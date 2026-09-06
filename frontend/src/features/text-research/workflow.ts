@@ -5,6 +5,7 @@ export type WorkflowStatus = "complete" | "current" | "incomplete" | "blocked" |
 export type WorkflowStageId =
     | "corpus"
     | "prepare"
+    | "codebook"
     | "annotate"
     | "reliability"
     | "analyze"
@@ -12,6 +13,7 @@ export type WorkflowStageId =
     | "classify"
     | "validate"
     | "explore"
+    | "contextual"
     | "export";
 
 export type WorkflowStageDefinition = {
@@ -35,6 +37,12 @@ export const RESEARCH_WORKFLOW_STAGES: WorkflowStageDefinition[] = [
         label: "Prepare",
         route: "prepare",
         description: "Segment documents into research text units",
+    },
+    {
+        id: "codebook",
+        label: "Codebook",
+        route: "codebook",
+        description: "Operationalize concepts and manage versioned labels",
     },
     {
         id: "annotate",
@@ -79,9 +87,15 @@ export const RESEARCH_WORKFLOW_STAGES: WorkflowStageDefinition[] = [
         description: "Inspect results across documents and units",
     },
     {
+        id: "contextual",
+        label: "Contextual",
+        route: "contextual",
+        description: "Join descriptive indicators to discourse prevalence",
+    },
+    {
         id: "export",
         label: "Export",
-        route: "runs",
+        route: "exports",
         description: "Export datasets, runs, and artifacts",
     },
 ];
@@ -97,6 +111,7 @@ type WorkflowInput = {
     hasCorpus: boolean;
     hasCodebook: boolean;
     labelCount: number;
+    codebook?: { name: string; version: string; is_frozen: boolean } | null;
     unitType: UnitType;
     summary: DashboardSummary | null | undefined;
 };
@@ -141,7 +156,7 @@ function applyCurrent(
 }
 
 export function deriveWorkflowStages(input: WorkflowInput): WorkflowStageState[] {
-    const { summary, unitType, hasCorpus, hasCodebook, labelCount, activeRoute } = input;
+    const { summary, unitType, hasCorpus, hasCodebook, labelCount, codebook = null, activeRoute } = input;
     const documentCount = summary?.document_count ?? 0;
     const unitCount = summary?.text_unit_counts?.[unitType] ?? 0;
     const anyUnits = Object.values(summary?.text_unit_counts ?? {}).some((count) => count > 0);
@@ -254,6 +269,22 @@ export function deriveWorkflowStages(input: WorkflowInput): WorkflowStageState[]
                     return { ...stage, status: "warning", detail, blockedReason: null };
                 }
                 return { ...stage, status: "incomplete", detail, blockedReason: null };
+            }
+            case "codebook": {
+                if (!hasCodebook || !codebook) {
+                    return {
+                        ...stage,
+                        status: "incomplete",
+                        detail: "No codebook selected",
+                        blockedReason: null,
+                    };
+                }
+                return {
+                    ...stage,
+                    status: labelCount > 0 ? "complete" : "incomplete",
+                    detail: `${codebook.name} · v${codebook.version} · ${codebook.is_frozen ? "frozen" : "draft"} · ${labelCount} label${labelCount === 1 ? "" : "s"}`,
+                    blockedReason: null,
+                };
             }
             case "reliability": {
                 if (annotationCompleted === 0) {
@@ -404,6 +435,30 @@ export function deriveWorkflowStages(input: WorkflowInput): WorkflowStageState[]
                     ...stage,
                     status: "incomplete",
                     detail: "Run analysis to explore",
+                    blockedReason: null,
+                };
+            }
+            case "contextual": {
+                if (!hasLabels) {
+                    return {
+                        ...stage,
+                        status: "blocked",
+                        detail: null,
+                        blockedReason: "Create a codebook with labels before contextual analysis",
+                    };
+                }
+                if (analysisRuns + topicRuns + modelCount === 0) {
+                    return {
+                        ...stage,
+                        status: "blocked",
+                        detail: null,
+                        blockedReason: "Run an analysis before joining contextual indicators",
+                    };
+                }
+                return {
+                    ...stage,
+                    status: "incomplete",
+                    detail: "Join indicators when ready",
                     blockedReason: null,
                 };
             }

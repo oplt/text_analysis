@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
     Alert,
     Button,
@@ -8,6 +8,7 @@ import {
     TableBody,
     TableCell,
     TableHead,
+    TablePagination,
     TableRow,
     TextField,
     Typography,
@@ -25,6 +26,7 @@ import {
     importContextualCsv,
     linkContextualDiscourse,
     listContextualDatasets,
+    listContextualObservations,
     type ContextualLinkResult,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
@@ -32,7 +34,7 @@ import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
-import { MetricCards, ResultsInspector, SimpleLineLikeBars } from "../components/ResearchCharts";
+import { MetricCards, ResultsInspector, ScientificLineChart, ScientificScatterPlot } from "../components/ResearchCharts";
 import { NoCorpusEmptyState } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 
@@ -48,6 +50,8 @@ export default function ContextualView() {
     const [groupBy, setGroupBy] = useState<"country" | "publication_year">("country");
     const [selectedLabelId, setSelectedLabelId] = useState("");
     const [linkResult, setLinkResult] = useState<ContextualLinkResult | null>(null);
+    const [observationPage, setObservationPage] = useState(0);
+    const observationPageSize = 50;
 
     const datasetsQuery = useQuery({
         queryKey: queryKeys.textResearch.contextualDatasets(ctx.projectId),
@@ -61,6 +65,16 @@ export default function ContextualView() {
     const detailQuery = useQuery({
         queryKey: queryKeys.textResearch.contextualDataset(activeDatasetId),
         queryFn: () => getContextualDataset(activeDatasetId),
+        enabled: Boolean(activeDatasetId),
+    });
+
+    const observationsQuery = useQuery({
+        queryKey: ["text-research", "contextual-observations", activeDatasetId, observationPage],
+        queryFn: () =>
+            listContextualObservations(activeDatasetId, {
+                limit: observationPageSize,
+                offset: observationPage * observationPageSize,
+            }),
         enabled: Boolean(activeDatasetId),
     });
 
@@ -98,6 +112,10 @@ export default function ContextualView() {
             void client.invalidateQueries({
                 queryKey: queryKeys.textResearch.contextualDataset(activeDatasetId),
             });
+            void client.invalidateQueries({
+                queryKey: ["text-research", "contextual-observations", activeDatasetId],
+            });
+            setObservationPage(0);
             if (result.indicator_keys[0]) setIndicatorKey(result.indicator_keys[0]);
             showToast({
                 message: `Imported ${result.imported} observations (${result.skipped} skipped).`,
@@ -150,17 +168,6 @@ export default function ContextualView() {
     });
 
     const activeLabelName = ctx.labels.find((l) => l.id === activeLabelId)?.name;
-
-    const chartItems = useMemo(() => {
-        if (!linkResult) return [];
-        return linkResult.points
-            .filter((point) => !activeLabelName || point.label === activeLabelName)
-            .slice(0, 40)
-            .map((point) => ({
-                label: point.group,
-                value: point.prevalence,
-            }));
-    }, [linkResult, activeLabelName]);
 
     if (!ctx.corporaLoading && ctx.corpora.length === 0) {
         return <NoCorpusEmptyState />;
@@ -228,6 +235,7 @@ export default function ContextualView() {
                                 value={activeDatasetId}
                                 onChange={(e) => {
                                     setSelectedDatasetId(e.target.value);
+                                    setObservationPage(0);
                                     setLinkResult(null);
                                 }}
                                 sx={{ minWidth: 280 }}
@@ -294,14 +302,7 @@ export default function ContextualView() {
                                             label: "Indicators",
                                             value: detail.indicator_keys.length,
                                         },
-                                        {
-                                            label: "Countries",
-                                            value: new Set(
-                                                detail.observations
-                                                    .map((row) => row.country)
-                                                    .filter(Boolean)
-                                            ).size,
-                                        },
+                                        { label: "Displayed", value: observationsQuery.data?.items.length ?? 0 },
                                     ]}
                                 />
                                 <Typography variant="body2" color="text.secondary">
@@ -310,31 +311,53 @@ export default function ContextualView() {
                                         ? detail.indicator_keys.join(" · ")
                                         : "none yet — upload a CSV"}
                                 </Typography>
-                                {detail.observations.length ? (
-                                    <Table size="small">
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell>Country</TableCell>
-                                                <TableCell>Year</TableCell>
-                                                <TableCell>Values</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {detail.observations.slice(0, 12).map((row) => (
-                                                <TableRow key={row.id}>
-                                                    <TableCell>{row.country ?? "—"}</TableCell>
-                                                    <TableCell>{row.year ?? "—"}</TableCell>
-                                                    <TableCell>
-                                                        {Object.entries(row.values)
-                                                            .slice(0, 4)
-                                                            .map(([key, value]) => `${key}=${value}`)
-                                                            .join(" · ")}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                ) : null}
+                                <QueryBoundary
+                                    isLoading={observationsQuery.isLoading}
+                                    isError={observationsQuery.isError}
+                                    error={observationsQuery.error}
+                                    onRetry={() => void observationsQuery.refetch()}
+                                    variant="inline"
+                                >
+                                    {observationsQuery.data?.items.length ? (
+                                        <>
+                                            <Table size="small">
+                                                <TableHead>
+                                                    <TableRow>
+                                                        <TableCell>Country</TableCell>
+                                                        <TableCell>Year</TableCell>
+                                                        <TableCell>Values</TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {observationsQuery.data.items.map((row) => (
+                                                        <TableRow key={row.id}>
+                                                            <TableCell>{row.country ?? "—"}</TableCell>
+                                                            <TableCell>{row.year ?? "—"}</TableCell>
+                                                            <TableCell>
+                                                                {Object.entries(row.values)
+                                                                    .slice(0, 4)
+                                                                    .map(([key, value]) => `${key}=${value}`)
+                                                                    .join(" · ")}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                            <TablePagination
+                                                component="div"
+                                                count={observationsQuery.data.total}
+                                                page={observationPage}
+                                                rowsPerPage={observationPageSize}
+                                                rowsPerPageOptions={[observationPageSize]}
+                                                onPageChange={(_, nextPage) => setObservationPage(nextPage)}
+                                            />
+                                        </>
+                                    ) : (
+                                        <Typography variant="body2" color="text.secondary">
+                                            No observations yet — upload a CSV to add indicators.
+                                        </Typography>
+                                    )}
+                                </QueryBoundary>
                             </Stack>
                         ) : null}
                     </QueryBoundary>
@@ -422,8 +445,36 @@ export default function ContextualView() {
                                     },
                                 ]}
                             />
-                            <Typography variant="subtitle2">Prevalence by group</Typography>
-                            <SimpleLineLikeBars items={chartItems} />
+                            {linkResult.group_by === "publication_year" ? (
+                                <>
+                                    <Typography variant="subtitle2">Discourse prevalence over time</Typography>
+                                    <ScientificLineChart
+                                        series={Object.entries(
+                                            linkResult.points
+                                                .filter((point) => !activeLabelName || point.label === activeLabelName)
+                                                .reduce<Record<string, Array<{ x: number; y: number }>>>((acc, point) => {
+                                                    const year = Number(point.group);
+                                                    if (Number.isFinite(year)) (acc[point.label] ??= []).push({ x: year, y: point.prevalence });
+                                                    return acc;
+                                                }, {})
+                                        ).map(([label, points]) => ({ label, points: points.sort((a, b) => a.x - b.x) }))}
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <Typography variant="subtitle2">Contextual indicator and discourse prevalence</Typography>
+                                    <ScientificScatterPlot
+                                        points={linkResult.points
+                                            .filter((point) => !activeLabelName || point.label === activeLabelName)
+                                            .map((point) => ({
+                                                x: point.indicator_value,
+                                                y: point.prevalence,
+                                                label: point.group,
+                                                detail: `${point.group_by}: ${point.group}; ${point.indicator_key}: ${point.indicator_value}; prevalence: ${point.prevalence.toFixed(3)}; yes: ${point.yes}; total: ${point.total}`,
+                                            }))}
+                                    />
+                                </>
+                            )}
                             <Table size="small">
                                 <TableHead>
                                     <TableRow>

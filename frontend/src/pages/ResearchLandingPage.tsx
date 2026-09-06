@@ -15,12 +15,12 @@ import {
     FolderOpen as ProjectIcon,
     Science as LabIcon,
 } from "@mui/icons-material";
-import { listProjects } from "../../api/projects";
-import { EmptyState } from "../../components/ui/EmptyState";
-import { PageShell } from "../../components/ui/PageShell";
-import { QueryBoundary } from "../../components/ui/QueryBoundary";
-import { SectionCard } from "../../components/ui/SectionCard";
-import { queryKeys } from "../../config/queryKeys";
+import { listProjects } from "../api/projects";
+import { EmptyState } from "../components/ui/EmptyState";
+import { PageShell } from "../components/ui/PageShell";
+import { QueryBoundary } from "../components/ui/QueryBoundary";
+import { SectionCard } from "../components/ui/SectionCard";
+import { queryKeys } from "../config/queryKeys";
 import {
     getLastResearchProjectId,
     researchLabPath,

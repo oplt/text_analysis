@@ -22,6 +22,11 @@ celery_app.conf.update(
         "backend.workers.tasks.run_ai_evaluation_task": {
             "queue": settings.CELERY_TASK_DEFAULT_QUEUE
         },
+        "backend.workers.tasks.research_segmentation_task": {"queue": "research_io"},
+        "backend.workers.tasks.research_classifier_training_task": {"queue": "research_cpu"},
+        "backend.workers.tasks.research_topic_model_training_task": {"queue": "research_cpu"},
+        "backend.workers.tasks.research_robustness_sweep_task": {"queue": "research_cpu"},
+        "backend.workers.tasks.research_prediction_task": {"queue": "research_cpu"},
     },
     task_serializer="json",
     accept_content=["json"],

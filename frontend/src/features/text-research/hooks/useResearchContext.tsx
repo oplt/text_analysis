@@ -43,14 +43,14 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
         queryKey: queryKeys.textResearch.corpora(projectId),
         queryFn: () => listCorpora(projectId),
         enabled: Boolean(projectId),
-        staleTime: QUERY_STALE_TIMES.userDirectory,
+        staleTime: QUERY_STALE_TIMES.researchReference,
     });
 
     const codebooksQuery = useQuery({
         queryKey: queryKeys.textResearch.codebooks(projectId),
         queryFn: () => listCodebooks(projectId),
         enabled: Boolean(projectId),
-        staleTime: QUERY_STALE_TIMES.userDirectory,
+        staleTime: QUERY_STALE_TIMES.researchReference,
     });
 
     const corpora = corporaQuery.data ?? [];
@@ -122,6 +122,7 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
         queryKey: queryKeys.textResearch.labels(selectedCodebookId),
         queryFn: () => listLabels(selectedCodebookId),
         enabled: Boolean(selectedCodebookId),
+        staleTime: QUERY_STALE_TIMES.researchReference,
     });
 
     const value = useMemo<ResearchContextValue>(

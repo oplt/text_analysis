@@ -13,6 +13,8 @@ export const QUERY_STALE_TIMES = {
     aiEvaluationRuns: 60_000,
     aiPromptVersions: 60_000,
     aiDatasetCases: 60_000,
+    researchReference: 5 * 60_000,
+    researchActiveRun: 5_000,
 } as const
 
 export const NOTIFICATIONS_REFETCH_INTERVAL_MS = 60_000

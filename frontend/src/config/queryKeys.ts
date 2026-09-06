@@ -69,8 +69,8 @@ export const queryKeys = {
         codebooks: (projectId: string) => ["text-research", projectId, "codebooks"] as const,
         labels: (codebookId: string) => ["text-research", "codebook", codebookId, "labels"] as const,
         dashboard: (corpusId: string) => ["text-research", "corpus", corpusId, "dashboard"] as const,
-        annotationQueue: (status?: string) =>
-            ["text-research", "annotation-queue", status ?? "all"] as const,
+        annotationQueue: (status?: string, offset = 0) =>
+            ["text-research", "annotation-queue", status ?? "all", offset] as const,
         annotationProgress: (corpusId: string) =>
             ["text-research", "corpus", corpusId, "annotation-progress"] as const,
         runs: (projectId: string, corpusId?: string, runType?: string) =>

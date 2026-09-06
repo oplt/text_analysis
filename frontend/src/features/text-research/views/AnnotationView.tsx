@@ -90,11 +90,13 @@ export default function AnnotationView() {
     const [comment, setComment] = useState("");
     const [confidence, setConfidence] = useState(0.8);
     const [queueFilter, setQueueFilter] = useState<"assigned" | "in_progress" | "all">("assigned");
+    const [queuePage, setQueuePage] = useState(0);
+    const queuePageSize = 50;
 
     const queueStatus = queueFilter === "all" ? undefined : queueFilter;
     const queueQuery = useQuery({
-        queryKey: queryKeys.textResearch.annotationQueue(queueStatus ?? "all"),
-        queryFn: () => listAnnotationQueue(queueStatus),
+        queryKey: queryKeys.textResearch.annotationQueue(queueStatus ?? "all", queuePage * queuePageSize),
+        queryFn: () => listAnnotationQueue(queueStatus, { limit: queuePageSize, offset: queuePage * queuePageSize }),
     });
 
     const progressQuery = useQuery({
@@ -123,7 +125,7 @@ export default function AnnotationView() {
     });
 
     const queueItems = useMemo(() => {
-        const items = (queueQuery.data ?? []).filter((item) => item.text_unit);
+        const items = (queueQuery.data?.items ?? []).filter((item) => item.text_unit);
         return items as AnnotationQueueItem[];
     }, [queueQuery.data]);
 
@@ -171,10 +173,7 @@ export default function AnnotationView() {
         },
         onSuccess: (options) => {
             void client.invalidateQueries({
-                queryKey: queryKeys.textResearch.annotationQueue("assigned"),
-            });
-            void client.invalidateQueries({
-                queryKey: queryKeys.textResearch.annotationQueue("pending"),
+                queryKey: ["text-research", "annotation-queue"],
             });
             void client.invalidateQueries({
                 queryKey: queryKeys.textResearch.annotationProgress(ctx.selectedCorpusId),
@@ -243,6 +242,7 @@ export default function AnnotationView() {
                             value={queueFilter}
                             onChange={(e) => {
                                 setQueueFilter(e.target.value as typeof queueFilter);
+                                setQueuePage(0);
                                 setSelectedUnitId(null);
                             }}
                         >
@@ -318,7 +318,33 @@ export default function AnnotationView() {
                             }}
                         >
                             <Stack spacing={1} sx={{ maxHeight: 640, overflow: "auto" }}>
-                                <Typography variant="subtitle2">Queue</Typography>
+                                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                                    <Typography variant="subtitle2">
+                                        Queue {queueQuery.data ? `(${queueQuery.data.total})` : ""}
+                                    </Typography>
+                                    <Stack direction="row" spacing={0.5}>
+                                        <Button
+                                            size="small"
+                                            disabled={queuePage === 0}
+                                            onClick={() => {
+                                                setQueuePage((page) => page - 1);
+                                                setSelectedUnitId(null);
+                                            }}
+                                        >
+                                            Earlier
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            disabled={!queueQuery.data || (queuePage + 1) * queuePageSize >= queueQuery.data.total}
+                                            onClick={() => {
+                                                setQueuePage((page) => page + 1);
+                                                setSelectedUnitId(null);
+                                            }}
+                                        >
+                                            Later
+                                        </Button>
+                                    </Stack>
+                                </Stack>
                                 {queueItems.map((item, index) => (
                                     <Button
                                         key={item.task.id}
@@ -331,7 +357,7 @@ export default function AnnotationView() {
                                         onClick={() => selectIndex(index)}
                                         sx={{ justifyContent: "flex-start", textAlign: "left" }}
                                     >
-                                        #{index + 1} · {item.text_unit?.text.slice(0, 48) ?? "Unit"}
+                                        #{queuePage * queuePageSize + index + 1} · {item.text_unit?.text.slice(0, 48) ?? "Unit"}
                                         …
                                     </Button>
                                 ))}

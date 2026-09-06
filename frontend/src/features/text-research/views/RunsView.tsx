@@ -38,7 +38,6 @@ import { ResultsInspector } from "../components/ResearchCharts";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
-import ExportsView from "./ExportsView";
 
 function formatValue(value: unknown): string {
     if (value == null) return "—";
@@ -479,8 +478,6 @@ export default function RunsView() {
                     </QueryBoundary>
                 </SectionCard>
             ) : null}
-
-            <ExportsView />
         </Stack>
     );
 }

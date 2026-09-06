@@ -1089,6 +1089,23 @@ class ResearchRepository:
         await self.db.flush()
         return row
 
+    async def bulk_upsert_predictions(self, rows: list[dict[str, object]]) -> None:
+        """Persist prediction batches with one PostgreSQL upsert statement."""
+        if not rows:
+            return
+        from sqlalchemy.dialects.postgresql import insert
+
+        statement = insert(ModelPrediction).values(rows)
+        statement = statement.on_conflict_do_update(
+            constraint="uq_prediction_model_unit",
+            set_={
+                "predicted_labels_json": statement.excluded.predicted_labels_json,
+                "scores_json": statement.excluded.scores_json,
+                "uncertainty": statement.excluded.uncertainty,
+            },
+        )
+        await self.db.execute(statement)
+
     async def list_predictions_for_model(
         self,
         trained_model_id: str,
@@ -1099,8 +1116,8 @@ class ResearchRepository:
     ) -> tuple[list[ModelPrediction], int]:
         stmt = select(ModelPrediction).where(ModelPrediction.trained_model_id == trained_model_id)
         if order_by_uncertainty:
-            # uncertainty convention: higher value == more uncertain (see
-            # infrastructure/classifiers.py); most-uncertain-first ranking.
+            # uncertainty convention: 0 == certain and 1 == maximally
+            # uncertain (see infrastructure/classifiers.py).
             stmt = stmt.order_by(ModelPrediction.uncertainty.desc().nulls_last())
         else:
             stmt = stmt.order_by(ModelPrediction.created_at.desc())
@@ -1223,6 +1240,21 @@ class ResearchRepository:
                 ContextualObservation.country.asc().nulls_last(),
                 ContextualObservation.year.asc().nulls_last(),
             )
+        )
+        return list(result.scalars().all())
+
+    async def list_observations_page(
+        self, dataset_id: str, *, limit: int, offset: int
+    ) -> list[ContextualObservation]:
+        result = await self.db.execute(
+            select(ContextualObservation)
+            .where(ContextualObservation.dataset_id == dataset_id)
+            .order_by(
+                ContextualObservation.country.asc().nulls_last(),
+                ContextualObservation.year.asc().nulls_last(),
+            )
+            .limit(limit)
+            .offset(offset)
         )
         return list(result.scalars().all())
 

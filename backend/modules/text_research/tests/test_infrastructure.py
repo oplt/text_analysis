@@ -10,8 +10,11 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+import numpy as np
+
 from backend.modules.text_research.infrastructure import (
     classifiers,
+    feature_cache,
     model_storage,
     preprocessing,
     quantitative,
@@ -83,6 +86,17 @@ class SegmentationTests(unittest.TestCase):
 
 
 class PreprocessingTests(unittest.TestCase):
+    def test_feature_cache_tracks_hits_misses_and_explicit_invalidation(self):
+        feature_cache.clear_cache()
+        self.assertIsNone(feature_cache.get_cached("missing"))
+        feature_cache.set_cached("cached", [["token"]])
+        self.assertEqual(feature_cache.get_cached("cached"), [["token"]])
+        feature_cache.invalidate_cache("cached")
+        metrics = feature_cache.cache_metrics()
+        self.assertEqual(metrics["entries"], 0)
+        self.assertGreaterEqual(metrics["hits"], 1)
+        self.assertGreaterEqual(metrics["misses"], 1)
+
     def test_normalize_whitespace_collapses_and_strips(self):
         self.assertEqual(
             preprocessing.normalize_whitespace("  Hello   \n\n world  "),
@@ -249,6 +263,10 @@ class ReliabilityTests(unittest.TestCase):
         self.assertEqual(result["n_units"], 4)
         self.assertEqual(result["n_coders"], 3)
         self.assertGreater(result["missingness"], 0.0)
+
+    def test_krippendorffs_alpha_without_shared_units_is_not_evaluable(self):
+        result = reliability.krippendorffs_alpha([["yes", None], [None, "no"]])
+        self.assertIsNone(result["alpha"])
 
     def test_krippendorffs_alpha_hand_computed_example(self):
         # Two coders, four units:
@@ -469,6 +487,15 @@ class ClassifierTests(unittest.TestCase):
             random_seed=5,
         )
         self.assertIn("per_class", result["metrics"])
+        self.assertEqual(
+            set(result["metrics"]["multilabel_confusion_matrices"]), set(label_names)
+        )
+        self.assertTrue(
+            all(
+                len(matrix) == 2 and all(len(row) == 2 for row in matrix)
+                for matrix in result["metrics"]["multilabel_confusion_matrices"].values()
+            )
+        )
         self.assertEqual(set(result["classes"]), set(label_names))
 
     def test_extract_linear_coefficients_shape_and_ranking(self):
@@ -517,7 +544,123 @@ class ClassifierTests(unittest.TestCase):
         self.assertEqual(len(predictions), 1)
         self.assertIn("uncertainty", predictions[0])
         self.assertGreaterEqual(predictions[0]["uncertainty"], 0.0)
-        self.assertLessEqual(predictions[0]["uncertainty"], 0.5)
+        self.assertLessEqual(predictions[0]["uncertainty"], 1.0)
+
+    def test_binary_probability_uncertainty_ranks_boundary_cases_first(self):
+        class Vectorizer:
+            def transform(self, texts):
+                return texts
+
+        class Model:
+            def predict(self, texts):
+                return np.zeros(len(texts), dtype=int)
+
+            def predict_proba(self, texts):
+                return np.array([[1 - p, p] for p in (0.50, 0.60, 0.90, 0.99)])
+
+        predictions = classifiers.predict_with_uncertainty(
+            Model(), Vectorizer(), ["a", "b", "c", "d"], task_type="binary"
+        )
+        scores = [row["uncertainty"] for row in predictions]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        self.assertAlmostEqual(scores[0], 1.0)
+        self.assertAlmostEqual(scores[-1], 0.02)
+
+    def test_linear_svm_uncertainty_ranks_smallest_margin_first(self):
+        class Vectorizer:
+            def transform(self, texts):
+                return texts
+
+        class Model:
+            def predict(self, texts):
+                return np.zeros(len(texts), dtype=int)
+
+            def decision_function(self, texts):
+                return np.array([0.0, 0.4, 2.0])
+
+        predictions = classifiers.predict_with_uncertainty(
+            Model(), Vectorizer(), ["a", "b", "c"], task_type="binary"
+        )
+        scores = [row["uncertainty"] for row in predictions]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        self.assertAlmostEqual(scores[0], 1.0)
+
+    def test_multiclass_uncertainty_ranks_smallest_probability_margin_first(self):
+        class Vectorizer:
+            def transform(self, texts):
+                return texts
+
+        class Model:
+            def predict(self, texts):
+                return np.zeros(len(texts), dtype=int)
+
+            def predict_proba(self, texts):
+                return np.array([[1 / 3, 1 / 3, 1 / 3], [0.6, 0.2, 0.2], [0.95, 0.03, 0.02]])
+
+        predictions = classifiers.predict_with_uncertainty(
+            Model(), Vectorizer(), ["a", "b", "c"], task_type="multiclass"
+        )
+        scores = [row["uncertainty"] for row in predictions]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        self.assertAlmostEqual(scores[0], 1.0)
+
+    def test_multiclass_linear_svm_uncertainty_ranks_smallest_margin_first(self):
+        class Vectorizer:
+            def transform(self, texts):
+                return texts
+
+        class Model:
+            def predict(self, texts):
+                return np.zeros(len(texts), dtype=int)
+
+            def decision_function(self, texts):
+                return np.array([[0.0, 0.0, -1.0], [1.0, 0.6, 0.0], [3.0, 0.1, 0.0]])
+
+        predictions = classifiers.predict_with_uncertainty(
+            Model(), Vectorizer(), ["a", "b", "c"], task_type="multiclass"
+        )
+        scores = [row["uncertainty"] for row in predictions]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        self.assertAlmostEqual(scores[0], 1.0)
+
+    def test_multilabel_uncertainty_uses_normalized_entropy(self):
+        class Vectorizer:
+            def transform(self, texts):
+                return texts
+
+        class Model:
+            def predict(self, texts):
+                return np.zeros((len(texts), 2), dtype=int)
+
+            def predict_proba(self, texts):
+                return np.array([[0.5, 0.5], [0.9, 0.9]])
+
+        predictions = classifiers.predict_with_uncertainty(
+            Model(), Vectorizer(), ["a", "b"], task_type="multilabel"
+        )
+        scores = [row["uncertainty"] for row in predictions]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        self.assertAlmostEqual(scores[0], 1.0)
+        self.assertGreaterEqual(scores[-1], 0.0)
+
+    def test_multilabel_linear_svm_uncertainty_ranks_smallest_margins_first(self):
+        class Vectorizer:
+            def transform(self, texts):
+                return texts
+
+        class Model:
+            def predict(self, texts):
+                return np.zeros((len(texts), 2), dtype=int)
+
+            def decision_function(self, texts):
+                return np.array([[0.0, 0.0], [2.0, 2.0]])
+
+        predictions = classifiers.predict_with_uncertainty(
+            Model(), Vectorizer(), ["a", "b"], task_type="multilabel"
+        )
+        scores = [row["uncertainty"] for row in predictions]
+        self.assertEqual(scores, sorted(scores, reverse=True))
+        self.assertAlmostEqual(scores[0], 1.0)
 
 
 class TopicModelTests(unittest.TestCase):

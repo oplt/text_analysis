@@ -134,15 +134,17 @@ class AnnotationService(ResearchAccessMixin):
         requesting_user_id: str,
         annotator_id: str | None = None,
         status: str | None = None,
-    ) -> list[dict[str, Any]]:
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[dict[str, Any]], int]:
         """Annotators may only list their own queue in this MVP."""
         target_annotator = annotator_id or requesting_user_id
         if target_annotator != requesting_user_id:
             raise HTTPException(status_code=403, detail="Cannot view another annotator's queue")
 
-        tasks = await self.repo.list_tasks_for_annotator(target_annotator)
-        if status:
-            tasks = [t for t in tasks if t.status == status]
+        tasks, total = await self.repo.paginate_tasks_for_annotator(
+            target_annotator, status=status, limit=limit, offset=offset
+        )
         units = {
             unit.id: unit
             for unit in await self.repo.list_text_units_by_ids([t.text_unit_id for t in tasks])
@@ -151,7 +153,7 @@ class AnnotationService(ResearchAccessMixin):
             {"task": task, "text_unit": units.get(task.text_unit_id)}
             for task in tasks
             if task.text_unit_id in units
-        ]
+        ], total
 
     async def save_annotations(
         self,

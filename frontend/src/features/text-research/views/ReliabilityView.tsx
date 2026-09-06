@@ -43,7 +43,7 @@ import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
-import { MatrixHeatmap, MetricCards, ResultsInspector } from "../components/ResearchCharts";
+import { MatrixHeatmap, MetricCards, ReliabilityComparisonChart, ResultsInspector } from "../components/ResearchCharts";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { activeRunRefetchInterval } from "../runPolling";
@@ -78,6 +78,7 @@ type LabelReliability = {
     coder_pair_agreement?: CoderPairAgreement | null;
     disagreement_count?: number;
     disagreements?: unknown;
+    evaluation_messages?: string[];
 };
 
 const STAT_HELP: Record<string, string> = {
@@ -117,17 +118,21 @@ function StatLabel({ label, helpKey }: { label: string; helpKey: keyof typeof ST
 
 function pairMatrixValues(pair: CoderPairAgreement | null | undefined): {
     coders: string[];
-    values: number[][];
+    values: Array<Array<number | null>>;
+    commonUnits: number[][];
 } {
     const coders = pair?.coders ?? [];
     const matrix = pair?.matrix ?? {};
     const values = coders.map((row) =>
         coders.map((col) => {
             const cell = matrix[row]?.[col];
-            return typeof cell?.agreement === "number" ? cell.agreement : 0;
+            return typeof cell?.agreement === "number" ? cell.agreement : null;
         })
     );
-    return { coders, values };
+    const commonUnits = coders.map((row) =>
+        coders.map((col) => matrix[row]?.[col]?.n_common_units ?? 0)
+    );
+    return { coders, values, commonUnits };
 }
 
 function LabelReliabilityCard({
@@ -139,7 +144,7 @@ function LabelReliabilityCard({
 }) {
     const kappa = row.cohens_kappa ?? null;
     const alpha = row.krippendorff_alpha ?? null;
-    const { coders, values } = pairMatrixValues(row.coder_pair_agreement);
+    const { coders, values, commonUnits } = pairMatrixValues(row.coder_pair_agreement);
 
     return (
         <Box sx={{ p: 2, borderRadius: 1, bgcolor: "action.hover" }}>
@@ -192,6 +197,11 @@ function LabelReliabilityCard({
                         Disagreements: {row.disagreement_count}
                     </Typography>
                 ) : null}
+                {row.evaluation_messages?.map((message) => (
+                    <Alert key={message} severity="info">
+                        {message}
+                    </Alert>
+                ))}
                 {coders.length > 0 ? (
                     <Box>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -202,6 +212,11 @@ function LabelReliabilityCard({
                             colLabels={coders}
                             values={values}
                             formatCell={(v) => formatMetric(v, 2)}
+                            cellDetails={(rowIndex, colIndex) =>
+                                values[rowIndex]?.[colIndex] === null
+                                    ? "No shared annotations"
+                                    : `${commonUnits[rowIndex]?.[colIndex] ?? 0} shared units`
+                            }
                         />
                     </Box>
                 ) : null}
@@ -247,6 +262,7 @@ export default function ReliabilityView() {
     const [selectedDisagreementKey, setSelectedDisagreementKey] = useState<string | null>(null);
     const [finalValue, setFinalValue] = useState<LabelDecision | "">("");
     const [adjudicationComment, setAdjudicationComment] = useState("");
+    const [selectedReliabilityLabel, setSelectedReliabilityLabel] = useState<string | null>(null);
 
     const reliabilityReady =
         Boolean(ctx.selectedCorpusId) &&
@@ -517,13 +533,26 @@ export default function ReliabilityView() {
                                 ) : null}
 
                                 {byLabel
-                                    ? Object.entries(byLabel).map(([labelName, row]) => (
+                                    ? <>
+                                          <ReliabilityComparisonChart
+                                              items={Object.entries(byLabel).map(([label, row]) => ({
+                                                  label,
+                                                  kappa: row.cohens_kappa?.kappa ?? null,
+                                                  alpha: row.krippendorff_alpha?.alpha ?? null,
+                                              }))}
+                                              onSelect={setSelectedReliabilityLabel}
+                                          />
+                                          {selectedReliabilityLabel ? <Button size="small" onClick={() => setSelectedReliabilityLabel(null)}>Show all labels</Button> : null}
+                                          {Object.entries(byLabel)
+                                              .filter(([labelName]) => !selectedReliabilityLabel || labelName === selectedReliabilityLabel)
+                                              .map(([labelName, row]) => (
                                           <LabelReliabilityCard
                                               key={labelName}
                                               labelName={labelName}
                                               row={row}
                                           />
-                                      ))
+                                      ))}
+                                      </>
                                     : null}
 
                                 <ResultsInspector

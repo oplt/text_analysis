@@ -87,6 +87,15 @@ def robustness_sweep_sync(*, run_id: str, user_id: str) -> None:
         raise
 
 
+def prediction_sync(*, run_id: str, user_id: str) -> None:
+    from backend.modules.text_research.application.prediction_service import PredictionService
+
+    async def _execute(db):
+        await PredictionService(db).execute_prediction(run_id)
+
+    _run_with_session(_execute)
+
+
 def queue_segmentation(*, run_id: str, user_id: str) -> None:
     from backend.workers.tasks import research_segmentation_task
 
@@ -137,3 +146,9 @@ def queue_robustness_sweep(*, run_id: str, user_id: str) -> None:
         queue=settings.CELERY_TASK_DEFAULT_QUEUE,
         job_name="research-robustness-sweep",
     )
+
+
+def queue_prediction(*, run_id: str, user_id: str) -> None:
+    from backend.workers.tasks import research_prediction_task
+
+    dispatch_background_sync_job(target=prediction_sync, kwargs={"run_id": run_id, "user_id": user_id}, celery_task=research_prediction_task, celery_kwargs={"run_id": run_id, "user_id": user_id}, queue="research_cpu", job_name="research-prediction")

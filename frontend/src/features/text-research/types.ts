@@ -245,7 +245,8 @@ export const RESEARCH_TABS = [
     { slug: "robustness", label: "Robustness" },
     { slug: "explorer", label: "Explorer" },
     { slug: "contextual", label: "Contextual" },
-    { slug: "runs", label: "Runs & Exports" },
+    { slug: "runs", label: "Runs" },
+    { slug: "exports", label: "Exports" },
 ] as const;
 
 export type ResearchTabSlug = (typeof RESEARCH_TABS)[number]["slug"];

@@ -540,7 +540,13 @@ class ContextualDatasetDetail(BaseModel):
     created_at: datetime
     observation_count: int
     indicator_keys: list[str]
-    observations: list[ContextualObservationResponse]
+
+
+class ContextualObservationPage(BaseModel):
+    items: list[ContextualObservationResponse]
+    total: int
+    limit: int
+    offset: int
 
 
 class ContextualImportResponse(BaseModel):

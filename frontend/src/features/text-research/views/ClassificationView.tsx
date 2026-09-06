@@ -5,6 +5,7 @@ import {
     Button,
     Checkbox,
     Chip,
+    FormControlLabel,
     MenuItem,
     Stack,
     Step,
@@ -50,10 +51,12 @@ import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import {
     DivergingBarChart,
+    MatrixHeatmap,
     MetricCards,
     RankedBarChart,
     ResultsInspector,
 } from "../components/ResearchCharts";
+import { ResearchResultsTable } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { activeRunRefetchInterval } from "../runPolling";
@@ -251,6 +254,8 @@ export default function ClassificationView() {
     const [selectedUncertainIds, setSelectedUncertainIds] = useState<string[]>([]);
     const [assignedOnce, setAssignedOnce] = useState(false);
     const [coefficientLabel, setCoefficientLabel] = useState("");
+    const [confusionNormalized, setConfusionNormalized] = useState(false);
+    const [confusionLabel, setConfusionLabel] = useState("");
 
     const labelIds = ctx.labels.map((l) => l.id);
     const labelNameById = useMemo(
@@ -351,6 +356,18 @@ export default function ClassificationView() {
         ? trainResults.train_groups
         : null;
     const testGroups = Array.isArray(trainResults?.test_groups) ? trainResults.test_groups : null;
+    const multiclassConfusion = Array.isArray(trainMetrics?.confusion_matrix)
+        ? (trainMetrics?.confusion_matrix as number[][])
+        : null;
+    const multiclassConfusionLabels = Array.isArray(trainMetrics?.confusion_matrix_labels)
+        ? trainMetrics.confusion_matrix_labels.map(String)
+        : [];
+    const multilabelConfusions = asRecord(trainMetrics?.multilabel_confusion_matrices);
+    const availableConfusionLabels = Object.keys(multilabelConfusions ?? {});
+    const activeConfusionLabel = confusionLabel || availableConfusionLabels[0] || "";
+    const multilabelConfusion = Array.isArray(multilabelConfusions?.[activeConfusionLabel])
+        ? (multilabelConfusions?.[activeConfusionLabel] as number[][])
+        : null;
 
     const distributionItems = previewQuery.data
         ? classDistributionItems(previewQuery.data.class_distribution)
@@ -979,6 +996,33 @@ export default function ClassificationView() {
                             </Box>
                         ) : null}
 
+                        {multiclassConfusion || multilabelConfusion ? (
+                            <Stack spacing={1}>
+                                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                                    <Typography variant="subtitle2">Confusion matrix</Typography>
+                                    <FormControlLabel
+                                        control={<Checkbox checked={confusionNormalized} onChange={(event) => setConfusionNormalized(event.target.checked)} />}
+                                        label="Row-normalized percentages"
+                                    />
+                                    {availableConfusionLabels.length ? (
+                                        <TextField select size="small" label="Multilabel class" value={activeConfusionLabel} onChange={(event) => setConfusionLabel(event.target.value)} sx={{ minWidth: 180 }}>
+                                            {availableConfusionLabels.map((label) => <MenuItem key={label} value={label}>{labelNameById.get(label) ?? label}</MenuItem>)}
+                                        </TextField>
+                                    ) : null}
+                                </Stack>
+                                {(() => {
+                                    const matrix = multiclassConfusion ?? multilabelConfusion ?? [];
+                                    const labels = multiclassConfusion ? multiclassConfusionLabels : ["Actual no", "Actual yes"];
+                                    const columns = multiclassConfusion ? multiclassConfusionLabels : ["Predicted no", "Predicted yes"];
+                                    const values = matrix.map((row) => {
+                                        const total = row.reduce((sum, value) => sum + value, 0);
+                                        return row.map((value) => confusionNormalized && total ? value / total : value);
+                                    });
+                                    return <MatrixHeatmap rowLabels={labels} colLabels={columns} values={values} formatCell={(value) => value == null ? "—" : confusionNormalized ? `${(value * 100).toFixed(1)}%` : String(value)} />;
+                                })()}
+                            </Stack>
+                        ) : null}
+
                         {(trainGroups || testGroups) && (
                             <Typography variant="body2" color="text.secondary">
                                 Grouped split:{" "}
@@ -1221,7 +1265,7 @@ export default function ClassificationView() {
                         >
                             <Stack spacing={1}>
                                 <Typography variant="body2" color="text.secondary">
-                                    Lowest uncertainty distance first. These are model candidates
+                                    Highest uncertainty first. These are model candidates
                                     for human review — not automatic labels.
                                 </Typography>
                                 {(uncertainQuery.data ?? []).length === 0 ? (
@@ -1300,6 +1344,27 @@ export default function ClassificationView() {
                                         </Box>
                                     );
                                 })}
+                                <ResearchResultsTable
+                                    rows={(uncertainQuery.data ?? []).map((item) => ({
+                                        id: item.prediction.id,
+                                        text: item.text_unit.text,
+                                        labels: item.prediction.predicted_labels.join(", "),
+                                        scores: Object.entries(item.prediction.scores ?? {})
+                                            .map(([label, score]) => `${labelNameById.get(label) ?? label}: ${formatMetric(score)}`)
+                                            .join(", "),
+                                        uncertainty: item.prediction.uncertainty,
+                                        model: selectedModel?.name ?? selectedModel?.model_family ?? selectedModelId,
+                                        provenance: "Model prediction",
+                                    }))}
+                                    columns={[
+                                        { id: "text", label: "Text unit", value: (row) => row.text },
+                                        { id: "labels", label: "Predicted label(s)", value: (row) => row.labels },
+                                        { id: "scores", label: "Scores", value: (row) => row.scores },
+                                        { id: "uncertainty", label: "Uncertainty", value: (row) => row.uncertainty, align: "right" },
+                                        { id: "model", label: "Model", value: (row) => row.model },
+                                        { id: "provenance", label: "Provenance", value: (row) => row.provenance },
+                                    ]}
+                                />
                                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                                     <Button
                                         variant="contained"

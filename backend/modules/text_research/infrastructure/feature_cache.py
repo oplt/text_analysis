@@ -13,6 +13,7 @@ import hashlib
 import json
 import logging
 import threading
+import sys
 from collections import OrderedDict
 from typing import Any
 
@@ -26,6 +27,20 @@ logger = logging.getLogger(__name__)
 _LOCK = threading.Lock()
 _CACHE: OrderedDict[str, Any] = OrderedDict()
 _MAX_ENTRIES = 64
+_MAX_BYTES = 32 * 1024 * 1024
+_CACHE_BYTES = 0
+_HITS = 0
+_MISSES = 0
+_EVICTIONS = 0
+
+
+def _estimate_size(value: Any) -> int:
+    size = sys.getsizeof(value)
+    if isinstance(value, dict):
+        return size + sum(_estimate_size(key) + _estimate_size(item) for key, item in value.items())
+    if isinstance(value, (list, tuple)):
+        return size + sum(_estimate_size(item) for item in value)
+    return size
 
 
 def build_cache_key(
@@ -58,25 +73,55 @@ def build_cache_key(
 
 
 def get_cached(key: str) -> Any | None:
+    global _HITS, _MISSES
     with _LOCK:
         value = _CACHE.get(key)
         if value is None:
+            _MISSES += 1
             return None
+        _HITS += 1
         _CACHE.move_to_end(key)
         return value
 
 
 def set_cached(key: str, value: Any) -> None:
+    global _CACHE_BYTES, _EVICTIONS
     with _LOCK:
+        previous = _CACHE.pop(key, None)
+        if previous is not None:
+            _CACHE_BYTES -= _estimate_size(previous)
         _CACHE[key] = value
+        _CACHE_BYTES += _estimate_size(value)
         _CACHE.move_to_end(key)
-        while len(_CACHE) > _MAX_ENTRIES:
-            _CACHE.popitem(last=False)
+        while len(_CACHE) > _MAX_ENTRIES or _CACHE_BYTES > _MAX_BYTES:
+            _, evicted = _CACHE.popitem(last=False)
+            _CACHE_BYTES -= _estimate_size(evicted)
+            _EVICTIONS += 1
 
 
 def clear_cache() -> None:
+    global _CACHE_BYTES
     with _LOCK:
         _CACHE.clear()
+        _CACHE_BYTES = 0
+
+
+def invalidate_cache(key: str | None = None) -> None:
+    """Invalidate one entry or the entire in-process quantitative cache."""
+    global _CACHE_BYTES
+    with _LOCK:
+        if key is None:
+            _CACHE.clear()
+            _CACHE_BYTES = 0
+            return
+        value = _CACHE.pop(key, None)
+        if value is not None:
+            _CACHE_BYTES -= _estimate_size(value)
+
+
+def cache_metrics() -> dict[str, int]:
+    with _LOCK:
+        return {"entries": len(_CACHE), "bytes": _CACHE_BYTES, "hits": _HITS, "misses": _MISSES, "evictions": _EVICTIONS}
 
 
 def get_or_tokenize(

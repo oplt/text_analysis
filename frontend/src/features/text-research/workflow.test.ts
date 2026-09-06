@@ -112,4 +112,26 @@ describe("deriveWorkflowStages", () => {
             detail: "2 trained models",
         });
     });
+
+    it("places codebook, contextual analysis, and export in the workflow", () => {
+        const stages = deriveWorkflowStages({
+            activeRoute: "codebook",
+            hasCorpus: true,
+            hasCodebook: true,
+            codebook: { name: "Values", version: "2", is_frozen: true },
+            labelCount: 3,
+            unitType: "paragraph",
+            summary: summary({ document_count: 2, text_unit_counts: { paragraph: 8 } }),
+        });
+
+        expect(stages.map((stage) => stage.id)).toEqual([
+            "corpus", "prepare", "codebook", "annotate", "reliability", "analyze",
+            "topics", "classify", "validate", "explore", "contextual", "export",
+        ]);
+        expect(stages.find((stage) => stage.id === "codebook")).toMatchObject({
+            status: "current",
+            detail: "Values · v2 · frozen · 3 labels",
+        });
+        expect(stages.find((stage) => stage.id === "export")?.route).toBe("exports");
+    });
 });

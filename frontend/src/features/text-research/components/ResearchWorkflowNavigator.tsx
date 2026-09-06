@@ -57,6 +57,20 @@ function statusAccent(status: WorkflowStatus): string {
     }
 }
 
+function prerequisite(stage: WorkflowStageState): { label: string; route: WorkflowStageState["route"] } | null {
+    switch (stage.id) {
+        case "prepare": return { label: "Go to corpus", route: "corpus" };
+        case "codebook": return { label: "Create codebook", route: "codebook" };
+        case "annotate": return { label: "Go to codebook", route: "codebook" };
+        case "reliability": return { label: "Go to annotation", route: "annotation" };
+        case "classify": return { label: "Go to annotation", route: "annotation" };
+        case "validate": return { label: "Go to analysis", route: "analysis" };
+        case "explore": return { label: "Go to analysis", route: "analysis" };
+        case "contextual": return { label: "Go to analysis", route: "analysis" };
+        default: return null;
+    }
+}
+
 type ResearchWorkflowNavigatorProps = {
     stages: WorkflowStageState[];
     activeStageId: string | false;
@@ -74,6 +88,8 @@ export function ResearchWorkflowNavigator({
     dashboardSelected,
     orientation = "horizontal",
 }: ResearchWorkflowNavigatorProps) {
+    const activeStage = stages.find((stage) => stage.id === activeStageId) ?? null;
+    const nextStep = activeStage?.status === "blocked" ? prerequisite(activeStage) : null;
     return (
         <Box>
             <Stack
@@ -194,6 +210,12 @@ export function ResearchWorkflowNavigator({
                     );
                 })}
             </Tabs>
+            {activeStage?.status === "blocked" && nextStep ? (
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }} sx={{ mt: 1.5 }}>
+                    <Typography variant="body2" color="text.secondary">{activeStage.blockedReason}</Typography>
+                    <Button size="small" variant="outlined" onClick={() => onSelectStage({ ...activeStage, route: nextStep.route })}>{nextStep.label}</Button>
+                </Stack>
+            ) : null}
         </Box>
     );
 }

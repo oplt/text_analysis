@@ -23,10 +23,13 @@ import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import {
     MetricCards,
+    MatrixHeatmap,
     RankedBarChart,
     ResultsInspector,
+    ScientificLineChart,
     SimpleLineLikeBars,
 } from "../components/ResearchCharts";
+import { ResearchResultsTable } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
@@ -400,6 +403,32 @@ export default function TopicsView() {
                                             }
                                         />
 
+                                        <ResearchResultsTable
+                                            rows={topics.map((topic, index) => {
+                                                const topicId = topic.topic_id ?? index;
+                                                const key = String(topicId);
+                                                return {
+                                                    id: key,
+                                                    topicId,
+                                                    name: topicDisplayName(topicId),
+                                                    prevalence: asRecord(
+                                                        asRecord(runQuery.data?.results)?.topic_prevalence
+                                                    )?.[key],
+                                                    dominant: asRecord(
+                                                        asRecord(runQuery.data?.results)?.dominant_topic_counts
+                                                    )?.[key],
+                                                    terms: topic.top_terms?.map((term) => term.term).filter(Boolean).join(", ") ?? "",
+                                                };
+                                            })}
+                                            columns={[
+                                                { id: "topic", label: "Topic ID", value: (row) => row.topicId },
+                                                { id: "name", label: "Human name", value: (row) => row.name },
+                                                { id: "prevalence", label: "Prevalence", value: (row) => row.prevalence as number | null, align: "right" },
+                                                { id: "dominant", label: "Dominant units", value: (row) => row.dominant as number | null, align: "right" },
+                                                { id: "terms", label: "Top terms", value: (row) => row.terms },
+                                            ]}
+                                        />
+
                                         <Typography variant="subtitle2">Dominant topic counts</Typography>
                                         <SimpleLineLikeBars
                                             items={dominantCounts.map((item) => ({
@@ -433,17 +462,30 @@ export default function TopicsView() {
 
                                         {Object.keys(metadataBreakdowns).length ? (
                                             <>
-                                                <Typography variant="subtitle2">Metadata breakdowns</Typography>
+                                                <Typography variant="subtitle2">Topic prevalence by metadata</Typography>
                                                 {Object.entries(metadataBreakdowns).map(([field, values]) => (
-                                                    <Typography key={field} variant="body2" color="text.secondary">
-                                                        {field}: {Object.entries(values)
-                                                            .map(([value, counts]) =>
-                                                                `${value} (${Object.entries(counts)
-                                                                    .map(([topicId, count]) => `${topicDisplayName(topicId)}: ${count}`)
-                                                                    .join(", ")})`
-                                                            )
-                                                            .join("; ")}
-                                                    </Typography>
+                                                    <Stack key={field} spacing={0.5}>
+                                                        <Typography variant="body2" color="text.secondary">{field}</Typography>
+                                                        <MatrixHeatmap
+                                                            rowLabels={Object.keys(values)}
+                                                            colLabels={topics.map((topic) => topicDisplayName(topic.topic_id))}
+                                                            values={Object.values(values).map((counts) =>
+                                                                topics.map((topic) => Number(counts[String(topic.topic_id ?? "")] ?? 0))
+                                                            )}
+                                                            formatCell={(value) => value == null ? "—" : String(value)}
+                                                        />
+                                                        {field === "publication_year" ? (
+                                                            <ScientificLineChart
+                                                                series={topics.map((topic) => ({
+                                                                    label: topicDisplayName(topic.topic_id),
+                                                                    points: Object.entries(values)
+                                                                        .map(([year, counts]) => ({ x: Number(year), y: Number(counts[String(topic.topic_id ?? "")] ?? 0) }))
+                                                                        .filter((point) => Number.isFinite(point.x))
+                                                                        .sort((a, b) => a.x - b.x),
+                                                                }))}
+                                                            />
+                                                        ) : null}
+                                                    </Stack>
                                                 ))}
                                             </>
                                         ) : null}

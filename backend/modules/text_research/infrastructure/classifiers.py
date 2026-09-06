@@ -175,6 +175,16 @@ def _classification_metrics(
         ).tolist()
         metrics_out["confusion_matrix_labels"] = target_names
 
+    if task_type == "multilabel":
+        metrics_out["multilabel_confusion_matrices"] = {
+            str(cls): matrix.tolist()
+            for cls, matrix in zip(
+                classes,
+                skmetrics.multilabel_confusion_matrix(y_true, y_pred),
+                strict=True,
+            )
+        }
+
     if task_type == "binary" and hasattr(model, "predict_proba"):
         try:
             proba = model.predict_proba(X_test_vec)[:, 1]
@@ -320,12 +330,15 @@ def predict_with_uncertainty(
 ) -> list[dict[str, Any]]:
     """Predict on new texts (transform-only) with an uncertainty score.
 
-    - binary: ``uncertainty = abs(probability_of_positive_class - 0.5)``
-      (falls back to a decision-function-based proxy for non-probabilistic
-      models such as LinearSVC).
-    - multiclass: entropy of the class-probability distribution and the
-      top-1/top-2 margin.
-    - multilabel: mean binary entropy across labels.
+    Every score uses the same invariant: ``0`` is maximally certain and ``1``
+    is maximally uncertain. This lets active-learning queries rank scores in
+    descending order independent of classifier type.
+
+    - binary: normalized distance from certainty around ``0.5`` (falls back
+      to a decision-function-based proxy for non-probabilistic models such as
+      LinearSVC).
+    - multiclass: top-1/top-2 margin uncertainty.
+    - multilabel: mean normalized binary entropy across labels.
     """
     if task_type not in TASK_TYPES:
         raise ValueError(f"Unsupported task_type: {task_type!r}; expected one of {TASK_TYPES}")
@@ -343,7 +356,7 @@ def predict_with_uncertainty(
                     {
                         "prediction": _to_native(predictions[i]),
                         "probability": p_positive,
-                        "uncertainty": abs(p_positive - 0.5),
+                        "uncertainty": 1.0 - (2.0 * abs(p_positive - 0.5)),
                     }
                 )
         else:
@@ -377,8 +390,23 @@ def predict_with_uncertainty(
                     }
                 )
         else:
+            scores = np.asarray(model.decision_function(X_vec))
+            if scores.ndim == 1:
+                scores = scores.reshape(-1, 1)
             for i in range(len(texts)):
-                results.append({"prediction": _to_native(predictions[i]), "uncertainty": None})
+                sorted_scores = np.sort(scores[i])[::-1]
+                margin = (
+                    float(sorted_scores[0] - sorted_scores[1])
+                    if len(sorted_scores) > 1
+                    else float("inf")
+                )
+                results.append(
+                    {
+                        "prediction": _to_native(predictions[i]),
+                        "decision_scores": _to_native(scores[i]),
+                        "uncertainty": 1.0 / (1.0 + margin),
+                    }
+                )
         return results
 
     # multilabel
@@ -386,21 +414,26 @@ def predict_with_uncertainty(
         proba = model.predict_proba(X_vec)
         for i in range(len(texts)):
             p = np.clip(np.asarray(proba[i]).reshape(-1), 1e-12, 1.0 - 1e-12)
-            binary_entropy = float(-np.sum(p * np.log(p) + (1 - p) * np.log(1 - p)))
+            binary_entropy = float(-np.mean(p * np.log(p) + (1 - p) * np.log(1 - p)))
             results.append(
                 {
                     "prediction": _to_native(np.asarray(predictions[i]).reshape(-1)),
                     "probabilities": _to_native(p),
                     "entropy": binary_entropy,
-                    "uncertainty": binary_entropy,
+                    "uncertainty": binary_entropy / float(np.log(2)),
                 }
             )
     else:
+        decision_scores = np.asarray(model.decision_function(X_vec))
+        if decision_scores.ndim == 1:
+            decision_scores = decision_scores.reshape(-1, 1)
         for i in range(len(texts)):
+            scores = decision_scores[i]
             results.append(
                 {
                     "prediction": _to_native(np.asarray(predictions[i]).reshape(-1)),
-                    "uncertainty": None,
+                    "decision_scores": _to_native(scores),
+                    "uncertainty": float(np.mean(1.0 / (1.0 + np.abs(scores)))),
                 }
             )
     return results

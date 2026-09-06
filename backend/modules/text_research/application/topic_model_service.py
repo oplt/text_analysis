@@ -143,6 +143,9 @@ class TopicModelService(ResearchAccessMixin):
                 }
                 for i, unit in enumerate(units)
             ]
+            distribution_path, distribution_artifact_metadata = model_storage.save_artifact_with_metadata(
+                doc_topic_rows, category="topic_distributions"
+            )
             dominant_counts = {str(k): v for k, v in Counter(dominant).items()}
             topic_prevalence = {
                 str(topic_id): sum(float(distribution[topic_id]) for distribution in doc_topic)
@@ -167,7 +170,7 @@ class TopicModelService(ResearchAccessMixin):
                     for index, distribution in ranked
                 ]
             metadata_breakdowns: dict[str, dict[str, dict[str, int]]] = {}
-            for field in ("organization", "region", "language"):
+            for field in ("organization", "region", "language", "publication_year"):
                 breakdown: dict[str, Counter[str]] = {}
                 for index, topic_id in enumerate(dominant):
                     document = documents.get(units[index].corpus_document_id)
@@ -198,8 +201,9 @@ class TopicModelService(ResearchAccessMixin):
                         "artifact_metadata": {
                             "model": model_artifact_metadata,
                             "vectorizer": vectorizer_artifact_metadata,
+                            "topic_distribution": distribution_artifact_metadata,
                         },
-                        "doc_topic": doc_topic_rows,
+                        "topic_distribution_artifact_path": distribution_path,
                         "unit_count": len(units),
                     }
                 ),

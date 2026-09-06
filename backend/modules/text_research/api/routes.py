@@ -38,6 +38,7 @@ from backend.modules.text_research.api.schemas import (
     ContextualDatasetCreate,
     ContextualDatasetDetail,
     ContextualDatasetSummary,
+    ContextualObservationPage,
     ContextualImportResponse,
     ContextualLinkRequest,
     CooccurrenceRequest,
@@ -330,6 +331,35 @@ async def delete_corpus(
 # ------------------------------------------------------------------
 # Corpus documents
 # ------------------------------------------------------------------
+
+
+@router.get("/corpora/{corpus_id}/facets")
+async def corpus_metadata_facets(
+    corpus_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Distinct metadata values and document counts for controlled research filters."""
+    service = CorpusService(db)
+    await service.get_corpus_or_404(corpus_id, user_id=current_user.id)
+    documents = await service.repo.list_documents(corpus_id)
+    fields = (
+        "organization",
+        "organization_type",
+        "publication_year",
+        "country",
+        "region",
+        "cultural_sphere",
+        "language",
+        "publication_type",
+    )
+    return {
+        field: [
+            {"value": value, "count": sum(1 for document in documents if str(getattr(document, field)) == value)}
+            for value in sorted({str(getattr(document, field)) for document in documents if getattr(document, field) is not None})
+        ]
+        for field in fields
+    }
 
 
 @router.post(
@@ -744,16 +774,22 @@ async def assign_corpus_annotation_tasks(
     )
 
 
-@router.get("/annotations/queue")
+@router.get("/annotations/queue", response_model=PaginatedResponse[dict[str, Any]])
 async def list_annotation_queue(
     status: str | None = None,
+    pagination: PaginationParams = Depends(pagination_params),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    queue = await AnnotationService(db).list_queue(
-        requesting_user_id=current_user.id, status=status
+    queue, total = await AnnotationService(db).list_queue(
+        requesting_user_id=current_user.id,
+        status=status,
+        limit=pagination.limit,
+        offset=pagination.offset,
     )
-    return queue
+    return paginated_response(
+        queue, total=total, limit=pagination.limit, offset=pagination.offset
+    )
 
 
 @router.post("/annotations", response_model=list[AnnotationResponse])
@@ -1712,6 +1748,23 @@ async def get_contextual_dataset(
 ):
     detail = await ContextualDatasetService(db).get_dataset(dataset_id, user_id=current_user.id)
     return ContextualDatasetDetail.model_validate(detail)
+
+
+@router.get(
+    "/contextual-datasets/{dataset_id}/observations",
+    response_model=ContextualObservationPage,
+)
+async def list_contextual_observations(
+    dataset_id: str,
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    page = await ContextualDatasetService(db).list_observations(
+        dataset_id, user_id=current_user.id, limit=limit, offset=offset
+    )
+    return ContextualObservationPage.model_validate(page)
 
 
 @router.delete("/contextual-datasets/{dataset_id}", status_code=204)

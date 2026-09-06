@@ -22,7 +22,8 @@ import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
-import { MatrixHeatmap, ResultsInspector } from "../components/ResearchCharts";
+import { MatrixHeatmap, ResultsInspector, ScientificLineChart } from "../components/ResearchCharts";
+import { ResearchResultsTable } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
@@ -381,13 +382,54 @@ export default function ExplorerView() {
                                             rowLabels={heatmap.groups}
                                             colLabels={heatmap.labels}
                                             values={heatmap.values}
-                                            formatCell={(value) => `${(value * 100).toFixed(0)}%`}
+                                            formatCell={(value) =>
+                                                value == null ? "—" : `${(value * 100).toFixed(0)}%`
+                                            }
                                             onCellClick={(rowIndex, colIndex) =>
                                                 setSelection({
                                                     group: heatmap.groups[rowIndex],
                                                     label: heatmap.labels[colIndex],
                                                 })
                                             }
+                                        />
+                                        {groupBy === "publication_year" ? (
+                                            <ScientificLineChart
+                                                series={heatmap.labels.map((label, columnIndex) => ({
+                                                    label,
+                                                    points: heatmap.groups
+                                                        .map((year, rowIndex) => ({ x: Number(year), y: heatmap.values[rowIndex]?.[columnIndex] ?? 0 }))
+                                                        .filter((point) => Number.isFinite(point.x))
+                                                        .sort((a, b) => a.x - b.x),
+                                                }))}
+                                            />
+                                        ) : null}
+                                        <ResearchResultsTable
+                                            rows={heatmap.groups.flatMap((group) =>
+                                                heatmap.labels.map((label) => {
+                                                    const cell = asRecord(asRecord(prevalence?.[label])?.[group]) as PrevalenceCell | null;
+                                                    return {
+                                                        id: `${group}:${label}`,
+                                                        group,
+                                                        label,
+                                                        yes: cell?.yes ?? null,
+                                                        total: cell?.total ?? null,
+                                                        prevalence: cell?.prevalence ?? null,
+                                                        documentCount: cell?.document_count ?? null,
+                                                        provenance: cell?.provenance_counts
+                                                            ? Object.entries(cell.provenance_counts).map(([source, count]) => `${source}: ${count}`).join(", ")
+                                                            : null,
+                                                    };
+                                                })
+                                            )}
+                                            columns={[
+                                                { id: "group", label: "Metadata group", value: (row) => row.group },
+                                                { id: "label", label: "Discourse label", value: (row) => row.label },
+                                                { id: "yes", label: "Yes", value: (row) => row.yes, align: "right" },
+                                                { id: "total", label: "Total", value: (row) => row.total, align: "right" },
+                                                { id: "prevalence", label: "Prevalence", value: (row) => row.prevalence, align: "right" },
+                                                { id: "documents", label: "Document count", value: (row) => row.documentCount, align: "right" },
+                                                { id: "provenance", label: "Provenance", value: (row) => row.provenance },
+                                            ]}
                                         />
                                         <ResultsInspector
                                             title="prevalence results"

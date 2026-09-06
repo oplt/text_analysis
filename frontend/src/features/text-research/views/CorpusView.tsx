@@ -27,6 +27,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../../app/snackbarContext";
+import { useDebounce } from "../../../hooks/useDebounce";
 import {
     bulkUpdateDocumentMetadata,
     createCorpus,
@@ -70,6 +71,7 @@ export default function CorpusView() {
     const [bulkOrg, setBulkOrg] = useState("");
     const [bulkYear, setBulkYear] = useState("");
     const [bulkLanguage, setBulkLanguage] = useState("");
+    const debouncedSearch = useDebounce(filters.search.trim(), 300);
 
     const listParams = useMemo(
         () => ({
@@ -82,16 +84,16 @@ export default function CorpusView() {
             region: filters.region.trim() || undefined,
             cultural_sphere: filters.cultural_sphere.trim() || undefined,
             language: filters.language.trim() || undefined,
-            search: filters.search.trim() || undefined,
+            search: debouncedSearch || undefined,
             sort_by: filters.sort_by,
             sort_dir: filters.sort_dir,
         }),
-        [filters, page]
+        [debouncedSearch, filters, page]
     );
 
     const documentsQuery = useQuery({
         queryKey: queryKeys.textResearch.documents(ctx.selectedCorpusId, listParams),
-        queryFn: () => listDocuments(ctx.selectedCorpusId, listParams),
+        queryFn: ({ signal }) => listDocuments(ctx.selectedCorpusId, listParams, signal),
         enabled: Boolean(ctx.selectedCorpusId),
     });
 

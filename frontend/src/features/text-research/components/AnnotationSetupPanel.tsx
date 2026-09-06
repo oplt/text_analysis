@@ -93,10 +93,7 @@ export function AnnotationSetupPanel() {
         onSuccess: (result) => {
             ctx.setUnitType(unitType);
             void client.invalidateQueries({
-                queryKey: queryKeys.textResearch.annotationQueue("assigned"),
-            });
-            void client.invalidateQueries({
-                queryKey: queryKeys.textResearch.annotationQueue("all"),
+                queryKey: ["text-research", "annotation-queue"],
             });
             void client.invalidateQueries({
                 queryKey: queryKeys.textResearch.annotationProgress(ctx.selectedCorpusId),

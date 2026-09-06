@@ -75,20 +75,10 @@ class ContextualDatasetService(ResearchAccessMixin):
         dataset = await self.get_contextual_dataset_or_404(dataset_id, user_id=user_id)
         observations = await self.repo.list_observations(dataset_id)
         indicator_keys: set[str] = set()
-        observation_rows = []
         for row in observations:
             values = loads(row.values_json, {}) or {}
             if isinstance(values, dict):
                 indicator_keys.update(str(key) for key in values)
-            observation_rows.append(
-                {
-                    "id": row.id,
-                    "country": row.country,
-                    "year": row.year,
-                    "values": values if isinstance(values, dict) else {},
-                    "created_at": row.created_at,
-                }
-            )
         return {
             "id": dataset.id,
             "project_id": dataset.project_id,
@@ -96,9 +86,30 @@ class ContextualDatasetService(ResearchAccessMixin):
             "description": dataset.description,
             "created_by": dataset.created_by,
             "created_at": dataset.created_at,
-            "observation_count": len(observation_rows),
+            "observation_count": len(observations),
             "indicator_keys": sorted(indicator_keys),
-            "observations": observation_rows,
+        }
+
+    async def list_observations(
+        self, dataset_id: str, *, user_id: str, limit: int, offset: int
+    ) -> dict[str, Any]:
+        await self.get_contextual_dataset_or_404(dataset_id, user_id=user_id)
+        rows = await self.repo.list_observations_page(dataset_id, limit=limit, offset=offset)
+        total = await self.repo.count_observations(dataset_id)
+        return {
+            "items": [
+                {
+                    "id": row.id,
+                    "country": row.country,
+                    "year": row.year,
+                    "values": loads(row.values_json, {}) or {},
+                    "created_at": row.created_at,
+                }
+                for row in rows
+            ],
+            "total": total,
+            "limit": limit,
+            "offset": offset,
         }
 
     async def delete_dataset(self, dataset_id: str, *, user_id: str) -> None:

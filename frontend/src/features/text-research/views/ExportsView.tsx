@@ -19,6 +19,7 @@ import {
     getQuantedaScript,
     listClassifiers,
     listPreprocessingProfiles,
+    listRuns,
     researchExportUrl,
 } from "../../../api/textResearch";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
@@ -70,6 +71,11 @@ export default function ExportsView() {
         queryFn: () => listClassifiers(ctx.projectId, ctx.selectedCorpusId),
         enabled: Boolean(ctx.projectId && ctx.selectedCorpusId),
     });
+    const runsQuery = useQuery({
+        queryKey: queryKeys.textResearch.runs(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: () => listRuns(ctx.projectId, { corpus_id: ctx.selectedCorpusId, limit: 100 }),
+        enabled: Boolean(ctx.projectId && ctx.selectedCorpusId),
+    });
 
     const handleDownload = useCallback(
         async (path: string, filename: string) => {
@@ -101,7 +107,7 @@ export default function ExportsView() {
 
     return (
         <Stack spacing={2}>
-            <SectionCard title="Export manifest" description="Overview of exportable artifacts for this corpus.">
+            <SectionCard title="Data" description="Corpus manifest and tabular research data.">
                 <QueryBoundary
                     isLoading={manifestQuery.isLoading}
                     isError={manifestQuery.isError}
@@ -112,7 +118,7 @@ export default function ExportsView() {
                 </QueryBoundary>
             </SectionCard>
 
-            <SectionCard title="CSV downloads" description="Download tabular exports for offline analysis.">
+            <SectionCard title="Data downloads" description="Download tabular exports for offline analysis.">
                 <Table size="small">
                     <TableHead>
                         <TableRow>
@@ -184,7 +190,7 @@ export default function ExportsView() {
             </SectionCard>
 
             <SectionCard
-                title="Reproducibility JSON"
+                title="Measurement & models"
                 description="Export codebooks, preprocessing profiles, model metrics, and individual robustness or analysis runs."
             >
                 <Table size="small">
@@ -256,6 +262,13 @@ export default function ExportsView() {
                                 </TableCell>
                             </TableRow>
                         ))}
+                        {(classifiersQuery.data ?? []).map((model) => (
+                            <TableRow key={`${model.id}:predictions`}>
+                                <TableCell>Predictions: {model.name || `v${model.version}`}</TableCell>
+                                <TableCell>Predicted labels, scores, uncertainty, and model provenance</TableCell>
+                                <TableCell align="right"><Button size="small" startIcon={<DownloadIcon />} onClick={() => void handleDownload(`/research/classifiers/${model.id}/export/predictions.csv`, `model-${model.id}-predictions.csv`)}>Download</Button></TableCell>
+                            </TableRow>
+                        ))}
                     </TableBody>
                 </Table>
                 <Alert severity="info" sx={{ mt: 2 }}>
@@ -263,7 +276,13 @@ export default function ExportsView() {
                 </Alert>
             </SectionCard>
 
-            <SectionCard title="Quanteda script" description="R script for reproducing corpus construction.">
+            <SectionCard title="Analysis" description="Completed analysis runs in portable JSON.">
+                <Table size="small"><TableHead><TableRow><TableCell>Run</TableCell><TableCell>Status</TableCell><TableCell align="right">Action</TableCell></TableRow></TableHead><TableBody>
+                    {(runsQuery.data?.items ?? []).map((run) => <TableRow key={run.id}><TableCell>{run.run_type} · {run.id.slice(0, 8)}</TableCell><TableCell>{run.status}</TableCell><TableCell align="right"><Button size="small" startIcon={<DownloadIcon />} onClick={() => void handleDownload(`/research/runs/${run.id}/export.json`, `run-${run.id}.json`)}>Download JSON</Button></TableCell></TableRow>)}
+                </TableBody></Table>
+            </SectionCard>
+
+            <SectionCard title="Reproducibility" description="R script for reproducing corpus construction.">
                 <QueryBoundary
                     isLoading={scriptQuery.isLoading}
                     isError={scriptQuery.isError}

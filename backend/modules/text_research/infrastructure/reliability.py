@@ -103,7 +103,7 @@ def krippendorffs_alpha(
 
     if not pairable_units:
         return {
-            "alpha": float("nan"),
+            "alpha": None,
             "n_units": n_units,
             "n_coders": n_coders,
             "missingness": missingness,

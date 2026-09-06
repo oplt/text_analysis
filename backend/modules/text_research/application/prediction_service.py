@@ -52,7 +52,9 @@ class PredictionService(ResearchAccessMixin):
             )
         )
         await self.db.commit()
-        await self.execute_prediction(run.id)
+        from backend.modules.text_research.workers import queue_prediction
+
+        queue_prediction(run_id=run.id, user_id=user_id)
         refreshed = await self.repo.get_run(run.id)
         assert refreshed is not None
         return refreshed
@@ -63,9 +65,7 @@ class PredictionService(ResearchAccessMixin):
             raise ValueError(f"AnalysisRun {run_id} not found")
         params = loads(run.parameters_json, {})
 
-        await self.repo.update_run(
-            run, status=AnalysisRunStatus.RUNNING.value, progress_stage="predicting", started_at=_utcnow()
-        )
+        await self.repo.update_run(run, status=AnalysisRunStatus.RUNNING.value, progress_stage="loading_units", started_at=_utcnow())
         await self.db.commit()
 
         try:
@@ -91,12 +91,16 @@ class PredictionService(ResearchAccessMixin):
             label_names = loads(model.label_ids_json, [])
             texts = [u.text for u in units]
 
+            await self.repo.update_run(run, progress_stage="vectorizing")
+            await self.db.commit()
             predictions = (
                 predict_with_uncertainty(classifier, vectorizer, texts, task_type=model.task_type)
                 if texts
                 else []
             )
 
+            await self.repo.update_run(run, progress_stage="predicting")
+            rows: list[dict[str, object]] = []
             for unit, prediction in zip(units, predictions, strict=True):
                 if model.task_type == "multilabel":
                     predicted_binary = prediction["prediction"]
@@ -113,13 +117,11 @@ class PredictionService(ResearchAccessMixin):
                     predicted_labels = [str(prediction["prediction"])]
                     scores = {}
                 uncertainty = prediction.get("uncertainty")
-                await self.repo.upsert_prediction(
-                    trained_model_id=model.id,
-                    text_unit_id=unit.id,
-                    predicted_labels_json=dumps(predicted_labels),
-                    scores_json=dumps(scores),
-                    uncertainty=uncertainty,
-                )
+                rows.append({"trained_model_id": model.id, "text_unit_id": unit.id, "predicted_labels_json": dumps(predicted_labels), "scores_json": dumps(scores), "uncertainty": uncertainty})
+
+            await self.repo.update_run(run, progress_stage="saving")
+            for start in range(0, len(rows), 500):
+                await self.repo.bulk_upsert_predictions(rows[start : start + 500])
 
             await self.repo.update_run(
                 run,

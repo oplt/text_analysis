@@ -63,6 +63,9 @@ const ContextualView = lazy(() =>
 const RunsView = lazy(() =>
     import("../features/text-research/views/RunsView").then((m) => ({ default: m.default }))
 );
+const ExportsView = lazy(() =>
+    import("../features/text-research/views/ExportsView").then((m) => ({ default: m.default }))
+);
 
 function PageLoader() {
     return (
@@ -123,7 +126,7 @@ export function AppRouter() {
                         <Route path="explorer" element={<SuspensePage><ExplorerView /></SuspensePage>} />
                         <Route path="contextual" element={<SuspensePage><ContextualView /></SuspensePage>} />
                         <Route path="runs" element={<SuspensePage><RunsView /></SuspensePage>} />
-                        <Route path="exports" element={<Navigate to="../runs" replace />} />
+                        <Route path="exports" element={<SuspensePage><ExportsView /></SuspensePage>} />
                     </Route>
                     <Route path="/platform" element={<SuspensePage><PlatformPage /></SuspensePage>} />
                     <Route path="/ai" element={<SuspensePage><AiStudioPage /></SuspensePage>} />

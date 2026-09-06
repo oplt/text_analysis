@@ -24,6 +24,13 @@ export function useResearchWorkflow(activeRoute: string): {
                 hasCorpus: Boolean(ctx.selectedCorpusId) || ctx.corpora.length > 0,
                 hasCodebook: Boolean(ctx.selectedCodebookId) || ctx.codebooks.length > 0,
                 labelCount: ctx.labels.length,
+                codebook: ctx.selectedCodebook
+                    ? {
+                          name: ctx.selectedCodebook.name,
+                          version: ctx.selectedCodebook.version,
+                          is_frozen: ctx.selectedCodebook.is_frozen,
+                      }
+                    : null,
                 unitType: ctx.unitType,
                 summary: dashboardQuery.data,
             }),
@@ -34,6 +41,7 @@ export function useResearchWorkflow(activeRoute: string): {
             ctx.selectedCodebookId,
             ctx.codebooks.length,
             ctx.labels.length,
+            ctx.selectedCodebook,
             ctx.unitType,
             dashboardQuery.data,
         ]

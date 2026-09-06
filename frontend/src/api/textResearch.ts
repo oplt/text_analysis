@@ -83,7 +83,8 @@ export async function listDocuments(
         search?: string;
         sort_by?: string;
         sort_dir?: "asc" | "desc";
-    }
+    },
+    signal?: AbortSignal
 ): Promise<Paginated<CorpusDocument>> {
     const search = new URLSearchParams();
     if (params?.limit != null) search.set("limit", String(params.limit));
@@ -99,7 +100,7 @@ export async function listDocuments(
     if (params?.sort_by) search.set("sort_by", params.sort_by);
     if (params?.sort_dir) search.set("sort_dir", params.sort_dir);
     const qs = search.toString();
-    return apiFetch(`${BASE}/corpora/${corpusId}/documents${qs ? `?${qs}` : ""}`);
+    return apiFetch(`${BASE}/corpora/${corpusId}/documents${qs ? `?${qs}` : ""}`, { signal });
 }
 
 export async function addDocument(
@@ -272,9 +273,15 @@ export async function updateLabel(
 // Annotation
 // ------------------------------------------------------------------
 
-export async function listAnnotationQueue(status?: string): Promise<AnnotationQueueItem[]> {
-    const qs = status ? `?status=${encodeURIComponent(status)}` : "";
-    return apiFetch(`${BASE}/annotations/queue${qs}`);
+export async function listAnnotationQueue(
+    status?: string,
+    params: { limit?: number; offset?: number } = {}
+): Promise<Paginated<AnnotationQueueItem>> {
+    const search = new URLSearchParams();
+    if (status) search.set("status", status);
+    if (params.limit !== undefined) search.set("limit", String(params.limit));
+    if (params.offset !== undefined) search.set("offset", String(params.offset));
+    return apiFetch(`${BASE}/annotations/queue${search.size ? `?${search}` : ""}`);
 }
 
 export async function assignCorpusAnnotationTasks(
@@ -541,6 +548,30 @@ export async function createDictionary(
         method: "POST",
         body: JSON.stringify(payload),
     });
+}
+
+export async function getDictionary(dictionaryId: string): Promise<ResearchDictionary> {
+    return apiFetch(`${BASE}/dictionaries/${dictionaryId}`);
+}
+
+export async function updateDictionary(
+    dictionaryId: string,
+    payload: { name?: string; description?: string; terms?: string[] }
+): Promise<ResearchDictionary> {
+    return apiFetch(`${BASE}/dictionaries/${dictionaryId}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function createDictionaryVersion(dictionaryId: string): Promise<ResearchDictionary> {
+    return apiFetch(`${BASE}/dictionaries/${dictionaryId}/versions`, { method: "POST" });
+}
+
+export type MetadataFacets = Record<string, Array<{ value: string; count: number }>>;
+
+export async function getCorpusMetadataFacets(corpusId: string): Promise<MetadataFacets> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/facets`);
 }
 
 // ------------------------------------------------------------------
@@ -956,13 +987,21 @@ export type ContextualDatasetSummary = {
 
 export type ContextualDatasetDetail = ContextualDatasetSummary & {
     indicator_keys: string[];
-    observations: Array<{
-        id: string;
-        country: string | null;
-        year: number | null;
-        values: Record<string, number>;
-        created_at: string;
-    }>;
+};
+
+export type ContextualObservation = {
+    id: string;
+    country: string | null;
+    year: number | null;
+    values: Record<string, number>;
+    created_at: string;
+};
+
+export type ContextualObservationPage = {
+    items: ContextualObservation[];
+    total: number;
+    limit: number;
+    offset: number;
 };
 
 export type ContextualLinkResult = {
@@ -1010,6 +1049,17 @@ export async function getContextualDataset(
     datasetId: string
 ): Promise<ContextualDatasetDetail> {
     return apiFetch(`${BASE}/contextual-datasets/${datasetId}`);
+}
+
+export async function listContextualObservations(
+    datasetId: string,
+    params: { limit: number; offset: number }
+): Promise<ContextualObservationPage> {
+    const search = new URLSearchParams({
+        limit: String(params.limit),
+        offset: String(params.offset),
+    });
+    return apiFetch(`${BASE}/contextual-datasets/${datasetId}/observations?${search}`);
 }
 
 export async function deleteContextualDataset(datasetId: string): Promise<void> {

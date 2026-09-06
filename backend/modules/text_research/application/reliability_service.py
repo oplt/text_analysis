@@ -56,18 +56,37 @@ class ReliabilityService(ResearchAccessMixin):
         for label in labels:
             values_by_coder = by_label.get(label.id, {})
             coders = sorted(values_by_coder)
+            value_matrix = _build_value_matrix(values_by_coder)
+            pairable_unit_count = sum(1 for values in value_matrix if sum(v is not None for v in values) >= 2)
+            evaluation_messages: list[str] = []
 
             raw: dict[str, Any] | None = None
             kappa: dict[str, Any] | None = None
             if len(coders) == 2:
                 shared = sorted(set(values_by_coder[coders[0]]) & set(values_by_coder[coders[1]]))
-                values_a = [values_by_coder[coders[0]][unit] for unit in shared]
-                values_b = [values_by_coder[coders[1]][unit] for unit in shared]
-                raw = raw_agreement(values_a, values_b)
-                kappa = cohens_kappa(values_a, values_b)
+                if shared:
+                    values_a = [values_by_coder[coders[0]][unit] for unit in shared]
+                    values_b = [values_by_coder[coders[1]][unit] for unit in shared]
+                    raw = raw_agreement(values_a, values_b)
+                    kappa = cohens_kappa(values_a, values_b)
+                else:
+                    evaluation_messages.append(
+                        "Cohen's κ is not evaluable because the two coders have no overlapping annotated units."
+                    )
+            elif len(coders) < 2:
+                evaluation_messages.append(
+                    "Reliability is not evaluable because fewer than two coders contributed annotations."
+                )
+            else:
+                evaluation_messages.append(
+                    "Cohen's κ is not reported because this label has more than two coders; use Krippendorff's α."
+                )
 
-            value_matrix = _build_value_matrix(values_by_coder)
             alpha = krippendorff_alpha_nominal(value_matrix)
+            if pairable_unit_count == 0:
+                evaluation_messages.append(
+                    "Krippendorff's α is not evaluable because no unit has annotations from at least two coders."
+                )
             pair_agreement = coder_pair_agreement_matrix(values_by_coder)
             disagreements = disagreement_units(values_by_coder)
 
@@ -80,6 +99,7 @@ class ReliabilityService(ResearchAccessMixin):
                 "coder_pair_agreement": pair_agreement,
                 "disagreement_count": len(disagreements),
                 "disagreements": disagreements,
+                "evaluation_messages": evaluation_messages,
             }
 
         alphas = [

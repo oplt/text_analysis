@@ -36,14 +36,18 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
+import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import {
     MetricCards,
+    CooccurrenceNetwork,
+    DivergingBarChart,
     RankedBarChart,
     ResultsInspector,
     type RankedItem,
 } from "../components/ResearchCharts";
-import { RunStatusChip } from "../components/ResearchShared";
+import { ChartTableToggle, ResearchResultPanel, ResearchResultsTable } from "../components/ResearchResults";
+import { MetadataFilterBar } from "../components/MetadataFilterBar";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 import type { AnalysisRun } from "../types";
@@ -146,22 +150,6 @@ function extractRankedItems(
         .filter((item): item is RankedItem => item != null);
 }
 
-function extractCooccurrenceItems(source: unknown): RankedItem[] {
-    return asArray(source)
-        .map((entry) => {
-            const row = asRecord(entry);
-            if (!row) return null;
-            const joined = pickString(row, ["pair", "label", "terms"]);
-            const termA = pickString(row, ["term_a", "termA", "a", "left"]);
-            const termB = pickString(row, ["term_b", "termB", "b", "right"]);
-            const label = joined ?? (termA && termB ? `${termA} · ${termB}` : termA ?? termB);
-            const value = pickNumber(row, ["count", "frequency", "score", "association_score", "pmi"]);
-            if (!label || value == null) return null;
-            return { label, value };
-        })
-        .filter((item): item is RankedItem => item != null);
-}
-
 function metricNumber(
     sources: Array<Record<string, unknown> | null | undefined>,
     keys: string[]
@@ -194,12 +182,46 @@ function parseCommaTerms(raw: string): string[] {
         .filter(Boolean);
 }
 
+function downloadCsv(filename: string, rows: unknown[]) {
+    const records = rows.map(asRecord).filter((row): row is Record<string, unknown> => row != null);
+    if (!records.length) return;
+    const headers = Array.from(new Set(records.flatMap((row) => Object.keys(row))));
+    const csv = [headers.join(","), ...records.map((row) => headers.map((header) => JSON.stringify(row[header] ?? "")).join(","))].join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
 function runPayload(run: AnalysisRun | undefined): unknown {
     if (!run) return null;
     return run.results ?? run.metrics ?? null;
 }
 
 function KwicTable({ matches }: { matches: unknown[] }) {
+    const [filter, setFilter] = useState("");
+    const visibleMatches = matches.filter((entry) =>
+        JSON.stringify(entry).toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase())
+    );
+
+    function exportCsv() {
+        const rows = visibleMatches.map((entry) => {
+            const row = asRecord(entry) ?? {};
+            return ["left_context", "keyword", "right_context", "document_title", "organization"].map(
+                (key) => JSON.stringify(row[key] ?? "")
+            ).join(",");
+        });
+        const blob = new Blob([["left,keyword,right,document,organization", ...rows].join("\n")], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = "kwic-results.csv";
+        anchor.click();
+        URL.revokeObjectURL(url);
+    }
+
     if (!matches.length) {
         return (
             <Typography variant="body2" color="text.secondary">
@@ -208,6 +230,11 @@ function KwicTable({ matches }: { matches: unknown[] }) {
         );
     }
     return (
+        <Stack spacing={1}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <TextField size="small" label="Filter concordance" value={filter} onChange={(event) => setFilter(event.target.value)} />
+                <Button size="small" variant="outlined" onClick={exportCsv}>Export CSV</Button>
+            </Stack>
         <Table size="small">
             <TableHead>
                 <TableRow>
@@ -219,7 +246,7 @@ function KwicTable({ matches }: { matches: unknown[] }) {
                 </TableRow>
             </TableHead>
             <TableBody>
-                {matches.slice(0, 100).map((entry, index) => {
+                {visibleMatches.slice(0, 100).map((entry, index) => {
                     const row = asRecord(entry) ?? {};
                     return (
                         <TableRow key={index}>
@@ -237,6 +264,8 @@ function KwicTable({ matches }: { matches: unknown[] }) {
                 })}
             </TableBody>
         </Table>
+        {visibleMatches.length > 100 ? <Typography variant="caption" color="text.secondary">Showing the first 100 of {visibleMatches.length} matching lines.</Typography> : null}
+        </Stack>
     );
 }
 
@@ -284,6 +313,9 @@ function DfmPreviewTable({ preview }: { preview: Record<string, unknown> }) {
 }
 
 function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
+    const [display, setDisplay] = useState<"chart" | "table" | "both">("both");
+    const [networkLimit, setNetworkLimit] = useState<20 | 50>(20);
+    const [minimumEdgeStrength, setMinimumEdgeStrength] = useState(1);
     const results = asRecord(run.results);
     const metrics = asRecord(run.metrics);
     const summary = asRecord(results?.summary) ?? asRecord(metrics?.summary);
@@ -367,7 +399,24 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
         ]);
         return (
             <Stack spacing={2}>
-                <RankedBarChart items={items} />
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                    <ChartTableToggle value={display} onChange={setDisplay} />
+                    <Button size="small" variant="outlined" onClick={() => downloadCsv("frequencies.csv", asArray(results?.frequencies ?? payload))}>Export CSV</Button>
+                </Stack>
+                {display !== "table" ? <RankedBarChart items={items} /> : null}
+                {display !== "chart" ? <ResearchResultsTable
+                    rows={asArray(results?.frequencies ?? payload).map((entry, index) => ({
+                        ...(asRecord(entry) ?? {}),
+                        id: index,
+                        rank: index + 1,
+                    }))}
+                    columns={[
+                        { id: "rank", label: "Rank", value: (row) => row.rank, align: "right" },
+                        { id: "term", label: "Term", value: (row) => pickString(row, ["term", "token", "feature"]) },
+                        { id: "count", label: "Count", value: (row) => pickNumber(row, ["raw_count", "count"]), align: "right" },
+                        { id: "relative", label: "Share", value: (row) => pickNumber(row, ["relative_frequency", "frequency"]), align: "right" },
+                    ]}
+                /> : null}
                 <ResultsInspector data={payload} />
             </Stack>
         );
@@ -382,7 +431,21 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
         ]);
         return (
             <Stack spacing={2}>
-                <RankedBarChart items={items} />
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                    <ChartTableToggle value={display} onChange={setDisplay} />
+                    <Button size="small" variant="outlined" onClick={() => downloadCsv("ngrams.csv", asArray(results?.ngrams ?? payload))}>Export CSV</Button>
+                </Stack>
+                {display !== "table" ? <RankedBarChart items={items} /> : null}
+                {display !== "chart" ? <ResearchResultsTable
+                    rows={asArray(results?.ngrams ?? payload).map((entry, index) => ({ ...(asRecord(entry) ?? {}), id: index, rank: index + 1 }))}
+                    columns={[
+                        { id: "rank", label: "Rank", value: (row) => row.rank, align: "right" },
+                        { id: "ngram", label: "N-gram", value: (row) => pickString(row, ["ngram", "term"]) },
+                        { id: "n", label: "N", value: (row) => pickNumber(row, ["n"]), align: "right" },
+                        { id: "count", label: "Count", value: (row) => pickNumber(row, ["raw_count", "count"]), align: "right" },
+                        { id: "relative", label: "Share", value: (row) => pickNumber(row, ["relative_frequency", "frequency"]), align: "right" },
+                    ]}
+                /> : null}
                 <ResultsInspector data={payload} />
             </Stack>
         );
@@ -471,7 +534,26 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                         },
                     ]}
                 />
-                <RankedBarChart items={items} />
+                <DivergingBarChart
+                    items={asArray(results?.keyness ?? payload).map((entry) => {
+                        const row = asRecord(entry) ?? {};
+                        const score = pickNumber(row, ["keyness_statistic", "keyness", "g2"]) ?? 0;
+                        return {
+                            label: pickString(row, ["feature", "term"]) ?? "",
+                            value: pickString(row, ["effect_direction", "direction"]) === "a" ? -score : score,
+                        };
+                    })}
+                />
+                <ResearchResultsTable
+                    rows={asArray(results?.keyness ?? payload).map((entry, index) => ({ ...(asRecord(entry) ?? {}), id: index }))}
+                    columns={[
+                        { id: "feature", label: "Feature", value: (row) => pickString(row, ["feature", "term"]) },
+                        { id: "a", label: "Group A", value: (row) => pickNumber(row, ["freq_a", "count_a"]), align: "right" },
+                        { id: "b", label: "Group B", value: (row) => pickNumber(row, ["freq_b", "count_b"]), align: "right" },
+                        { id: "keyness", label: "Keyness", value: (row) => pickNumber(row, ["keyness_statistic", "keyness", "g2"]), align: "right" },
+                        { id: "direction", label: "Direction", value: (row) => pickString(row, ["effect_direction", "direction"]) },
+                    ]}
+                />
                 <ResultsInspector data={payload} />
             </Stack>
         );
@@ -520,15 +602,69 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                         <RankedBarChart items={groupItems} />
                     </Stack>
                 ) : null}
+                <ResearchResultsTable
+                    rows={((Object.entries(byGroup ?? {}).length
+                        ? Object.entries(byGroup ?? {})
+                        : [["All units", { hits: results?.total_hits, units: undefined }]]) as Array<
+                        [string, unknown]
+                    >)
+                        .map(([group, value], index) => {
+                        const bucket = asRecord(value) ?? {};
+                        const hits = pickNumber(bucket, ["hits", "count"]) ?? 0;
+                        const grouped = Object.keys(byGroup ?? {}).length > 0;
+                        return {
+                            id: index,
+                            group,
+                            hits,
+                            normalized: grouped
+                                ? null
+                                : metricNumber([metrics, results], ["hits_per_1000_tokens", "per_1000"]),
+                            prevalence: grouped
+                                ? null
+                                : metricNumber([metrics, results], ["document_prevalence", "unit_prevalence"]),
+                        };
+                    })}
+                    columns={[
+                        { id: "dictionary", label: "Dictionary", value: () => pickString(run.parameters ?? {}, ["dictionary_id"]) ?? "Custom terms" },
+                        { id: "group", label: "Group", value: (row) => row.group },
+                        { id: "hits", label: "Hits", value: (row) => row.hits, align: "right" },
+                        { id: "normalized", label: "Normalized hits", value: (row) => row.normalized, align: "right" },
+                        { id: "prevalence", label: "Prevalence", value: (row) => row.prevalence, align: "right" },
+                    ]}
+                />
                 <ResultsInspector data={payload} />
             </Stack>
         );
     }
 
-    const items = extractCooccurrenceItems(results?.cooccurrence ?? payload);
+    const networkEdges = asArray(results?.cooccurrence ?? payload)
+        .map((entry) => asRecord(entry))
+        .filter((row): row is Record<string, unknown> => row != null)
+        .map((row) => ({
+            termA: pickString(row, ["term_a", "termA", "a"]) ?? "",
+            termB: pickString(row, ["term_b", "termB", "b"]) ?? "",
+            count: pickNumber(row, ["count", "frequency"]) ?? 0,
+            association: pickNumber(row, ["association_score", "pmi", "score"]) ?? 0,
+        }))
+        .filter((edge) => edge.termA && edge.termB && edge.count >= minimumEdgeStrength)
+        .slice(0, networkLimit);
     return (
         <Stack spacing={2}>
-            <RankedBarChart items={items} />
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <Button size="small" variant={networkLimit === 20 ? "contained" : "outlined"} onClick={() => setNetworkLimit(20)}>Top 20</Button>
+                <Button size="small" variant={networkLimit === 50 ? "contained" : "outlined"} onClick={() => setNetworkLimit(50)}>Top 50</Button>
+                <TextField size="small" type="number" label="Minimum edge count" value={minimumEdgeStrength} onChange={(event) => setMinimumEdgeStrength(Math.max(1, Number(event.target.value) || 1))} sx={{ width: 180 }} />
+            </Stack>
+            <CooccurrenceNetwork edges={networkEdges} />
+            <ResearchResultsTable
+                rows={asArray(results?.cooccurrence ?? payload).map((entry, index) => ({ ...(asRecord(entry) ?? {}), id: index }))}
+                columns={[
+                    { id: "termA", label: "Term A", value: (row) => pickString(row, ["term_a", "termA", "a"]) },
+                    { id: "termB", label: "Term B", value: (row) => pickString(row, ["term_b", "termB", "b"]) },
+                    { id: "count", label: "Co-occurrence count", value: (row) => pickNumber(row, ["count", "frequency"]), align: "right" },
+                    { id: "association", label: "Association", value: (row) => pickNumber(row, ["association_score", "pmi", "score"]), align: "right" },
+                ]}
+            />
             <ResultsInspector data={payload} />
         </Stack>
     );
@@ -555,28 +691,33 @@ export default function AnalysisView() {
     const [dictionaryTerms, setDictionaryTerms] = useState("");
     const [groupBy, setGroupBy] = useState("");
     const [coocWindow, setCoocWindow] = useState(5);
+    const [metadataFilters, setMetadataFilters] = useState<Record<string, string>>({});
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
         queryFn: () => listPreprocessingProfiles(ctx.projectId),
         enabled: Boolean(ctx.projectId),
+        staleTime: QUERY_STALE_TIMES.researchReference,
     });
 
     const dictionariesQuery = useQuery({
         queryKey: queryKeys.textResearch.dictionaries(ctx.projectId),
         queryFn: () => listDictionaries(ctx.projectId),
         enabled: Boolean(ctx.projectId),
+        staleTime: QUERY_STALE_TIMES.researchReference,
     });
 
     const runQuery = useQuery({
         queryKey: queryKeys.textResearch.run(runId ?? ""),
         queryFn: () => getRun(runId!),
         enabled: Boolean(runId),
+        staleTime: QUERY_STALE_TIMES.researchActiveRun,
         refetchInterval: activeRunRefetchInterval,
     });
 
     const basePayload = {
         unit_type: ctx.unitType,
+        ...metadataFilters,
         ...(profileId ? { preprocessing_profile_id: profileId } : {}),
     };
 
@@ -736,6 +877,7 @@ export default function AnalysisView() {
                 </Tabs>
 
                 <Stack spacing={2}>
+                    <MetadataFilterBar corpusId={ctx.selectedCorpusId} value={metadataFilters} onChange={setMetadataFilters} />
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
                         <TextField
                             select
@@ -946,13 +1088,9 @@ export default function AnalysisView() {
                         onRetry={() => void runQuery.refetch()}
                     >
                         {runQuery.data ? (
-                            <Stack spacing={2}>
-                                <Typography variant="body2">
-                                    {runQuery.data.run_type} —{" "}
-                                    <RunStatusChip status={runQuery.data.status} />
-                                </Typography>
+                            <ResearchResultPanel run={runQuery.data} title={runLabel}>
                                 <AnalysisResults tab={tab} run={runQuery.data} />
-                            </Stack>
+                            </ResearchResultPanel>
                         ) : null}
                     </QueryBoundary>
                 </SectionCard>

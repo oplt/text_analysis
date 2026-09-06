@@ -3,6 +3,7 @@ from backend.modules.rag.workers import cleanup_document_sync, index_document_sy
 from backend.modules.text_research.workers import (
     classifier_training_sync,
     robustness_sweep_sync,
+    prediction_sync,
     segmentation_sync,
     topic_model_training_sync,
 )
@@ -150,3 +151,8 @@ def research_topic_model_training_task(*, run_id: str, user_id: str) -> None:
 )
 def research_robustness_sweep_task(*, run_id: str, user_id: str) -> None:
     robustness_sweep_sync(run_id=run_id, user_id=user_id)
+
+
+@celery_app.task(name="backend.workers.tasks.research_prediction_task")
+def research_prediction_task(*, run_id: str, user_id: str) -> None:
+    prediction_sync(run_id=run_id, user_id=user_id)
