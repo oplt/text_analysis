@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     Box,
     Button,
@@ -56,6 +56,13 @@ type CorpusDocumentDrawerProps = {
 };
 
 export function CorpusDocumentDrawer({
+    document,
+    ...props
+}: CorpusDocumentDrawerProps) {
+    return <CorpusDocumentDrawerContent key={document?.id ?? "none"} document={document} {...props} />;
+}
+
+function CorpusDocumentDrawerContent({
     open,
     document,
     corpusId,
@@ -63,11 +70,9 @@ export function CorpusDocumentDrawer({
 }: CorpusDocumentDrawerProps) {
     const client = useQueryClient();
     const { showToast } = useSnackbar();
-    const [draft, setDraft] = useState<MetadataDraft | null>(null);
-
-    useEffect(() => {
-        setDraft(document ? toDraft(document) : null);
-    }, [document]);
+    const [draft, setDraft] = useState<MetadataDraft | null>(() =>
+        document ? toDraft(document) : null
+    );
 
     const sourceQuery = useQuery({
         queryKey: ["text-research", "source-text", document?.id],

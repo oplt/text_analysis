@@ -90,10 +90,9 @@ class ExportService(ResearchAccessMixin):
             annotations = [a for a in annotations if a.codebook_version == codebook.version]
 
         label_ids = {a.label_id for a in annotations}
-        label_names = {}
-        for label_id in label_ids:
-            label = await self.repo.get_label(label_id)
-            label_names[label_id] = label.name if label else label_id
+        label_names = {
+            label.id: label.name for label in await self.repo.list_labels_by_ids(label_ids)
+        }
 
         buffer = io.StringIO()
         writer = csv.writer(buffer)

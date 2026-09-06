@@ -1,6 +1,5 @@
-from datetime import date
-
 import asyncio
+from datetime import date
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,6 +18,8 @@ from backend.modules.notifications.repository import NotificationsRepository
 from backend.modules.projects.models import Project, ProjectTask
 from backend.modules.projects.repository import ProjectsRepository
 from backend.modules.projects.schemas import (
+    ProjectMemberCreate,
+    ProjectMemberResponse,
     ProjectResponse,
     ProjectTaskCreate,
     ProjectTaskReorderRequest,
@@ -76,6 +77,59 @@ class ProjectsService:
     async def get_project(self, user_id: str, project_id: str) -> Project:
         return await self._get_project_or_404(user_id, project_id)
 
+    async def list_members(self, user_id: str, project_id: str) -> list[ProjectMemberResponse]:
+        project = await self._get_project_or_404(user_id, project_id)
+        return [
+            ProjectMemberResponse(
+                user_id=user.id,
+                email=user.email,
+                full_name=user.full_name,
+                role=member.role,
+            )
+            for member, user in await self.repo.list_members_with_users(project.id)
+        ]
+
+    async def add_or_update_member(
+        self,
+        user_id: str,
+        project_id: str,
+        payload: ProjectMemberCreate,
+    ) -> ProjectMemberResponse:
+        project = await self._get_project_owner_or_404(user_id, project_id)
+        member_user = await self.users_repo.get_active_user_by_id(payload.user_id)
+        if not member_user:
+            raise HTTPException(status_code=404, detail="Member not found")
+        member = await self.repo.get_membership(project.id, member_user.id)
+        if member:
+            if member.role == "owner":
+                raise HTTPException(
+                    status_code=400,
+                    detail="The project owner role cannot be changed",
+                )
+            member.role = payload.role
+            await self.db.flush()
+        else:
+            member = await self.repo.add_member(project.id, member_user.id, payload.role)
+        await self.db.commit()
+        await self._invalidate_task_view_caches(user_id, member_user.id)
+        return ProjectMemberResponse(
+            user_id=member_user.id,
+            email=member_user.email,
+            full_name=member_user.full_name,
+            role=member.role,
+        )
+
+    async def remove_member(self, user_id: str, project_id: str, member_user_id: str) -> None:
+        project = await self._get_project_owner_or_404(user_id, project_id)
+        member = await self.repo.get_membership(project.id, member_user_id)
+        if not member:
+            raise HTTPException(status_code=404, detail="Project member not found")
+        if member.role == "owner":
+            raise HTTPException(status_code=400, detail="The project owner cannot be removed")
+        await self.repo.delete_member(member)
+        await self.db.commit()
+        await self._invalidate_task_view_caches(user_id, member_user_id)
+
     async def list_tasks(
         self,
         user_id: str,
@@ -96,8 +150,8 @@ class ProjectsService:
         project_id: str,
         payload: ProjectTaskCreate,
     ) -> tuple[ProjectTask, User | None]:
-        project = await self._get_project_or_404(user_id, project_id)
-        assignee = await self._get_assignee_or_404(payload.assignee_id)
+        project = await self._get_project_for_write_or_404(user_id, project_id)
+        assignee = await self._get_assignee_or_404(project.id, payload.assignee_id)
         position = await self.repo.get_next_task_position(project.id, payload.status)
         task = await self.repo.create_task(
             project_id=project.id,
@@ -117,10 +171,7 @@ class ProjectsService:
         task_row = await self.repo.get_task_with_assignee(project.id, task.id)
         if not task_row:
             raise HTTPException(status_code=500, detail="Failed to load created task")
-        if payload.due_date is not None:
-            await invalidate_calendar_cache(user_id)
-            if assignee and assignee.id != user_id:
-                await invalidate_calendar_cache(assignee.id)
+        await self._invalidate_project_view_caches(project.id)
         return task_row
 
     async def update_task(
@@ -131,7 +182,7 @@ class ProjectsService:
         task_id: str,
         payload: ProjectTaskUpdate,
     ) -> tuple[ProjectTask, User | None]:
-        project = await self._get_project_or_404(user_id, project_id)
+        project = await self._get_project_for_write_or_404(user_id, project_id)
         task = await self.repo.get_task_by_id(project.id, task_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -152,7 +203,7 @@ class ProjectsService:
 
         assignee = None
         if "assignee_id" in fields_set:
-            assignee = await self._get_assignee_or_404(payload.assignee_id)
+            assignee = await self._get_assignee_or_404(project.id, payload.assignee_id)
             task.assignee_id = assignee.id if assignee else None
         elif task.assignee_id:
             assignee = await self.users_repo.get_active_user_by_id(task.assignee_id)
@@ -170,14 +221,11 @@ class ProjectsService:
         task_row = await self.repo.get_task_with_assignee(project.id, task.id)
         if not task_row:
             raise HTTPException(status_code=500, detail="Failed to load updated task")
-        if "due_date" in fields_set or task.due_date is not None or previous_due_date is not None:
-            await invalidate_calendar_cache(user_id)
-            if assignee and assignee.id != user_id:
-                await invalidate_calendar_cache(assignee.id)
+        await self._invalidate_project_view_caches(project.id)
         return task_row
 
     async def delete_task(self, user_id: str, project_id: str, task_id: str) -> None:
-        project = await self._get_project_or_404(user_id, project_id)
+        project = await self._get_project_for_write_or_404(user_id, project_id)
         task = await self.repo.get_task_by_id(project.id, task_id)
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
@@ -185,10 +233,7 @@ class ProjectsService:
         await self.repo.delete_task(task)
         await self._normalize_positions(project.id)
         await self.db.commit()
-        if task.due_date is not None:
-            await invalidate_calendar_cache(user_id)
-            if task.assignee_id and task.assignee_id != user_id:
-                await invalidate_calendar_cache(task.assignee_id)
+        await self._invalidate_project_view_caches(project.id)
 
     async def reorder_tasks(
         self,
@@ -197,7 +242,7 @@ class ProjectsService:
         project_id: str,
         payload: ProjectTaskReorderRequest,
     ) -> list[tuple[ProjectTask, User | None]]:
-        project = await self._get_project_or_404(user_id, project_id)
+        project = await self._get_project_for_write_or_404(user_id, project_id)
         task_rows, _ = await self.repo.list_tasks_with_assignees(
             project.id, limit=MAX_PAGE_LIMIT
         )
@@ -239,12 +284,28 @@ class ProjectsService:
             raise HTTPException(status_code=404, detail="Project not found")
         return project
 
-    async def _get_assignee_or_404(self, assignee_id: str | None) -> User | None:
+    async def _get_project_for_write_or_404(self, user_id: str, project_id: str) -> Project:
+        project = await self._get_project_or_404(user_id, project_id)
+        membership = await self.repo.get_membership(project.id, user_id)
+        if not membership or membership.role not in {"owner", "editor"}:
+            raise HTTPException(status_code=403, detail="Project editor access required")
+        return project
+
+    async def _get_project_owner_or_404(self, user_id: str, project_id: str) -> Project:
+        project = await self._get_project_or_404(user_id, project_id)
+        membership = await self.repo.get_membership(project.id, user_id)
+        if not membership or membership.role != "owner":
+            raise HTTPException(status_code=403, detail="Project owner access required")
+        return project
+
+    async def _get_assignee_or_404(self, project_id: str, assignee_id: str | None) -> User | None:
         if not assignee_id:
             return None
         assignee = await self.users_repo.get_active_user_by_id(assignee_id)
         if not assignee:
             raise HTTPException(status_code=404, detail="Assignee not found")
+        if not await self.repo.get_membership(project_id, assignee.id):
+            raise HTTPException(status_code=422, detail="Assignee must be a project member")
         return assignee
 
     async def _normalize_positions(self, project_id: str) -> None:
@@ -258,6 +319,22 @@ class ProjectsService:
                 task.position = index
 
         await self.db.flush()
+
+    async def _invalidate_project_view_caches(self, project_id: str) -> None:
+        member_rows = await self.repo.list_members_with_users(project_id)
+        user_ids = [member.user_id for member, _ in member_rows]
+        await self._invalidate_task_view_caches(*user_ids)
+
+    @staticmethod
+    async def _invalidate_task_view_caches(*user_ids: str | None) -> None:
+        affected_users = {user_id for user_id in user_ids if user_id}
+        await asyncio.gather(
+            *[
+                operation(user_id)
+                for user_id in affected_users
+                for operation in (invalidate_calendar_cache, invalidate_project_list_cache)
+            ]
+        )
 
     async def _notify_assignment(
         self,

@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import RedirectResponse
 
 from backend.api.deps.auth import get_current_user
 from backend.api.deps.db import get_db
@@ -90,6 +91,23 @@ async def upload_avatar(
     if previous_key and previous_key != object_key:
         await object_storage.delete_object(previous_key)
     return profile_to_response(profile)
+
+
+@router.get("/avatar/content", include_in_schema=False)
+async def get_avatar_content(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    profile = await ProfileService(db).get_profile(current_user.id)
+    if not profile.avatar_storage_key:
+        raise HTTPException(status_code=404, detail="Avatar not found")
+    try:
+        url = await object_storage.presigned_download_url(profile.avatar_storage_key)
+    except StorageNotConfiguredError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except ObjectStorageError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return RedirectResponse(url, status_code=307)
 
 
 @router.delete("/avatar", status_code=204)

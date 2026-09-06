@@ -37,22 +37,7 @@ import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { useResearchContext } from "../hooks/useResearchContext";
-
-export const DEFAULT_PREPROCESSING_CONFIG: PreprocessingConfigPayload = {
-    lowercase: true,
-    remove_punctuation: true,
-    remove_numbers: false,
-    remove_stopwords: false,
-    preserve_negation: true,
-    stemming: false,
-    lemmatization: false,
-    ngram_min: 1,
-    ngram_max: 1,
-    min_df: 1,
-    max_df: 1.0,
-    max_features: null,
-    custom_stopwords: [],
-};
+import { DEFAULT_PREPROCESSING_CONFIG } from "./preprocessingConfig";
 
 const DEFAULT_SAMPLE =
     "Students should not be excluded from the universal education policy in 2024.";

@@ -1,9 +1,11 @@
+import asyncio
 import hashlib
 import hmac
 import ipaddress
 import json
 import logging
 import secrets
+import socket
 from datetime import UTC, datetime
 from urllib.parse import urlparse
 
@@ -38,7 +40,7 @@ class WebhookService(PlatformConfigService):
         events: list[str],
     ) -> WebhookEndpoint:
         await self.ensure_module_enabled("webhooks")
-        self._validate_webhook_target(target_url)
+        await self._validate_webhook_target(target_url)
         webhook = await self.repo.create_webhook(
             user_id=user.id,
             target_url=target_url,
@@ -64,7 +66,7 @@ class WebhookService(PlatformConfigService):
             if field == "events":
                 webhook.events_json = value
             elif field == "target_url" and value is not None:
-                self._validate_webhook_target(str(value))
+                await self._validate_webhook_target(str(value))
                 webhook.target_url = str(value)
             elif value is not None:
                 setattr(webhook, field, value)
@@ -103,7 +105,12 @@ class WebhookService(PlatformConfigService):
         signature = hmac.new(webhook.secret.encode("utf-8"), raw_body, hashlib.sha256).hexdigest()
 
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
+            await self._validate_webhook_target(webhook.target_url)
+            async with httpx.AsyncClient(
+                timeout=10,
+                follow_redirects=False,
+                trust_env=False,
+            ) as client:
                 response = await client.post(
                     webhook.target_url,
                     content=raw_body,
@@ -149,10 +156,12 @@ class WebhookService(PlatformConfigService):
             }
 
     @staticmethod
-    def _validate_webhook_target(target_url: str) -> None:
+    async def _validate_webhook_target(target_url: str) -> None:
         parsed = urlparse(target_url)
         host = (parsed.hostname or "").strip().lower()
-        if not host:
+        if parsed.scheme != "https":
+            raise HTTPException(status_code=422, detail="Webhook target must use HTTPS")
+        if not host or parsed.username or parsed.password:
             raise HTTPException(status_code=422, detail="Webhook target host is required")
         if host in {"localhost", "metadata.google.internal"} or host.endswith(".internal"):
             raise HTTPException(status_code=422, detail="Webhook target host is not allowed")
@@ -161,13 +170,32 @@ class WebhookService(PlatformConfigService):
         try:
             ip = ipaddress.ip_address(host.strip("[]"))
         except ValueError:
+            try:
+                addresses = await asyncio.to_thread(
+                    socket.getaddrinfo,
+                    host,
+                    parsed.port or 443,
+                    type=socket.SOCK_STREAM,
+                )
+            except socket.gaierror as exc:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Webhook target host could not be resolved",
+                ) from exc
+            resolved_ips = {result[4][0] for result in addresses}
+            if not resolved_ips:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Webhook target host is not allowed",
+                ) from None
+            for resolved_ip in resolved_ips:
+                WebhookService._validate_webhook_ip(resolved_ip)
             return
-        if (
-            ip.is_private
-            or ip.is_loopback
-            or ip.is_link_local
-            or ip.is_multicast
-            or ip.is_reserved
-            or ip.is_unspecified
-        ):
+
+        WebhookService._validate_webhook_ip(str(ip))
+
+    @staticmethod
+    def _validate_webhook_ip(value: str) -> None:
+        ip = ipaddress.ip_address(value)
+        if not ip.is_global:
             raise HTTPException(status_code=422, detail="Webhook target host is not allowed")

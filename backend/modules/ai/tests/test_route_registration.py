@@ -15,6 +15,7 @@ class AiRouteRegistrationTest(unittest.TestCase):
             ("POST", "/prompts/{template_id}/versions"),
             ("PATCH", "/prompts/{template_id}/versions/{version_id}"),
             ("GET", "/documents"),
+            ("GET", "/documents/{document_id}"),
             ("POST", "/documents"),
             ("POST", "/documents/upload"),
             ("POST", "/retrieve"),

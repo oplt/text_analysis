@@ -92,9 +92,14 @@ const { anchorDate, itemsByDate, openDay } = m;
                                 const colors = getWeekItemColor(item, theme);
                                 return (
                                     <Box
+                                        component="button"
+                                        type="button"
                                         key={item.id}
                                         onClick={() => openDay(anchorDate)}
+                                        aria-label={`Open ${item.title} on ${anchorDate.format("dddd, MMMM D")}`}
                                         sx={{
+                                            width: "100%",
+                                            textAlign: "left",
                                             px: 1.25,
                                             py: 0.8,
                                             borderRadius: 2,
@@ -196,8 +201,11 @@ const { anchorDate, itemsByDate, openDay } = m;
 
                             return (
                                 <Box
+                                    component="button"
+                                    type="button"
                                     key={item.id}
                                     onClick={() => openDay(anchorDate)}
+                                    aria-label={`Open ${item.title} on ${anchorDate.format("dddd, MMMM D")} at ${formatItemTime(item)}`}
                                     sx={{
                                         position: "absolute",
                                         top,
@@ -212,6 +220,7 @@ const { anchorDate, itemsByDate, openDay } = m;
                                         color: colors.text,
                                         cursor: "pointer",
                                         overflow: "hidden",
+                                        textAlign: "left",
                                         zIndex: 1,
                                     }}
                                 >

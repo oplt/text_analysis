@@ -20,7 +20,7 @@ describe("apiFetchItems", () => {
 
         expect(items).toEqual([{ id: "item-1" }]);
         expect(fetchMock).toHaveBeenCalledWith(
-            "http://localhost:8000/api/v1/items",
+            "/api/v1/items",
             expect.objectContaining({ credentials: "include" })
         );
     });

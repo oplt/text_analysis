@@ -144,6 +144,14 @@ class ResearchRepository:
         )
         return result.scalar_one_or_none()
 
+    async def list_documents_by_ids(self, document_ids: list[str]) -> list[CorpusDocument]:
+        if not document_ids:
+            return []
+        result = await self.db.execute(
+            select(CorpusDocument).where(CorpusDocument.id.in_(document_ids))
+        )
+        return list(result.scalars().all())
+
     async def get_document_by_rag_id(
         self, *, corpus_id: str, rag_document_id: str
     ) -> CorpusDocument | None:
@@ -573,6 +581,14 @@ class ResearchRepository:
             select(AnnotationLabel).where(AnnotationLabel.id == label_id)
         )
         return result.scalar_one_or_none()
+
+    async def list_labels_by_ids(self, label_ids: set[str]) -> list[AnnotationLabel]:
+        if not label_ids:
+            return []
+        result = await self.db.execute(
+            select(AnnotationLabel).where(AnnotationLabel.id.in_(label_ids))
+        )
+        return list(result.scalars().all())
 
     async def list_labels(self, codebook_id: str) -> list[AnnotationLabel]:
         result = await self.db.execute(
@@ -1211,13 +1227,20 @@ class ResearchRepository:
         await self.db.flush()
         return row
 
-    async def list_contextual_datasets(self, project_id: str) -> list[ContextualDataset]:
+    async def list_contextual_datasets_with_counts(
+        self, project_id: str
+    ) -> list[tuple[ContextualDataset, int]]:
         result = await self.db.execute(
-            select(ContextualDataset)
+            select(ContextualDataset, func.count(ContextualObservation.id))
+            .outerjoin(
+                ContextualObservation,
+                ContextualObservation.dataset_id == ContextualDataset.id,
+            )
             .where(ContextualDataset.project_id == project_id)
+            .group_by(ContextualDataset.id)
             .order_by(ContextualDataset.created_at.desc())
         )
-        return list(result.scalars().all())
+        return [(dataset, int(count)) for dataset, count in result.all()]
 
     async def get_contextual_dataset(self, dataset_id: str) -> ContextualDataset | None:
         result = await self.db.execute(

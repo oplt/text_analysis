@@ -76,6 +76,9 @@ class Settings(BaseSettings):
     HEALTH_READY_PUBLIC: bool = False
     HEALTH_VERSION_PUBLIC: bool = False
     REQUIRE_EMAIL_VERIFICATION: bool = False  # disabled for local dev; re-enable in production
+    # Only these reverse proxies may supply X-Forwarded-* headers.  Leave empty
+    # when the application receives client traffic directly.
+    TRUSTED_PROXY_IPS: Annotated[list[str], NoDecode] = Field(default_factory=list)
 
     # Email verification / password reset token TTLs (seconds)
     VERIFICATION_TOKEN_TTL: int = 86400  # 24 h
@@ -121,7 +124,7 @@ class Settings(BaseSettings):
     STORAGE_FORCE_PATH_STYLE: bool = True
     STORAGE_PUBLIC_BASE_URL: str = ""
     STORAGE_AUTO_CREATE_BUCKET: bool = True
-    STORAGE_PUBLIC_READ: bool = True
+    STORAGE_PUBLIC_READ: bool = False
     STORAGE_AVATAR_MAX_BYTES: int = 5 * 1024 * 1024
 
     AI_DEFAULT_PROVIDER: str = "local"
@@ -286,6 +289,15 @@ class Settings(BaseSettings):
                     )
                 return [str(item).strip() for item in parsed if str(item).strip()]
             return [item.strip() for item in normalized.split(",") if item.strip()]
+        return value
+
+    @field_validator("TRUSTED_PROXY_IPS", mode="before")
+    @classmethod
+    def parse_trusted_proxy_ips(cls, value):
+        if value in (None, ""):
+            return []
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(",") if item.strip()]
         return value
 
     @model_validator(mode="after")

@@ -3,7 +3,11 @@ from __future__ import annotations
 import logging
 from uuid import uuid4
 
-from backend.core.storage import PRIVATE_UPLOAD_CACHE_CONTROL, StorageNotConfiguredError, object_storage
+from backend.core.storage import (
+    PRIVATE_UPLOAD_CACHE_CONTROL,
+    StorageNotConfiguredError,
+    object_storage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,10 +25,11 @@ class FileStorageAdapter:
         filename: str,
         content: bytes,
         content_type: str,
-    ) -> str | None:
+    ) -> str:
         if not object_storage.is_configured:
-            logger.info("Object storage not configured; document kept in DB metadata only")
-            return None
+            raise StorageNotConfiguredError(
+                "Object storage is required to retain documents for asynchronous indexing"
+            )
         object_key = build_document_object_key(user_id, filename)
         try:
             await object_storage.upload_bytes(

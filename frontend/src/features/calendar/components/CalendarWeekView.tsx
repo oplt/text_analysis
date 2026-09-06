@@ -138,9 +138,14 @@ const { anchorDate, itemsByDate, openDay } = m;
                                     const colors = getWeekItemColor(item, theme);
                                     return (
                                         <Box
+                                            component="button"
+                                            type="button"
                                             key={item.id}
                                             onClick={() => openDay(day)}
+                                            aria-label={`Open ${item.title} on ${day.format("dddd, MMMM D")}`}
                                             sx={{
+                                                width: "100%",
+                                                textAlign: "left",
                                                 px: 1.25,
                                                 py: 0.75,
                                                 borderRadius: 2,
@@ -212,8 +217,11 @@ const { anchorDate, itemsByDate, openDay } = m;
                             const colors = getWeekItemColor(item, theme);
                             return (
                                 <Box
+                                    component="button"
+                                    type="button"
                                     key={item.id}
                                     onClick={() => openDay(day)}
+                                    aria-label={`Open ${item.title} on ${day.format("dddd, MMMM D")} at ${formatTimeValue(item.start_time ?? "09:00")}`}
                                     sx={{
                                         position: "absolute",
                                         top: item.top,
@@ -228,6 +236,7 @@ const { anchorDate, itemsByDate, openDay } = m;
                                         color: colors.text,
                                         cursor: "pointer",
                                         overflow: "hidden",
+                                        textAlign: "left",
                                     }}
                                 >
                                     <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>

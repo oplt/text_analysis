@@ -54,22 +54,19 @@ class ContextualDatasetService(ResearchAccessMixin):
 
     async def list_datasets(self, *, project_id: str, user_id: str) -> list[dict[str, Any]]:
         await self.ensure_project_access(user_id=user_id, project_id=project_id)
-        datasets = await self.repo.list_contextual_datasets(project_id)
-        rows: list[dict[str, Any]] = []
-        for dataset in datasets:
-            count = await self.repo.count_observations(dataset.id)
-            rows.append(
-                {
-                    "id": dataset.id,
-                    "project_id": dataset.project_id,
-                    "name": dataset.name,
-                    "description": dataset.description,
-                    "created_by": dataset.created_by,
-                    "created_at": dataset.created_at,
-                    "observation_count": count,
-                }
-            )
-        return rows
+        datasets = await self.repo.list_contextual_datasets_with_counts(project_id)
+        return [
+            {
+                "id": dataset.id,
+                "project_id": dataset.project_id,
+                "name": dataset.name,
+                "description": dataset.description,
+                "created_by": dataset.created_by,
+                "created_at": dataset.created_at,
+                "observation_count": count,
+            }
+            for dataset, count in datasets
+        ]
 
     async def get_dataset(self, dataset_id: str, *, user_id: str) -> dict[str, Any]:
         dataset = await self.get_contextual_dataset_or_404(dataset_id, user_id=user_id)

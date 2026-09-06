@@ -7,6 +7,7 @@ from backend.core.schemas import RequestModel
 
 TaskStatus = Literal["backlog", "todo", "in_progress", "review", "done"]
 TaskPriority = Literal["low", "medium", "high", "urgent"]
+ProjectRole = Literal["owner", "editor", "viewer"]
 
 
 class ProjectCreate(RequestModel):
@@ -19,6 +20,18 @@ class ProjectResponse(BaseModel):
     name: str
     description: str | None
     created_at: datetime
+
+
+class ProjectMemberCreate(RequestModel):
+    user_id: str
+    role: Literal["editor", "viewer"]
+
+
+class ProjectMemberResponse(BaseModel):
+    user_id: str
+    email: str
+    full_name: str | None
+    role: ProjectRole
 
 
 class ProjectTaskAssigneeResponse(BaseModel):

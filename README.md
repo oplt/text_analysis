@@ -164,8 +164,7 @@ make local-dev-no-observability
 Backend tests (example):
 
 ```bash
-cd backend
-PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest modules/text_research/tests/ -q
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 backend/.venv/bin/python -m pytest backend/modules/text_research/tests/ -q
 ```
 
 Frontend tests:

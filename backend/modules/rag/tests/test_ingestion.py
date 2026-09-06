@@ -154,9 +154,14 @@ class EnqueueDocumentIndexingTest(unittest.IsolatedAsyncioTestCase):
         document = SimpleNamespace(id="doc-1", user_id="user-a", project_id=None)
         job = SimpleNamespace(id="job-1")
         service._get_document_for_indexing = AsyncMock(return_value=document)
+        service.repo.get_active_ingestion_job = AsyncMock(return_value=None)
         service.repo.create_ingestion_job = AsyncMock(return_value=job)
         db.commit = AsyncMock()
         db.refresh = AsyncMock()
+        nested_transaction = MagicMock()
+        nested_transaction.__aenter__ = AsyncMock(return_value=None)
+        nested_transaction.__aexit__ = AsyncMock(return_value=None)
+        db.begin_nested = MagicMock(return_value=nested_transaction)
 
         result = await service.enqueue_document_indexing(
             document_id="doc-1",
@@ -170,3 +175,25 @@ class EnqueueDocumentIndexingTest(unittest.IsolatedAsyncioTestCase):
             job_id="job-1",
         )
         service.repo.create_ingestion_job.assert_awaited_once()
+
+    @patch("backend.modules.rag.application.document_ingestion_service.queue_document_indexing")
+    async def test_enqueue_reuses_active_job(self, queue_fn):
+        db = AsyncMock()
+        service = __import__(
+            "backend.modules.rag.application.document_ingestion_service",
+            fromlist=["DocumentIngestionService"],
+        ).DocumentIngestionService(db)
+        service.repo = MagicMock()
+        document = SimpleNamespace(id="doc-1", user_id="user-a", project_id=None)
+        active_job = SimpleNamespace(id="job-active")
+        service._get_document_for_indexing = AsyncMock(return_value=document)
+        service.repo.get_active_ingestion_job = AsyncMock(return_value=active_job)
+
+        result = await service.enqueue_document_indexing(
+            document_id="doc-1",
+            user_id="user-a",
+        )
+
+        self.assertEqual(result.id, "job-active")
+        service.repo.create_ingestion_job.assert_not_called()
+        queue_fn.assert_not_called()

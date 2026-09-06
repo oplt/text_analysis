@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps.auth import get_current_user
@@ -13,6 +13,8 @@ from backend.modules.identity_access.models import User
 from backend.modules.projects.models import Project, ProjectTask
 from backend.modules.projects.schemas import (
     ProjectCreate,
+    ProjectMemberCreate,
+    ProjectMemberResponse,
     ProjectResponse,
     ProjectTaskAssigneeResponse,
     ProjectTaskCreate,
@@ -68,7 +70,12 @@ async def list_projects(
     projects, total = await service.list_projects(
         current_user.id, limit=pagination.limit, offset=pagination.offset
     )
-    return paginated_response(projects, total=total, limit=pagination.limit, offset=pagination.offset)
+    return paginated_response(
+        projects,
+        total=total,
+        limit=pagination.limit,
+        offset=pagination.offset,
+    )
 
 
 @router.post("", response_model=ProjectResponse, status_code=201)
@@ -91,6 +98,38 @@ async def get_project(
     service = ProjectsService(db)
     project = await service.get_project(current_user.id, project_id)
     return _project_to_response(project)
+
+
+@router.get("/{project_id}/members", response_model=list[ProjectMemberResponse])
+async def list_project_members(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ProjectsService(db).list_members(current_user.id, project_id)
+
+
+@router.put("/{project_id}/members/{member_user_id}", response_model=ProjectMemberResponse)
+async def add_or_update_project_member(
+    project_id: str,
+    member_user_id: str,
+    payload: ProjectMemberCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if payload.user_id != member_user_id:
+        raise HTTPException(status_code=422, detail="Member ID must match the request path")
+    return await ProjectsService(db).add_or_update_member(current_user.id, project_id, payload)
+
+
+@router.delete("/{project_id}/members/{member_user_id}", status_code=204)
+async def remove_project_member(
+    project_id: str,
+    member_user_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await ProjectsService(db).remove_member(current_user.id, project_id, member_user_id)
 
 
 @router.get("/{project_id}/tasks", response_model=PaginatedResponse[ProjectTaskResponse])

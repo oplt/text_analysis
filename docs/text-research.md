@@ -126,8 +126,7 @@ cd backend && .venv/bin/alembic upgrade head
 ## Testing
 
 ```bash
-cd backend
-PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest modules/text_research/tests/ -q
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 backend/.venv/bin/python -m pytest backend/modules/text_research/tests/ -q
 
 cd frontend
 npm test

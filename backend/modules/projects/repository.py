@@ -1,12 +1,12 @@
 from datetime import date
 
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from backend.core.pagination import DEFAULT_PAGE_LIMIT
 from backend.modules.identity_access.models import User
-from backend.modules.projects.models import Project, ProjectTask
+from backend.modules.projects.models import Project, ProjectMember, ProjectTask
 
 
 class ProjectsRepository:
@@ -17,6 +17,8 @@ class ProjectsRepository:
         project = Project(owner_id=owner_id, name=name, description=description)
         self.db.add(project)
         await self.db.flush()
+        self.db.add(ProjectMember(project_id=project.id, user_id=owner_id, role="owner"))
+        await self.db.flush()
         return project
 
     async def list_accessible_by_user(
@@ -26,14 +28,10 @@ class ProjectsRepository:
         limit: int = DEFAULT_PAGE_LIMIT,
         offset: int = 0,
     ) -> tuple[list[Project], int]:
-        access_filter = or_(
-            Project.owner_id == user_id,
-            ProjectTask.assignee_id == user_id,
-        )
         id_stmt = (
             select(Project.id)
-            .outerjoin(ProjectTask, ProjectTask.project_id == Project.id)
-            .where(access_filter)
+            .join(ProjectMember, ProjectMember.project_id == Project.id)
+            .where(ProjectMember.user_id == user_id)
             .distinct()
         )
         total = int(
@@ -41,8 +39,8 @@ class ProjectsRepository:
         )
         result = await self.db.execute(
             select(Project)
-            .outerjoin(ProjectTask, ProjectTask.project_id == Project.id)
-            .where(access_filter)
+            .join(ProjectMember, ProjectMember.project_id == Project.id)
+            .where(ProjectMember.user_id == user_id)
             .distinct()
             .order_by(Project.created_at.desc())
             .offset(offset)
@@ -53,13 +51,10 @@ class ProjectsRepository:
     async def get_by_id_for_user(self, project_id: str, user_id: str) -> Project | None:
         result = await self.db.execute(
             select(Project)
-            .outerjoin(ProjectTask, ProjectTask.project_id == Project.id)
+            .join(ProjectMember, ProjectMember.project_id == Project.id)
             .where(
                 Project.id == project_id,
-                or_(
-                    Project.owner_id == user_id,
-                    ProjectTask.assignee_id == user_id,
-                ),
+                ProjectMember.user_id == user_id,
             )
             .distinct()
         )
@@ -74,17 +69,42 @@ class ProjectsRepository:
             return set()
         result = await self.db.execute(
             select(Project.id)
-            .outerjoin(ProjectTask, ProjectTask.project_id == Project.id)
+            .join(ProjectMember, ProjectMember.project_id == Project.id)
             .where(
                 Project.id.in_(project_ids),
-                or_(
-                    Project.owner_id == user_id,
-                    ProjectTask.assignee_id == user_id,
-                ),
+                ProjectMember.user_id == user_id,
             )
             .distinct()
         )
         return set(result.scalars().all())
+
+    async def get_membership(self, project_id: str, user_id: str) -> ProjectMember | None:
+        result = await self.db.execute(
+            select(ProjectMember).where(
+                ProjectMember.project_id == project_id,
+                ProjectMember.user_id == user_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def list_members_with_users(self, project_id: str) -> list[tuple[ProjectMember, User]]:
+        result = await self.db.execute(
+            select(ProjectMember, User)
+            .join(User, User.id == ProjectMember.user_id)
+            .where(ProjectMember.project_id == project_id)
+            .order_by(ProjectMember.created_at.asc())
+        )
+        return list(result.all())
+
+    async def add_member(self, project_id: str, user_id: str, role: str) -> ProjectMember:
+        member = ProjectMember(project_id=project_id, user_id=user_id, role=role)
+        self.db.add(member)
+        await self.db.flush()
+        return member
+
+    async def delete_member(self, member: ProjectMember) -> None:
+        await self.db.delete(member)
+        await self.db.flush()
 
     async def get_task_by_id(self, project_id: str, task_id: str) -> ProjectTask | None:
         result = await self.db.execute(
@@ -197,9 +217,8 @@ class ProjectsRepository:
                 ProjectTask.due_date.is_not(None),
                 ProjectTask.due_date >= start_date,
                 ProjectTask.due_date <= end_date,
-                or_(
-                    Project.owner_id == user_id,
-                    ProjectTask.assignee_id == user_id,
+                ProjectTask.project_id.in_(
+                    select(ProjectMember.project_id).where(ProjectMember.user_id == user_id)
                 ),
             )
             .order_by(

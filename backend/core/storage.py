@@ -67,20 +67,6 @@ class ObjectStorage:
                     }
                 self._client.create_bucket(**create_kwargs)
 
-                if settings.STORAGE_PUBLIC_READ:
-                    self._client.put_bucket_policy(
-                        Bucket=settings.STORAGE_BUCKET,
-                        Policy=(
-                            "{"
-                            '"Version":"2012-10-17",'
-                            '"Statement":[{'
-                            '"Effect":"Allow",'
-                            '"Principal":"*",'
-                            '"Action":["s3:GetObject"],'
-                            f'"Resource":["arn:aws:s3:::{settings.STORAGE_BUCKET}/*"]'
-                            "}]}"
-                        ),
-                    )
 
         try:
             await asyncio.to_thread(_ensure_bucket)
@@ -132,6 +118,24 @@ class ObjectStorage:
             return await asyncio.to_thread(_download)
         except Exception as exc:
             raise ObjectStorageError(f"Failed to download object {object_key}") from exc
+
+    async def presigned_download_url(self, object_key: str, *, expires_in: int = 300) -> str:
+        if not self.is_configured:
+            raise StorageNotConfiguredError(
+                "Object storage is not configured. Set STORAGE_BUCKET and storage credentials."
+            )
+
+        def _presign() -> str:
+            return self._client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": settings.STORAGE_BUCKET, "Key": object_key},
+                ExpiresIn=expires_in,
+            )
+
+        try:
+            return await asyncio.to_thread(_presign)
+        except Exception as exc:
+            raise ObjectStorageError("Failed to authorize object download") from exc
 
     def download_bytes_sync(self, object_key: str, *, bucket: str | None = None) -> bytes:
         if not self.is_configured and not bucket:

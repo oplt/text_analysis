@@ -4,6 +4,7 @@ import json
 import logging
 from datetime import UTC, datetime
 
+from backend.core.storage import StorageNotConfiguredError
 from backend.lib.project_access import ProjectAccessPort, SqlAlchemyProjectAccessPort
 from backend.lib.retrieval_cache import invalidate_retrieval_cache_for_document
 from backend.modules.rag.application.chunking_service import ChunkingService
@@ -18,6 +19,7 @@ from backend.modules.rag.infrastructure.repositories import RagRepository
 from backend.modules.rag.infrastructure.vector_store_adapter import build_vector_store
 from backend.modules.rag.workers import queue_document_cleanup, queue_document_indexing
 from fastapi import HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
@@ -59,12 +61,15 @@ class DocumentIngestionService:
         if project_id:
             await self._ensure_project_access(user_id, project_id)
 
-        storage_path = await self.storage.store_document(
-            user_id=user_id,
-            filename=filename,
-            content=content,
-            content_type=content_type,
-        )
+        try:
+            storage_path = await self.storage.store_document(
+                user_id=user_id,
+                filename=filename,
+                content=content,
+                content_type=content_type,
+            )
+        except StorageNotConfiguredError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
 
         document = await self.repo.create_document(
             user_id=user_id,
@@ -102,11 +107,21 @@ class DocumentIngestionService:
             user_id=user_id,
             is_admin=is_admin,
         )
-        job = await self.repo.create_ingestion_job(
-            document_id=document.id,
-            user_id=user_id,
-            project_id=document.project_id,
-        )
+        active_job = await self.repo.get_active_ingestion_job(document.id)
+        if active_job:
+            return active_job
+        try:
+            async with self.db.begin_nested():
+                job = await self.repo.create_ingestion_job(
+                    document_id=document.id,
+                    user_id=user_id,
+                    project_id=document.project_id,
+                )
+        except IntegrityError:
+            active_job = await self.repo.get_active_ingestion_job(document.id)
+            if active_job:
+                return active_job
+            raise
         await self.db.commit()
         await self.db.refresh(job)
         queue_document_indexing(
@@ -230,7 +245,19 @@ class DocumentIngestionService:
                 project_id=document.project_id,
             )
             return document, chunk_rows, job
-        except HTTPException:
+        except HTTPException as exc:
+            await self.repo.update_document_status(document, DocumentStatus.FAILED)
+            await self.repo.update_ingestion_job(
+                job,
+                status=IngestionJobStatus.FAILED,
+                error_message=(
+                    exc.detail[:500]
+                    if isinstance(exc.detail, str)
+                    else "Document indexing failed"
+                ),
+                finished=True,
+            )
+            await self.db.commit()
             raise
         except Exception as exc:
             logger.exception("Document indexing failed for %s", document_id)

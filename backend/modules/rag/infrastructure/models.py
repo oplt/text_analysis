@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from backend.db.base import Base
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -76,6 +76,15 @@ class RagQueryRecord(Base):
 
 class RagIngestionJob(Base):
     __tablename__ = "rag_ingestion_jobs"
+    __table_args__ = (
+        Index(
+            "uq_rag_ingestion_jobs_active_document",
+            "document_id",
+            unique=True,
+            postgresql_where=text("status IN ('pending', 'running')"),
+            sqlite_where=text("status IN ('pending', 'running')"),
+        ),
+    )
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
     document_id: Mapped[str] = mapped_column(

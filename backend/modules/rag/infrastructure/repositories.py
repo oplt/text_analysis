@@ -395,6 +395,19 @@ class RagRepository:
         result = await self.db.execute(select(RagIngestionJob).where(RagIngestionJob.id == job_id))
         return result.scalar_one_or_none()
 
+    async def get_active_ingestion_job(self, document_id: str) -> RagIngestionJob | None:
+        result = await self.db.execute(
+            select(RagIngestionJob)
+            .where(
+                RagIngestionJob.document_id == document_id,
+                RagIngestionJob.status.in_(
+                    [IngestionJobStatus.PENDING.value, IngestionJobStatus.RUNNING.value]
+                ),
+            )
+            .order_by(RagIngestionJob.created_at.desc())
+        )
+        return result.scalar_one_or_none()
+
     async def update_ingestion_job(
         self,
         job: RagIngestionJob,

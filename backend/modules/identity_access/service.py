@@ -1,7 +1,6 @@
 import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta
-from urllib.parse import urlencode
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,16 +64,13 @@ class IdentityService:
             password_hash=await hash_password_async(password),
             full_name=full_name,
             is_admin=is_admin,
-            is_verified=True,  # email verification temporarily disabled
-            # is_verified=not settings.REQUIRE_EMAIL_VERIFICATION,
+            is_verified=not settings.REQUIRE_EMAIL_VERIFICATION,
         )
         await self.db.commit()
         await self.db.refresh(user)
 
-        # Email verification temporarily disabled — signup verification emails are not sent.
-        # if settings.REQUIRE_EMAIL_VERIFICATION:
-        #     token = await self._store_verification_token(user.id)
-        #     ...
+        if settings.REQUIRE_EMAIL_VERIFICATION:
+            await self._send_verification_email(user)
 
         return user
 
@@ -85,9 +81,8 @@ class IdentityService:
 
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Account disabled")
-        # Email verification temporarily disabled.
-        # if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
-        #     raise HTTPException(status_code=403, detail="Verify your email before signing in")
+        if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
+            raise HTTPException(status_code=403, detail="Verify your email before signing in")
         if user.mfa_enabled:
             try:
                 import pyotp
@@ -132,9 +127,8 @@ class IdentityService:
         user = await self.repo.get_user_by_id(session.user_id)
         if not user or not user.is_active:
             raise HTTPException(status_code=401, detail="User not found or disabled")
-        # Email verification temporarily disabled.
-        # if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
-        #     raise HTTPException(status_code=403, detail="Verify your email before signing in")
+        if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
+            raise HTTPException(status_code=403, detail="Verify your email before signing in")
 
         await self.repo.revoke_refresh_session(session)
 
@@ -183,13 +177,37 @@ class IdentityService:
         await redis_client.delete(key)
 
     async def resend_verification(self, email: str) -> None:
-        # Email verification temporarily disabled.
-        return
+        if not settings.REQUIRE_EMAIL_VERIFICATION:
+            return
+        user = await self.repo.get_user_by_email(email)
+        if not user or user.is_verified:
+            return
+        await self._send_verification_email(user)
 
-        # user = await self.repo.get_user_by_email(email)
-        # if not user or user.is_verified:
-        #     return
-        # ...
+    async def _send_verification_email(self, user: User) -> None:
+        token = await self._store_verification_token(user.id)
+        verification_link = f"{settings.FRONTEND_URL}/verify-email?token={token}"
+        app_name = await self._get_platform_app_name()
+        subject, html_body, text_body = await self.platform.render_email_template(
+            key="auth.verify_email",
+            context={
+                "app_name": app_name,
+                "recipient_email": user.email,
+                "action_url": verification_link,
+            },
+            fallback_subject="Verify your email address",
+            fallback_html=(
+                "<p>Thanks for signing up. Verify your email address:</p>"
+                f"<p><a href=\"{verification_link}\">{verification_link}</a></p>"
+            ),
+            fallback_text=f"Verify your email address: {verification_link}",
+        )
+        queue_email(
+            to=user.email,
+            subject=subject,
+            html_body=html_body,
+            text_body=text_body,
+        )
 
     # ------------------------------------------------------------------ password reset
 

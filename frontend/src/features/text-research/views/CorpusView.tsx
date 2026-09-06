@@ -42,11 +42,11 @@ import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { CorpusDocumentDrawer } from "../components/CorpusDocumentDrawer";
+import { CorpusDocumentFilters } from "../components/CorpusDocumentFilters";
 import {
-    CorpusDocumentFilters,
     DEFAULT_DOCUMENT_FILTERS,
     type CorpusDocumentFiltersState,
-} from "../components/CorpusDocumentFilters";
+} from "../components/corpusDocumentFiltersModel";
 import { CorpusUploadPanel } from "../components/CorpusUploadPanel";
 import { NoCorpusEmptyState } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";

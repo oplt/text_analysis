@@ -7,9 +7,7 @@ from backend.core.config import settings
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
-        forwarded_proto = request.headers.get("x-forwarded-proto")
-        scheme = forwarded_proto or request.url.scheme
-        if settings.is_production and scheme != "https":
+        if settings.is_production and request.url.scheme != "https":
             return JSONResponse(status_code=400, content={"detail": "HTTPS is required"})
 
         response = await call_next(request)

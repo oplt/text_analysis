@@ -220,12 +220,13 @@ class CorpusService(ResearchAccessMixin):
         fields: dict[str, Any],
     ) -> list[CorpusDocument]:
         await self.get_corpus_or_404(corpus_id, user_id=user_id)
-        updated: list[CorpusDocument] = []
-        for document_id in document_ids:
-            document = await self.repo.get_document(document_id)
-            if document is None or document.corpus_id != corpus_id:
-                continue
-            updated.append(await self.repo.update_document(document, **fields))
+        documents = await self.repo.list_documents_by_ids(list(dict.fromkeys(document_ids)))
+        updated = [document for document in documents if document.corpus_id == corpus_id]
+        for document in updated:
+            for key, value in fields.items():
+                if value is not None:
+                    setattr(document, key, value)
+        await self.db.flush()
         await self.db.commit()
         return updated
 
@@ -235,22 +236,19 @@ class CorpusService(ResearchAccessMixin):
         """Bulk metadata import. CSV must contain a `rag_document_id` (or
         `document_id`) column plus any subset of the known metadata columns."""
         await self.get_corpus_or_404(corpus_id, user_id=user_id)
-        reader = csv.DictReader(io.StringIO(csv_content))
+        rows = list(csv.DictReader(io.StringIO(csv_content)))
+        document_ids = [(row.get("document_id") or "").strip() for row in rows]
+        rag_document_ids = [(row.get("rag_document_id") or "").strip() for row in rows]
+        documents = await self.repo.list_documents(corpus_id)
+        documents_by_id = {document.id: document for document in documents}
+        documents_by_rag_id = {document.rag_document_id: document for document in documents}
         updated = 0
         errors: list[str] = []
         row_number = 1
-        for row in reader:
+        for row, document_id, rag_document_id in zip(rows, document_ids, rag_document_ids, strict=True):
             row_number += 1
-            document_id = (row.get("document_id") or "").strip()
-            rag_document_id = (row.get("rag_document_id") or "").strip()
-            document: CorpusDocument | None = None
-            if document_id:
-                document = await self.repo.get_document(document_id)
-            elif rag_document_id:
-                document = await self.repo.get_document_by_rag_id(
-                    corpus_id=corpus_id, rag_document_id=rag_document_id
-                )
-            if document is None or document.corpus_id != corpus_id:
+            document = documents_by_id.get(document_id) if document_id else documents_by_rag_id.get(rag_document_id)
+            if document is None:
                 errors.append(f"row {row_number}: document not found in this corpus")
                 continue
 
@@ -266,8 +264,10 @@ class CorpusService(ResearchAccessMixin):
                             continue
                     fields[column] = value
             if fields:
-                await self.repo.update_document(document, **fields)
+                for key, value in fields.items():
+                    setattr(document, key, value)
                 updated += 1
+        await self.db.flush()
         await self.db.commit()
         return {"updated": updated, "errors": errors, "rows_processed": row_number - 1}
 
