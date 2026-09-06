@@ -11,6 +11,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.pagination import DEFAULT_PAGE_LIMIT, paginate_scalars
+from backend.modules.text_research.domain.enums import AnnotationTaskStatus
 from backend.modules.text_research.domain.models import (
     Adjudication,
     Annotation,

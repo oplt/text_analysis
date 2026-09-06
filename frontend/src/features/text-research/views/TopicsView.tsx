@@ -17,8 +17,11 @@ import {
     nameTopic,
     trainTopicModel,
 } from "../../../api/textResearch";
+import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { PageTabs } from "../../../components/ui/PageTabs";
+import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import {
@@ -33,6 +36,17 @@ import { ResearchResultsTable } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
+
+const TOPIC_TABS = ["setup", "topics", "distribution", "metadata", "documents"] as const;
+type TopicTab = (typeof TOPIC_TABS)[number];
+
+const TOPIC_TAB_ITEMS: Array<{ value: TopicTab; label: string }> = [
+    { value: "setup", label: "Setup" },
+    { value: "topics", label: "Topics" },
+    { value: "distribution", label: "Distribution" },
+    { value: "metadata", label: "Metadata" },
+    { value: "documents", label: "Documents" },
+];
 
 type TopicTerm = { term?: string; weight?: number };
 type TopicRow = { topic_id?: number | string; top_terms?: TopicTerm[] };
@@ -130,6 +144,7 @@ export default function TopicsView() {
     const [runId, setRunId] = useState<string | null>(null);
     const [selectedTopicId, setSelectedTopicId] = useState<string>("0");
     const [draftNames, setDraftNames] = useState<Record<string, string>>({});
+    const [tab, setTab] = useTabQueryParam(TOPIC_TABS, "setup");
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
@@ -177,6 +192,7 @@ export default function TopicsView() {
             setRunId(run.id);
             setSelectedTopicId("0");
             setDraftNames({});
+            setTab("topics");
             showToast({ message: "Topic model training started.", severity: "success" });
         },
         onError: (error) =>
@@ -229,131 +245,153 @@ export default function TopicsView() {
 
     return (
         <Stack spacing={2}>
-            <SectionCard
-                title="Topic modeling"
-                description="Train LDA or NMF on segmented units. Human names are labels only — they do not retrain the model."
-            >
-                <Stack spacing={2} sx={{ mb: 2 }}>
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
-                        <TextField
-                            select
-                            size="small"
-                            label="Algorithm"
-                            value={algorithm}
-                            onChange={(e) => setAlgorithm(e.target.value as "lda" | "nmf")}
-                            sx={{ minWidth: 140 }}
-                        >
-                            <MenuItem value="lda">LDA</MenuItem>
-                            <MenuItem value="nmf">NMF</MenuItem>
-                        </TextField>
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="Number of topics"
-                            value={nTopics}
-                            onChange={(e) => setNTopics(Number(e.target.value) || 2)}
-                            inputProps={{ min: 2, max: 50 }}
-                            sx={{ width: 160 }}
-                        />
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="Max iterations"
-                            value={maxIterations}
-                            onChange={(e) => setMaxIterations(Number(e.target.value) || 1)}
-                            inputProps={{ min: 1, max: 500 }}
-                            sx={{ width: 150 }}
-                        />
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="Random seed"
-                            value={randomSeed}
-                            onChange={(e) => setRandomSeed(Number(e.target.value) || 0)}
-                            sx={{ width: 140 }}
-                        />
-                        <TextField
-                            select
-                            size="small"
-                            label="Preprocessing profile"
-                            value={profileId}
-                            onChange={(e) => setProfileId(e.target.value)}
-                            sx={{ minWidth: 220 }}
-                        >
-                            <MenuItem value="">Default</MenuItem>
-                            {(profilesQuery.data ?? []).map((profile) => (
-                                <MenuItem key={profile.id} value={profile.id}>
-                                    {profile.name}
-                                </MenuItem>
-                            ))}
-                        </TextField>
-                    </Stack>
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
-                        <TextField
-                            size="small"
-                            label="Organization filter"
-                            value={organization}
-                            onChange={(e) => setOrganization(e.target.value)}
-                            placeholder="Optional"
-                            sx={{ minWidth: 180 }}
-                        />
-                        <TextField
-                            size="small"
-                            label="Language filter"
-                            value={language}
-                            onChange={(e) => setLanguage(e.target.value)}
-                            placeholder="Optional"
-                            sx={{ minWidth: 180 }}
-                        />
-                        <TextField
-                            size="small"
-                            label="Cultural sphere filter"
-                            value={culturalSphere}
-                            onChange={(e) => setCulturalSphere(e.target.value)}
-                            placeholder="Optional"
-                            sx={{ minWidth: 180 }}
-                        />
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="Publication year from"
-                            value={publicationYearMin}
-                            onChange={(e) => setPublicationYearMin(e.target.value)}
-                            sx={{ minWidth: 180 }}
-                        />
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="Publication year to"
-                            value={publicationYearMax}
-                            onChange={(e) => setPublicationYearMax(e.target.value)}
-                            sx={{ minWidth: 180 }}
-                        />
-                        <TextField
-                            size="small"
-                            label="Region filter"
-                            value={region}
-                            onChange={(e) => setRegion(e.target.value)}
-                            placeholder="Optional"
-                            sx={{ minWidth: 180 }}
-                        />
-                        <Typography variant="body2" color="text.secondary" sx={{ alignSelf: "center" }}>
-                            Unit type: {ctx.unitType}
-                        </Typography>
-                    </Stack>
-                </Stack>
-                <Button
-                    variant="contained"
-                    startIcon={<TrainIcon />}
-                    onClick={() => trainMutation.mutate()}
-                    disabled={!ctx.selectedCorpusId || trainMutation.isPending}
-                >
-                    Train topic model
-                </Button>
-            </SectionCard>
+            <PageTabs
+                value={tab}
+                onChange={setTab}
+                tabs={TOPIC_TAB_ITEMS}
+                ariaLabel="Topic modeling workflow"
+            />
 
-            {runId ? (
-                <SectionCard title="Topic model results">
+            {tab === "setup" ? (
+                <SectionCard
+                    title="Topic modeling"
+                    description="Train LDA or NMF on segmented units. Human names are labels only — they do not retrain the model."
+                >
+                    <Stack spacing={2} sx={{ mb: 2 }}>
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
+                            <TextField
+                                select
+                                size="small"
+                                label="Algorithm"
+                                value={algorithm}
+                                onChange={(e) => setAlgorithm(e.target.value as "lda" | "nmf")}
+                                sx={{ minWidth: 140 }}
+                            >
+                                <MenuItem value="lda">LDA</MenuItem>
+                                <MenuItem value="nmf">NMF</MenuItem>
+                            </TextField>
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Number of topics"
+                                value={nTopics}
+                                onChange={(e) => setNTopics(Number(e.target.value) || 2)}
+                                inputProps={{ min: 2, max: 50 }}
+                                sx={{ width: 160 }}
+                            />
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Max iterations"
+                                value={maxIterations}
+                                onChange={(e) => setMaxIterations(Number(e.target.value) || 1)}
+                                inputProps={{ min: 1, max: 500 }}
+                                sx={{ width: 150 }}
+                            />
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Random seed"
+                                value={randomSeed}
+                                onChange={(e) => setRandomSeed(Number(e.target.value) || 0)}
+                                sx={{ width: 140 }}
+                            />
+                            <TextField
+                                select
+                                size="small"
+                                label="Preprocessing profile"
+                                value={profileId}
+                                onChange={(e) => setProfileId(e.target.value)}
+                                sx={{ minWidth: 220 }}
+                            >
+                                <MenuItem value="">Default</MenuItem>
+                                {(profilesQuery.data ?? []).map((profile) => (
+                                    <MenuItem key={profile.id} value={profile.id}>
+                                        {profile.name}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                        </Stack>
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
+                            <TextField
+                                size="small"
+                                label="Organization filter"
+                                value={organization}
+                                onChange={(e) => setOrganization(e.target.value)}
+                                placeholder="Optional"
+                                sx={{ minWidth: 180 }}
+                            />
+                            <TextField
+                                size="small"
+                                label="Language filter"
+                                value={language}
+                                onChange={(e) => setLanguage(e.target.value)}
+                                placeholder="Optional"
+                                sx={{ minWidth: 180 }}
+                            />
+                            <TextField
+                                size="small"
+                                label="Cultural sphere filter"
+                                value={culturalSphere}
+                                onChange={(e) => setCulturalSphere(e.target.value)}
+                                placeholder="Optional"
+                                sx={{ minWidth: 180 }}
+                            />
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Publication year from"
+                                value={publicationYearMin}
+                                onChange={(e) => setPublicationYearMin(e.target.value)}
+                                sx={{ width: 180 }}
+                            />
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Publication year to"
+                                value={publicationYearMax}
+                                onChange={(e) => setPublicationYearMax(e.target.value)}
+                                sx={{ width: 160 }}
+                            />
+                            <TextField
+                                size="small"
+                                label="Region filter"
+                                value={region}
+                                onChange={(e) => setRegion(e.target.value)}
+                                placeholder="Optional"
+                                sx={{ minWidth: 160 }}
+                            />
+                            <Typography variant="body2" color="text.secondary" sx={{ alignSelf: "center" }}>
+                                Unit type: {ctx.unitType}
+                            </Typography>
+                        </Stack>
+                    </Stack>
+                    <Button
+                        variant="contained"
+                        startIcon={<TrainIcon />}
+                        onClick={() => trainMutation.mutate()}
+                        disabled={!ctx.selectedCorpusId || trainMutation.isPending}
+                    >
+                        Train topic model
+                    </Button>
+                </SectionCard>
+            ) : null}
+
+            {tab !== "setup" && !runId ? (
+                <EmptyState
+                    icon={<TrainIcon fontSize="large" />}
+                    title="No topic model yet"
+                    description="Configure and train a topic model in Setup to explore topics, distributions, and documents."
+                    action={
+                        <Button variant="contained" onClick={() => setTab("setup")}>
+                            Go to setup
+                        </Button>
+                    }
+                />
+            ) : null}
+
+            {runId && tab !== "setup" ? (
+                <SectionCard title="Topic model results" description="Diagnostics stay visible while you switch result views.">
                     <QueryBoundary
                         isLoading={runQuery.isLoading && !runQuery.data}
                         isError={runQuery.isError}
@@ -373,185 +411,228 @@ export default function TopicsView() {
                                     <>
                                         {cards.length ? <MetricCards items={cards} /> : null}
 
-                                        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                            <TextField
-                                                select
-                                                size="small"
-                                                label="Selected topic"
-                                                value={String(selectedTopic?.topic_id ?? selectedTopicId)}
-                                                onChange={(e) => setSelectedTopicId(e.target.value)}
-                                                sx={{ minWidth: 220 }}
-                                            >
-                                                {topics.map((topic) => (
-                                                    <MenuItem
-                                                        key={String(topic.topic_id)}
-                                                        value={String(topic.topic_id)}
+                                        {tab === "topics" ? (
+                                            <Stack spacing={2}>
+                                                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                                                    <TextField
+                                                        select
+                                                        size="small"
+                                                        label="Selected topic"
+                                                        value={String(selectedTopic?.topic_id ?? selectedTopicId)}
+                                                        onChange={(e) => setSelectedTopicId(e.target.value)}
+                                                        sx={{ minWidth: 220 }}
                                                     >
-                                                        {topicDisplayName(topic.topic_id)}
-                                                    </MenuItem>
-                                                ))}
-                                            </TextField>
-                                        </Stack>
+                                                        {topics.map((topic) => (
+                                                            <MenuItem
+                                                                key={String(topic.topic_id)}
+                                                                value={String(topic.topic_id)}
+                                                            >
+                                                                {topicDisplayName(topic.topic_id)}
+                                                            </MenuItem>
+                                                        ))}
+                                                    </TextField>
+                                                </Stack>
 
-                                        <Typography variant="subtitle2">
-                                            Top terms — {topicDisplayName(selectedTopic?.topic_id)}
-                                        </Typography>
-                                        <RankedBarChart
-                                            items={termItems}
-                                            valueFormatter={(v) =>
-                                                v == null ? "" : Number(v).toFixed(4)
-                                            }
-                                        />
-
-                                        <ResearchResultsTable
-                                            rows={topics.map((topic, index) => {
-                                                const topicId = topic.topic_id ?? index;
-                                                const key = String(topicId);
-                                                return {
-                                                    id: key,
-                                                    topicId,
-                                                    name: topicDisplayName(topicId),
-                                                    prevalence: asRecord(
-                                                        asRecord(runQuery.data?.results)?.topic_prevalence
-                                                    )?.[key],
-                                                    dominant: asRecord(
-                                                        asRecord(runQuery.data?.results)?.dominant_topic_counts
-                                                    )?.[key],
-                                                    terms: topic.top_terms?.map((term) => term.term).filter(Boolean).join(", ") ?? "",
-                                                };
-                                            })}
-                                            columns={[
-                                                { id: "topic", label: "Topic ID", value: (row) => row.topicId },
-                                                { id: "name", label: "Human name", value: (row) => row.name },
-                                                { id: "prevalence", label: "Prevalence", value: (row) => row.prevalence as number | null, align: "right" },
-                                                { id: "dominant", label: "Dominant units", value: (row) => row.dominant as number | null, align: "right" },
-                                                { id: "terms", label: "Top terms", value: (row) => row.terms },
-                                            ]}
-                                        />
-
-                                        <Typography variant="subtitle2">Dominant topic counts</Typography>
-                                        <SimpleLineLikeBars
-                                            items={dominantCounts.map((item) => ({
-                                                ...item,
-                                                label: topicDisplayName(item.label.replace(/\D/g, "")),
-                                            }))}
-                                        />
-
-                                        <Typography variant="subtitle2">Topic prevalence</Typography>
-                                        <RankedBarChart
-                                            items={topicPrevalence.map((item) => ({
-                                                ...item,
-                                                label: topicDisplayName(item.label.replace(/\D/g, "")),
-                                            }))}
-                                            valueFormatter={(v) =>
-                                                v == null ? "" : `${(Number(v) * 100).toFixed(1)}%`
-                                            }
-                                        />
-
-                                        <Typography variant="subtitle2">
-                                            Representative units — {topicDisplayName(selectedTopic?.topic_id)}
-                                        </Typography>
-                                        <Stack spacing={1}>
-                                            {representativeUnits.map((unit, index) => (
-                                                <Typography key={index} variant="body2">
-                                                    <strong>{unit.document_title || "Untitled document"}</strong>
-                                                    {" · "}{Number(unit.weight || 0).toFixed(3)} — {unit.text}
+                                                <Typography variant="subtitle2">
+                                                    Top terms — {topicDisplayName(selectedTopic?.topic_id)}
                                                 </Typography>
-                                            ))}
-                                        </Stack>
+                                                <RankedBarChart
+                                                    items={termItems}
+                                                    valueFormatter={(v) =>
+                                                        v == null ? "" : Number(v).toFixed(4)
+                                                    }
+                                                />
 
-                                        {Object.keys(metadataBreakdowns).length ? (
-                                            <>
-                                                <Typography variant="subtitle2">Topic prevalence by metadata</Typography>
-                                                {Object.entries(metadataBreakdowns).map(([field, values]) => (
-                                                    <Stack key={field} spacing={0.5}>
-                                                        <Typography variant="body2" color="text.secondary">{field}</Typography>
-                                                        <MatrixHeatmap
-                                                            rowLabels={Object.keys(values)}
-                                                            colLabels={topics.map((topic) => topicDisplayName(topic.topic_id))}
-                                                            values={Object.values(values).map((counts) =>
-                                                                topics.map((topic) => Number(counts[String(topic.topic_id ?? "")] ?? 0))
-                                                            )}
-                                                            formatCell={(value) => value == null ? "—" : String(value)}
-                                                        />
-                                                        {field === "publication_year" ? (
-                                                            <ScientificLineChart
-                                                                series={topics.map((topic) => ({
-                                                                    label: topicDisplayName(topic.topic_id),
-                                                                    points: Object.entries(values)
-                                                                        .map(([year, counts]) => ({ x: Number(year), y: Number(counts[String(topic.topic_id ?? "")] ?? 0) }))
-                                                                        .filter((point) => Number.isFinite(point.x))
-                                                                        .sort((a, b) => a.x - b.x),
-                                                                }))}
-                                                            />
-                                                        ) : null}
-                                                    </Stack>
-                                                ))}
-                                            </>
+                                                <ResearchResultsTable
+                                                    rows={topics.map((topic, index) => {
+                                                        const topicId = topic.topic_id ?? index;
+                                                        const key = String(topicId);
+                                                        return {
+                                                            id: key,
+                                                            topicId,
+                                                            name: topicDisplayName(topicId),
+                                                            prevalence: asRecord(
+                                                                asRecord(runQuery.data?.results)?.topic_prevalence
+                                                            )?.[key],
+                                                            dominant: asRecord(
+                                                                asRecord(runQuery.data?.results)?.dominant_topic_counts
+                                                            )?.[key],
+                                                            terms: topic.top_terms?.map((term) => term.term).filter(Boolean).join(", ") ?? "",
+                                                        };
+                                                    })}
+                                                    columns={[
+                                                        { id: "topic", label: "Topic ID", value: (row) => row.topicId },
+                                                        { id: "name", label: "Human name", value: (row) => row.name },
+                                                        { id: "prevalence", label: "Prevalence", value: (row) => row.prevalence as number | null, align: "right" },
+                                                        { id: "dominant", label: "Dominant units", value: (row) => row.dominant as number | null, align: "right" },
+                                                        { id: "terms", label: "Top terms", value: (row) => row.terms },
+                                                    ]}
+                                                />
+
+                                                <Typography variant="subtitle2">Human topic names</Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Rename topics for reporting. Names are metadata only and do
+                                                    not change model output.
+                                                </Typography>
+                                                <Stack spacing={1.5}>
+                                                    {topics.map((topic) => {
+                                                        const key = String(topic.topic_id ?? "");
+                                                        const saved = labelByTopic.get(key) ?? "";
+                                                        const draft = draftNames[key] ?? saved;
+                                                        return (
+                                                            <Stack
+                                                                key={key}
+                                                                direction={{ xs: "column", sm: "row" }}
+                                                                spacing={1}
+                                                                alignItems={{ sm: "center" }}
+                                                            >
+                                                                <Typography variant="body2" sx={{ minWidth: 88 }}>
+                                                                    Topic {key}
+                                                                </Typography>
+                                                                <TextField
+                                                                    size="small"
+                                                                    label="Custom name"
+                                                                    value={draft}
+                                                                    onChange={(e) =>
+                                                                        setDraftNames((prev) => ({
+                                                                            ...prev,
+                                                                            [key]: e.target.value,
+                                                                        }))
+                                                                    }
+                                                                    placeholder={`Topic ${key}`}
+                                                                    sx={{ flex: 1 }}
+                                                                />
+                                                                <Button
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    disabled={
+                                                                        !draft.trim() ||
+                                                                        draft.trim() === saved ||
+                                                                        nameMutation.isPending
+                                                                    }
+                                                                    onClick={() =>
+                                                                        nameMutation.mutate({
+                                                                            topic_id: topic.topic_id ?? key,
+                                                                            human_name: draft.trim(),
+                                                                        })
+                                                                    }
+                                                                >
+                                                                    Save name
+                                                                </Button>
+                                                            </Stack>
+                                                        );
+                                                    })}
+                                                </Stack>
+                                                <ResultsInspector
+                                                    title="topic results"
+                                                    data={{
+                                                        metrics: runQuery.data.metrics,
+                                                        results: runQuery.data.results,
+                                                    }}
+                                                />
+                                            </Stack>
                                         ) : null}
 
-                                        <Typography variant="subtitle2">Human topic names</Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Rename topics for reporting. Names are metadata only and do
-                                            not change model output.
-                                        </Typography>
-                                        <Stack spacing={1.5}>
-                                            {topics.map((topic) => {
-                                                const key = String(topic.topic_id ?? "");
-                                                const saved = labelByTopic.get(key) ?? "";
-                                                const draft = draftNames[key] ?? saved;
-                                                return (
-                                                    <Stack
-                                                        key={key}
-                                                        direction={{ xs: "column", sm: "row" }}
-                                                        spacing={1}
-                                                        alignItems={{ sm: "center" }}
-                                                    >
-                                                        <Typography variant="body2" sx={{ minWidth: 88 }}>
-                                                            Topic {key}
-                                                        </Typography>
-                                                        <TextField
-                                                            size="small"
-                                                            label="Custom name"
-                                                            value={draft}
-                                                            onChange={(e) =>
-                                                                setDraftNames((prev) => ({
-                                                                    ...prev,
-                                                                    [key]: e.target.value,
-                                                                }))
-                                                            }
-                                                            placeholder={`Topic ${key}`}
-                                                            sx={{ flex: 1 }}
-                                                        />
-                                                        <Button
-                                                            size="small"
-                                                            variant="outlined"
-                                                            disabled={
-                                                                !draft.trim() ||
-                                                                draft.trim() === saved ||
-                                                                nameMutation.isPending
-                                                            }
-                                                            onClick={() =>
-                                                                nameMutation.mutate({
-                                                                    topic_id: topic.topic_id ?? key,
-                                                                    human_name: draft.trim(),
-                                                                })
-                                                            }
-                                                        >
-                                                            Save name
-                                                        </Button>
-                                                    </Stack>
-                                                );
-                                            })}
-                                        </Stack>
+                                        {tab === "distribution" ? (
+                                            <Stack spacing={2}>
+                                                <Typography variant="subtitle2">Dominant topic counts</Typography>
+                                                <SimpleLineLikeBars
+                                                    items={dominantCounts.map((item) => ({
+                                                        ...item,
+                                                        label: topicDisplayName(item.label.replace(/\D/g, "")),
+                                                    }))}
+                                                />
+                                                <Typography variant="subtitle2">Topic prevalence</Typography>
+                                                <RankedBarChart
+                                                    items={topicPrevalence.map((item) => ({
+                                                        ...item,
+                                                        label: topicDisplayName(item.label.replace(/\D/g, "")),
+                                                    }))}
+                                                    valueFormatter={(v) =>
+                                                        v == null ? "" : `${(Number(v) * 100).toFixed(1)}%`
+                                                    }
+                                                />
+                                            </Stack>
+                                        ) : null}
 
-                                        <ResultsInspector
-                                            title="topic results"
-                                            data={{
-                                                metrics: runQuery.data.metrics,
-                                                results: runQuery.data.results,
-                                            }}
-                                        />
+                                        {tab === "metadata" ? (
+                                            <Stack spacing={2}>
+                                                {Object.keys(metadataBreakdowns).length ? (
+                                                    <>
+                                                        <Typography variant="subtitle2">Topic prevalence by metadata</Typography>
+                                                        {Object.entries(metadataBreakdowns).map(([field, values]) => (
+                                                            <Stack key={field} spacing={0.5}>
+                                                                <Typography variant="body2" color="text.secondary">{field}</Typography>
+                                                                <MatrixHeatmap
+                                                                    rowLabels={Object.keys(values)}
+                                                                    colLabels={topics.map((topic) => topicDisplayName(topic.topic_id))}
+                                                                    values={Object.values(values).map((counts) =>
+                                                                        topics.map((topic) => Number(counts[String(topic.topic_id ?? "")] ?? 0))
+                                                                    )}
+                                                                    formatCell={(value) => value == null ? "—" : String(value)}
+                                                                />
+                                                                {field === "publication_year" ? (
+                                                                    <ScientificLineChart
+                                                                        series={topics.map((topic) => ({
+                                                                            label: topicDisplayName(topic.topic_id),
+                                                                            points: Object.entries(values)
+                                                                                .map(([year, counts]) => ({ x: Number(year), y: Number(counts[String(topic.topic_id ?? "")] ?? 0) }))
+                                                                                .filter((point) => Number.isFinite(point.x))
+                                                                                .sort((a, b) => a.x - b.x),
+                                                                        }))}
+                                                                    />
+                                                                ) : null}
+                                                            </Stack>
+                                                        ))}
+                                                    </>
+                                                ) : (
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        No metadata breakdowns available for this run.
+                                                    </Typography>
+                                                )}
+                                            </Stack>
+                                        ) : null}
+
+                                        {tab === "documents" ? (
+                                            <Stack spacing={2}>
+                                                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                                                    <TextField
+                                                        select
+                                                        size="small"
+                                                        label="Selected topic"
+                                                        value={String(selectedTopic?.topic_id ?? selectedTopicId)}
+                                                        onChange={(e) => setSelectedTopicId(e.target.value)}
+                                                        sx={{ minWidth: 220 }}
+                                                    >
+                                                        {topics.map((topic) => (
+                                                            <MenuItem
+                                                                key={String(topic.topic_id)}
+                                                                value={String(topic.topic_id)}
+                                                            >
+                                                                {topicDisplayName(topic.topic_id)}
+                                                            </MenuItem>
+                                                        ))}
+                                                    </TextField>
+                                                </Stack>
+                                                <Typography variant="subtitle2">
+                                                    Representative units — {topicDisplayName(selectedTopic?.topic_id)}
+                                                </Typography>
+                                                <Stack spacing={1}>
+                                                    {representativeUnits.length ? (
+                                                        representativeUnits.map((unit, index) => (
+                                                            <Typography key={index} variant="body2">
+                                                                <strong>{unit.document_title || "Untitled document"}</strong>
+                                                                {" · "}{Number(unit.weight || 0).toFixed(3)} — {unit.text}
+                                                            </Typography>
+                                                        ))
+                                                    ) : (
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            No representative units for this topic.
+                                                        </Typography>
+                                                    )}
+                                                </Stack>
+                                            </Stack>
+                                        ) : null}
                                     </>
                                 ) : isActiveRunStatus(runQuery.data.status) ? (
                                     <Typography color="text.secondary">Training in progress…</Typography>

@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from backend.core.storage import (
     PRIVATE_UPLOAD_CACHE_CONTROL,
+    ObjectStorageError,
     StorageNotConfiguredError,
     object_storage,
 )
@@ -32,6 +33,7 @@ class FileStorageAdapter:
             )
         object_key = build_document_object_key(user_id, filename)
         try:
+            await object_storage.ensure_bucket()
             await object_storage.upload_bytes(
                 object_key=object_key,
                 body=content,
@@ -40,8 +42,13 @@ class FileStorageAdapter:
             )
             return object_key
         except StorageNotConfiguredError:
-            return None
-
+            raise
+        except ObjectStorageError:
+            raise
+        except Exception as exc:
+            raise ObjectStorageError(
+                "Failed to upload document to object storage"
+            ) from exc
     async def delete_document(self, storage_path: str | None) -> None:
         if storage_path:
             await object_storage.delete_object(storage_path)

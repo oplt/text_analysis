@@ -1,9 +1,25 @@
-import { useEffect } from "react";
-import { Alert, Box, Button, Stack, Typography } from "@mui/material";
-import { ArrowBack as BackIcon, Science as LabIcon } from "@mui/icons-material";
+import { useEffect, useState } from "react";
+import {
+    Alert,
+    Box,
+    Button,
+    Drawer,
+    IconButton,
+    Stack,
+    Typography,
+    useMediaQuery,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import {
+    ArrowBack as BackIcon,
+    Close as CloseIcon,
+    Science as LabIcon,
+    Tune as ContextIcon,
+} from "@mui/icons-material";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getProject } from "../../../api/projects";
+import { PageHeader } from "../../../components/ui/PageHeader";
 import { PageShell } from "../../../components/ui/PageShell";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
@@ -34,10 +50,15 @@ function ResearchLayoutInner() {
     const { projectId = "" } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const theme = useTheme();
+    const isWide = useMediaQuery(theme.breakpoints.up("xl"));
+    const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
+    const showInlineContext = isWide;
     const ctx = useResearchContext();
     const activeRoute = routeFromPath(location.pathname, projectId);
     const activeStageId = stageIdFromPath(location.pathname, projectId);
     const { stages } = useResearchWorkflow(activeRoute);
+    const [contextOpen, setContextOpen] = useState(false);
 
     const projectQuery = useQuery({
         queryKey: queryKeys.projects.detail(projectId),
@@ -55,9 +76,30 @@ function ResearchLayoutInner() {
         navigate(`/research/${projectId}/${stage.route}`);
     }
 
+    const drawerOpen = contextOpen && !showInlineContext;
+
+    const contextPanel = (
+        <SectionCard
+            title="Workspace context"
+            description="Corpus, codebook, and unit selection remain visible while you work."
+            variant="subtle"
+            compact
+            sx={{ mt: 0 }}
+            action={
+                !showInlineContext ? (
+                    <IconButton aria-label="Close context" size="small" onClick={() => setContextOpen(false)}>
+                        <CloseIcon fontSize="small" />
+                    </IconButton>
+                ) : undefined
+            }
+        >
+            <ResearchContextBar />
+        </SectionCard>
+    );
+
     return (
-        <PageShell maxWidth="xl">
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+        <PageShell width="full" dense>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                 <Button
                     variant="outlined"
                     size="small"
@@ -69,45 +111,77 @@ function ResearchLayoutInner() {
                 <Button variant="text" size="small" onClick={() => navigate("/research")}>
                     Switch project
                 </Button>
+                {!showInlineContext ? (
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<ContextIcon />}
+                        onClick={() => setContextOpen(true)}
+                        sx={{ ml: { sm: "auto" } }}
+                    >
+                        Context
+                    </Button>
+                ) : null}
             </Stack>
 
-            <Stack direction="row" spacing={1.5} alignItems="center">
-                <LabIcon color="primary" />
-                <Box>
-                    <Typography variant="h4">Policy Text Lab</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        {projectQuery.data?.name ?? "Research workspace"} — corpus management,
-                        annotation, analysis, and exports.
-                    </Typography>
-                </Box>
-            </Stack>
+            <PageHeader
+                dense
+                icon={<LabIcon />}
+                title="Policy Text Lab"
+                description={`${projectQuery.data?.name ?? "Research workspace"} — corpus, annotation, analysis, and exports.`}
+            />
 
             <Box
                 sx={{
                     display: "grid",
                     gridTemplateColumns: {
                         xs: "minmax(0, 1fr)",
-                        lg: "minmax(210px, 0.75fr) minmax(0, 2.2fr) minmax(230px, 0.85fr)",
+                        lg: showInlineContext
+                            ? "minmax(180px, 200px) minmax(0, 1fr) minmax(240px, 280px)"
+                            : "minmax(180px, 200px) minmax(0, 1fr)",
+                        xl: "minmax(180px, 220px) minmax(0, 1fr) minmax(260px, 300px)",
                     },
-                    gap: 2,
+                    gap: { xs: 1.5, lg: 2 },
                     alignItems: "start",
-                    mt: 2,
                 }}
             >
-                <Box component="nav" aria-label="Research workflow" sx={{ position: { lg: "sticky" }, top: { lg: 16 } }}>
-                    <SectionCard sx={{ mt: 0 }}>
+                {isDesktop ? (
+                    <Box
+                        component="nav"
+                        aria-label="Research workflow"
+                        sx={{ position: "sticky", top: 16 }}
+                    >
+                        <SectionCard variant="subtle" compact sx={{ mt: 0 }}>
+                            <ResearchWorkflowNavigator
+                                stages={stages}
+                                activeStageId={
+                                    activeStageId && activeStageId !== "dashboard"
+                                        ? activeStageId
+                                        : false
+                                }
+                                onSelectStage={handleSelectStage}
+                                onOpenDashboard={() => navigate(`/research/${projectId}/dashboard`)}
+                                dashboardSelected={activeRoute === "dashboard"}
+                                orientation="vertical"
+                            />
+                        </SectionCard>
+                    </Box>
+                ) : (
+                    <SectionCard variant="flat" compact sx={{ mt: 0 }}>
                         <ResearchWorkflowNavigator
                             stages={stages}
                             activeStageId={
-                                activeStageId && activeStageId !== "dashboard" ? activeStageId : false
+                                activeStageId && activeStageId !== "dashboard"
+                                    ? activeStageId
+                                    : false
                             }
                             onSelectStage={handleSelectStage}
                             onOpenDashboard={() => navigate(`/research/${projectId}/dashboard`)}
                             dashboardSelected={activeRoute === "dashboard"}
-                            orientation="vertical"
+                            orientation="horizontal"
                         />
                     </SectionCard>
-                </Box>
+                )}
 
                 <Box component="main" sx={{ minWidth: 0 }}>
                     {ctx.corporaError ? (
@@ -123,23 +197,34 @@ function ResearchLayoutInner() {
                     </QueryBoundary>
                 </Box>
 
-                <Box component="aside" aria-label="Research context" sx={{ position: { lg: "sticky" }, top: { lg: 16 } }}>
-                    <SectionCard
-                        title="Workspace context"
-                        description="Corpus, codebook, and unit selection remain visible while you work."
-                        sx={{ mt: 0 }}
+                {showInlineContext ? (
+                    <Box
+                        component="aside"
+                        aria-label="Research context"
+                        sx={{ position: "sticky", top: 16 }}
                     >
-                        <ResearchContextBar />
-                    </SectionCard>
-                </Box>
+                        {contextPanel}
+                    </Box>
+                ) : null}
             </Box>
+
+            <Drawer
+                anchor="right"
+                open={drawerOpen}
+                onClose={() => setContextOpen(false)}
+                PaperProps={{ sx: { width: { xs: "100%", sm: 360 }, p: 2 } }}
+            >
+                {contextPanel}
+            </Drawer>
 
             <Box
                 component="footer"
-                sx={{ mt: 2, py: 1, borderTop: 1, borderColor: "divider" }}
+                sx={{ mt: 1, py: 1, borderTop: 1, borderColor: "divider" }}
             >
                 <Typography variant="caption" color="text.secondary">
-                    Corpus: {ctx.selectedCorpus?.name ?? "not selected"} · Unit: {ctx.unitType} · Codebook: {ctx.selectedCodebook?.name ?? "not selected"} · Research state is persisted in analysis runs.
+                    Corpus: {ctx.selectedCorpus?.name ?? "not selected"} · Unit: {ctx.unitType} ·
+                    Codebook: {ctx.selectedCodebook?.name ?? "not selected"} · Research state is
+                    persisted in analysis runs.
                 </Typography>
             </Box>
         </PageShell>

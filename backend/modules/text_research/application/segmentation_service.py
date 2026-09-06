@@ -13,7 +13,7 @@ from backend.modules.text_research.application.access import ResearchAccessMixin
 from backend.modules.text_research.application.corpus_service import CorpusService
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import AnalysisRun, TextUnit, dumps, loads
-from backend.modules.text_research.infrastructure.segmentation import segment_text
+from backend.modules.text_research.infrastructure.segmentation import hash_text, segment_text
 
 
 def _utcnow() -> datetime:
@@ -118,12 +118,12 @@ class SegmentationService(ResearchAccessMixin):
                     TextUnit(
                         corpus_document_id=document.id,
                         unit_type=unit_type,
-                        position=segment.position,
-                        page_number=segment.page_number,
-                        paragraph_number=segment.paragraph_number,
-                        sentence_number=segment.sentence_number,
-                        text=segment.text,
-                        text_hash=segment.text_hash,
+                        position=segment["position"],
+                        page_number=segment.get("page_number"),
+                        paragraph_number=segment.get("paragraph_number"),
+                        sentence_number=segment.get("sentence_number"),
+                        text=segment["text"],
+                        text_hash=segment.get("text_hash") or hash_text(segment["text"]),
                     )
                     for segment in segments
                 ]

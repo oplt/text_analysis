@@ -4,7 +4,7 @@ import json
 import logging
 from datetime import UTC, datetime
 
-from backend.core.storage import StorageNotConfiguredError
+from backend.core.storage import ObjectStorageError, StorageNotConfiguredError
 from backend.lib.project_access import ProjectAccessPort, SqlAlchemyProjectAccessPort
 from backend.lib.retrieval_cache import invalidate_retrieval_cache_for_document
 from backend.modules.rag.application.chunking_service import ChunkingService
@@ -70,7 +70,15 @@ class DocumentIngestionService:
             )
         except StorageNotConfiguredError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
-
+        except ObjectStorageError as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Object storage unavailable. Start MinIO "
+                    "(`docker compose -f infra/docker-compose.yml up -d minio`) "
+                    "and confirm STORAGE_* credentials match MINIO_ROOT_*."
+                ),
+            ) from exc
         document = await self.repo.create_document(
             user_id=user_id,
             filename=filename,

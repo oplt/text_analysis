@@ -1,0 +1,1137 @@
+You are a senior frontend architect, product designer, UX engineer, and Material UI specialist working directly on this repository.
+Your objective is to **systematically clean up and modernize the existing frontend UI without changing application functionality or rewriting the product**.
+
+The application already uses React, TypeScript, Material UI, MUI X, TanStack Query, React Router, Vitest, and Playwright. Preserve that stack.
+
+Do NOT introduce Tailwind, shadcn/ui, Bootstrap, Chakra, Ant Design, or another competing design system.
+
+Use the existing MUI design system much more consistently and turn the application into a restrained, minimalist, professional research/data-analysis application.
+
+The visual target should feel closer to a modern professional analytical product such as Linear, Notion, Vercel, modern GitHub, Stripe Dashboard, or a high-quality scientific SaaS application — but do not blindly imitate any of them.
+
+The final UI should be:
+
+* minimalist
+* calm
+* information-dense without feeling crowded
+* consistent
+* responsive
+* accessible
+* easy to scan
+* visually balanced
+* appropriate for researchers and technical users
+
+Do not make the UI decorative or flashy.
+
+---
+
+# 1. UNDERSTAND THE FRONTEND BEFORE MODIFYING IT
+
+First inspect the complete frontend.
+
+Pay particular attention to:
+
+`frontend/src/app/theme.ts`
+
+`frontend/src/app/designTokens.ts`
+
+`frontend/src/components/ui/PageShell.tsx`
+
+`frontend/src/components/ui/SectionCard.tsx`
+
+`frontend/src/components/ui/StatCard.tsx`
+
+`frontend/src/components/layout/AppLayout.tsx`
+
+`frontend/src/components/layout/SettingsTabs.tsx`
+
+and all files under:
+
+`frontend/src/pages/`
+
+`frontend/src/features/*/views/`
+
+`frontend/src/features/*/components/`
+
+Create an internal inventory of every major page and determine:
+
+1. its purpose
+2. its important user actions
+3. number of major sections
+4. approximate vertical length
+5. whether information is logically grouped
+6. whether the page needs tabs
+7. whether it has oversized or undersized containers
+8. whether cards have unequal or awkward heights
+9. whether whitespace is excessive or insufficient
+10. whether controls are scattered
+11. whether important information has appropriate visual priority
+12. whether its desktop layout collapses correctly on tablet/mobile
+
+Do not start by globally changing colors or border radii.
+
+First identify the structural problems.
+
+---
+
+# 2. PRIORITY PAGES
+
+Pay especially close attention to the large research views, including:
+
+`ClassificationView.tsx`
+
+`ReliabilityView.tsx`
+
+`AnalysisView.tsx`
+
+`TopicsView.tsx`
+
+`AnnotationView.tsx`
+
+`CodebookView.tsx`
+
+`ContextualView.tsx`
+
+`CorpusView.tsx`
+
+`ExplorerView.tsx`
+
+`PrepareView.tsx`
+
+`RunsView.tsx`
+
+`RobustnessView.tsx`
+
+`ExportsView.tsx`
+
+Also review:
+
+`DashboardPage.tsx`
+
+`ProjectsPage.tsx`
+
+`NotificationsPage.tsx`
+
+`AdminUsersPage.tsx`
+
+`AuthHomePage.tsx`
+
+`CalendarPage.tsx`
+
+AI Studio pages
+
+Profile/settings pages
+
+Platform/admin pages
+
+Do not assume that every large source file requires tabs. Judge the UI based on actual user tasks and information architecture.
+
+---
+
+# 3. REDUCE VERY LONG PAGES WITH TABS
+
+The application currently has several pages containing many conceptually separate workflows stacked vertically.
+
+Where content consists of distinct peer workflows, introduce page-level or section-level MUI `Tabs`.
+
+Tabs should reduce cognitive load and vertical scrolling.
+
+Do NOT put everything behind tabs automatically.
+
+Use tabs when:
+
+* a page contains multiple distinct workflows
+* users normally focus on only one workflow at a time
+* sections have significant vertical content
+* sections represent stages, modes, result categories, or related tools
+* moving content behind a tab does not hide information users need simultaneously
+
+Do NOT use tabs when:
+
+* users need to compare sections simultaneously
+* the content is naturally sequential
+* there are only two tiny sections
+* an Accordion, inline section, Drawer, or progressive disclosure pattern is more appropriate
+
+As a practical guideline, investigate pages that contain more than roughly 4–5 substantial sections or require several viewport heights of scrolling.
+
+---
+
+# 4. SPECIFIC TAB CANDIDATES
+
+Use these as hypotheses, then validate them against the actual code.
+
+## Classification
+
+`ClassificationView.tsx` is currently one of the strongest candidates for restructuring.
+
+Investigate grouping it approximately into:
+
+**Dataset**
+
+* dataset preview
+* annotation source
+* class distribution
+* freeze/select training snapshots
+
+**Train**
+
+* model configuration
+* preprocessing
+* algorithm parameters
+* training controls
+* training status
+
+**Evaluate**
+
+* metrics
+* confusion matrix
+* per-label metrics
+* evaluation charts
+
+**Models**
+
+* trained models
+* model selection
+* coefficients / feature importance
+
+**Active Learning**
+
+* predictions
+* uncertain cases
+* send to annotation
+* active-learning workflow
+
+Keep the high-level active-learning status/progress visible above the tabs if it provides useful global context.
+
+Do not duplicate state or API calls when splitting the UI.
+
+---
+
+# 5. RELIABILITY PAGE
+
+`ReliabilityView.tsx` currently mixes different jobs.
+
+Investigate a structure such as:
+
+**Agreement**
+
+* compute reliability
+* Cohen's kappa
+* Krippendorff's alpha
+* label comparison
+* reliability charts
+
+**Adjudication**
+
+* disagreements
+* source passage
+* coder decisions
+* codebook definition
+* final decision
+
+**History**
+
+* adjudication provenance
+* saved decisions
+
+If there are no results yet, ensure the empty state guides users clearly toward Annotation or Codebook.
+
+The adjudication workspace should receive more usable horizontal space than its supporting list.
+
+Use a responsive master-detail layout rather than forcing equal-width columns.
+
+---
+
+# 6. TOPIC MODELING PAGE
+
+`TopicsView.tsx` also contains many conceptually different result types.
+
+Investigate separating:
+
+**Setup**
+
+* model configuration
+* metadata filters
+* train action
+
+**Topics**
+
+* selected topic
+* top terms
+* topic table
+* human-readable topic names
+
+**Distribution**
+
+* dominant topic counts
+* topic prevalence
+
+**Metadata**
+
+* topic prevalence by organization/year/region/etc.
+* heatmaps
+* trend charts
+
+**Documents**
+
+* representative text units/documents
+
+Keep global model metrics in a compact summary that remains visible where useful.
+
+Do not show every visualization in one extremely long vertical column.
+
+---
+
+# 7. ANALYSIS PAGE
+
+`AnalysisView.tsx` already uses tabs for different analysis methods.
+
+Preserve this architecture.
+
+Improve it rather than replacing it.
+
+Review:
+
+* tab styling
+* horizontal overflow behavior
+* active-tab visibility
+* spacing around tabs
+* configuration controls
+* relationship between configuration and output
+* mobile responsiveness
+* repeated controls across tabs
+
+Consider making the analysis navigation visually quieter and more compact.
+
+Do not nest another unnecessary tab layer inside it.
+
+---
+
+# 8. OTHER LARGE PAGES
+
+Review Annotation, Codebook, Corpus, Contextual Analysis, Explorer, Runs, Prepare, Robustness and Exports.
+
+For each one decide between:
+
+1. simple page sections
+2. tabs
+3. segmented controls
+4. accordion/progressive disclosure
+5. master-detail layout
+6. split-pane layout
+7. drawers/dialogs for secondary tasks
+
+Choose based on user workflow rather than component fashion.
+
+---
+
+# 9. BUILD A CONSISTENT PAGE ANATOMY
+
+Major application screens should follow a predictable hierarchy:
+
+Page header
+
+→ optional concise description/context
+
+→ primary actions
+
+→ optional tabs/navigation
+
+→ key metrics or status
+
+→ primary work area
+
+→ secondary/supporting information
+
+Avoid pages where every block competes equally for attention.
+
+Standardize page headers rather than having every page invent its own spacing.
+
+Consider creating or extending shared primitives such as:
+
+`PageHeader`
+
+`PageTabs`
+
+`ContentSection`
+
+`Toolbar`
+
+`ResponsiveGrid`
+
+only if they remove genuine duplication.
+
+Do not create abstractions for one-off visual details.
+
+---
+
+# 10. BALANCE WIDTHS
+
+Audit every Grid, Stack, flexbox and CSS grid.
+
+Eliminate awkward layouts such as:
+
+50/50 columns where one side contains very little information
+
+tiny controls stretched across an entire card
+
+charts constrained into narrow columns
+
+tables placed in unnecessarily small containers
+
+sidebars occupying too much width
+
+large empty right or left areas
+
+cards whose content naturally needs different widths but receives equal fractions
+
+Use responsive ratios based on content.
+
+Examples:
+
+primary / secondary:
+
+`minmax(0, 1.6fr) minmax(280px, 0.8fr)`
+
+workbench / inspector:
+
+`minmax(0, 2fr) minmax(300px, 1fr)`
+
+master / detail:
+
+`minmax(240px, 0.7fr) minmax(0, 2fr)`
+
+Do not mechanically use these exact values.
+
+Choose ratios according to the actual content.
+
+Use `minmax(0, ...)` to prevent overflow where appropriate.
+
+---
+
+# 11. BALANCE HEIGHTS
+
+Do NOT give cards arbitrary fixed heights merely to make a grid symmetrical.
+
+Instead:
+
+* group cards with similar semantic weight
+* use CSS Grid where equal-height rows genuinely improve scanning
+* allow dense content to determine natural height
+* keep empty/simple cards compact
+* set sensible max-heights on scrollable lists
+* give data tables and long result lists bounded work areas where appropriate
+* avoid giant blank card bottoms
+* avoid a short card sitting beside an extremely tall unrelated card when another composition would be better
+
+For dashboard-style card rows, use consistent stretch behavior where cards belong to the same group.
+
+For mixed-content pages, optimize visual balance rather than mathematical equality.
+
+---
+
+# 12. REVISIT THE RESEARCH THREE-COLUMN LAYOUT
+
+Inspect:
+
+`ResearchLayout.tsx`
+
+The current desktop workspace contains:
+
+workflow navigation | main view | context sidebar
+
+This is useful, but on some pages the center workspace can become too narrow for tables, configuration forms and charts.
+
+Improve responsiveness intelligently.
+
+Consider:
+
+* preserving all three columns on genuinely wide displays
+* reducing side-column width
+* changing column ratios
+* collapsing the context panel into a Drawer/Popover at intermediate widths
+* allowing the workflow navigator to become compact
+* switching to a single main content column earlier
+* ensuring tables and charts receive sufficient width
+
+Do not remove useful persistent context without providing an equivalent accessible interaction.
+
+Do not allow the workspace sidebars to consume more space than the actual research task.
+
+---
+
+# 13. DASHBOARD BALANCE
+
+Review `DashboardPage.tsx`.
+
+The dashboard should communicate hierarchy, not simply place cards wherever they fit.
+
+Inspect the relationship between:
+
+* KPI/stat cards
+* recent activity
+* account health
+* calendar
+* project snapshot
+
+Determine which information is primary.
+
+Avoid a very tall secondary column next to a relatively short primary column.
+
+Possible solutions include:
+
+* reordering sections
+* using a more balanced grid
+* moving the calendar into a wider row
+* placing account/project summaries side by side
+* limiting activity height with intentional scrolling when appropriate
+* reducing nested cards
+
+Do not force all dashboard widgets to equal height.
+
+The goal is compositional balance.
+
+---
+
+# 14. MINIMALIST VISUAL LANGUAGE
+
+Refine the existing theme rather than redesigning the brand from scratch.
+
+Apply a minimalist visual system:
+
+* restrained use of surfaces
+* fewer unnecessary containers
+* fewer nested cards
+* minimal shadows
+* subtle borders/dividers only when they communicate structure
+* one dominant accent color
+* neutral backgrounds
+* clear typography hierarchy
+* generous but controlled whitespace
+* compact analytical controls
+* restrained icon usage
+* consistent corner radii
+* consistent control heights
+* consistent focus states
+* subtle motion only where functional
+
+Do not turn every section into a card.
+
+Sometimes a simple heading + divider + content is better.
+
+Prefer visual hierarchy produced by:
+
+spacing
+
+typography
+
+alignment
+
+grouping
+
+background contrast
+
+rather than borders around everything.
+
+---
+
+# 15. REDUCE "CARD INSIDE CARD" DESIGN
+
+Audit uses of `SectionCard`, `Paper`, `Card`, and boxed inner surfaces.
+
+Avoid structures such as:
+
+Card
+→ Card
+→ Box with another background
+→ bordered Box
+
+unless there is a real semantic hierarchy.
+
+A professional analytical interface usually benefits from fewer surface layers.
+
+Use one primary surface and separate its internal groups with spacing, headings, dividers, or subtle background changes.
+
+---
+
+# 16. IMPROVE `SectionCard`
+
+Review whether `SectionCard.tsx` needs small improvements to support the new system.
+
+Potentially support a restrained set of variants such as:
+
+default
+
+subtle
+
+outlined
+
+flat
+
+Do this only if it eliminates repetitive custom styling.
+
+Avoid adding dozens of props.
+
+Its header should consistently support:
+
+title
+
+description
+
+action
+
+optional compact mode
+
+Ensure long descriptions and actions wrap gracefully on smaller screens.
+
+---
+
+# 17. IMPROVE PAGE WIDTH STRATEGY
+
+`PageShell` currently defaults to a broad XL container.
+
+Do not assume every page needs the same maximum width.
+
+Use content-aware widths.
+
+Examples:
+
+forms/settings:
+narrower readable content width
+
+dashboards:
+wide
+
+data tables/charts:
+wide or full available workspace
+
+authentication:
+compact
+
+text-heavy information:
+readable line length
+
+Allow pages to explicitly select an appropriate width while maintaining consistent outer gutters.
+
+Avoid giant forms stretching across a 1400px screen.
+
+Avoid complex data tables squeezed into unnecessarily narrow reading columns.
+
+---
+
+# 18. FORMS
+
+Group related form controls into logical sections.
+
+Avoid a long horizontal row of unrelated inputs.
+
+Use responsive CSS Grid for forms when it gives cleaner alignment.
+
+For example:
+
+desktop:
+2–4 logical columns depending on control type
+
+tablet:
+2 columns
+
+mobile:
+1 column
+
+Do not make a 120px numeric input occupy the same width as a descriptive text field.
+
+Keep labels concise.
+
+Place advanced or infrequently changed parameters behind an "Advanced settings" progressive-disclosure area where appropriate.
+
+Classification model hyperparameters are a particularly good candidate.
+
+Primary actions should be visually obvious without being oversized.
+
+---
+
+# 19. TABLES
+
+Review every table.
+
+For large structured datasets, use the existing MUI ecosystem appropriately.
+
+Keep standard `Table` when the data is simple.
+
+Consider MUI X DataGrid only when features such as the following actually add value:
+
+* sorting
+* pagination
+* filtering
+* column management
+* larger result sets
+
+Do not migrate every small table to DataGrid.
+
+Tables should:
+
+* fit their available space
+* scroll intentionally on small screens
+* have sensible column priorities
+* truncate/expand long text intelligently
+* avoid tiny unreadable columns
+* keep actions predictable
+
+---
+
+# 20. CHARTS
+
+The application already uses MUI X Charts.
+
+Keep chart design restrained.
+
+Standardize:
+
+* chart heights
+* title placement
+* axis formatting
+* tooltip behavior
+* empty states
+* loading states
+* legend positioning
+* margins
+
+Do not make every chart the same height.
+
+A compact KPI chart should remain compact.
+
+A detailed analytical chart should have sufficient room.
+
+Avoid decorative visualizations.
+
+---
+
+# 21. TAB DESIGN
+
+Create a shared visual pattern for page-level tabs where useful.
+
+Tabs should:
+
+* be keyboard accessible
+* use MUI `Tabs` / `Tab`
+* support horizontal scrolling on narrow screens
+* visibly indicate the active state
+* avoid oversized pill styling
+* avoid excessive borders
+* have compact but accessible hit targets
+* preserve relevant local state when users switch tabs
+
+For major workflow tabs, strongly consider making the active tab URL-addressable using query parameters or nested routes where this improves:
+
+* refresh behavior
+* browser back/forward
+* deep linking
+* bookmarking
+
+Example:
+
+`?tab=evaluation`
+
+Do not unnecessarily change existing routes where local tab state is sufficient.
+
+---
+
+# 22. RESPONSIVE DESIGN
+
+Explicitly verify layouts at approximately:
+
+390px mobile
+
+768px tablet
+
+1024px compact laptop
+
+1280px laptop
+
+1440px desktop
+
+1920px wide desktop
+
+At each width inspect:
+
+* navigation
+* tabs
+* forms
+* cards
+* tables
+* charts
+* sidebars
+* dialogs
+* action toolbars
+* whitespace
+
+Avoid simply stacking everything vertically at the first breakpoint.
+
+Use responsive re-composition.
+
+A mobile interface should still preserve information hierarchy.
+
+---
+
+# 23. MODERN CSS/MUI LAYOUT TOOLS
+
+Use current, stable capabilities supported by the existing project and browser target.
+
+Prefer:
+
+* CSS Grid
+* flexbox
+* `minmax()`
+* `clamp()` where appropriate
+* responsive MUI `sx`
+* MUI theme spacing
+* MUI breakpoints
+* `Stack`
+* `Box`
+* current MUI Grid APIs where appropriate
+
+Consider container-aware behavior where it provides a genuine benefit and is compatible with the project's supported browsers.
+
+Avoid large amounts of custom CSS.
+
+Avoid magic pixel values scattered throughout components.
+
+Move recurring design values into theme/design tokens.
+
+---
+
+# 24. TYPOGRAPHY
+
+Make the hierarchy obvious but restrained.
+
+A typical screen should not need many giant headings.
+
+Use:
+
+page title
+→ section title
+→ subsection title
+→ body
+→ supporting metadata
+
+Keep analytical UI typography relatively compact.
+
+Do not make card headings too large.
+
+Do not use bold text everywhere.
+
+Use muted secondary text only for genuinely secondary information.
+
+Maintain sufficient contrast.
+
+---
+
+# 25. BUTTON HIERARCHY
+
+Reduce excessive button competition.
+
+Within a page or section:
+
+one clear primary action where possible
+
+secondary actions → outlined/text
+
+tertiary actions → text/icon/menu
+
+Avoid multiple adjacent contained buttons unless both genuinely have equal importance.
+
+Move rare actions into menus when appropriate.
+
+Do not hide frequently used operations solely for visual minimalism.
+
+---
+
+# 26. EMPTY / LOADING / ERROR STATES
+
+Standardize existing states.
+
+Keep:
+
+* useful EmptyState
+* QueryBoundary
+* skeleton/progress behavior
+* retry affordances
+* concise errors
+
+Avoid giant empty-state blocks inside already small cards.
+
+Scale empty states according to context.
+
+A whole empty page can use a larger state.
+
+An empty subsection should remain compact.
+
+---
+
+# 27. ACCESSIBILITY
+
+Maintain or improve WCAG 2.2 AA-quality interaction.
+
+Verify:
+
+* keyboard navigation
+* tabs
+* focus-visible states
+* form labels
+* dialog focus
+* semantic headings
+* icon-button labels
+* contrast
+* table semantics
+* responsive zoom
+* reduced motion where appropriate
+
+Do not sacrifice accessibility for minimalist aesthetics.
+
+---
+
+# 28. PRESERVE FUNCTIONALITY
+
+This task is primarily frontend architecture and presentation.
+
+Do NOT:
+
+* modify backend behavior unnecessarily
+* change API contracts
+* remove analytical functionality
+* remove useful fields
+* remove charts simply because a page is crowded
+* alter scientific calculations
+* alter query semantics
+* change authentication behavior
+* rewrite state management unnecessarily
+
+Instead reorganize and present existing functionality more effectively.
+
+---
+
+# 29. REFACTOR GIANT VIEWS WHERE NEEDED
+
+Several view files are very large.
+
+When introducing tabs or major sections, extract coherent UI sections into components.
+
+For example, Classification could potentially become conceptually similar to:
+
+`ClassificationView.tsx`
+
+`ClassificationDatasetTab.tsx`
+
+`ClassificationTrainTab.tsx`
+
+`ClassificationEvaluationTab.tsx`
+
+`ClassificationModelsTab.tsx`
+
+`ClassificationActiveLearningTab.tsx`
+
+This is only an example.
+
+Do not blindly create these exact files.
+
+Extract components where doing so improves:
+
+* readability
+* maintainability
+* testability
+* rendering boundaries
+
+Keep API/query ownership at the appropriate level.
+
+Avoid prop-drilling huge state objects if the current parent view naturally owns the workflow.
+
+---
+
+# 30. VISUAL QA WITH PLAYWRIGHT
+
+The repository already has Playwright.
+
+Use it where practical to inspect major pages at multiple viewport sizes.
+
+Capture representative screenshots before and after changes.
+
+Visually inspect:
+
+* overflow
+* unexpected blank areas
+* mismatched card heights
+* awkward grids
+* tab overflow
+* clipped tables
+* oversized inputs
+* large empty cards
+* excessive vertical scrolling
+* broken mobile composition
+
+If authenticated routes require fixtures or setup, reuse the project's existing test infrastructure.
+
+Do not bypass authentication insecurely merely to make screenshots easier.
+
+---
+
+# 31. IMPLEMENT IN INCREMENTS
+
+Proceed approximately in this order:
+
+Phase 1 — audit/layout system
+
+Understand the pages and establish shared spacing/layout principles.
+
+Phase 2 — shared primitives
+
+Improve PageShell, SectionCard, tab treatment, page headers, and any genuinely reusable layout helpers.
+
+Phase 3 — worst long pages
+
+Refactor Classification, Reliability, Topics and other confirmed long pages.
+
+Phase 4 — research workspace
+
+Tune ResearchLayout/sidebar/main-content proportions.
+
+Phase 5 — dashboards and ordinary pages
+
+Balance Dashboard, Projects, Notifications, Admin, Profile, etc.
+
+Phase 6 — responsive polish
+
+Fix tablet/mobile/wide-screen issues.
+
+Phase 7 — verification
+
+Tests, lint, build and visual QA.
+
+Do not perform a giant rewrite in one uncontrolled pass.
+
+---
+
+# 32. TESTING
+
+After modifications run:
+
+`npm run lint`
+
+`npm run test`
+
+`npm run build`
+
+and relevant:
+
+`npm run test:e2e`
+
+Add or update tests for important tab/navigation interactions when necessary.
+
+Verify that moving content between tabs does not accidentally:
+
+* retrigger expensive requests unnecessarily
+* lose unsaved form state
+* reset selections
+* duplicate requests
+* change mutation behavior
+
+---
+
+# 33. DEFINITION OF DONE
+
+The redesign is successful when:
+
+1. Very long pages are divided into understandable task-oriented views where appropriate.
+2. Users no longer need to scroll through unrelated workflows to reach the operation they want.
+3. Cards/divs have intentional proportions instead of arbitrary equal sizing.
+4. Dashboard compositions feel visually balanced.
+5. Forms have coherent widths.
+6. Tables and charts have enough horizontal space.
+7. The research workspace remains usable at laptop widths.
+8. Mobile and tablet layouts are intentionally recomposed.
+9. Nested-card visual clutter is substantially reduced.
+10. Typography and spacing establish hierarchy without decoration.
+11. MUI styling is consistent.
+12. Existing functionality remains available.
+13. Dark and light themes remain coherent.
+14. Accessibility is maintained or improved.
+15. Tests/lint/build pass.
+16. The interface feels like one coherent product rather than individually designed pages.
+
+---
+
+# IMPORTANT DESIGN PRINCIPLE
+
+Do not interpret "minimalist" as "remove information."
+
+This is an analytical/research application.
+
+The objective is:
+
+**reduce visual noise while preserving information density.**
+
+Achieve minimalism through:
+
+better information architecture
+
+progressive disclosure
+
+tabs where justified
+
+clear hierarchy
+
+better alignment
+
+balanced proportions
+
+consistent spacing
+
+fewer unnecessary surfaces
+
+responsive composition
+
+not by deleting valuable functionality.
+
+---
+
+# FINAL DELIVERABLE
+
+Implement the improvements directly.
+
+At the end provide a concise report containing:
+
+### Pages redesigned
+
+State which pages changed and why.
+
+### Tabs introduced
+
+Explain which pages received tabs and the information architecture used.
+
+### Layout improvements
+
+Explain major width/height/grid changes.
+
+### Shared UI improvements
+
+List PageShell, SectionCard, theme, tabs, or other shared primitives modified.
+
+### Responsive improvements
+
+Summarize desktop/tablet/mobile changes.
+
+### Files changed
+
+Group them by shared UI and feature/page.
+
+### Verification
+
+Report lint, tests, build, Playwright/e2e results.
+
+### Remaining opportunities
+
+Only list meaningful UI issues that should be handled separately.
+
+Do not report cosmetic changes as major accomplishments.
+
+The final goal is to make the existing interface feel **cleaner, calmer, shorter, more intentional and professionally designed while retaining the full power of the application.**

@@ -6,8 +6,6 @@ import {
     FormControlLabel,
     MenuItem,
     Stack,
-    Tab,
-    Tabs,
     Table,
     TableBody,
     TableCell,
@@ -35,6 +33,8 @@ import {
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { PageTabs } from "../../../components/ui/PageTabs";
+import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { queryKeys } from "../../../config/queryKeys";
 import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
@@ -61,6 +61,17 @@ type AnalysisTab =
     | "keyness"
     | "dictionaries"
     | "cooccurrence";
+
+const ANALYSIS_TAB_VALUES = [
+    "overview",
+    "frequencies",
+    "ngrams",
+    "kwic",
+    "dfm",
+    "keyness",
+    "dictionaries",
+    "cooccurrence",
+] as const satisfies readonly AnalysisTab[];
 
 type DfmWeighting = "count" | "binary" | "tfidf";
 type KeynessFilterField = "organization" | "cultural_sphere";
@@ -674,7 +685,7 @@ export default function AnalysisView() {
     const ctx = useResearchContext();
     const { showToast } = useSnackbar();
 
-    const [tab, setTab] = useState<AnalysisTab>("overview");
+    const [tab, setTab] = useTabQueryParam(ANALYSIS_TAB_VALUES, "overview");
     const [runId, setRunId] = useState<string | null>(null);
 
     const [profileId, setProfileId] = useState("");
@@ -864,17 +875,12 @@ export default function AnalysisView() {
                 title="Quantitative analysis"
                 description="Expose corpus statistics, frequencies, n-grams, KWIC, DFM, keyness, dictionaries, and co-occurrence with charts and inspectable raw results."
             >
-                <Tabs
+                <PageTabs
                     value={tab}
-                    onChange={(_, value: AnalysisTab) => setTab(value)}
-                    variant="scrollable"
-                    scrollButtons="auto"
-                    sx={{ mb: 2 }}
-                >
-                    {TABS.map((entry) => (
-                        <Tab key={entry.value} label={entry.label} value={entry.value} />
-                    ))}
-                </Tabs>
+                    onChange={setTab}
+                    tabs={TABS}
+                    ariaLabel="Analysis methods"
+                />
 
                 <Stack spacing={2}>
                     <MetadataFilterBar corpusId={ctx.selectedCorpusId} value={metadataFilters} onChange={setMetadataFilters} />

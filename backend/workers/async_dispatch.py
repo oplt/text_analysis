@@ -18,8 +18,23 @@ T = TypeVar("T")
 
 
 def run_async_in_sync_context(coro: Coroutine[Any, Any, T]) -> T:
-    """Run a coroutine from a sync worker entrypoint (Celery task thread)."""
-    return asyncio.run(coro)
+    """Run a coroutine from a sync worker entrypoint (Celery task / eager thread).
+
+    Uses an isolated DB engine for the temporary event loop so asyncpg connections
+    are never shared with the FastAPI loop (CELERY_TASK_ALWAYS_EAGER=true).
+    """
+
+    async def _runner() -> T:
+        from backend.db.session import install_worker_engine, uninstall_worker_engine
+
+        worker_engine, token = install_worker_engine()
+        try:
+            return await coro
+        finally:
+            uninstall_worker_engine(token)
+            await worker_engine.dispose()
+
+    return asyncio.run(_runner())
 
 
 def dispatch_background_sync_job(

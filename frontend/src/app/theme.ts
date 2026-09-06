@@ -398,6 +398,37 @@ function buildTheme(mode: PaletteMode) {
                     },
                 },
             },
+            MuiTabs: {
+                styleOverrides: {
+                    root: {
+                        minHeight: 40,
+                    },
+                    indicator: {
+                        height: 2,
+                        borderRadius: 1,
+                    },
+                    scrollButtons: {
+                        "&.Mui-disabled": {
+                            opacity: 0.3,
+                        },
+                    },
+                },
+            },
+            MuiTab: {
+                styleOverrides: {
+                    root: {
+                        minHeight: 40,
+                        padding: "8px 12px",
+                        fontSize: "0.8125rem",
+                        fontWeight: 500,
+                        textTransform: "none",
+                        color: theme.palette.text.secondary,
+                        "&.Mui-selected": {
+                            color: theme.palette.text.primary,
+                        },
+                    },
+                },
+            },
             MuiTableCell: {
                 styleOverrides: {
                     head: {

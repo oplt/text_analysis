@@ -19,6 +19,8 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
+import { PageTabs } from "../../../components/ui/PageTabs";
+import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import {
     ModelTraining as ModelIcon,
     PlayArrow as TrainIcon,
@@ -75,6 +77,17 @@ const ACTIVE_LEARNING_STEPS = [
     "Freeze dataset v2",
     "Retrain",
 ] as const;
+
+const CLASSIFICATION_TABS = ["dataset", "train", "evaluate", "models", "active"] as const;
+type ClassificationTab = (typeof CLASSIFICATION_TABS)[number];
+
+const CLASSIFICATION_TAB_ITEMS: Array<{ value: ClassificationTab; label: string }> = [
+    { value: "dataset", label: "Dataset" },
+    { value: "train", label: "Train" },
+    { value: "evaluate", label: "Evaluate" },
+    { value: "models", label: "Models" },
+    { value: "active", label: "Active learning" },
+];
 
 const ANNOTATION_SOURCES: Array<{ value: AnnotationSource; label: string }> = [
     { value: "adjudicated_only", label: "Adjudicated only" },
@@ -256,6 +269,7 @@ export default function ClassificationView() {
     const [coefficientLabel, setCoefficientLabel] = useState("");
     const [confusionNormalized, setConfusionNormalized] = useState(false);
     const [confusionLabel, setConfusionLabel] = useState("");
+    const [tab, setTab] = useTabQueryParam(CLASSIFICATION_TABS, "dataset");
 
     const labelIds = ctx.labels.map((l) => l.id);
     const labelNameById = useMemo(
@@ -549,6 +563,7 @@ export default function ClassificationView() {
             <SectionCard
                 title="Active learning loop"
                 description="Train a model, score unannotated units, review uncertain cases, send them for human coding, then freeze and retrain."
+                compact
             >
                 <Stepper activeStep={workflowStep} alternativeLabel sx={{ mb: 2 }}>
                     {ACTIVE_LEARNING_STEPS.map((label) => (
@@ -572,6 +587,15 @@ export default function ClassificationView() {
                 </Stack>
             </SectionCard>
 
+            <PageTabs
+                value={tab}
+                onChange={setTab}
+                tabs={CLASSIFICATION_TAB_ITEMS}
+                ariaLabel="Classification workflow"
+            />
+
+            {tab === "dataset" ? (
+            <>
             <SectionCard
                 title="Dataset preview"
                 description="Inspect labeled units before freezing a training snapshot."
@@ -827,7 +851,10 @@ export default function ClassificationView() {
                     )}
                 </Stack>
             </SectionCard>
+            </>
+            ) : null}
 
+            {tab === "train" ? (
             <SectionCard
                 title="Model configuration"
                 description="Configure a linear classifier. Train/test splitting is grouped by source document to prevent leakage."
@@ -974,7 +1001,9 @@ export default function ClassificationView() {
                     ) : null}
                 </Stack>
             </SectionCard>
+            ) : null}
 
+            {tab === "evaluate" ? (
             <SectionCard
                 title="Evaluation"
                 description="Metrics from the latest training run or the selected model. Splits are document-grouped."
@@ -1088,7 +1117,10 @@ export default function ClassificationView() {
                     </Typography>
                 )}
             </SectionCard>
+            ) : null}
 
+            {tab === "models" ? (
+            <>
             <SectionCard title="Trained models" description="Classifiers saved for this project/corpus.">
                 <QueryBoundary
                     isLoading={classifiersQuery.isLoading}
@@ -1217,7 +1249,10 @@ export default function ClassificationView() {
                     </QueryBoundary>
                 )}
             </SectionCard>
+            </>
+            ) : null}
 
+            {tab === "active" ? (
             <SectionCard
                 title="Apply model & uncertain cases"
                 description="Predictions stay separate from human coding. Send difficult cases to annotation deliberately."
@@ -1383,7 +1418,7 @@ export default function ClassificationView() {
                                             setSnapshotName(
                                                 `Training snapshot v${(snapshotsQuery.data?.length ?? 0) + 2}`
                                             );
-                                            window.scrollTo({ top: 0, behavior: "smooth" });
+                                            setTab("dataset");
                                         }}
                                     >
                                         After annotating: freeze dataset v2 → retrain
@@ -1394,6 +1429,7 @@ export default function ClassificationView() {
                     </Stack>
                 )}
             </SectionCard>
+            ) : null}
         </Stack>
     );
 }

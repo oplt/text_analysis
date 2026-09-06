@@ -7,7 +7,7 @@ type ColorModeContextValue = {
 };
 
 export const ColorModeContext = createContext<ColorModeContextValue>({
-    colorMode: "system",
+    colorMode: "light",
     setColorMode: () => undefined,
 });
 

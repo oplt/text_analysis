@@ -100,7 +100,7 @@ class ObjectStorage:
         try:
             await asyncio.to_thread(_upload)
         except Exception as exc:
-            raise ObjectStorageError("Failed to upload avatar to object storage") from exc
+            raise ObjectStorageError("Failed to upload object to storage") from exc
 
         return self.public_url_for(object_key)
 

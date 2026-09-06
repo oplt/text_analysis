@@ -150,7 +150,32 @@ class AnnotationService(ResearchAccessMixin):
             for unit in await self.repo.list_text_units_by_ids([t.text_unit_id for t in tasks])
         }
         return [
-            {"task": task, "text_unit": units.get(task.text_unit_id)}
+            {
+                "task": {
+                    "id": task.id,
+                    "text_unit_id": task.text_unit_id,
+                    "annotator_id": task.annotator_id,
+                    "status": task.status,
+                    "assigned_at": task.assigned_at,
+                    "completed_at": task.completed_at,
+                },
+                "text_unit": (
+                    {
+                        "id": unit.id,
+                        "corpus_document_id": unit.corpus_document_id,
+                        "unit_type": unit.unit_type,
+                        "position": unit.position,
+                        "page_number": unit.page_number,
+                        "paragraph_number": unit.paragraph_number,
+                        "sentence_number": unit.sentence_number,
+                        "text": unit.text,
+                        "text_hash": unit.text_hash,
+                        "created_at": unit.created_at,
+                    }
+                    if (unit := units.get(task.text_unit_id)) is not None
+                    else None
+                ),
+            }
             for task in tasks
             if task.text_unit_id in units
         ], total

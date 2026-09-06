@@ -10,7 +10,7 @@ import { SnackbarProvider } from "./SnackbarProvider";
 import { ColorModeContext } from "./colorModeContext";
 
 export function AppProviders({ children }: PropsWithChildren) {
-    const [colorMode, setColorMode] = useState<ColorMode>("system");
+    const [colorMode, setColorMode] = useState<ColorMode>("light");
     const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
 
     const theme = useMemo(() => {

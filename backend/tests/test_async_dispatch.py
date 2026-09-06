@@ -24,6 +24,19 @@ def test_run_async_in_sync_context_executes_coroutine() -> None:
     assert seen == [1]
 
 
+def test_run_async_in_sync_context_installs_isolated_sessionmaker() -> None:
+    from backend.db import session as db_session
+
+    observed: list[bool] = []
+
+    async def _work() -> None:
+        observed.append(db_session._sessionmaker_override.get() is not None)
+
+    async_dispatch.run_async_in_sync_context(_work())
+    assert observed == [True]
+    assert db_session._sessionmaker_override.get() is None
+
+
 @patch("backend.workers.async_dispatch.threading.Thread")
 @patch("backend.workers.async_dispatch.settings.CELERY_TASK_ALWAYS_EAGER", True)
 def test_dispatch_background_sync_job_uses_daemon_thread_when_eager(

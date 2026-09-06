@@ -32,7 +32,7 @@ services:
       - "127.0.0.1:8025:8025"
 
   minio:
-    image: minio/minio:RELEASE.2026-01-03T04-44-24Z
+    image: minio/minio:latest
     container_name: app_minio
     command: server /data --console-address ":9001"
     environment:
@@ -43,7 +43,6 @@ services:
       - "127.0.0.1:9001:9001"
     volumes:
       - minio_data:/data
-
 volumes:
   postgres_data:
   minio_data:

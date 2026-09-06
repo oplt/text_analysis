@@ -41,6 +41,8 @@ import {
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { PageTabs } from "../../../components/ui/PageTabs";
+import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { MatrixHeatmap, MetricCards, ReliabilityComparisonChart, ResultsInspector } from "../components/ResearchCharts";
@@ -263,6 +265,10 @@ export default function ReliabilityView() {
     const [finalValue, setFinalValue] = useState<LabelDecision | "">("");
     const [adjudicationComment, setAdjudicationComment] = useState("");
     const [selectedReliabilityLabel, setSelectedReliabilityLabel] = useState<string | null>(null);
+    const [tab, setTab] = useTabQueryParam(
+        ["agreement", "adjudication", "history"] as const,
+        "agreement"
+    );
 
     const reliabilityReady =
         Boolean(ctx.selectedCorpusId) &&
@@ -437,6 +443,19 @@ export default function ReliabilityView() {
 
     return (
         <Stack spacing={2}>
+            <PageTabs
+                value={tab}
+                onChange={setTab}
+                tabs={[
+                    { value: "agreement", label: "Agreement" },
+                    { value: "adjudication", label: "Adjudication" },
+                    { value: "history", label: "History", disabled: !ctx.selectedCorpusId },
+                ]}
+                ariaLabel="Reliability workflow"
+            />
+
+            {tab === "agreement" ? (
+            <>
             <SectionCard
                 title="Inter-annotator reliability"
                 description="Compute agreement metrics for the selected codebook labels."
@@ -567,7 +586,10 @@ export default function ReliabilityView() {
                     </QueryBoundary>
                 </SectionCard>
             ) : null}
+            </>
+            ) : null}
 
+            {tab === "adjudication" ? (
             <SectionCard
                 title="Disagreement adjudication"
                 description="Resolve coder disagreements into a gold label without changing original annotations."
@@ -630,7 +652,10 @@ export default function ReliabilityView() {
                                 sx={{
                                     display: "grid",
                                     gap: 2,
-                                    gridTemplateColumns: { xs: "1fr", md: "280px 1fr" },
+                                    gridTemplateColumns: {
+                                        xs: "1fr",
+                                        md: "minmax(220px, 0.7fr) minmax(0, 2fr)",
+                                    },
                                 }}
                             >
                                 <List dense sx={{ maxHeight: 520, overflow: "auto" }}>
@@ -854,8 +879,9 @@ export default function ReliabilityView() {
                     </QueryBoundary>
                 )}
             </SectionCard>
+            ) : null}
 
-            {ctx.selectedCorpusId ? (
+            {tab === "history" && ctx.selectedCorpusId ? (
                 <SectionCard
                     title="Adjudication provenance"
                     description="Gold decisions recorded for this corpus. Original coder judgments are preserved."

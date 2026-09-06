@@ -18,6 +18,7 @@ import { listProjects } from "../api/projects";
 import { queryKeys } from "../config/queryKeys";
 import { DashboardCalendar } from "../components/dashboard/DashboardCalendar";
 import { NotificationListItem } from "../components/notifications/NotificationListItem";
+import { PageHeader } from "../components/ui/PageHeader";
 import { PageShell } from "../components/ui/PageShell";
 import { QueryBoundary } from "../components/ui/QueryBoundary";
 import { SectionCard } from "../components/ui/SectionCard";
@@ -74,15 +75,25 @@ export default function DashboardPage() {
     ];
 
     return (
-        <PageShell maxWidth="xl">
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mb: 2 }}>
-                <Button variant="contained" endIcon={<ArrowForwardIcon />} onClick={() => navigate("/projects")}>
-                    Open {coreDomainPlural}
-                </Button>
-                <Button variant="outlined" onClick={() => navigate("/notifications")}>
-                    View inbox
-                </Button>
-            </Stack>
+        <PageShell width="wide">
+            <PageHeader
+                title="Dashboard"
+                description="Workspace health, recent activity, and quick entry points."
+                actions={
+                    <>
+                        <Button
+                            variant="contained"
+                            endIcon={<ArrowForwardIcon />}
+                            onClick={() => navigate("/projects")}
+                        >
+                            Open {coreDomainPlural}
+                        </Button>
+                        <Button variant="outlined" onClick={() => navigate("/notifications")}>
+                            View inbox
+                        </Button>
+                    </>
+                }
+            />
 
             <Box
                 sx={{
@@ -130,86 +141,57 @@ export default function DashboardPage() {
                 sx={{
                     display: "grid",
                     gap: 2,
-                    gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.25fr) minmax(320px, 0.9fr)" },
+                    gridTemplateColumns: {
+                        xs: "1fr",
+                        lg: "minmax(0, 1.6fr) minmax(280px, 0.9fr)",
+                    },
+                    alignItems: "start",
                 }}
             >
-                <SectionCard
-                    title="Recent activity"
-                    description="The latest notifications and alerts across your account."
-                    action={
-                        <Button variant="text" onClick={() => navigate("/notifications")}>
-                            Open all
-                        </Button>
-                    }
-                >
-                    <QueryBoundary
-                        isLoading={notificationsLoading}
-                        isError={notificationsIsError}
-                        error={notificationsError}
-                        errorFallback="Failed to load notifications."
-                        onRetry={() => void refetchNotifications()}
-                        isEmpty={recentNotifications.length === 0}
-                        emptyFallback={
-                            <EmptyState
-                                icon={<NotificationsIcon />}
-                                title="No notifications yet"
-                                description="Updates, reminders, and account events will appear here as soon as the workspace becomes active."
-                                action={
-                                    <Button variant="outlined" onClick={() => navigate("/projects")}>
-                                        Explore workspace
-                                    </Button>
-                                }
-                            />
+                <Stack spacing={2}>
+                    <SectionCard
+                        title="Recent activity"
+                        description="The latest notifications and alerts across your account."
+                        action={
+                            <Button variant="text" onClick={() => navigate("/notifications")}>
+                                Open all
+                            </Button>
                         }
                     >
-                        <Stack spacing={1.5}>
-                            {recentNotifications.map((notification) => (
-                                <NotificationListItem
-                                    key={notification.id}
-                                    notification={notification}
-                                    variant="compact"
+                        <QueryBoundary
+                            isLoading={notificationsLoading}
+                            isError={notificationsIsError}
+                            error={notificationsError}
+                            errorFallback="Failed to load notifications."
+                            onRetry={() => void refetchNotifications()}
+                            isEmpty={recentNotifications.length === 0}
+                            emptyFallback={
+                                <EmptyState
+                                    icon={<NotificationsIcon />}
+                                    title="No notifications yet"
+                                    description="Updates, reminders, and account events will appear here as soon as the workspace becomes active."
+                                    action={
+                                        <Button
+                                            variant="outlined"
+                                            onClick={() => navigate("/projects")}
+                                        >
+                                            Explore workspace
+                                        </Button>
+                                    }
                                 />
-                            ))}
-                        </Stack>
-                    </QueryBoundary>
-                </SectionCard>
-
-                <Stack spacing={2}>
-                    <SectionCard title="Account health" description="A quick view of the settings that affect trust and security.">
-                        <Stack spacing={1.5}>
-                            {accountChecks.map((item) => (
-                                <Box
-                                    key={item.label}
-                                    sx={(theme) => ({
-                                        p: 2,
-                                        borderRadius: 1,
-                                        backgroundColor:
-                                            theme.palette.mode === "dark"
-                                                ? theme.palette.background.paper
-                                                : colors.white,
-                                    })}
-                                >
-                                    <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ mb: 0.5 }}>
-                                        <Typography variant="subtitle2">{item.label}</Typography>
-                                        <Typography variant="body2" sx={{ color: item.color, fontWeight: 500 }}>
-                                            {item.value}
-                                        </Typography>
-                                    </Stack>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {item.description}
-                                    </Typography>
-                                </Box>
-                            ))}
-                        </Stack>
+                            }
+                        >
+                            <Stack spacing={1.5} sx={{ maxHeight: 420, overflow: "auto" }}>
+                                {recentNotifications.map((notification) => (
+                                    <NotificationListItem
+                                        key={notification.id}
+                                        notification={notification}
+                                        variant="compact"
+                                    />
+                                ))}
+                            </Stack>
+                        </QueryBoundary>
                     </SectionCard>
-
-                    <DashboardCalendar
-                        projects={projects ?? []}
-                        projectsLoading={projectsLoading}
-                        onOpenProjects={() => navigate("/projects")}
-                        allowedViews={["month"]}
-                        initialView="month"
-                    />
 
                     <SectionCard
                         title={`${coreDomainPlural} snapshot`}
@@ -228,15 +210,28 @@ export default function DashboardPage() {
                                     title={`No ${coreDomainPlural.toLowerCase()} yet`}
                                     description={`Create your first ${platformMetadata?.core_domain_singular?.toLowerCase() ?? "project"} to start building out the workspace.`}
                                     action={
-                                        <Button variant="contained" onClick={() => navigate("/projects")}>
+                                        <Button
+                                            variant="contained"
+                                            onClick={() => navigate("/projects")}
+                                        >
                                             Create first item
                                         </Button>
                                     }
                                 />
                             }
                         >
-                            <Stack spacing={1.25}>
-                                {projects?.slice(0, 3).map((project) => (
+                            <Box
+                                sx={{
+                                    display: "grid",
+                                    gap: 1.25,
+                                    gridTemplateColumns: {
+                                        xs: "1fr",
+                                        sm: "repeat(2, minmax(0, 1fr))",
+                                        md: "repeat(3, minmax(0, 1fr))",
+                                    },
+                                }}
+                            >
+                                {projects?.slice(0, 6).map((project) => (
                                     <Box
                                         key={project.id}
                                         sx={(theme) => ({
@@ -246,18 +241,73 @@ export default function DashboardPage() {
                                                 theme.palette.mode === "dark"
                                                     ? theme.palette.background.paper
                                                     : colors.white,
+                                            cursor: "pointer",
                                         })}
+                                        onClick={() => navigate(`/projects/${project.id}`)}
                                     >
                                         <Typography variant="subtitle2">{project.name}</Typography>
-                                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                                            {project.description || `No description added for this ${platformMetadata?.core_domain_singular?.toLowerCase() ?? "project"} yet.`}
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                            sx={{ mt: 0.5 }}
+                                        >
+                                            {project.description ||
+                                                `No description added for this ${platformMetadata?.core_domain_singular?.toLowerCase() ?? "project"} yet.`}
                                         </Typography>
                                     </Box>
                                 ))}
-                            </Stack>
+                            </Box>
                         </QueryBoundary>
                     </SectionCard>
+
+                    <DashboardCalendar
+                        projects={projects ?? []}
+                        projectsLoading={projectsLoading}
+                        onOpenProjects={() => navigate("/projects")}
+                        allowedViews={["month"]}
+                        initialView="month"
+                    />
                 </Stack>
+
+                <SectionCard
+                    title="Account health"
+                    description="Settings that affect trust and security."
+                    compact
+                >
+                    <Stack spacing={1.5}>
+                        {accountChecks.map((item) => (
+                            <Box
+                                key={item.label}
+                                sx={(theme) => ({
+                                    p: 1.5,
+                                    borderRadius: 1,
+                                    backgroundColor:
+                                        theme.palette.mode === "dark"
+                                            ? theme.palette.background.paper
+                                            : colors.white,
+                                })}
+                            >
+                                <Stack
+                                    direction="row"
+                                    justifyContent="space-between"
+                                    spacing={1}
+                                    sx={{ mb: 0.5 }}
+                                >
+                                    <Typography variant="subtitle2">{item.label}</Typography>
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ color: item.color, fontWeight: 500 }}
+                                    >
+                                        {item.value}
+                                    </Typography>
+                                </Stack>
+                                <Typography variant="body2" color="text.secondary">
+                                    {item.description}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Stack>
+                </SectionCard>
             </Box>
         </PageShell>
     );
