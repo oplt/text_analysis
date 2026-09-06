@@ -44,6 +44,9 @@ class ObjectStorage:
             use_ssl=settings.STORAGE_USE_SSL,
             config=Config(
                 signature_version="s3v4",
+                connect_timeout=2,
+                read_timeout=2,
+                retries={"max_attempts": 1, "mode": "standard"},
                 s3={"addressing_style": "path" if settings.STORAGE_FORCE_PATH_STYLE else "auto"},
             ),
         )

@@ -1,6 +1,10 @@
 # Redis
 dump.rdb
 
+# Accidental `alembic init` at repo root (use backend/alembic/ instead)
+/alembic.ini
+/migrations/
+
 # Created by https://www.toptal.com/developers/gitignore/api/python,pycharm,linux,react
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,pycharm,linux,react
 

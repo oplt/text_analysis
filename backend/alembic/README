@@ -1,1 +1,49 @@
-Generic single-database configuration with an async dbapi.
+# Database migrations
+
+Migrations for this project live here. Do **not** run `alembic init` anywhere in the repo.
+
+## Apply migrations
+
+From the repo root:
+
+```bash
+make db-migrate
+```
+
+Or from `backend/`:
+
+```bash
+./scripts/migrate.sh upgrade head
+```
+
+Always use the backend virtualenv (`backend/.venv/bin/python -m alembic`), not a global `alembic` install.
+
+## Create a new migration
+
+After changing SQLAlchemy models:
+
+```bash
+cd backend
+./scripts/migrate.sh revision --autogenerate -m "describe change"
+./scripts/migrate.sh upgrade head
+```
+
+## Database connection errors
+
+If you see `password authentication failed for user "text_analysis"`, your local Postgres credentials do not match `DATABASE_URL` in `backend/.env`.
+
+1. Check the connection:
+
+   ```bash
+   cd backend && .venv/bin/python scripts/check_db.py
+   ```
+
+2. Create or reset the default local user/database:
+
+   ```bash
+   sudo -u postgres psql -f backend/scripts/setup-local-db.sql
+   ```
+
+3. Or set `DATABASE_URL` in `backend/.env` to credentials that already work on your machine.
+
+Existing migrations (including the users table) are in `backend/alembic/versions/`. Do not autogenerate a duplicate "create users table" migration.

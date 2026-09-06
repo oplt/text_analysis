@@ -1,0 +1,1513 @@
+"""HTTP routes for the Policy Text Lab research workflow."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.responses import PlainTextResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.api.deps.auth import get_current_user
+from backend.api.deps.db import get_db
+from backend.core.pagination import (
+    PaginatedResponse,
+    PaginationParams,
+    paginated_response,
+    pagination_params,
+)
+from backend.modules.identity_access.models import User
+from backend.modules.text_research.api.schemas import (
+    ActiveLearningAssignRequest,
+    AdjudicationSaveRequest,
+    AnalysisRequest,
+    AnalysisRunResponse,
+    AnnotationAssignRequest,
+    AnnotationLabelCreate,
+    AnnotationLabelResponse,
+    AnnotationLabelUpdate,
+    AnnotationResponse,
+    AnnotationSaveRequest,
+    BulkMetadataUpdate,
+    ClassifierPredictRequest,
+    ClassifierTrainRequest,
+    CodebookCreate,
+    CodebookResponse,
+    ComparativeAnalysisRequest,
+    CooccurrenceRequest,
+    CorpusDocumentCreate,
+    CorpusDocumentResponse,
+    CorpusDocumentUpdate,
+    DatasetFreezeRequest,
+    DatasetPreviewRequest,
+    DemoSeedRequest,
+    DfmRequest,
+    DictionaryAnalysisRequest,
+    DictionaryCreate,
+    DictionaryResponse,
+    DictionaryUpdate,
+    ExportManifestResponse,
+    FrequencyRequest,
+    KeynessRequest,
+    KwicRequest,
+    NgramRequest,
+    PreprocessingProfileCreate,
+    PreprocessingProfileResponse,
+    PreprocessingProfileUpdate,
+    QuantedaScriptResponse,
+    ReliabilityRequest,
+    ResearchCorpusCreate,
+    ResearchCorpusResponse,
+    ResearchCorpusUpdate,
+    RobustnessRequest,
+    SegmentRequest,
+    SourceTextResponse,
+    TopicLabelRequest,
+    TopicTrainRequest,
+    TrainedModelResponse,
+    TrainingDatasetSnapshotResponse,
+)
+from backend.modules.text_research.application.active_learning_service import ActiveLearningService
+from backend.modules.text_research.application.adjudication_service import AdjudicationService
+from backend.modules.text_research.application.annotation_service import AnnotationService
+from backend.modules.text_research.application.classification_service import ClassificationService
+from backend.modules.text_research.application.codebook_service import CodebookService
+from backend.modules.text_research.application.comparative_analysis_service import (
+    ComparativeAnalysisService,
+)
+from backend.modules.text_research.application.corpus_service import CorpusService
+from backend.modules.text_research.application.dashboard_service import DashboardService
+from backend.modules.text_research.application.dataset_builder_service import DatasetBuilderService
+from backend.modules.text_research.application.demo_seed_service import DemoSeedService
+from backend.modules.text_research.application.dictionary_service import DictionaryService
+from backend.modules.text_research.application.export_service import ExportService
+from backend.modules.text_research.application.prediction_service import PredictionService
+from backend.modules.text_research.application.preprocessing_service import (
+    PreprocessingProfileService,
+)
+from backend.modules.text_research.application.quantitative_analysis_service import (
+    QuantitativeAnalysisService,
+)
+from backend.modules.text_research.application.reliability_service import ReliabilityService
+from backend.modules.text_research.application.robustness_service import RobustnessService
+from backend.modules.text_research.application.run_service import RunService
+from backend.modules.text_research.application.segmentation_service import SegmentationService
+from backend.modules.text_research.application.topic_model_service import TopicModelService
+from backend.modules.text_research.domain.models import (
+    AnalysisRun,
+    AnnotationLabel,
+    CorpusDocument,
+    DictionaryDefinition,
+    PreprocessingProfile,
+    ResearchCorpus,
+    TrainedModel,
+    TrainingDatasetSnapshot,
+    loads,
+)
+
+router = APIRouter()
+
+
+def _loads(value: str | None, default: Any = None) -> Any:
+    return loads(value, default)
+
+
+def _corpus_response(corpus: ResearchCorpus) -> ResearchCorpusResponse:
+    return ResearchCorpusResponse.model_validate(corpus)
+
+
+def _document_response(document: CorpusDocument) -> CorpusDocumentResponse:
+    return CorpusDocumentResponse(
+        id=document.id,
+        corpus_id=document.corpus_id,
+        rag_document_id=document.rag_document_id,
+        title=document.title,
+        organization=document.organization,
+        organization_type=document.organization_type,
+        publication_year=document.publication_year,
+        publication_type=document.publication_type,
+        country=document.country,
+        region=document.region,
+        cultural_sphere=document.cultural_sphere,
+        language=document.language,
+        education_level=document.education_level,
+        source_url=document.source_url,
+        research_notes=document.research_notes,
+        metadata_json=_loads(document.metadata_json),
+        created_at=document.created_at,
+        updated_at=document.updated_at,
+    )
+
+
+def _run_response(run: AnalysisRun) -> AnalysisRunResponse:
+    return AnalysisRunResponse(
+        id=run.id,
+        project_id=run.project_id,
+        corpus_id=run.corpus_id,
+        run_type=run.run_type,
+        status=run.status,
+        progress_stage=run.progress_stage,
+        parameters=_loads(run.parameters_json),
+        metrics=_loads(run.metrics_json),
+        results=_loads(run.results_json),
+        artifact_path=run.artifact_path,
+        random_seed=run.random_seed,
+        created_by=run.created_by,
+        started_at=run.started_at,
+        completed_at=run.completed_at,
+        error_message=run.error_message,
+        created_at=run.created_at,
+    )
+
+
+def _profile_response(profile: PreprocessingProfile) -> PreprocessingProfileResponse:
+    return PreprocessingProfileResponse(
+        id=profile.id,
+        project_id=profile.project_id,
+        name=profile.name,
+        description=profile.description,
+        config=_loads(profile.config_json, {}),
+        created_by=profile.created_by,
+        created_at=profile.created_at,
+        updated_at=profile.updated_at,
+    )
+
+
+def _label_response(label: AnnotationLabel) -> AnnotationLabelResponse:
+    return AnnotationLabelResponse(
+        id=label.id,
+        codebook_id=label.codebook_id,
+        name=label.name,
+        description=label.description,
+        inclusion_criteria=label.inclusion_criteria,
+        exclusion_criteria=label.exclusion_criteria,
+        positive_examples=_loads(label.positive_examples_json),
+        negative_examples=_loads(label.negative_examples_json),
+        is_placeholder=label.is_placeholder,
+        created_at=label.created_at,
+    )
+
+
+def _dictionary_response(dictionary: DictionaryDefinition) -> DictionaryResponse:
+    return DictionaryResponse(
+        id=dictionary.id,
+        project_id=dictionary.project_id,
+        name=dictionary.name,
+        version=dictionary.version,
+        description=dictionary.description,
+        terms=_loads(dictionary.terms_json, []),
+        created_by=dictionary.created_by,
+        created_at=dictionary.created_at,
+    )
+
+
+def _snapshot_response(snapshot: TrainingDatasetSnapshot) -> TrainingDatasetSnapshotResponse:
+    return TrainingDatasetSnapshotResponse.model_validate(snapshot)
+
+
+def _model_response(model: TrainedModel) -> TrainedModelResponse:
+    return TrainedModelResponse(
+        id=model.id,
+        project_id=model.project_id,
+        corpus_id=model.corpus_id,
+        analysis_run_id=model.analysis_run_id,
+        training_dataset_snapshot_id=model.training_dataset_snapshot_id,
+        model_family=model.model_family,
+        task_type=model.task_type,
+        label_ids=_loads(model.label_ids_json, []),
+        feature_config=_loads(model.feature_config_json, {}),
+        training_config=_loads(model.training_config_json, {}),
+        metrics=_loads(model.metrics_json, {}),
+        version=model.version,
+        name=model.name,
+        created_by=model.created_by,
+        created_at=model.created_at,
+    )
+
+
+# ------------------------------------------------------------------
+# Demo seed
+# ------------------------------------------------------------------
+
+
+@router.post(
+    "/projects/{project_id}/demo-seed", response_model=ResearchCorpusResponse, status_code=201
+)
+async def seed_demo_corpus(
+    project_id: str,
+    body: DemoSeedRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    corpus = await DemoSeedService(db).seed_demo_corpus(
+        project_id=project_id,
+        user_id=current_user.id,
+        corpus_name=body.corpus_name or "Demo Corpus (Synthetic)",
+    )
+    return _corpus_response(corpus)
+
+
+# ------------------------------------------------------------------
+# Corpora
+# ------------------------------------------------------------------
+
+
+@router.post(
+    "/projects/{project_id}/corpora", response_model=ResearchCorpusResponse, status_code=201
+)
+async def create_corpus(
+    project_id: str,
+    body: ResearchCorpusCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    corpus = await CorpusService(db).create_corpus(
+        project_id=project_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+    )
+    return _corpus_response(corpus)
+
+
+@router.get("/projects/{project_id}/corpora", response_model=list[ResearchCorpusResponse])
+async def list_corpora(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    corpora = await CorpusService(db).list_corpora(project_id=project_id, user_id=current_user.id)
+    return [_corpus_response(c) for c in corpora]
+
+
+@router.get("/corpora/{corpus_id}", response_model=ResearchCorpusResponse)
+async def get_corpus(
+    corpus_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    corpus = await CorpusService(db).get_corpus(corpus_id, user_id=current_user.id)
+    return _corpus_response(corpus)
+
+
+@router.patch("/corpora/{corpus_id}", response_model=ResearchCorpusResponse)
+async def update_corpus(
+    corpus_id: str,
+    body: ResearchCorpusUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    corpus = await CorpusService(db).update_corpus(
+        corpus_id, user_id=current_user.id, name=body.name, description=body.description
+    )
+    return _corpus_response(corpus)
+
+
+@router.delete("/corpora/{corpus_id}", status_code=204)
+async def delete_corpus(
+    corpus_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await CorpusService(db).delete_corpus(corpus_id, user_id=current_user.id)
+
+
+# ------------------------------------------------------------------
+# Corpus documents
+# ------------------------------------------------------------------
+
+
+@router.post(
+    "/corpora/{corpus_id}/documents", response_model=CorpusDocumentResponse, status_code=201
+)
+async def add_document(
+    corpus_id: str,
+    body: CorpusDocumentCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    document = await CorpusService(db).add_document(
+        corpus_id,
+        user_id=current_user.id,
+        rag_document_id=body.rag_document_id,
+        title=body.title,
+        organization=body.organization,
+        organization_type=body.organization_type,
+        publication_year=body.publication_year,
+        publication_type=body.publication_type,
+        country=body.country,
+        region=body.region,
+        cultural_sphere=body.cultural_sphere,
+        language=body.language,
+        education_level=body.education_level,
+        source_url=body.source_url,
+        research_notes=body.research_notes,
+        extra_metadata=body.metadata_json,
+    )
+    return _document_response(document)
+
+
+@router.get(
+    "/corpora/{corpus_id}/documents", response_model=PaginatedResponse[CorpusDocumentResponse]
+)
+async def list_documents(
+    corpus_id: str,
+    pagination: PaginationParams = Depends(pagination_params),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    documents = await CorpusService(db).list_documents(
+        corpus_id,
+        user_id=current_user.id,
+        limit=pagination.limit,
+        offset=pagination.offset,
+    )
+    total = len(documents)
+    return paginated_response(
+        [_document_response(d) for d in documents],
+        total=total,
+        limit=pagination.limit,
+        offset=pagination.offset,
+    )
+
+
+@router.get("/documents/{document_id}", response_model=CorpusDocumentResponse)
+async def get_document(
+    document_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    document = await CorpusService(db).get_document(document_id, user_id=current_user.id)
+    return _document_response(document)
+
+
+@router.patch("/documents/{document_id}", response_model=CorpusDocumentResponse)
+async def update_document(
+    document_id: str,
+    body: CorpusDocumentUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    fields = body.model_dump(exclude_unset=True)
+    if "metadata_json" in fields and fields["metadata_json"] is not None:
+        fields["extra_metadata"] = fields.pop("metadata_json")
+    document = await CorpusService(db).update_document_metadata(
+        document_id, user_id=current_user.id, **fields
+    )
+    return _document_response(document)
+
+
+@router.post(
+    "/corpora/{corpus_id}/documents/metadata/bulk", response_model=list[CorpusDocumentResponse]
+)
+async def bulk_update_metadata(
+    corpus_id: str,
+    body: BulkMetadataUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    documents = await CorpusService(db).bulk_update_metadata(
+        corpus_id, user_id=current_user.id, document_ids=body.document_ids, fields=body.fields
+    )
+    return [_document_response(d) for d in documents]
+
+
+@router.post(
+    "/corpora/{corpus_id}/documents/metadata/import", response_model=list[CorpusDocumentResponse]
+)
+async def import_metadata_csv(
+    corpus_id: str,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    content = (await file.read()).decode("utf-8")
+    return await CorpusService(db).import_metadata_csv(
+        corpus_id, user_id=current_user.id, csv_content=content
+    )
+
+
+@router.delete("/documents/{document_id}", status_code=204)
+async def delete_document(
+    document_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await CorpusService(db).delete_document(document_id, user_id=current_user.id)
+
+
+@router.get("/documents/{document_id}/source-text", response_model=SourceTextResponse)
+async def get_source_text(
+    document_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    text = await CorpusService(db).get_source_text(document_id, user_id=current_user.id)
+    return SourceTextResponse(document_id=document_id, text=text)
+
+
+# ------------------------------------------------------------------
+# Segmentation
+# ------------------------------------------------------------------
+
+
+@router.post("/corpora/{corpus_id}/segment", response_model=AnalysisRunResponse, status_code=202)
+async def segment_corpus(
+    corpus_id: str,
+    body: SegmentRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await SegmentationService(db).start_segmentation(
+        corpus_id, user_id=current_user.id, unit_type=body.unit_type
+    )
+    return _run_response(run)
+
+
+# ------------------------------------------------------------------
+# Preprocessing profiles
+# ------------------------------------------------------------------
+
+
+@router.post(
+    "/projects/{project_id}/preprocessing-profiles",
+    response_model=PreprocessingProfileResponse,
+    status_code=201,
+)
+async def create_preprocessing_profile(
+    project_id: str,
+    body: PreprocessingProfileCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    profile = await PreprocessingProfileService(db).create_profile(
+        project_id=project_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+        config=body.config,
+    )
+    return _profile_response(profile)
+
+
+@router.get(
+    "/projects/{project_id}/preprocessing-profiles",
+    response_model=list[PreprocessingProfileResponse],
+)
+async def list_preprocessing_profiles(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    profiles = await PreprocessingProfileService(db).list_profiles(
+        project_id=project_id, user_id=current_user.id
+    )
+    return [_profile_response(p) for p in profiles]
+
+
+@router.get("/preprocessing-profiles/{profile_id}", response_model=PreprocessingProfileResponse)
+async def get_preprocessing_profile(
+    profile_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    profile = await PreprocessingProfileService(db).get_profile(profile_id, user_id=current_user.id)
+    return _profile_response(profile)
+
+
+@router.patch("/preprocessing-profiles/{profile_id}", response_model=PreprocessingProfileResponse)
+async def update_preprocessing_profile(
+    profile_id: str,
+    body: PreprocessingProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    profile = await PreprocessingProfileService(db).update_profile(
+        profile_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+        config=body.config,
+    )
+    return _profile_response(profile)
+
+
+@router.delete("/preprocessing-profiles/{profile_id}", status_code=204)
+async def delete_preprocessing_profile(
+    profile_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await PreprocessingProfileService(db).delete_profile(profile_id, user_id=current_user.id)
+
+
+# ------------------------------------------------------------------
+# Codebooks & labels
+# ------------------------------------------------------------------
+
+
+@router.post("/projects/{project_id}/codebooks", response_model=CodebookResponse, status_code=201)
+async def create_codebook(
+    project_id: str,
+    body: CodebookCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    codebook = await CodebookService(db).create_codebook(
+        project_id=project_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+        seed_placeholder_labels=body.seed_demo_labels,
+    )
+    return CodebookResponse.model_validate(codebook)
+
+
+@router.get("/projects/{project_id}/codebooks", response_model=list[CodebookResponse])
+async def list_codebooks(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    codebooks = await CodebookService(db).list_codebooks(
+        project_id=project_id, user_id=current_user.id
+    )
+    return [CodebookResponse.model_validate(c) for c in codebooks]
+
+
+@router.get("/codebooks/{codebook_id}", response_model=CodebookResponse)
+async def get_codebook(
+    codebook_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    codebook = await CodebookService(db).get_codebook(codebook_id, user_id=current_user.id)
+    return CodebookResponse.model_validate(codebook)
+
+
+@router.post("/codebooks/{codebook_id}/versions", response_model=CodebookResponse, status_code=201)
+async def create_codebook_version(
+    codebook_id: str,
+    new_version: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    codebook = await CodebookService(db).create_version(
+        codebook_id, user_id=current_user.id, new_version=new_version
+    )
+    return CodebookResponse.model_validate(codebook)
+
+
+@router.post("/codebooks/{codebook_id}/freeze", response_model=CodebookResponse)
+async def freeze_codebook(
+    codebook_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    codebook = await CodebookService(db).freeze_codebook(codebook_id, user_id=current_user.id)
+    return CodebookResponse.model_validate(codebook)
+
+
+@router.post(
+    "/codebooks/{codebook_id}/labels", response_model=AnnotationLabelResponse, status_code=201
+)
+async def add_label(
+    codebook_id: str,
+    body: AnnotationLabelCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    label = await CodebookService(db).add_label(
+        codebook_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+        inclusion_criteria=body.inclusion_criteria,
+        exclusion_criteria=body.exclusion_criteria,
+        positive_examples=body.positive_examples,
+        negative_examples=body.negative_examples,
+    )
+    return _label_response(label)
+
+
+@router.get("/codebooks/{codebook_id}/labels", response_model=list[AnnotationLabelResponse])
+async def list_labels(
+    codebook_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    labels = await CodebookService(db).list_labels(codebook_id, user_id=current_user.id)
+    return [_label_response(label) for label in labels]
+
+
+@router.patch("/labels/{label_id}", response_model=AnnotationLabelResponse)
+async def update_label(
+    label_id: str,
+    body: AnnotationLabelUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    fields = body.model_dump(exclude_unset=True)
+    label = await CodebookService(db).update_label(label_id, user_id=current_user.id, **fields)
+    return _label_response(label)
+
+
+# ------------------------------------------------------------------
+# Annotation
+# ------------------------------------------------------------------
+
+
+@router.post("/annotations/assign", status_code=201)
+async def assign_annotation_tasks(
+    body: AnnotationAssignRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    tasks = await AnnotationService(db).assign_tasks(
+        user_id=current_user.id,
+        text_unit_ids=body.text_unit_ids,
+        annotator_ids=body.annotator_ids,
+    )
+    return {"assigned_count": len(tasks)}
+
+
+@router.get("/annotations/queue")
+async def list_annotation_queue(
+    status: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    queue = await AnnotationService(db).list_queue(
+        requesting_user_id=current_user.id, status=status
+    )
+    return queue
+
+
+@router.post("/annotations", response_model=list[AnnotationResponse])
+async def save_annotations(
+    body: AnnotationSaveRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    annotations = await AnnotationService(db).save_annotations(
+        user_id=current_user.id,
+        text_unit_id=body.text_unit_id,
+        codebook_id=body.codebook_id,
+        values=body.values,
+        mark_task_complete=body.mark_task_complete,
+    )
+    return [AnnotationResponse.model_validate(a) for a in annotations]
+
+
+@router.get("/corpora/{corpus_id}/annotations/progress")
+async def annotation_progress(
+    corpus_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await AnnotationService(db).progress(corpus_id, user_id=current_user.id)
+
+
+@router.get("/text-units/{text_unit_id}/annotations")
+async def list_unit_annotations(
+    text_unit_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    annotations = await AnnotationService(db).list_annotations_for_unit(
+        text_unit_id, user_id=current_user.id
+    )
+    return [AnnotationResponse.model_validate(a) for a in annotations]
+
+
+# ------------------------------------------------------------------
+# Reliability & adjudication
+# ------------------------------------------------------------------
+
+
+@router.post("/corpora/{corpus_id}/reliability", response_model=AnalysisRunResponse)
+async def compute_reliability(
+    corpus_id: str,
+    body: ReliabilityRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await ReliabilityService(db).compute_reliability(
+        corpus_id,
+        user_id=current_user.id,
+        codebook_id=body.codebook_id,
+        label_ids=body.label_ids,
+    )
+    return _run_response(run)
+
+
+@router.get("/corpora/{corpus_id}/adjudication/disagreements")
+async def list_disagreements(
+    corpus_id: str,
+    codebook_id: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await AdjudicationService(db).list_disagreements(
+        corpus_id, user_id=current_user.id, codebook_id=codebook_id
+    )
+
+
+@router.post("/adjudication", status_code=201)
+async def save_adjudication(
+    body: AdjudicationSaveRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    adjudication = await AdjudicationService(db).save_adjudication(
+        user_id=current_user.id,
+        text_unit_id=body.text_unit_id,
+        label_id=body.label_id,
+        final_value=body.final_value,
+        comment=body.comment,
+    )
+    return {"id": adjudication.id}
+
+
+@router.get("/corpora/{corpus_id}/adjudications")
+async def list_adjudications(
+    corpus_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await AdjudicationService(db).list_adjudications(corpus_id, user_id=current_user.id)
+
+
+# ------------------------------------------------------------------
+# Quantitative analysis
+# ------------------------------------------------------------------
+
+
+def _analysis_filters(body: AnalysisRequest) -> dict[str, Any]:
+    return {
+        k: v
+        for k, v in body.model_dump().items()
+        if k not in {"unit_type", "preprocessing_profile_id", "top_n", "n", "weighting"}
+        and v is not None
+    }
+
+
+@router.post("/corpora/{corpus_id}/analysis/corpus-stats", response_model=AnalysisRunResponse)
+async def corpus_stats(
+    corpus_id: str,
+    body: AnalysisRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await QuantitativeAnalysisService(db).corpus_stats(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/analysis/frequencies", response_model=AnalysisRunResponse)
+async def frequencies(
+    corpus_id: str,
+    body: FrequencyRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await QuantitativeAnalysisService(db).frequencies(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        top_n=body.top_n,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/analysis/ngrams", response_model=AnalysisRunResponse)
+async def ngrams(
+    corpus_id: str,
+    body: NgramRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await QuantitativeAnalysisService(db).ngrams(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        n=body.n,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        top_n=body.top_n,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/analysis/dfm", response_model=AnalysisRunResponse)
+async def dfm(
+    corpus_id: str,
+    body: DfmRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await QuantitativeAnalysisService(db).dfm(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        weighting=body.weighting,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/analysis/kwic", response_model=AnalysisRunResponse)
+async def kwic(
+    corpus_id: str,
+    body: KwicRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await QuantitativeAnalysisService(db).kwic(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        keyword=body.keyword,
+        window_size=body.window_size,
+        case_sensitive=body.case_sensitive,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/analysis/dictionary", response_model=AnalysisRunResponse)
+async def dictionary_analysis(
+    corpus_id: str,
+    body: DictionaryAnalysisRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not body.dictionary_id and not body.dictionary_terms:
+        raise HTTPException(status_code=400, detail="dictionary_id or dictionary_terms required")
+    run = await QuantitativeAnalysisService(db).dictionary(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        dictionary_terms=body.dictionary_terms or [],
+        dictionary_id=body.dictionary_id,
+        group_by=body.group_by,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/analysis/keyness", response_model=AnalysisRunResponse)
+async def keyness(
+    corpus_id: str,
+    body: KeynessRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await QuantitativeAnalysisService(db).keyness(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        filters_a=body.filters_a,
+        filters_b=body.filters_b,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        top_n=body.top_n,
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/analysis/cooccurrence", response_model=AnalysisRunResponse)
+async def cooccurrence(
+    corpus_id: str,
+    body: CooccurrenceRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await QuantitativeAnalysisService(db).cooccurrence(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        window_size=body.window_size,
+        top_n=body.top_n,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+# ------------------------------------------------------------------
+# Dictionaries
+# ------------------------------------------------------------------
+
+
+@router.post(
+    "/projects/{project_id}/dictionaries", response_model=DictionaryResponse, status_code=201
+)
+async def create_dictionary(
+    project_id: str,
+    body: DictionaryCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    dictionary = await DictionaryService(db).create_dictionary(
+        project_id=project_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+        terms=body.terms,
+    )
+    return _dictionary_response(dictionary)
+
+
+@router.get("/projects/{project_id}/dictionaries", response_model=list[DictionaryResponse])
+async def list_dictionaries(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    dictionaries = await DictionaryService(db).list_dictionaries(
+        project_id=project_id, user_id=current_user.id
+    )
+    return [_dictionary_response(d) for d in dictionaries]
+
+
+@router.get("/dictionaries/{dictionary_id}", response_model=DictionaryResponse)
+async def get_dictionary(
+    dictionary_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    dictionary = await DictionaryService(db).get_dictionary(dictionary_id, user_id=current_user.id)
+    return _dictionary_response(dictionary)
+
+
+@router.patch("/dictionaries/{dictionary_id}", response_model=DictionaryResponse)
+async def update_dictionary(
+    dictionary_id: str,
+    body: DictionaryUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    dictionary = await DictionaryService(db).update_dictionary(
+        dictionary_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+        terms=body.terms,
+    )
+    return _dictionary_response(dictionary)
+
+
+@router.post(
+    "/dictionaries/{dictionary_id}/versions", response_model=DictionaryResponse, status_code=201
+)
+async def create_dictionary_version(
+    dictionary_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    dictionary = await DictionaryService(db).create_version(dictionary_id, user_id=current_user.id)
+    return _dictionary_response(dictionary)
+
+
+# ------------------------------------------------------------------
+# Training datasets & classifiers
+# ------------------------------------------------------------------
+
+
+@router.post("/classifiers/dataset-preview")
+async def dataset_preview(
+    body: DatasetPreviewRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await DatasetBuilderService(db).preview(
+        body.corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        codebook_id=body.codebook_id,
+        label_ids=body.label_ids,
+        annotation_source=body.annotation_source,
+        selected_annotator_id=body.selected_annotator_id,
+        minimum_agreement=body.minimum_agreement,
+    )
+
+
+@router.post(
+    "/classifiers/dataset-snapshots",
+    response_model=TrainingDatasetSnapshotResponse,
+    status_code=201,
+)
+async def freeze_dataset(
+    body: DatasetFreezeRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    snapshot = await DatasetBuilderService(db).freeze(
+        body.corpus_id,
+        user_id=current_user.id,
+        name=body.name,
+        unit_type=body.unit_type,
+        codebook_id=body.codebook_id,
+        label_ids=body.label_ids,
+        annotation_source=body.annotation_source,
+        selected_annotator_id=body.selected_annotator_id,
+        minimum_agreement=body.minimum_agreement,
+    )
+    return _snapshot_response(snapshot)
+
+
+@router.get(
+    "/projects/{project_id}/dataset-snapshots", response_model=list[TrainingDatasetSnapshotResponse]
+)
+async def list_dataset_snapshots(
+    project_id: str,
+    corpus_id: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    snapshots = await DatasetBuilderService(db).list_snapshots(
+        project_id=project_id, user_id=current_user.id, corpus_id=corpus_id
+    )
+    return [_snapshot_response(s) for s in snapshots]
+
+
+@router.get("/dataset-snapshots/{snapshot_id}", response_model=TrainingDatasetSnapshotResponse)
+async def get_dataset_snapshot(
+    snapshot_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    snapshot = await DatasetBuilderService(db).get_snapshot(snapshot_id, user_id=current_user.id)
+    return _snapshot_response(snapshot)
+
+
+@router.post("/classifiers/train", response_model=AnalysisRunResponse, status_code=202)
+async def train_classifier(
+    body: ClassifierTrainRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await ClassificationService(db).train(
+        user_id=current_user.id,
+        snapshot_id=body.snapshot_id,
+        algorithm=body.algorithm,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        ngram_max=body.ngram_max,
+        min_df=body.min_df,
+        max_df=body.max_df,
+        max_features=body.max_features,
+        class_weight=body.class_weight,
+        regularization_c=body.regularization_c,
+        test_size=body.test_size,
+        random_seed=body.random_seed,
+        name=body.name,
+        run_async=body.run_async,
+    )
+    return _run_response(run)
+
+
+@router.get("/projects/{project_id}/classifiers", response_model=list[TrainedModelResponse])
+async def list_classifiers(
+    project_id: str,
+    corpus_id: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    models = await ClassificationService(db).list_models(
+        project_id=project_id, user_id=current_user.id, corpus_id=corpus_id
+    )
+    return [_model_response(m) for m in models]
+
+
+@router.get("/classifiers/{model_id}", response_model=TrainedModelResponse)
+async def get_classifier(
+    model_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    model = await ClassificationService(db).get_model(model_id, user_id=current_user.id)
+    return _model_response(model)
+
+
+@router.get("/classifiers/{model_id}/coefficients")
+async def get_classifier_coefficients(
+    model_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ClassificationService(db).get_coefficients(model_id, user_id=current_user.id)
+
+
+@router.post("/classifiers/{model_id}/clone")
+async def clone_classifier_config(
+    model_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ClassificationService(db).clone_config(model_id, user_id=current_user.id)
+
+
+@router.post("/classifiers/{model_id}/predict", response_model=AnalysisRunResponse, status_code=202)
+async def predict_classifier(
+    model_id: str,
+    body: ClassifierPredictRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await PredictionService(db).predict(
+        model_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        only_unannotated=body.only_unannotated,
+        filters=body.filters,
+    )
+    return _run_response(run)
+
+
+@router.get("/classifiers/{model_id}/predictions")
+async def list_predictions(
+    model_id: str,
+    limit: int = Query(default=100, le=500),
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await PredictionService(db).list_predictions(
+        model_id, user_id=current_user.id, limit=limit, offset=offset
+    )
+
+
+@router.get("/classifiers/{model_id}/active-learning/queue")
+async def list_uncertain_predictions(
+    model_id: str,
+    limit: int = Query(default=20, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return persisted predictions ordered from most to least uncertain.
+
+    This endpoint deliberately returns model output separately from human
+    annotations; users explicitly choose which units enter an annotation task.
+    """
+    rows = await ActiveLearningService(db).uncertain_queue(
+        model_id, user_id=current_user.id, limit=limit
+    )
+    return [
+        {
+            "prediction": {
+                "id": prediction.id,
+                "trained_model_id": prediction.trained_model_id,
+                "text_unit_id": prediction.text_unit_id,
+                "predicted_labels": _loads(prediction.predicted_labels_json, []),
+                "scores": _loads(prediction.scores_json, {}),
+                "uncertainty": prediction.uncertainty,
+                "created_at": prediction.created_at,
+            },
+            "text_unit": {
+                "id": unit.id,
+                "corpus_document_id": unit.corpus_document_id,
+                "unit_type": unit.unit_type,
+                "position": unit.position,
+                "text": unit.text,
+            },
+        }
+        for row in rows
+        if (prediction := row["prediction"]) and (unit := row["text_unit"])
+    ]
+
+
+@router.post("/classifiers/{model_id}/active-learning/assign", status_code=201)
+async def assign_uncertain_predictions(
+    model_id: str,
+    body: ActiveLearningAssignRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    tasks = await ActiveLearningService(db).send_to_annotation(
+        model_id,
+        user_id=current_user.id,
+        text_unit_ids=body.text_unit_ids,
+        annotator_ids=body.annotator_ids,
+    )
+    return [
+        {
+            "id": task.id,
+            "text_unit_id": task.text_unit_id,
+            "annotator_id": task.annotator_id,
+            "status": task.status,
+            "assigned_at": task.assigned_at,
+            "completed_at": task.completed_at,
+        }
+        for task in tasks
+    ]
+
+
+# ------------------------------------------------------------------
+# Topic models
+# ------------------------------------------------------------------
+
+
+def _topic_filters(body: TopicTrainRequest) -> dict[str, Any]:
+    return {
+        k: v
+        for k, v in body.model_dump().items()
+        if k
+        not in {
+            "unit_type",
+            "algorithm",
+            "n_topics",
+            "preprocessing_profile_id",
+            "max_iterations",
+            "random_seed",
+            "run_async",
+        }
+        and v is not None
+    }
+
+
+@router.post(
+    "/corpora/{corpus_id}/topics/train", response_model=AnalysisRunResponse, status_code=202
+)
+async def train_topic_model(
+    corpus_id: str,
+    body: TopicTrainRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await TopicModelService(db).train(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        algorithm=body.algorithm,
+        n_topics=body.n_topics,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        max_iterations=body.max_iterations,
+        random_seed=body.random_seed,
+        run_async=body.run_async,
+        **_topic_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post("/topics/{run_id}/labels", status_code=201)
+async def name_topic(
+    run_id: str,
+    body: TopicLabelRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    label = await TopicModelService(db).name_topic(
+        run_id,
+        user_id=current_user.id,
+        topic_id=body.topic_id,
+        human_name=body.human_name,
+    )
+    return {"id": label.id, "topic_id": label.topic_id, "human_name": label.human_name}
+
+
+@router.get("/topics/{run_id}/labels")
+async def list_topic_labels(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    labels = await TopicModelService(db).get_topic_labels(run_id, user_id=current_user.id)
+    return [
+        {
+            "id": label.id,
+            "topic_id": label.topic_id,
+            "human_name": label.human_name,
+            "created_at": label.created_at,
+        }
+        for label in labels
+    ]
+
+
+# ------------------------------------------------------------------
+# Robustness, comparative, dashboard
+# ------------------------------------------------------------------
+
+
+@router.post("/robustness/sweep", response_model=AnalysisRunResponse, status_code=202)
+async def run_robustness_sweep(
+    body: RobustnessRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await RobustnessService(db).run_sweep(
+        body.snapshot_id,
+        user_id=current_user.id,
+        algorithm=body.algorithm,
+        seeds=body.seeds,
+        cv_folds=body.cv_folds,
+        class_weights=body.class_weights,
+        test_size=body.test_size,
+        run_async=body.run_async,
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/comparative/prevalence", response_model=AnalysisRunResponse)
+async def comparative_prevalence(
+    corpus_id: str,
+    body: ComparativeAnalysisRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    filters = {
+        k: v
+        for k, v in body.model_dump().items()
+        if k
+        not in {
+            "unit_type",
+            "codebook_id",
+            "label_ids",
+            "group_by",
+            "provenance_mode",
+            "model_id",
+        }
+        and v is not None
+    }
+    run = await ComparativeAnalysisService(db).prevalence_by_metadata(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        codebook_id=body.codebook_id,
+        label_ids=body.label_ids,
+        group_by=body.group_by,
+        provenance_mode=body.provenance_mode,
+        model_id=body.model_id,
+        **filters,
+    )
+    return _run_response(run)
+
+
+@router.get("/corpora/{corpus_id}/dashboard")
+async def dashboard_summary(
+    corpus_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await DashboardService(db).summary(corpus_id, user_id=current_user.id)
+
+
+# ------------------------------------------------------------------
+# Runs & exports
+# ------------------------------------------------------------------
+
+
+@router.get("/projects/{project_id}/runs", response_model=PaginatedResponse[AnalysisRunResponse])
+async def list_runs(
+    project_id: str,
+    corpus_id: str | None = None,
+    run_type: str | None = None,
+    pagination: PaginationParams = Depends(pagination_params),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    runs, total = await RunService(db).list_runs(
+        project_id=project_id,
+        user_id=current_user.id,
+        corpus_id=corpus_id,
+        run_type=run_type,
+        limit=pagination.limit,
+        offset=pagination.offset,
+    )
+    return paginated_response(
+        [_run_response(r) for r in runs],
+        total=total,
+        limit=pagination.limit,
+        offset=pagination.offset,
+    )
+
+
+@router.get("/runs/{run_id}", response_model=AnalysisRunResponse)
+async def get_run(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await RunService(db).get_run(run_id, user_id=current_user.id)
+    return _run_response(run)
+
+
+@router.get("/runs/{run_id}/clone-parameters")
+async def clone_run_parameters(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await RunService(db).clone_parameters(run_id, user_id=current_user.id)
+
+
+@router.post("/runs/{run_id}/rerun", response_model=AnalysisRunResponse, status_code=202)
+async def rerun(
+    run_id: str,
+    run_async: bool = False,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await RunService(db).rerun(run_id, user_id=current_user.id, run_async=run_async)
+    return _run_response(run)
+
+
+@router.get("/corpora/{corpus_id}/export/manifest", response_model=ExportManifestResponse)
+async def export_manifest(
+    corpus_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    manifest = await ExportService(db).build_manifest(corpus_id, user_id=current_user.id)
+    return ExportManifestResponse(manifest=manifest)
+
+
+@router.get("/corpora/{corpus_id}/export/quanteda-script", response_model=QuantedaScriptResponse)
+async def export_quanteda_script(
+    corpus_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    script = await ExportService(db).build_quanteda_script(corpus_id, user_id=current_user.id)
+    return QuantedaScriptResponse(script=script)
+
+
+@router.get("/corpora/{corpus_id}/export/units.csv", response_class=PlainTextResponse)
+async def export_units_csv(
+    corpus_id: str,
+    unit_type: str = Query(default="paragraph"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ExportService(db).export_units_csv(
+        corpus_id, user_id=current_user.id, unit_type=unit_type
+    )
+
+
+@router.get("/corpora/{corpus_id}/export/annotations.csv", response_class=PlainTextResponse)
+async def export_annotations_csv(
+    corpus_id: str,
+    codebook_id: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ExportService(db).export_annotations_csv(
+        corpus_id, user_id=current_user.id, codebook_id=codebook_id
+    )
+
+
+@router.get("/classifiers/{model_id}/export/predictions.csv", response_class=PlainTextResponse)
+async def export_predictions_csv(
+    model_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ExportService(db).export_predictions_csv(model_id, user_id=current_user.id)

@@ -8,6 +8,7 @@ Generic full-stack starter with:
 - Celery workers for asynchronous jobs, using Redis as broker/result backend
 - JWT auth with refresh rotation
 - Admin settings, notifications, profile, and project modules
+- **Policy Text Lab** — computational text research workflow ([docs/text-research.md](docs/text-research.md))
 - Optional platform modules for billing, API keys, webhooks, feature flags, and email templates
 - Sentry/OpenTelemetry hooks and S3-compatible avatar storage
 

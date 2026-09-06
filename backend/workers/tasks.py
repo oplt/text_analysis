@@ -1,5 +1,11 @@
 from backend.modules.memory.workers import extract_turn_memories_sync
 from backend.modules.rag.workers import cleanup_document_sync, index_document_sync
+from backend.modules.text_research.workers import (
+    classifier_training_sync,
+    robustness_sweep_sync,
+    segmentation_sync,
+    topic_model_training_sync,
+)
 from backend.workers.celery_app import celery_app
 from backend.workers.email import send_email_sync
 from backend.workers.evaluation import run_evaluation_sync
@@ -100,3 +106,47 @@ def extract_turn_memories_task(
         assistant_message=assistant_message,
         source_message_id=source_message_id,
     )
+
+
+@celery_app.task(
+    name="backend.workers.tasks.research_segmentation_task",
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=3,
+)
+def research_segmentation_task(*, run_id: str, user_id: str) -> None:
+    segmentation_sync(run_id=run_id, user_id=user_id)
+
+
+@celery_app.task(
+    name="backend.workers.tasks.research_classifier_training_task",
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=2,
+)
+def research_classifier_training_task(*, run_id: str, user_id: str) -> None:
+    classifier_training_sync(run_id=run_id, user_id=user_id)
+
+
+@celery_app.task(
+    name="backend.workers.tasks.research_topic_model_training_task",
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=2,
+)
+def research_topic_model_training_task(*, run_id: str, user_id: str) -> None:
+    topic_model_training_sync(run_id=run_id, user_id=user_id)
+
+
+@celery_app.task(
+    name="backend.workers.tasks.research_robustness_sweep_task",
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_jitter=True,
+    max_retries=2,
+)
+def research_robustness_sweep_task(*, run_id: str, user_id: str) -> None:
+    robustness_sweep_sync(run_id=run_id, user_id=user_id)

@@ -33,6 +33,11 @@ dependencies = [
     "pypdf",
     "python-docx",
     "pgvector",
+    "numpy",
+    "pandas",
+    "scipy",
+    "scikit-learn",
+    "joblib",
 ]
 
 [tool.ruff]
@@ -49,6 +54,8 @@ ignore = ["B008"]  # FastAPI Depends() in defaults
 [dependency-groups]
 dev = [
     "honcho>=2.0.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
 ]
 
 [tool.pytest.ini_options]

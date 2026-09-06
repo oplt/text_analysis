@@ -1,0 +1,124 @@
+"""Deterministic corpus segmentation into `TextUnit`s, tracked via `AnalysisRun`.
+
+Large corpora are segmented asynchronously via Celery; small corpora are
+segmented synchronously within the request so the demo feels immediate.
+"""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+
+from backend.core.config import settings
+from backend.modules.text_research.application.access import ResearchAccessMixin
+from backend.modules.text_research.application.corpus_service import CorpusService
+from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
+from backend.modules.text_research.domain.models import AnalysisRun, TextUnit, dumps, loads
+from backend.modules.text_research.infrastructure.segmentation import segment_text
+
+
+def _utcnow() -> datetime:
+    return datetime.now(UTC)
+
+
+class SegmentationService(ResearchAccessMixin):
+    async def start_segmentation(
+        self, corpus_id: str, *, user_id: str, unit_type: str
+    ) -> AnalysisRun:
+        corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        documents = await self.repo.list_documents(corpus_id)
+
+        run = await self.repo.create_run(
+            AnalysisRun(
+                project_id=corpus.project_id,
+                corpus_id=corpus_id,
+                run_type=AnalysisRunType.SEGMENTATION.value,
+                status=AnalysisRunStatus.QUEUED.value,
+                parameters_json=dumps({"unit_type": unit_type, "document_count": len(documents)}),
+                created_by=user_id,
+            )
+        )
+        await self.db.commit()
+
+        if len(documents) > settings.RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD:
+            from backend.modules.text_research.workers import queue_segmentation
+
+            queue_segmentation(run_id=run.id, user_id=user_id)
+        else:
+            await self.execute_segmentation(run.id)
+
+        refreshed = await self.repo.get_run(run.id)
+        assert refreshed is not None
+        return refreshed
+
+    async def execute_segmentation(self, run_id: str) -> AnalysisRun:
+        """Perform the actual segmentation for a queued/running AnalysisRun.
+
+        Safe to call from a Celery worker (its own DB session) or synchronously
+        from `start_segmentation` for small corpora.
+        """
+        run = await self.repo.get_run(run_id)
+        if run is None:
+            raise ValueError(f"AnalysisRun {run_id} not found")
+
+        params = loads(run.parameters_json, {})
+        unit_type = params.get("unit_type")
+
+        await self.repo.update_run(
+            run,
+            status=AnalysisRunStatus.RUNNING.value,
+            progress_stage="segmenting",
+            started_at=_utcnow(),
+        )
+        await self.db.commit()
+
+        corpus_service = CorpusService(self.db)
+        try:
+            documents = await self.repo.list_documents(run.corpus_id)
+            total_units = 0
+            per_document: list[dict] = []
+            for document in documents:
+                text = await corpus_service.get_source_text(document.id, user_id=run.created_by)
+                await self.repo.delete_text_units_for_document(document.id, unit_type)
+                segments = segment_text(text, unit_type)
+                rows = [
+                    TextUnit(
+                        corpus_document_id=document.id,
+                        unit_type=unit_type,
+                        position=segment.position,
+                        page_number=segment.page_number,
+                        paragraph_number=segment.paragraph_number,
+                        sentence_number=segment.sentence_number,
+                        text=segment.text,
+                        text_hash=segment.text_hash,
+                    )
+                    for segment in segments
+                ]
+                if rows:
+                    await self.repo.bulk_create_text_units(rows)
+                total_units += len(rows)
+                per_document.append({"document_id": document.id, "unit_count": len(rows)})
+
+            await self.repo.update_run(
+                run,
+                status=AnalysisRunStatus.COMPLETED.value,
+                progress_stage="completed",
+                completed_at=_utcnow(),
+                metrics_json=dumps(
+                    {"documents_segmented": len(documents), "text_units_created": total_units}
+                ),
+                results_json=dumps({"per_document": per_document}),
+            )
+            await self.db.commit()
+        except Exception as exc:  # noqa: BLE001
+            await self.repo.update_run(
+                run,
+                status=AnalysisRunStatus.FAILED.value,
+                completed_at=_utcnow(),
+                error_message=str(exc),
+            )
+            await self.db.commit()
+            raise
+
+        refreshed = await self.repo.get_run(run_id)
+        assert refreshed is not None
+        return refreshed

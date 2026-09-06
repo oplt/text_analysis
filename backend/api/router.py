@@ -12,6 +12,7 @@ from backend.modules.profile.router import router as profile_router
 from backend.modules.projects.router import router as projects_router
 from backend.modules.rag.api.routes import router as rag_router
 from backend.modules.settings.router import router as settings_router
+from backend.modules.text_research.api.routes import router as research_router
 from backend.modules.users.router import router as users_router
 from backend.observability.router import router as observability_router
 
@@ -22,6 +23,7 @@ api_router.include_router(ai_router, prefix="/ai", tags=["ai"])
 api_router.include_router(agent_router, prefix="/agent", tags=["agent"])
 api_router.include_router(memory_router, prefix="/memory", tags=["memory"])
 api_router.include_router(rag_router, prefix="/rag", tags=["rag"])
+api_router.include_router(research_router, prefix="/research", tags=["research"])
 api_router.include_router(calendar_router, prefix="/calendar", tags=["calendar"])
 api_router.include_router(users_router, prefix="/users", tags=["users"])
 api_router.include_router(profile_router, prefix="/profile", tags=["profile"])

@@ -60,6 +60,30 @@ export const queryKeys = {
         promptVersions: (templateId: string) => ["ai", "prompt-versions", templateId] as const,
         datasetCases: (datasetId: string) => ["ai", "dataset-cases", datasetId] as const,
     },
+    textResearch: {
+        all: ["text-research"] as const,
+        corpora: (projectId: string) => ["text-research", projectId, "corpora"] as const,
+        corpus: (corpusId: string) => ["text-research", "corpus", corpusId] as const,
+        documents: (corpusId: string) => ["text-research", "corpus", corpusId, "documents"] as const,
+        codebooks: (projectId: string) => ["text-research", projectId, "codebooks"] as const,
+        labels: (codebookId: string) => ["text-research", "codebook", codebookId, "labels"] as const,
+        dashboard: (corpusId: string) => ["text-research", "corpus", corpusId, "dashboard"] as const,
+        annotationQueue: (status?: string) =>
+            ["text-research", "annotation-queue", status ?? "all"] as const,
+        annotationProgress: (corpusId: string) =>
+            ["text-research", "corpus", corpusId, "annotation-progress"] as const,
+        runs: (projectId: string, corpusId?: string, runType?: string) =>
+            ["text-research", projectId, "runs", corpusId ?? "all", runType ?? "all"] as const,
+        run: (runId: string) => ["text-research", "run", runId] as const,
+        classifiers: (projectId: string, corpusId?: string) =>
+            ["text-research", projectId, "classifiers", corpusId ?? "all"] as const,
+        datasetSnapshots: (projectId: string, corpusId?: string) =>
+            ["text-research", projectId, "snapshots", corpusId ?? "all"] as const,
+        exportManifest: (corpusId: string) =>
+            ["text-research", "corpus", corpusId, "export-manifest"] as const,
+        preprocessingProfiles: (projectId: string) =>
+            ["text-research", projectId, "preprocessing-profiles"] as const,
+    },
 } as const;
 
 export async function invalidateUserIdentity(queryClient: QueryClient) {

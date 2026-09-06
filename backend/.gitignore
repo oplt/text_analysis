@@ -33,7 +33,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/  # do not ignore backend/lib shared ports
+# lib/
 lib64/
 parts/
 sdist/
@@ -191,3 +192,6 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 ../commands.txt
+
+# Policy Text Lab: local research model/vectorizer artifacts
+.research_artifacts/

@@ -26,6 +26,7 @@ from backend.modules.platform import models as platform_models  # noqa: F401
 from backend.modules.profile import models as profile_models  # noqa: F401
 from backend.modules.projects import models as project_models  # noqa: F401
 from backend.modules.settings import models as settings_models  # noqa: F401
+from backend.modules.text_research import domain as text_research_models  # noqa: F401
 from backend.modules.users import models as user_models  # noqa: F401
 
 # this is the Alembic Config object, which provides

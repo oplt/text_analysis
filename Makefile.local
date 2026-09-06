@@ -277,11 +277,24 @@ observability-status:
 
 kill-dev: kill-celery kill-app-processes kill-ports
 
-db-migrate:
+backend/.env:
+	@if [ ! -f backend/.env ]; then \
+		cp backend/.env.example backend/.env; \
+		echo "Created backend/.env from backend/.env.example"; \
+	fi
+
+db-migrate: backend/.env
+	@echo "[db] checking database connection..."
+	@cd backend && $(PYTHON) scripts/check_db.py
 	@echo "[db] applying pending migrations..."
 	@cd backend && $(PYTHON) -m alembic upgrade head
 
-local-dev: check-local-tools kill-dev db-migrate start-observability-stack
+local-dev: check-local-tools
+	@echo "[dev] stopping existing local development processes and clearing ports"
+	@$(MAKE) -f $(LOCAL_MAKEFILE) kill-dev
+	@$(MAKE) -f $(LOCAL_MAKEFILE) db-migrate
+	@$(MAKE) -f $(LOCAL_MAKEFILE) start-observability-stack
+	@echo "[dev] starting Redis, backend, worker, and frontend"
 	$(HONCHO) -f Procfile.dev start $(DEV_PROCS)
 
 local-dev-no-observability:

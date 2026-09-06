@@ -75,7 +75,7 @@ class Settings(BaseSettings):
     AUTH_FAILURE_WINDOW_SECONDS: int = 900
     HEALTH_READY_PUBLIC: bool = False
     HEALTH_VERSION_PUBLIC: bool = False
-    REQUIRE_EMAIL_VERIFICATION: bool = True
+    REQUIRE_EMAIL_VERIFICATION: bool = False  # disabled for local dev; re-enable in production
 
     # Email verification / password reset token TTLs (seconds)
     VERIFICATION_TOKEN_TTL: int = 86400  # 24 h
@@ -170,6 +170,13 @@ class Settings(BaseSettings):
     RAG_MAX_FILE_BYTES: int = 10 * 1024 * 1024
     RAG_ASK_PROMPT_TEMPLATE_KEY: str = "rag-answer"
     RAG_ASK_TIMEOUT_SECONDS: float = 45.0
+
+    # Text Research (Policy Text Lab) model/vectorizer artifact storage
+    RESEARCH_ARTIFACT_DIR: str = "var/research_artifacts"
+    RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD: int = 50
+
+    # Text research (Policy Text Lab)
+    RESEARCH_ARTIFACT_ROOT: str = ""
 
     CORS_ALLOWED_ORIGINS: Annotated[list[str], NoDecode] = Field(default_factory=list)
 

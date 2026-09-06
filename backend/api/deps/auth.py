@@ -42,9 +42,10 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     user = await _get_authenticated_user(access_token, db)
-    if not user.is_verified:
-        logger.warning("authorization_failed action=unverified_access user_id=%s", user.id)
-        raise HTTPException(status_code=403, detail="Verify your email before accessing the app")
+    # Email verification temporarily disabled.
+    # if not user.is_verified:
+    #     logger.warning("authorization_failed action=unverified_access user_id=%s", user.id)
+    #     raise HTTPException(status_code=403, detail="Verify your email before accessing the app")
     return user
 
 

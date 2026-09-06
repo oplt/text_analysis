@@ -44,8 +44,9 @@ class IdentityService:
     ) -> User | None:
         existing = await self.repo.get_user_by_email(email)
         if existing:
-            if settings.REQUIRE_EMAIL_VERIFICATION and not existing.is_verified:
-                await self.resend_verification(email)
+            # Email verification temporarily disabled.
+            # if settings.REQUIRE_EMAIL_VERIFICATION and not existing.is_verified:
+            #     await self.resend_verification(email)
             return None
 
         invite_code = (admin_invite_code or "").strip()
@@ -64,41 +65,16 @@ class IdentityService:
             password_hash=await hash_password_async(password),
             full_name=full_name,
             is_admin=is_admin,
-            is_verified=not settings.REQUIRE_EMAIL_VERIFICATION,
+            is_verified=True,  # email verification temporarily disabled
+            # is_verified=not settings.REQUIRE_EMAIL_VERIFICATION,
         )
         await self.db.commit()
         await self.db.refresh(user)
 
-        if settings.REQUIRE_EMAIL_VERIFICATION:
-            token = await self._store_verification_token(user.id)
-            _query = urlencode({"token": token, "email": user.email})
-            verification_link = f"{settings.FRONTEND_URL}/verify-email?{_query}"
-            app_name = await self._get_platform_app_name()
-            subject, html_body, text_body = await self.platform.render_email_template(
-                key="auth.verify_email",
-                context={
-                    "app_name": app_name,
-                    "recipient_email": user.email,
-                    "action_url": verification_link,
-                },
-                fallback_subject="Verify your email address",
-                fallback_html=(
-                    "<p>Thanks for signing up. Click the link below to verify your email:</p>"
-                    f"<p><a href=\"{verification_link}\">{verification_link}</a></p>"
-                    "<p>This link expires in 24 hours.</p>"
-                ),
-                fallback_text=(
-                    "Thanks for signing up.\n"
-                    f"Verify your email: {verification_link}\n"
-                    "This link expires in 24 hours."
-                ),
-            )
-            queue_email(
-                to=user.email,
-                subject=subject,
-                html_body=html_body,
-                text_body=text_body,
-            )
+        # Email verification temporarily disabled — signup verification emails are not sent.
+        # if settings.REQUIRE_EMAIL_VERIFICATION:
+        #     token = await self._store_verification_token(user.id)
+        #     ...
 
         return user
 
@@ -109,8 +85,9 @@ class IdentityService:
 
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Account disabled")
-        if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
-            raise HTTPException(status_code=403, detail="Verify your email before signing in")
+        # Email verification temporarily disabled.
+        # if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
+        #     raise HTTPException(status_code=403, detail="Verify your email before signing in")
         if user.mfa_enabled:
             try:
                 import pyotp
@@ -155,8 +132,9 @@ class IdentityService:
         user = await self.repo.get_user_by_id(session.user_id)
         if not user or not user.is_active:
             raise HTTPException(status_code=401, detail="User not found or disabled")
-        if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
-            raise HTTPException(status_code=403, detail="Verify your email before signing in")
+        # Email verification temporarily disabled.
+        # if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
+        #     raise HTTPException(status_code=403, detail="Verify your email before signing in")
 
         await self.repo.revoke_refresh_session(session)
 
@@ -205,43 +183,13 @@ class IdentityService:
         await redis_client.delete(key)
 
     async def resend_verification(self, email: str) -> None:
-        if not settings.REQUIRE_EMAIL_VERIFICATION:
-            return
+        # Email verification temporarily disabled.
+        return
 
-        user = await self.repo.get_user_by_email(email)
-        if not user or user.is_verified:
-            # Don't leak whether address exists
-            return
-
-        token = await self._store_verification_token(user.id)
-        _query = urlencode({"token": token, "email": user.email})
-        verification_link = f"{settings.FRONTEND_URL}/verify-email?{_query}"
-        app_name = await self._get_platform_app_name()
-        subject, html_body, text_body = await self.platform.render_email_template(
-            key="auth.verify_email",
-            context={
-                "app_name": app_name,
-                "recipient_email": user.email,
-                "action_url": verification_link,
-            },
-            fallback_subject="Verify your email address",
-            fallback_html=(
-                "<p>Thanks for signing up. Click the link below to verify your email:</p>"
-                f"<p><a href=\"{verification_link}\">{verification_link}</a></p>"
-                "<p>This link expires in 24 hours.</p>"
-            ),
-            fallback_text=(
-                "Thanks for signing up.\n"
-                f"Verify your email: {verification_link}\n"
-                "This link expires in 24 hours."
-            ),
-        )
-        queue_email(
-            to=user.email,
-            subject=subject,
-            html_body=html_body,
-            text_body=text_body,
-        )
+        # user = await self.repo.get_user_by_email(email)
+        # if not user or user.is_verified:
+        #     return
+        # ...
 
     # ------------------------------------------------------------------ password reset
 

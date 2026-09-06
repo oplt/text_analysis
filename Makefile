@@ -1,4 +1,7 @@
-.PHONY: local-dev docker-dev prod-dev observability-up observability-down observability-logs observability-status start-observability-stack stop-observability-stack local-dev-no-observability fix check install-hooks commit-ready
+.PHONY: local-dev docker-dev prod-dev db-migrate observability-up observability-down observability-logs observability-status start-observability-stack stop-observability-stack local-dev-no-observability fix check install-hooks commit-ready
+
+db-migrate:
+	$(MAKE) -f Makefile.local db-migrate
 
 local-dev:
 	$(MAKE) -f Makefile.local local-dev

@@ -1,32 +1,44 @@
-# AI Assistant Guidelines — generic_app
-
-Guidelines for AI tools contributing to this fullstack monorepo (FastAPI + React).
+# AI Assistant Guidelines
 
 ## Architecture
 
-- **Backend:** modular monolith under `backend/modules/` (`identity_access`, `users`, `projects`, `ai`, `rag`, `memory`, …)
-- **Shared libs:** `backend/lib/` (vectors, caches, pagination), `backend/core/` (config, cache, storage)
-- **Frontend:** React + Vite in `frontend/src/`; prefer `features/*` colocation for new UI
-- **Observability:** `backend/observability/` + `observability/` (Grafana/Prometheus/Tempo configs)
+* Backend: FastAPI modular monolith in `backend/modules/`
+* Core/shared concerns: `backend/core/`
+* Frontend: React + Vite in `frontend/src/`; prefer `features/*`
+* Workers: Celery in `backend/workers/`
+* Observability: `backend/observability/` and `observability/`
+* Check `DESIGN.md` and `docs/adr/` for architectural changes
 
 ## Conventions
 
-- Python: type hints, async SQLAlchemy sessions, `HTTPException` for API errors
-- RAG documents live in the `rag` module; `/api/v1/ai/documents*` delegates to `LegacyAiDocumentService` when `RAG_ENABLED=true`
-- Do not reintroduce parallel AI document ingestion — use RAG ingestion only
-- Vector search: pgvector only (`RAG_VECTOR_BACKEND=pgvector`); unsupported backends fail at startup
-- Tests: `pytest` / `unittest` under `backend/tests/` and `backend/modules/*/tests/`
-- Logging: centralized setup in `backend/core/logging.py`; see [docs/logging.md](../docs/logging.md)
+* Python: type hints, async SQLAlchemy
+* Follow `router -> service/application -> repository/infrastructure`
+* Do not import peer modules' routers
+* Domain code must not depend on infrastructure
+* Reuse existing helpers before adding new ones
+* Add Alembic migrations for DB schema changes
 
-## Before submitting changes
+## AI / RAG
 
-1. Run relevant tests (see `Makefile`, module READMEs)
-2. Keep diffs focused; match existing patterns in the touched module
-3. Disclose AI assistance in PR descriptions
-4. Do not commit secrets, `.env`, or Redis dumps (`dump.rdb`)
+* RAG owns document ingestion
+* `/api/v1/ai/documents*` is a legacy compatibility layer backed by RAG
+* Do not add parallel ingestion/vector-storage paths
+* Vector backend: pgvector only
+* Unsupported backends must fail validation
+
+## Validation
+
+* Run relevant tests
+* Run `make check`
+* Backend: relevant `pytest` tests
+* Frontend: `cd frontend && npm test`
+* Run E2E tests when changing covered user flows
+* Never claim tests passed unless actually run
 
 ## Do not
 
-- Fabricate test results or API behavior
-- Add duplicate helpers when `backend/lib/` already provides them
-- Bypass module boundaries (e.g. import another module's `router.py` from feature code)
+* Commit secrets, `.env`, tokens, credentials, or `dump.rdb`
+* Fabricate test results or API behavior
+* Bypass module boundaries
+* Duplicate existing infrastructure/helpers
+* Make unrelated broad refactors

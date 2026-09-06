@@ -1,5 +1,5 @@
 redis: sh -c 'redis-cli -h 127.0.0.1 -p "${REDIS_PORT:-6380}" ping >/dev/null 2>&1 && echo "Redis already running" && tail -f /dev/null || exec redis-server --bind 127.0.0.1 --port "${REDIS_PORT:-6380}"'
-backend: sh -c 'exec "${PYTHON:-python}" -m uvicorn backend.api.main:app --reload --reload-dir backend --port "${BACKEND_PORT:-8000}"'
+backend: sh -c 'export PYTHONPATH="${PYTHONPATH:-.}"; exec "${PYTHON:-python}" -m uvicorn backend.api.main:app --reload --reload-dir backend --host 127.0.0.1 --port "${BACKEND_PORT:-8000}"'
 worker: sh -c 'exec "${PYTHON:-python}" -m celery -A backend.workers.celery_app:celery_app worker --loglevel=INFO --queues=default,email --concurrency="${CELERY_CONCURRENCY:-2}"'
 frontend: sh -c 'cd frontend && exec npm run dev -- --port "${FRONTEND_PORT:-5173}"'
 browser: sh -c 'until curl -s "http://localhost:${FRONTEND_PORT:-5173}" >/dev/null 2>&1; do sleep 1; done; xdg-open "http://localhost:${FRONTEND_PORT:-5173}" >/dev/null 2>&1 || true; tail -f /dev/null'
