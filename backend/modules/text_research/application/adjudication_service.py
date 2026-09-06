@@ -61,10 +61,12 @@ class AdjudicationService(ResearchAccessMixin):
         label = await self.repo.get_label(label_id)
         if label is None:
             raise HTTPException(status_code=404, detail="Label not found")
+        codebook = await self.get_codebook_or_404(label.codebook_id, user_id=user_id)
 
         adjudication = await self.repo.upsert_adjudication(
             text_unit_id=text_unit_id,
             label_id=label_id,
+            codebook_version=codebook.version,
             final_value=final_value,
             adjudicator_id=user_id,
             comment=comment,

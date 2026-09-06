@@ -29,17 +29,26 @@ from backend.modules.text_research.api.schemas import (
     AnnotationResponse,
     AnnotationSaveRequest,
     BulkMetadataUpdate,
+    MetadataImportResponse,
     ClassifierPredictRequest,
     ClassifierTrainRequest,
     CodebookCreate,
     CodebookResponse,
     ComparativeAnalysisRequest,
+    ContextualDatasetCreate,
+    ContextualDatasetDetail,
+    ContextualDatasetSummary,
+    ContextualImportResponse,
+    ContextualLinkRequest,
     CooccurrenceRequest,
+    CorpusAnnotationAssignRequest,
+    CorpusAnnotationAssignResponse,
     CorpusDocumentCreate,
     CorpusDocumentResponse,
     CorpusDocumentUpdate,
     DatasetFreezeRequest,
     DatasetPreviewRequest,
+    DatasetPreviewResponse,
     DemoSeedRequest,
     DfmRequest,
     DictionaryAnalysisRequest,
@@ -51,6 +60,8 @@ from backend.modules.text_research.api.schemas import (
     KeynessRequest,
     KwicRequest,
     NgramRequest,
+    PreprocessingPreviewRequest,
+    PreprocessingPreviewResponse,
     PreprocessingProfileCreate,
     PreprocessingProfileResponse,
     PreprocessingProfileUpdate,
@@ -62,6 +73,7 @@ from backend.modules.text_research.api.schemas import (
     RobustnessRequest,
     SegmentRequest,
     SourceTextResponse,
+    TextUnitContextResponse,
     TopicLabelRequest,
     TopicTrainRequest,
     TrainedModelResponse,
@@ -74,6 +86,9 @@ from backend.modules.text_research.application.classification_service import Cla
 from backend.modules.text_research.application.codebook_service import CodebookService
 from backend.modules.text_research.application.comparative_analysis_service import (
     ComparativeAnalysisService,
+)
+from backend.modules.text_research.application.contextual_dataset_service import (
+    ContextualDatasetService,
 )
 from backend.modules.text_research.application.corpus_service import CorpusService
 from backend.modules.text_research.application.dashboard_service import DashboardService
@@ -353,16 +368,31 @@ async def add_document(
 async def list_documents(
     corpus_id: str,
     pagination: PaginationParams = Depends(pagination_params),
+    organization: str | None = Query(default=None),
+    publication_year: int | None = Query(default=None),
+    region: str | None = Query(default=None),
+    cultural_sphere: str | None = Query(default=None),
+    language: str | None = Query(default=None),
+    search: str | None = Query(default=None),
+    sort_by: str = Query(default="created_at"),
+    sort_dir: str = Query(default="asc"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    documents = await CorpusService(db).list_documents(
+    documents, total = await CorpusService(db).paginate_documents(
         corpus_id,
         user_id=current_user.id,
+        organization=organization,
+        publication_year=publication_year,
+        region=region,
+        cultural_sphere=cultural_sphere,
+        language=language,
+        search=search,
+        sort_by=sort_by,
+        sort_dir=sort_dir,
         limit=pagination.limit,
         offset=pagination.offset,
     )
-    total = len(documents)
     return paginated_response(
         [_document_response(d) for d in documents],
         total=total,
@@ -413,7 +443,7 @@ async def bulk_update_metadata(
 
 
 @router.post(
-    "/corpora/{corpus_id}/documents/metadata/import", response_model=list[CorpusDocumentResponse]
+    "/corpora/{corpus_id}/documents/metadata/import", response_model=MetadataImportResponse
 )
 async def import_metadata_csv(
     corpus_id: str,
@@ -422,9 +452,10 @@ async def import_metadata_csv(
     current_user: User = Depends(get_current_user),
 ):
     content = (await file.read()).decode("utf-8")
-    return await CorpusService(db).import_metadata_csv(
+    result = await CorpusService(db).import_metadata_csv(
         corpus_id, user_id=current_user.id, csv_content=content
     )
+    return MetadataImportResponse(**result)
 
 
 @router.delete("/documents/{document_id}", status_code=204)
@@ -539,6 +570,24 @@ async def delete_preprocessing_profile(
     current_user: User = Depends(get_current_user),
 ):
     await PreprocessingProfileService(db).delete_profile(profile_id, user_id=current_user.id)
+
+
+@router.post("/preprocessing/preview", response_model=PreprocessingPreviewResponse)
+async def preview_preprocessing_config(
+    body: PreprocessingPreviewRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await PreprocessingProfileService(db).preview(
+        user_id=current_user.id,
+        project_id=body.project_id,
+        corpus_id=body.corpus_id,
+        unit_type=body.unit_type,
+        texts=body.texts,
+        config=body.config,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        sample_size=body.sample_size,
+    )
 
 
 # ------------------------------------------------------------------
@@ -671,6 +720,30 @@ async def assign_annotation_tasks(
     return {"assigned_count": len(tasks)}
 
 
+@router.post(
+    "/corpora/{corpus_id}/annotations/assign",
+    response_model=CorpusAnnotationAssignResponse,
+    status_code=201,
+)
+async def assign_corpus_annotation_tasks(
+    corpus_id: str,
+    body: CorpusAnnotationAssignRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    sample_size = body.sample_size if body.limit is None else body.limit
+    return await AnnotationService(db).assign_corpus_tasks(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        annotator_ids=body.annotator_ids,
+        sample_size=sample_size,
+        strategy=body.strategy,
+        overlap_count=body.overlap_count,
+        overlap_percent=body.overlap_percent,
+    )
+
+
 @router.get("/annotations/queue")
 async def list_annotation_queue(
     status: str | None = None,
@@ -718,6 +791,18 @@ async def list_unit_annotations(
         text_unit_id, user_id=current_user.id
     )
     return [AnnotationResponse.model_validate(a) for a in annotations]
+
+
+@router.get("/text-units/{text_unit_id}/context", response_model=TextUnitContextResponse)
+async def get_text_unit_context(
+    text_unit_id: str,
+    window: int = Query(default=2, ge=0, le=10),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await AnnotationService(db).get_unit_context(
+        text_unit_id, user_id=current_user.id, window=window
+    )
 
 
 # ------------------------------------------------------------------
@@ -1023,7 +1108,7 @@ async def create_dictionary_version(
 # ------------------------------------------------------------------
 
 
-@router.post("/classifiers/dataset-preview")
+@router.post("/classifiers/dataset-preview", response_model=DatasetPreviewResponse)
 async def dataset_preview(
     body: DatasetPreviewRequest,
     db: AsyncSession = Depends(get_db),
@@ -1452,12 +1537,70 @@ async def clone_run_parameters(
 @router.post("/runs/{run_id}/rerun", response_model=AnalysisRunResponse, status_code=202)
 async def rerun(
     run_id: str,
-    run_async: bool = False,
+    run_async: bool = True,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     run = await RunService(db).rerun(run_id, user_id=current_user.id, run_async=run_async)
     return _run_response(run)
+
+
+@router.post("/runs/{run_id}/cancel", response_model=AnalysisRunResponse)
+async def cancel_run(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await RunService(db).cancel_run(run_id, user_id=current_user.id)
+    return _run_response(run)
+
+
+@router.get("/runs/{run_a_id}/compare/{run_b_id}")
+async def compare_runs(
+    run_a_id: str,
+    run_b_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await RunService(db).compare_runs(run_a_id, run_b_id, user_id=current_user.id)
+
+
+@router.get("/runs/{run_id}/export.json")
+async def export_run_json(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ExportService(db).export_run_json(run_id, user_id=current_user.id)
+
+
+@router.get("/codebooks/{codebook_id}/export.json")
+async def export_codebook_json(
+    codebook_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ExportService(db).export_codebook_json(codebook_id, user_id=current_user.id)
+
+
+@router.get("/classifiers/{model_id}/export/metrics.json")
+async def export_model_metrics(
+    model_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ExportService(db).export_model_metrics(model_id, user_id=current_user.id)
+
+
+@router.get("/preprocessing-profiles/{profile_id}/export.json")
+async def export_preprocessing_profile_json(
+    profile_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ExportService(db).export_preprocessing_profile_json(
+        profile_id, user_id=current_user.id
+    )
 
 
 @router.get("/corpora/{corpus_id}/export/manifest", response_model=ExportManifestResponse)
@@ -1511,3 +1654,117 @@ async def export_predictions_csv(
     current_user: User = Depends(get_current_user),
 ):
     return await ExportService(db).export_predictions_csv(model_id, user_id=current_user.id)
+
+
+# ------------------------------------------------------------------
+# Contextual / mixed-method datasets
+# ------------------------------------------------------------------
+
+
+@router.post(
+    "/projects/{project_id}/contextual-datasets",
+    response_model=ContextualDatasetSummary,
+    status_code=201,
+)
+async def create_contextual_dataset(
+    project_id: str,
+    body: ContextualDatasetCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    dataset = await ContextualDatasetService(db).create_dataset(
+        project_id=project_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+    )
+    return ContextualDatasetSummary(
+        id=dataset.id,
+        project_id=dataset.project_id,
+        name=dataset.name,
+        description=dataset.description,
+        created_by=dataset.created_by,
+        created_at=dataset.created_at,
+        observation_count=0,
+    )
+
+
+@router.get(
+    "/projects/{project_id}/contextual-datasets",
+    response_model=list[ContextualDatasetSummary],
+)
+async def list_contextual_datasets(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    rows = await ContextualDatasetService(db).list_datasets(
+        project_id=project_id, user_id=current_user.id
+    )
+    return [ContextualDatasetSummary.model_validate(row) for row in rows]
+
+
+@router.get("/contextual-datasets/{dataset_id}", response_model=ContextualDatasetDetail)
+async def get_contextual_dataset(
+    dataset_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    detail = await ContextualDatasetService(db).get_dataset(dataset_id, user_id=current_user.id)
+    return ContextualDatasetDetail.model_validate(detail)
+
+
+@router.delete("/contextual-datasets/{dataset_id}", status_code=204)
+async def delete_contextual_dataset(
+    dataset_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await ContextualDatasetService(db).delete_dataset(dataset_id, user_id=current_user.id)
+
+
+@router.post(
+    "/contextual-datasets/{dataset_id}/import-csv",
+    response_model=ContextualImportResponse,
+)
+async def import_contextual_csv(
+    dataset_id: str,
+    file: UploadFile = File(...),
+    replace_existing: bool = Query(default=True),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    payload = await file.read()
+    try:
+        csv_text = payload.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=422, detail="CSV must be UTF-8 encoded.") from exc
+    result = await ContextualDatasetService(db).import_csv(
+        dataset_id,
+        user_id=current_user.id,
+        csv_text=csv_text,
+        replace_existing=replace_existing,
+    )
+    return ContextualImportResponse.model_validate(result)
+
+
+@router.post("/contextual-datasets/{dataset_id}/link-discourse")
+async def link_contextual_discourse(
+    dataset_id: str,
+    body: ContextualLinkRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await ContextualDatasetService(db).link_discourse(
+        dataset_id,
+        user_id=current_user.id,
+        corpus_id=body.corpus_id,
+        codebook_id=body.codebook_id,
+        label_ids=body.label_ids,
+        indicator_key=body.indicator_key,
+        unit_type=body.unit_type,
+        group_by=body.group_by,
+        join_on_year=body.join_on_year,
+        provenance_mode=body.provenance_mode,
+        model_id=body.model_id,
+    )

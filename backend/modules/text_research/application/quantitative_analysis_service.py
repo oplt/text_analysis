@@ -9,6 +9,7 @@ reproducibility. Nothing is fabricated.
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from typing import Any
 
@@ -21,6 +22,7 @@ from backend.modules.text_research.application.preprocessing_service import (
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import AnalysisRun, CorpusDocument, TextUnit, dumps
 from backend.modules.text_research.infrastructure import quantitative
+from backend.modules.text_research.infrastructure.feature_cache import build_cache_key
 from backend.modules.text_research.infrastructure.preprocessing import PreprocessingConfig
 
 
@@ -28,27 +30,64 @@ def _utcnow() -> datetime:
     return datetime.now(UTC)
 
 
+def _filter_kwargs(filters: dict[str, Any]) -> dict[str, Any]:
+    """Map analysis filter names onto repository document-select kwargs."""
+    mapping = {
+        "organization": "organization",
+        "organization_type": "organization_type",
+        "region": "region",
+        "cultural_sphere": "cultural_sphere",
+        "language": "language",
+        "publication_type": "publication_type",
+        "country": "country",
+        "publication_year": "publication_year",
+        "publication_year_min": "publication_year_min",
+        "publication_year_max": "publication_year_max",
+        "year_min": "publication_year_min",
+        "year_max": "publication_year_max",
+    }
+    return {
+        mapping[key]: value
+        for key, value in filters.items()
+        if key in mapping and value is not None
+    }
+
+
 def _apply_document_filters(
     documents: list[CorpusDocument], filters: dict[str, Any]
 ) -> list[CorpusDocument]:
+    """Legacy in-memory filter kept for callers that already loaded documents."""
     result = documents
-    if filters.get("organization"):
-        result = [d for d in result if d.organization == filters["organization"]]
-    if filters.get("region"):
-        result = [d for d in result if d.region == filters["region"]]
-    if filters.get("cultural_sphere"):
-        result = [d for d in result if d.cultural_sphere == filters["cultural_sphere"]]
-    if filters.get("language"):
-        result = [d for d in result if d.language == filters["language"]]
-    if filters.get("publication_type"):
-        result = [d for d in result if d.publication_type == filters["publication_type"]]
-    if filters.get("year_min") is not None:
+    kwargs = _filter_kwargs(filters)
+    if kwargs.get("organization"):
+        result = [d for d in result if d.organization == kwargs["organization"]]
+    if kwargs.get("organization_type"):
+        result = [d for d in result if d.organization_type == kwargs["organization_type"]]
+    if kwargs.get("region"):
+        result = [d for d in result if d.region == kwargs["region"]]
+    if kwargs.get("cultural_sphere"):
+        result = [d for d in result if d.cultural_sphere == kwargs["cultural_sphere"]]
+    if kwargs.get("language"):
+        result = [d for d in result if d.language == kwargs["language"]]
+    if kwargs.get("publication_type"):
+        result = [d for d in result if d.publication_type == kwargs["publication_type"]]
+    if kwargs.get("country"):
+        result = [d for d in result if d.country == kwargs["country"]]
+    if kwargs.get("publication_year") is not None:
+        result = [d for d in result if d.publication_year == kwargs["publication_year"]]
+    if kwargs.get("publication_year_min") is not None:
         result = [
-            d for d in result if d.publication_year is not None and d.publication_year >= filters["year_min"]
+            d
+            for d in result
+            if d.publication_year is not None
+            and d.publication_year >= kwargs["publication_year_min"]
         ]
-    if filters.get("year_max") is not None:
+    if kwargs.get("publication_year_max") is not None:
         result = [
-            d for d in result if d.publication_year is not None and d.publication_year <= filters["year_max"]
+            d
+            for d in result
+            if d.publication_year is not None
+            and d.publication_year <= kwargs["publication_year_max"]
         ]
     if filters.get("document_ids"):
         wanted = set(filters["document_ids"])
@@ -74,11 +113,16 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         self, corpus_id: str, *, user_id: str, unit_type: str, filters: dict[str, Any] | None = None
     ) -> tuple[Any, list[TextUnit], list[CorpusDocument]]:
         corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
-        documents = await self.repo.list_documents(corpus_id)
-        filtered_docs = _apply_document_filters(documents, filters or {})
-        doc_ids = [d.id for d in filtered_docs]
+        filter_kwargs = _filter_kwargs(filters or {})
+        documents = await self.repo.list_documents(corpus_id, **filter_kwargs)
+        if filters and filters.get("document_ids"):
+            wanted = set(filters["document_ids"])
+            documents = [d for d in documents if d.id in wanted]
+        doc_ids = [d.id for d in documents]
         units = await self.repo.list_text_units_for_corpus(
-            corpus_id, unit_type=unit_type, document_ids=doc_ids if filters else None
+            corpus_id,
+            unit_type=unit_type,
+            document_ids=doc_ids if (filters and filter_kwargs) or (filters and filters.get("document_ids")) else None,
         )
         if not units:
             raise HTTPException(
@@ -86,7 +130,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 detail="No text units match the requested corpus/unit_type/filters. "
                 "Segment the corpus first or relax filters.",
             )
-        return corpus, units, filtered_docs
+        return corpus, units, documents
 
     async def _persist_run(
         self,
@@ -118,6 +162,26 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
     def _document_lookup(self, units: list[TextUnit], documents: list[CorpusDocument]) -> dict[str, CorpusDocument]:
         return {d.id: d for d in documents}
 
+    def _cache_key(
+        self,
+        *,
+        corpus_id: str,
+        unit_type: str,
+        units: list[TextUnit],
+        config: PreprocessingConfig,
+        filters: dict[str, Any] | None,
+        mode: str,
+    ) -> str:
+        return build_cache_key(
+            corpus_id=corpus_id,
+            unit_type=unit_type,
+            unit_ids=[u.id for u in units],
+            unit_hashes=[u.text_hash for u in units],
+            config=config,
+            mode=mode,
+            filters=filters,
+        )
+
     # ------------------------------------------------------------------
     async def corpus_stats(
         self,
@@ -133,7 +197,17 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         )
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
         texts = [u.text for u in units]
-        stats = quantitative.corpus_stats(texts, config)
+        cache_key = self._cache_key(
+            corpus_id=corpus.id,
+            unit_type=unit_type,
+            units=units,
+            config=config,
+            filters=filters,
+            mode="tokens",
+        )
+        stats = await asyncio.to_thread(
+            quantitative.corpus_stats, texts, config, cache_key=cache_key
+        )
 
         doc_lookup = self._document_lookup(units, documents)
 
@@ -173,7 +247,21 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
     ) -> AnalysisRun:
         corpus, units, _ = await self._select(corpus_id, user_id=user_id, unit_type=unit_type, filters=filters)
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
-        rows = quantitative.compute_frequencies([u.text for u in units], config, top_n=top_n)
+        cache_key = self._cache_key(
+            corpus_id=corpus.id,
+            unit_type=unit_type,
+            units=units,
+            config=config,
+            filters=filters,
+            mode="tokens",
+        )
+        rows = await asyncio.to_thread(
+            quantitative.compute_frequencies,
+            [u.text for u in units],
+            config,
+            top_n=top_n,
+            cache_key=cache_key,
+        )
         return await self._persist_run(
             corpus,
             AnalysisRunType.FREQUENCY_ANALYSIS,
@@ -196,7 +284,17 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
     ) -> AnalysisRun:
         corpus, units, _ = await self._select(corpus_id, user_id=user_id, unit_type=unit_type, filters=filters)
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
-        rows = quantitative.compute_ngrams([u.text for u in units], config, n=n, top_n=top_n)
+        cache_key = self._cache_key(
+            corpus_id=corpus.id, unit_type=unit_type, units=units, config=config, filters=filters, mode="tokens"
+        )
+        rows = await asyncio.to_thread(
+            quantitative.compute_ngrams,
+            [u.text for u in units],
+            config,
+            n=n,
+            top_n=top_n,
+            cache_key=cache_key,
+        )
         return await self._persist_run(
             corpus,
             AnalysisRunType.NGRAM_ANALYSIS,
@@ -218,10 +316,18 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
     ) -> AnalysisRun:
         corpus, units, _ = await self._select(corpus_id, user_id=user_id, unit_type=unit_type, filters=filters)
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
-        result = quantitative.build_dfm(
-            [u.text for u in units], [u.id for u in units], config, weighting=weighting
+        cache_key = self._cache_key(
+            corpus_id=corpus.id, unit_type=unit_type, units=units, config=config, filters=filters, mode="tokens"
         )
-        summary = quantitative.dfm_summary(result)
+        result = await asyncio.to_thread(
+            quantitative.build_dfm,
+            [u.text for u in units],
+            [u.id for u in units],
+            config,
+            weighting=weighting,
+            cache_key=cache_key,
+        )
+        summary = await asyncio.to_thread(quantitative.dfm_summary, result)
         return await self._persist_run(
             corpus,
             AnalysisRunType.DFM,
@@ -256,8 +362,12 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                     "publication_year": doc.publication_year if doc else None,
                 }
             )
-        matches = quantitative.kwic_search(
-            payload, keyword, window_size=window_size, case_sensitive=case_sensitive
+        matches = await asyncio.to_thread(
+            quantitative.kwic_search,
+            payload,
+            keyword,
+            window_size=window_size,
+            case_sensitive=case_sensitive,
         )
         return await self._persist_run(
             corpus,
@@ -288,6 +398,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
     ) -> AnalysisRun:
         corpus, units, documents = await self._select(corpus_id, user_id=user_id, unit_type=unit_type, filters=filters)
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
+        cache_key = self._cache_key(
+            corpus_id=corpus.id, unit_type=unit_type, units=units, config=config, filters=filters, mode="tokens"
+        )
         doc_lookup = self._document_lookup(units, documents)
         group_keys = None
         if group_by:
@@ -295,8 +408,14 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 str(getattr(doc_lookup.get(u.corpus_document_id), group_by, None) or "unspecified")
                 for u in units
             ]
-        result = quantitative.dictionary_analysis(
-            [u.text for u in units], [u.id for u in units], dictionary_terms, config, group_keys=group_keys
+        result = await asyncio.to_thread(
+            quantitative.dictionary_analysis,
+            [u.text for u in units],
+            [u.id for u in units],
+            dictionary_terms,
+            config,
+            group_keys=group_keys,
+            cache_key=cache_key,
         )
         return await self._persist_run(
             corpus,
@@ -332,8 +451,20 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units_a, _ = await self._select(corpus_id, user_id=user_id, unit_type=unit_type, filters=filters_a)
         _, units_b, _ = await self._select(corpus_id, user_id=user_id, unit_type=unit_type, filters=filters_b)
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
-        rows = quantitative.keyness_for_texts(
-            [u.text for u in units_a], [u.text for u in units_b], config, top_n=top_n
+        cache_key_a = self._cache_key(
+            corpus_id=corpus.id, unit_type=unit_type, units=units_a, config=config, filters=filters_a, mode="tokens"
+        )
+        cache_key_b = self._cache_key(
+            corpus_id=corpus.id, unit_type=unit_type, units=units_b, config=config, filters=filters_b, mode="tokens"
+        )
+        rows = await asyncio.to_thread(
+            quantitative.keyness_for_texts,
+            [u.text for u in units_a],
+            [u.text for u in units_b],
+            config,
+            top_n=top_n,
+            cache_key_a=cache_key_a,
+            cache_key_b=cache_key_b,
         )
         return await self._persist_run(
             corpus,
@@ -363,8 +494,16 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
     ) -> AnalysisRun:
         corpus, units, _ = await self._select(corpus_id, user_id=user_id, unit_type=unit_type, filters=filters)
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
-        rows = quantitative.cooccurrence_for_texts(
-            [u.text for u in units], config, window_size=window_size, top_n=top_n
+        cache_key = self._cache_key(
+            corpus_id=corpus.id, unit_type=unit_type, units=units, config=config, filters=filters, mode="tokens"
+        )
+        rows = await asyncio.to_thread(
+            quantitative.cooccurrence_for_texts,
+            [u.text for u in units],
+            config,
+            window_size=window_size,
+            top_n=top_n,
+            cache_key=cache_key,
         )
         return await self._persist_run(
             corpus,

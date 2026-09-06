@@ -1,22 +1,11 @@
 # .understandignore — patterns for files/dirs to exclude from analysis
-node_modules/
-.git/
-venv/
-.venv/
-__pycache__/
-dist/
-build/
-coverage/
-.next/
-.cache/
-target/
-*.lock
-package-lock.json
-uv.lock
-*.png
-*.jpg
-*.svg
-*.min.js
-*.map
-.idea/
-.vscode/
+# Syntax: same as .gitignore. Built-in exclusions also cover node_modules,
+# virtual environments, build outputs, lockfiles, binaries, and logs.
+#
+# Uncomment a pattern only when that area is outside the graph's intended scope.
+
+# docs/
+# backend/tests/
+# backend/scripts/
+# *.test.*
+# *.spec.*

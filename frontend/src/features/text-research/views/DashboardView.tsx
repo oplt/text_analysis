@@ -1,5 +1,6 @@
 import {
     Box,
+    Button,
     Table,
     TableBody,
     TableCell,
@@ -11,30 +12,50 @@ import {
     Assignment as AnnotationIcon,
     AutoStories as CorpusIcon,
     ModelTraining as ModelIcon,
+    Science as SeedIcon,
     Verified as ReliabilityIcon,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { StatCard } from "../../../components/ui/StatCard";
+import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { getDashboardSummary } from "../../../api/textResearch";
 import { queryKeys } from "../../../config/queryKeys";
+import { NoCorpusEmptyState } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 
 export default function DashboardView() {
     const ctx = useResearchContext();
+    const navigate = useNavigate();
     const dashboardQuery = useQuery({
         queryKey: queryKeys.textResearch.dashboard(ctx.selectedCorpusId),
         queryFn: () => getDashboardSummary(ctx.selectedCorpusId),
         enabled: Boolean(ctx.selectedCorpusId),
     });
 
+    if (!ctx.corporaLoading && ctx.corpora.length === 0) {
+        return <NoCorpusEmptyState />;
+    }
+
     if (!ctx.selectedCorpusId) {
         return (
             <SectionCard title="Dashboard">
-                <Typography color="text.secondary">
-                    Select or create a corpus to view dashboard KPIs.
-                </Typography>
+                <EmptyState
+                    icon={<CorpusIcon fontSize="large" />}
+                    title="Select a corpus"
+                    description="Choose an existing corpus in the workspace context bar, or create one to see KPIs."
+                    action={
+                        <Button
+                            variant="contained"
+                            startIcon={<SeedIcon />}
+                            onClick={() => navigate(`/research/${ctx.projectId}/corpus`)}
+                        >
+                            Go to corpus
+                        </Button>
+                    }
+                />
             </SectionCard>
         );
     }
@@ -47,16 +68,41 @@ export default function DashboardView() {
             onRetry={() => void dashboardQuery.refetch()}
         >
             {dashboardQuery.data ? (
-                <StackContent summary={dashboardQuery.data} />
+                <StackContent summary={dashboardQuery.data} projectId={ctx.projectId} />
             ) : null}
         </QueryBoundary>
     );
 }
 
-function StackContent({ summary }: { summary: Awaited<ReturnType<typeof getDashboardSummary>> }) {
+function StackContent({
+    summary,
+    projectId,
+}: {
+    summary: Awaited<ReturnType<typeof getDashboardSummary>>;
+    projectId: string;
+}) {
+    const navigate = useNavigate();
     const completionPct = Math.round(summary.annotation_completion_rate * 100);
+    const hasUnits = Object.values(summary.text_unit_counts).some((count) => count > 0);
+
     return (
         <Box sx={{ display: "grid", gap: 2 }}>
+            {!hasUnits && summary.document_count > 0 ? (
+                <EmptyState
+                    icon={<CorpusIcon fontSize="large" />}
+                    title="Segment this corpus"
+                    description={`${summary.document_count} documents are linked, but no text units exist yet.`}
+                    action={
+                        <Button
+                            variant="contained"
+                            onClick={() => navigate(`/research/${projectId}/corpus`)}
+                        >
+                            Prepare corpus
+                        </Button>
+                    }
+                />
+            ) : null}
+
             <Box
                 sx={{
                     display: "grid",
@@ -138,12 +184,14 @@ function StackContent({ summary }: { summary: Awaited<ReturnType<typeof getDashb
                     </Typography>
                     <Table size="small">
                         <TableBody>
-                            {Object.entries(summary.analysis_run_counts_by_status).map(([status, count]) => (
-                                <TableRow key={status}>
-                                    <TableCell>{status}</TableCell>
-                                    <TableCell align="right">{count}</TableCell>
-                                </TableRow>
-                            ))}
+                            {Object.entries(summary.analysis_run_counts_by_status).map(
+                                ([status, count]) => (
+                                    <TableRow key={status}>
+                                        <TableCell>{status}</TableCell>
+                                        <TableCell align="right">{count}</TableCell>
+                                    </TableRow>
+                                )
+                            )}
                         </TableBody>
                     </Table>
                 </SectionCard>

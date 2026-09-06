@@ -20,6 +20,8 @@ class ResearchRouteRegistrationTest(unittest.TestCase):
             '/classifiers/{model_id}/active-learning/queue"',
             '/classifiers/{model_id}/active-learning/assign"',
             '/robustness/sweep"',
+            '/preprocessing/preview"',
+            '/contextual-datasets/',
         ):
             self.assertIn(fragment, source)
 

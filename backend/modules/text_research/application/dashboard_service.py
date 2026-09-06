@@ -16,49 +16,42 @@ from backend.modules.text_research.domain.models import loads
 class DashboardService(ResearchAccessMixin):
     async def summary(self, corpus_id: str, *, user_id: str) -> dict[str, Any]:
         corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
-        documents = await self.repo.list_documents(corpus_id)
 
+        document_count = await self.repo.count_documents(corpus_id)
+        grouped_unit_counts = await self.repo.count_text_units_grouped_by_type(corpus_id)
         unit_counts = {
-            unit_type.value: await self.repo.count_text_units_for_corpus(
-                corpus_id, unit_type=unit_type.value
-            )
+            unit_type.value: grouped_unit_counts.get(unit_type.value, 0)
             for unit_type in (UnitType.DOCUMENT, UnitType.PARAGRAPH, UnitType.SENTENCE)
         }
 
-        codebooks = await self.repo.list_codebooks(corpus.project_id)
-        models = await self.repo.list_models(corpus.project_id, corpus_id=corpus_id)
-        snapshots = await self.repo.list_snapshots(corpus.project_id, corpus_id=corpus_id)
-        runs, _total_runs = await self.repo.list_runs(
-            corpus.project_id, corpus_id=corpus_id, limit=200, offset=0
+        codebook_count = await self.repo.count_codebooks(corpus.project_id)
+        trained_model_count = await self.repo.count_models(corpus.project_id, corpus_id=corpus_id)
+        snapshot_count = await self.repo.count_snapshots(corpus.project_id, corpus_id=corpus_id)
+        runs_by_type = await self.repo.count_runs_grouped(
+            corpus.project_id, corpus_id=corpus_id, group_by="run_type"
         )
+        runs_by_status = await self.repo.count_runs_grouped(
+            corpus.project_id, corpus_id=corpus_id, group_by="status"
+        )
+        task_counts = await self.repo.count_annotation_tasks_for_corpus(corpus_id)
+        latest_reliability_run = await self.repo.get_latest_run(
+            corpus.project_id,
+            corpus_id=corpus_id,
+            run_type=AnalysisRunType.RELIABILITY.value,
+            status=AnalysisRunStatus.COMPLETED.value,
+        )
+        latest_model = await self.repo.get_latest_model(corpus.project_id, corpus_id=corpus_id)
 
-        runs_by_type: dict[str, int] = {}
-        runs_by_status: dict[str, int] = {}
-        latest_reliability_run = None
-        for run in runs:
-            runs_by_type[run.run_type] = runs_by_type.get(run.run_type, 0) + 1
-            runs_by_status[run.status] = runs_by_status.get(run.status, 0) + 1
-            if (
-                run.run_type == AnalysisRunType.RELIABILITY.value
-                and run.status == AnalysisRunStatus.COMPLETED.value
-                and (latest_reliability_run is None or run.created_at > latest_reliability_run.created_at)
-            ):
-                latest_reliability_run = run
-
-        latest_model = max(models, key=lambda m: m.created_at) if models else None
-
-        all_units = await self.repo.list_text_units_for_corpus(corpus_id)
-        unit_ids = [u.id for u in all_units]
-        tasks = await self.repo.list_tasks_for_units(unit_ids) if unit_ids else []
-        completed_tasks = sum(1 for t in tasks if t.status == "completed")
+        annotation_task_count = int(task_counts.get("total", 0))
+        completed_tasks = int(task_counts.get("completed", 0))
 
         return {
             "corpus": {"id": corpus.id, "name": corpus.name},
-            "document_count": len(documents),
+            "document_count": document_count,
             "text_unit_counts": unit_counts,
-            "codebook_count": len(codebooks),
-            "training_dataset_snapshot_count": len(snapshots),
-            "trained_model_count": len(models),
+            "codebook_count": codebook_count,
+            "training_dataset_snapshot_count": snapshot_count,
+            "trained_model_count": trained_model_count,
             "latest_model": (
                 {
                     "id": latest_model.id,
@@ -79,7 +72,9 @@ class DashboardService(ResearchAccessMixin):
                 if latest_reliability_run
                 else None
             ),
-            "annotation_task_count": len(tasks),
+            "annotation_task_count": annotation_task_count,
             "annotation_completed_count": completed_tasks,
-            "annotation_completion_rate": completed_tasks / len(tasks) if tasks else 0.0,
+            "annotation_completion_rate": (
+                completed_tasks / annotation_task_count if annotation_task_count else 0.0
+            ),
         }

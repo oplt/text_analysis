@@ -23,14 +23,21 @@ const AdminPlatformPage = lazy(() => import("../pages/AdminPlatformPage"));
 const AdminSettingsPage = lazy(() => import("../pages/AdminSettingsPage"));
 const AiStudioPage = lazy(() => import("../pages/AiStudioPage"));
 const ResearchPage = lazy(() => import("../pages/ResearchPage"));
+const ResearchLandingPage = lazy(() => import("../pages/ResearchLandingPage"));
 const DashboardView = lazy(() =>
     import("../features/text-research/views/DashboardView").then((m) => ({ default: m.default }))
 );
 const CorpusView = lazy(() =>
     import("../features/text-research/views/CorpusView").then((m) => ({ default: m.default }))
 );
+const PrepareView = lazy(() =>
+    import("../features/text-research/views/PrepareView").then((m) => ({ default: m.default }))
+);
 const AnnotationView = lazy(() =>
     import("../features/text-research/views/AnnotationView").then((m) => ({ default: m.default }))
+);
+const CodebookView = lazy(() =>
+    import("../features/text-research/views/CodebookView").then((m) => ({ default: m.default }))
 );
 const ReliabilityView = lazy(() =>
     import("../features/text-research/views/ReliabilityView").then((m) => ({ default: m.default }))
@@ -49,6 +56,9 @@ const RobustnessView = lazy(() =>
 );
 const ExplorerView = lazy(() =>
     import("../features/text-research/views/ExplorerView").then((m) => ({ default: m.default }))
+);
+const ContextualView = lazy(() =>
+    import("../features/text-research/views/ContextualView").then((m) => ({ default: m.default }))
 );
 const RunsView = lazy(() =>
     import("../features/text-research/views/RunsView").then((m) => ({ default: m.default }))
@@ -97,17 +107,21 @@ export function AppRouter() {
                     <Route path="/calendar" element={<SuspensePage><CalendarPage /></SuspensePage>} />
                     <Route path="/projects" element={<SuspensePage><ProjectsPage /></SuspensePage>} />
                     <Route path="/projects/:projectId" element={<SuspensePage><ProjectDetailPage /></SuspensePage>} />
+                    <Route path="/research" element={<SuspensePage><ResearchLandingPage /></SuspensePage>} />
                     <Route path="/research/:projectId" element={<SuspensePage><ResearchPage /></SuspensePage>}>
                         <Route index element={<Navigate to="dashboard" replace />} />
                         <Route path="dashboard" element={<SuspensePage><DashboardView /></SuspensePage>} />
                         <Route path="corpus" element={<SuspensePage><CorpusView /></SuspensePage>} />
+                        <Route path="prepare" element={<SuspensePage><PrepareView /></SuspensePage>} />
                         <Route path="annotation" element={<SuspensePage><AnnotationView /></SuspensePage>} />
+                        <Route path="codebook" element={<SuspensePage><CodebookView /></SuspensePage>} />
                         <Route path="reliability" element={<SuspensePage><ReliabilityView /></SuspensePage>} />
                         <Route path="analysis" element={<SuspensePage><AnalysisView /></SuspensePage>} />
                         <Route path="classification" element={<SuspensePage><ClassificationView /></SuspensePage>} />
                         <Route path="topics" element={<SuspensePage><TopicsView /></SuspensePage>} />
                         <Route path="robustness" element={<SuspensePage><RobustnessView /></SuspensePage>} />
                         <Route path="explorer" element={<SuspensePage><ExplorerView /></SuspensePage>} />
+                        <Route path="contextual" element={<SuspensePage><ContextualView /></SuspensePage>} />
                         <Route path="runs" element={<SuspensePage><RunsView /></SuspensePage>} />
                         <Route path="exports" element={<Navigate to="../runs" replace />} />
                     </Route>

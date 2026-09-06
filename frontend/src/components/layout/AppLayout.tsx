@@ -29,12 +29,15 @@ import {
     Logout as LogoutIcon,
     Menu as MenuIcon,
     Notifications as NotificationsIcon,
+    Science as ResearchIcon,
     Settings as SettingsIcon,
     SettingsBrightness as SystemModeIcon,
 } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
+import { useQuery } from "@tanstack/react-query";
 import { colors, fonts } from "../../app/designTokens";
 import { useColorMode } from "../../app/colorModeContext";
+import { listProjects } from "../../api/projects";
 import { useAuth } from "../../hooks/useAuth";
 import { usePlatformMetadata } from "../../hooks/usePlatformMetadata";
 import { useUserProfile } from "../../hooks/useUserProfile";
@@ -43,6 +46,11 @@ import {
     isSettingsHubPath,
     useSettingsTabs,
 } from "../../hooks/useSettingsTabs";
+import { queryKeys } from "../../config/queryKeys";
+import {
+    getLastResearchProjectId,
+    researchLabPath,
+} from "../../features/text-research/researchProjectStorage";
 import { NotificationNavBadge } from "./NotificationNavBadge";
 import { getInitials } from "../../utils/formatters";
 
@@ -172,10 +180,26 @@ export function AppLayout() {
     const { data: platformMetadata } = usePlatformMetadata();
     const { data: profile } = useUserProfile();
     const settingsTabs = useSettingsTabs();
+    const { data: projects = [] } = useQuery({
+        queryKey: queryKeys.projects.all,
+        queryFn: listProjects,
+        staleTime: 60_000,
+    });
     const appName = platformMetadata?.app_name ?? "Your App";
     const coreDomainPlural = platformMetadata?.core_domain_plural ?? "Projects";
     const drawerCollapsed = !isMobile && desktopNavCollapsed;
     const desktopDrawerWidth = drawerCollapsed ? COLLAPSED_DRAWER_WIDTH : DRAWER_WIDTH;
+
+    const researchNavPath = useMemo(() => {
+        const lastId = getLastResearchProjectId();
+        if (lastId && projects.some((project) => project.id === lastId)) {
+            return researchLabPath(lastId);
+        }
+        if (projects.length === 1) {
+            return researchLabPath(projects[0].id);
+        }
+        return "/research";
+    }, [projects]);
 
     const settingsNavItem = useMemo<NavItem>(
         () => ({
@@ -192,8 +216,15 @@ export function AppLayout() {
         () => [
             { label: "Dashboard", icon: <DashboardIcon />, path: "/dashboard", group: "workspace" },
             { label: coreDomainPlural, icon: <ProjectsIcon />, path: "/projects", group: "workspace" },
+            {
+                label: "Policy Text Lab",
+                icon: <ResearchIcon />,
+                path: researchNavPath,
+                group: "workspace",
+                isSelected: (pathname) => pathname.startsWith("/research"),
+            },
         ],
-        [coreDomainPlural]
+        [coreDomainPlural, researchNavPath]
     );
 
     const visibleNavItems = navItems;
@@ -202,12 +233,26 @@ export function AppLayout() {
         settingsSelected
             ? settingsNavItem
             : visibleNavItems.find((item) =>
-                  item.path === "/dashboard"
-                      ? location.pathname === item.path
-                      : location.pathname.startsWith(item.path)
+                  item.isSelected
+                      ? item.isSelected(location.pathname)
+                      : item.path === "/dashboard"
+                        ? location.pathname === item.path
+                        : location.pathname.startsWith(item.path)
               );
+
+    const researchProjectId = location.pathname.match(/^\/research\/([^/]+)/)?.[1];
+    const researchProjectName =
+        researchProjectId && researchProjectId !== "undefined"
+            ? projects.find((project) => project.id === researchProjectId)?.name
+            : undefined;
+
     const pageTitle =
         getSettingsHubLabel(location.pathname, settingsTabs) ??
+        (location.pathname.startsWith("/research")
+            ? researchProjectName
+                ? `Policy Text Lab · ${researchProjectName}`
+                : "Policy Text Lab"
+            : undefined) ??
         currentItem?.label ??
         (location.pathname.startsWith("/calendar") ? "Calendar" : undefined) ??
         (location.pathname.startsWith("/notifications") ? "Notifications" : undefined) ??

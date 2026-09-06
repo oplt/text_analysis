@@ -64,7 +64,8 @@ export const queryKeys = {
         all: ["text-research"] as const,
         corpora: (projectId: string) => ["text-research", projectId, "corpora"] as const,
         corpus: (corpusId: string) => ["text-research", "corpus", corpusId] as const,
-        documents: (corpusId: string) => ["text-research", "corpus", corpusId, "documents"] as const,
+        documents: (corpusId: string, params?: Record<string, unknown>) =>
+            ["text-research", "corpus", corpusId, "documents", params ?? {}] as const,
         codebooks: (projectId: string) => ["text-research", projectId, "codebooks"] as const,
         labels: (codebookId: string) => ["text-research", "codebook", codebookId, "labels"] as const,
         dashboard: (corpusId: string) => ["text-research", "corpus", corpusId, "dashboard"] as const,
@@ -83,6 +84,20 @@ export const queryKeys = {
             ["text-research", "corpus", corpusId, "export-manifest"] as const,
         preprocessingProfiles: (projectId: string) =>
             ["text-research", projectId, "preprocessing-profiles"] as const,
+        dictionaries: (projectId: string) =>
+            ["text-research", projectId, "dictionaries"] as const,
+        disagreements: (corpusId: string, codebookId: string) =>
+            ["text-research", "corpus", corpusId, "disagreements", codebookId] as const,
+        adjudications: (corpusId: string) =>
+            ["text-research", "corpus", corpusId, "adjudications"] as const,
+        topicLabels: (runId: string) =>
+            ["text-research", "topic-labels", runId] as const,
+        coefficients: (modelId: string) =>
+            ["text-research", "coefficients", modelId] as const,
+        contextualDatasets: (projectId: string) =>
+            ["text-research", projectId, "contextual-datasets"] as const,
+        contextualDataset: (datasetId: string) =>
+            ["text-research", "contextual-dataset", datasetId] as const,
     },
 } as const;
 

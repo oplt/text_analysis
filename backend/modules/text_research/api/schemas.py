@@ -91,6 +91,12 @@ class BulkMetadataUpdate(BaseModel):
     fields: dict[str, Any]
 
 
+class MetadataImportResponse(BaseModel):
+    updated: int
+    errors: list[str]
+    rows_processed: int
+
+
 class SourceTextResponse(BaseModel):
     document_id: str
     text: str
@@ -121,6 +127,29 @@ class PreprocessingProfileResponse(BaseModel):
     created_by: str
     created_at: datetime
     updated_at: datetime
+
+
+class PreprocessingPreviewRequest(BaseModel):
+    project_id: str | None = None
+    corpus_id: str | None = None
+    unit_type: str | None = None
+    texts: list[str] | None = None
+    config: dict[str, Any] | None = None
+    preprocessing_profile_id: str | None = None
+    sample_size: int = Field(default=5, ge=1, le=20)
+
+
+class PreprocessingPreviewResponse(BaseModel):
+    rows: list[dict[str, Any]]
+    token_count_before: int
+    token_count_after: int
+    vocabulary_size: int
+    most_frequently_removed_terms: list[dict[str, Any]]
+    config: dict[str, Any]
+    stemmer: str
+    lemmatization_supported: bool
+    profile_name: str | None = None
+    profile_updated_at: str | None = None
 
 
 class CodebookCreate(BaseModel):
@@ -178,6 +207,36 @@ class AnnotationAssignRequest(BaseModel):
     annotator_ids: list[str]
 
 
+class CorpusAnnotationAssignRequest(BaseModel):
+    unit_type: str = "paragraph"
+    annotator_ids: list[str] | None = None
+    sample_size: int = Field(default=50, ge=1, le=5000)
+    # Backward-compatible alias for sample_size
+    limit: int | None = Field(default=None, ge=1, le=5000)
+    strategy: str = Field(
+        default="overlap",
+        description="shared | disjoint | overlap",
+    )
+    overlap_count: int | None = Field(default=None, ge=0, le=5000)
+    overlap_percent: float | None = Field(default=None, ge=0, le=100)
+
+
+class CorpusAnnotationAssignResponse(BaseModel):
+    assigned_count: int
+    unique_units: int
+    overlap_units: int
+    strategy: str
+    unit_type: str
+    per_annotator: dict[str, int]
+
+
+class TextUnitContextResponse(BaseModel):
+    unit: dict[str, Any]
+    document: dict[str, Any] | None = None
+    before: list[dict[str, Any]] = Field(default_factory=list)
+    after: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class AnnotationSaveRequest(BaseModel):
     text_unit_id: str
     codebook_id: str
@@ -226,6 +285,19 @@ class DatasetFreezeRequest(DatasetPreviewRequest):
     name: str
 
 
+class DatasetPreviewResponse(BaseModel):
+    unit_count: int
+    document_count: int
+    unit_ids: list[str]
+    document_ids: list[str]
+    class_distribution: dict[str, dict[str, int]]
+    unit_labels: dict[str, list[str]]
+    missing_labels: list[dict[str, Any]]
+    excluded_disagreements: list[dict[str, Any]]
+    annotator_coverage: list[str]
+    warnings: list[str]
+
+
 class TrainingDatasetSnapshotResponse(BaseModel):
     id: str
     project_id: str
@@ -256,6 +328,7 @@ class CorpusFilters(BaseModel):
 class AnalysisRequest(CorpusFilters):
     unit_type: str
     preprocessing_profile_id: str | None = None
+    run_async: bool = False
 
 
 class FrequencyRequest(AnalysisRequest):
@@ -269,6 +342,7 @@ class NgramRequest(AnalysisRequest):
 
 class DfmRequest(AnalysisRequest):
     weighting: str = "count"
+    run_async: bool = True
 
 
 class KwicRequest(AnalysisRequest):
@@ -281,6 +355,7 @@ class DictionaryAnalysisRequest(AnalysisRequest):
     dictionary_id: str | None = None
     dictionary_terms: list[str] | None = None
     group_by: str | None = None
+    run_async: bool = True
 
 
 class KeynessRequest(BaseModel):
@@ -289,11 +364,13 @@ class KeynessRequest(BaseModel):
     filters_a: dict[str, Any]
     filters_b: dict[str, Any]
     top_n: int = 50
+    run_async: bool = True
 
 
 class CooccurrenceRequest(AnalysisRequest):
     window_size: int = 5
     top_n: int = 50
+    run_async: bool = True
 
 
 class ClassifierTrainRequest(BaseModel):
@@ -309,7 +386,7 @@ class ClassifierTrainRequest(BaseModel):
     test_size: float = 0.25
     random_seed: int = 42
     name: str | None = None
-    run_async: bool = False
+    run_async: bool = True
 
 
 class ClassifierPredictRequest(BaseModel):
@@ -350,7 +427,7 @@ class TopicTrainRequest(CorpusFilters):
     preprocessing_profile_id: str | None = None
     max_iterations: int = 25
     random_seed: int = 42
-    run_async: bool = False
+    run_async: bool = True
 
 
 class TopicLabelRequest(BaseModel):
@@ -365,7 +442,7 @@ class RobustnessRequest(BaseModel):
     cv_folds: int = 5
     class_weights: list[str | None] | None = None
     test_size: float = 0.25
-    run_async: bool = False
+    run_async: bool = True
 
 
 class ComparativeAnalysisRequest(CorpusFilters):
@@ -429,3 +506,58 @@ class ExportManifestResponse(BaseModel):
 
 class QuantedaScriptResponse(BaseModel):
     script: str
+
+
+class ContextualDatasetCreate(BaseModel):
+    name: str
+    description: str | None = None
+
+
+class ContextualDatasetSummary(BaseModel):
+    id: str
+    project_id: str
+    name: str
+    description: str | None
+    created_by: str
+    created_at: datetime
+    observation_count: int
+
+
+class ContextualObservationResponse(BaseModel):
+    id: str
+    country: str | None
+    year: int | None
+    values: dict[str, Any]
+    created_at: datetime
+
+
+class ContextualDatasetDetail(BaseModel):
+    id: str
+    project_id: str
+    name: str
+    description: str | None
+    created_by: str
+    created_at: datetime
+    observation_count: int
+    indicator_keys: list[str]
+    observations: list[ContextualObservationResponse]
+
+
+class ContextualImportResponse(BaseModel):
+    dataset_id: str
+    imported: int
+    skipped: int
+    indicator_keys: list[str]
+    replaced: bool
+
+
+class ContextualLinkRequest(BaseModel):
+    corpus_id: str
+    codebook_id: str
+    label_ids: list[str]
+    indicator_key: str
+    unit_type: str = "paragraph"
+    group_by: str = "country"
+    join_on_year: bool = True
+    provenance_mode: str = "human_only"
+    model_id: str | None = None

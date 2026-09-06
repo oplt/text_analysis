@@ -14,7 +14,13 @@ import {
 import { Download as DownloadIcon } from "@mui/icons-material";
 import { useQuery } from "@tanstack/react-query";
 import { useSnackbar } from "../../../app/snackbarContext";
-import { getExportManifest, getQuantedaScript, researchExportUrl } from "../../../api/textResearch";
+import {
+    getExportManifest,
+    getQuantedaScript,
+    listClassifiers,
+    listPreprocessingProfiles,
+    researchExportUrl,
+} from "../../../api/textResearch";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
@@ -51,6 +57,18 @@ export default function ExportsView() {
         queryKey: ["text-research", "quanteda-script", ctx.selectedCorpusId],
         queryFn: () => getQuantedaScript(ctx.selectedCorpusId),
         enabled: Boolean(ctx.selectedCorpusId),
+    });
+
+    const profilesQuery = useQuery({
+        queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
+        queryFn: () => listPreprocessingProfiles(ctx.projectId),
+        enabled: Boolean(ctx.projectId),
+    });
+
+    const classifiersQuery = useQuery({
+        queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: () => listClassifiers(ctx.projectId, ctx.selectedCorpusId),
+        enabled: Boolean(ctx.projectId && ctx.selectedCorpusId),
     });
 
     const handleDownload = useCallback(
@@ -162,6 +180,86 @@ export default function ExportsView() {
                             </Link>
                         </>
                     ) : null}
+                </Alert>
+            </SectionCard>
+
+            <SectionCard
+                title="Reproducibility JSON"
+                description="Export codebooks, preprocessing profiles, model metrics, and individual robustness or analysis runs."
+            >
+                <Table size="small">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Export</TableCell>
+                            <TableCell>Description</TableCell>
+                            <TableCell align="right">Action</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {ctx.selectedCodebookId ? (
+                            <TableRow>
+                                <TableCell>Codebook</TableCell>
+                                <TableCell>Selected codebook with labels and version</TableCell>
+                                <TableCell align="right">
+                                    <Button
+                                        size="small"
+                                        startIcon={<DownloadIcon />}
+                                        onClick={() =>
+                                            void handleDownload(
+                                                `/research/codebooks/${ctx.selectedCodebookId}/export.json`,
+                                                "codebook.json"
+                                            )
+                                        }
+                                    >
+                                        Download
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ) : null}
+                        {(profilesQuery.data ?? []).map((profile) => (
+                            <TableRow key={profile.id}>
+                                <TableCell>Preprocessing: {profile.name}</TableCell>
+                                <TableCell>Versioned preprocessing configuration</TableCell>
+                                <TableCell align="right">
+                                    <Button
+                                        size="small"
+                                        startIcon={<DownloadIcon />}
+                                        onClick={() =>
+                                            void handleDownload(
+                                                `/research/preprocessing-profiles/${profile.id}/export.json`,
+                                                `preprocessing-${profile.id}.json`
+                                            )
+                                        }
+                                    >
+                                        Download
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                        {(classifiersQuery.data ?? []).map((model) => (
+                            <TableRow key={model.id}>
+                                <TableCell>Model metrics: {model.name || `v${model.version}`}</TableCell>
+                                <TableCell>Classifier metrics, features, and training configuration</TableCell>
+                                <TableCell align="right">
+                                    <Button
+                                        size="small"
+                                        startIcon={<DownloadIcon />}
+                                        onClick={() =>
+                                            void handleDownload(
+                                                `/research/classifiers/${model.id}/export/metrics.json`,
+                                                `model-${model.id}-metrics.json`
+                                            )
+                                        }
+                                    >
+                                        Download
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                <Alert severity="info" sx={{ mt: 2 }}>
+                    Export a robustness result or any other analysis from its Run detail page.
                 </Alert>
             </SectionCard>
 

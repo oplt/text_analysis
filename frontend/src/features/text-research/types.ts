@@ -153,17 +153,19 @@ export type AnnotationQueueItem = {
         text_unit_id: string;
         annotator_id: string;
         status: string;
-        created_at: string;
-        updated_at: string;
+        assigned_at: string;
+        completed_at: string | null;
     };
     text_unit: {
         id: string;
-        corpus_id: string;
         corpus_document_id: string;
         unit_type: string;
-        unit_index: number;
+        position: number;
+        page_number: number | null;
+        paragraph_number: number | null;
+        sentence_number: number | null;
         text: string;
-        token_count: number | null;
+        text_hash: string;
         created_at: string;
     } | null;
 };
@@ -201,6 +203,11 @@ export type AnnotationProgress = {
     by_annotator: Record<string, { assigned: number; completed: number }>;
 };
 
+export type DatasetLabelGap = {
+    text_unit_id: string;
+    label_id: string;
+};
+
 export type DatasetPreview = {
     unit_count: number;
     document_count: number;
@@ -208,8 +215,8 @@ export type DatasetPreview = {
     document_ids: string[];
     class_distribution: Record<string, Record<string, number>>;
     unit_labels: Record<string, string[]>;
-    missing_labels: number;
-    excluded_disagreements: number;
+    missing_labels: DatasetLabelGap[];
+    excluded_disagreements: DatasetLabelGap[];
     annotator_coverage: string[];
     warnings: string[];
 };
@@ -230,12 +237,14 @@ export const RESEARCH_TABS = [
     { slug: "dashboard", label: "Dashboard" },
     { slug: "corpus", label: "Corpus" },
     { slug: "annotation", label: "Annotation" },
+    { slug: "codebook", label: "Codebook" },
     { slug: "reliability", label: "Reliability" },
     { slug: "analysis", label: "Analysis" },
     { slug: "classification", label: "Classification" },
     { slug: "topics", label: "Topics" },
     { slug: "robustness", label: "Robustness" },
     { slug: "explorer", label: "Explorer" },
+    { slug: "contextual", label: "Contextual" },
     { slug: "runs", label: "Runs & Exports" },
 ] as const;
 

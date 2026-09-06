@@ -386,16 +386,33 @@ def _config_dict(config: PreprocessingConfig | dict[str, Any] | None) -> dict[st
 
 
 def _tokenize_texts(
-    texts: list[str], config: PreprocessingConfig | dict[str, Any] | None
+    texts: list[str],
+    config: PreprocessingConfig | dict[str, Any] | None,
+    *,
+    cache_key: str | None = None,
 ) -> list[list[str]]:
+    if cache_key:
+        from backend.modules.text_research.infrastructure.feature_cache import get_cached, set_cached
+
+        cached = get_cached(cache_key)
+        if cached is not None:
+            return cached
     cfg = _config_dict(config)
-    return [tokenize(text, cfg) for text in texts]
+    tokenized = [tokenize(text, cfg) for text in texts]
+    if cache_key:
+        from backend.modules.text_research.infrastructure.feature_cache import set_cached
+
+        set_cached(cache_key, tokenized)
+    return tokenized
 
 
 def corpus_stats(
-    texts: list[str], config: PreprocessingConfig | dict[str, Any] | None
+    texts: list[str],
+    config: PreprocessingConfig | dict[str, Any] | None,
+    *,
+    cache_key: str | None = None,
 ) -> dict[str, Any]:
-    tokenized = _tokenize_texts(texts, config)
+    tokenized = _tokenize_texts(texts, config, cache_key=cache_key)
     return corpus_statistics(texts, tokenized)
 
 
@@ -404,8 +421,9 @@ def compute_frequencies(
     config: PreprocessingConfig | dict[str, Any] | None,
     *,
     top_n: int = 50,
+    cache_key: str | None = None,
 ) -> list[dict[str, Any]]:
-    tokenized = _tokenize_texts(texts, config)
+    tokenized = _tokenize_texts(texts, config, cache_key=cache_key)
     return term_frequencies(tokenized)[:top_n]
 
 
@@ -415,8 +433,9 @@ def compute_ngrams(
     *,
     n: int = 2,
     top_n: int = 50,
+    cache_key: str | None = None,
 ) -> list[dict[str, Any]]:
-    tokenized = _tokenize_texts(texts, config)
+    tokenized = _tokenize_texts(texts, config, cache_key=cache_key)
     return ngram_frequencies(tokenized, n=n)[:top_n]
 
 
@@ -425,6 +444,7 @@ def build_dfm(
     *args: Any,
     weighting: str = "count",
     mode: str | None = None,
+    cache_key: str | None = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Build a DFM from token lists or raw texts plus a preprocessing config."""
@@ -432,7 +452,7 @@ def build_dfm(
         isinstance(args[1], PreprocessingConfig)
         or (isinstance(args[1], dict) and "lowercase" in args[1])
     ):
-        tokenized = _tokenize_texts(texts_or_tokenized, args[1])
+        tokenized = _tokenize_texts(texts_or_tokenized, args[1], cache_key=cache_key)
         return build_dfm_matrix(tokenized, mode=weighting)
     use_mode = mode if mode is not None else weighting
     return build_dfm_matrix(texts_or_tokenized, mode=use_mode, **kwargs)
@@ -486,8 +506,9 @@ def dictionary_analysis(
     config: PreprocessingConfig | dict[str, Any] | None,
     *,
     group_keys: list[str] | None = None,
+    cache_key: str | None = None,
 ) -> dict[str, Any]:
-    tokenized = _tokenize_texts(texts, config)
+    tokenized = _tokenize_texts(texts, config, cache_key=cache_key)
     base = dictionary_hits(tokenized, dictionary_terms)
     per_unit = base.pop("per_unit_hits")
     result: dict[str, Any] = {
@@ -516,9 +537,11 @@ def keyness_for_texts(
     config: PreprocessingConfig | dict[str, Any] | None,
     *,
     top_n: int = 50,
+    cache_key_a: str | None = None,
+    cache_key_b: str | None = None,
 ) -> list[dict[str, Any]]:
-    tokenized_a = _tokenize_texts(texts_a, config)
-    tokenized_b = _tokenize_texts(texts_b, config)
+    tokenized_a = _tokenize_texts(texts_a, config, cache_key=cache_key_a)
+    tokenized_b = _tokenize_texts(texts_b, config, cache_key=cache_key_b)
     return keyness(tokenized_a, tokenized_b, top_n=top_n)
 
 
@@ -528,6 +551,7 @@ def cooccurrence_for_texts(
     *,
     window_size: int = 5,
     top_n: int = 50,
+    cache_key: str | None = None,
 ) -> list[dict[str, Any]]:
-    tokenized = _tokenize_texts(texts, config)
+    tokenized = _tokenize_texts(texts, config, cache_key=cache_key)
     return cooccurrence(tokenized, window=window_size, top_n=top_n)

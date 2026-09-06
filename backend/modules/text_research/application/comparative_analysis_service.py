@@ -17,7 +17,7 @@ from fastapi import HTTPException
 
 from backend.modules.text_research.application.access import ResearchAccessMixin
 from backend.modules.text_research.application.quantitative_analysis_service import (
-    _apply_document_filters,
+    _filter_kwargs,
 )
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType, ProvenanceMode
 from backend.modules.text_research.domain.models import AnalysisRun, dumps, loads
@@ -60,12 +60,12 @@ class ComparativeAnalysisService(ResearchAccessMixin):
         if not label_ids:
             raise HTTPException(status_code=400, detail="At least one label is required")
 
-        documents = await self.repo.list_documents(corpus_id)
-        filtered_docs = _apply_document_filters(documents, filters or {})
-        doc_ids = [d.id for d in filtered_docs]
-        doc_lookup = {d.id: d for d in filtered_docs}
+        filter_kwargs = _filter_kwargs(filters or {})
+        documents = await self.repo.list_documents(corpus_id, **filter_kwargs)
+        doc_ids = [document.id for document in documents]
+        doc_lookup = {document.id: document for document in documents}
         units = await self.repo.list_text_units_for_corpus(
-            corpus_id, unit_type=unit_type, document_ids=doc_ids if filters else None
+            corpus_id, unit_type=unit_type, document_ids=doc_ids if filter_kwargs else None
         )
         if not units:
             raise HTTPException(
@@ -98,6 +98,7 @@ class ComparativeAnalysisService(ResearchAccessMixin):
 
         # --- Model-sourced values ---
         model_values: dict[str, dict[str, str]] = {}
+        model_uncertainty: dict[str, float] = {}
         if provenance_mode != ProvenanceMode.HUMAN_ONLY.value:
             if not model_id:
                 raise HTTPException(
@@ -114,6 +115,8 @@ class ComparativeAnalysisService(ResearchAccessMixin):
             for prediction in predictions:
                 if prediction.text_unit_id not in unit_id_set:
                     continue
+                if prediction.uncertainty is not None:
+                    model_uncertainty[prediction.text_unit_id] = prediction.uncertainty
                 predicted_labels = set(loads(prediction.predicted_labels_json, []))
                 for label_name in label_names:
                     label_id = name_to_id.get(label_name)
@@ -140,26 +143,80 @@ class ComparativeAnalysisService(ResearchAccessMixin):
         label_name_by_id = {label.id: label.name for label in codebook_labels}
 
         prevalence: dict[str, dict[str, dict[str, Any]]] = {}
+        examples: dict[str, dict[str, list[dict[str, Any]]]] = {}
         provenance_counts = {"human": 0, "model": 0, "missing": 0}
         for label_id in label_ids:
             label_name = label_name_by_id.get(label_id, label_id)
-            group_tally: dict[str, dict[str, int]] = {}
+            group_tally: dict[str, dict[str, Any]] = {}
+            group_examples: dict[str, list[dict[str, Any]]] = {}
             for unit in units:
                 doc = doc_lookup.get(unit.corpus_document_id)
                 key = str(getattr(doc, group_by, None) or "unspecified") if doc else "unspecified"
                 value, source = resolve(label_id, unit.id)
                 provenance_counts[source] += 1
-                bucket = group_tally.setdefault(key, {"total": 0, "yes": 0})
+                bucket = group_tally.setdefault(
+                    key,
+                    {
+                        "total": 0,
+                        "yes": 0,
+                        "document_ids": set(),
+                        "provenance_counts": Counter(),
+                        "uncertainties": [],
+                        "temporal_distribution": Counter(),
+                    },
+                )
                 bucket["total"] += 1
+                bucket["document_ids"].add(unit.corpus_document_id)
+                bucket["provenance_counts"][source] += 1
+                if source == "model" and unit.id in model_uncertainty:
+                    bucket["uncertainties"].append(model_uncertainty[unit.id])
+                if doc and doc.publication_year is not None:
+                    bucket["temporal_distribution"][str(doc.publication_year)] += 1
                 if value == "yes":
                     bucket["yes"] += 1
+                    samples = group_examples.setdefault(key, [])
+                    if len(samples) < 5:
+                        samples.append(
+                            {
+                                "text_unit_id": unit.id,
+                                "text": unit.text[:500],
+                                "document_id": unit.corpus_document_id,
+                                "document_title": doc.title if doc else None,
+                                "organization": doc.organization if doc else None,
+                                "publication_year": doc.publication_year if doc else None,
+                                "country": doc.country if doc else None,
+                                "provenance": source,
+                                "uncertainty": model_uncertainty.get(unit.id)
+                                if source == "model"
+                                else None,
+                                "document_metadata": {
+                                    "organization_type": doc.organization_type if doc else None,
+                                    "region": doc.region if doc else None,
+                                    "cultural_sphere": doc.cultural_sphere if doc else None,
+                                    "language": doc.language if doc else None,
+                                    "publication_type": doc.publication_type if doc else None,
+                                    "source_url": doc.source_url if doc else None,
+                                },
+                            }
+                        )
             prevalence[label_name] = {
                 key: {
                     "total": bucket["total"],
                     "yes": bucket["yes"],
                     "prevalence": bucket["yes"] / bucket["total"] if bucket["total"] else 0.0,
+                    "document_count": len(bucket["document_ids"]),
+                    "provenance_counts": dict(bucket["provenance_counts"]),
+                    "mean_uncertainty": (
+                        sum(bucket["uncertainties"]) / len(bucket["uncertainties"])
+                        if bucket["uncertainties"]
+                        else None
+                    ),
+                    "temporal_distribution": dict(bucket["temporal_distribution"]),
                 }
                 for key, bucket in sorted(group_tally.items())
+            }
+            examples[label_name] = {
+                key: group_examples.get(key, []) for key in prevalence[label_name]
             }
 
         run = await self.repo.create_run(
@@ -180,7 +237,7 @@ class ComparativeAnalysisService(ResearchAccessMixin):
                     }
                 ),
                 metrics_json=dumps({"unit_count": len(units), "provenance_counts": provenance_counts}),
-                results_json=dumps({"prevalence": prevalence}),
+                results_json=dumps({"prevalence": prevalence, "examples": examples}),
                 created_by=user_id,
                 started_at=_utcnow(),
                 completed_at=_utcnow(),

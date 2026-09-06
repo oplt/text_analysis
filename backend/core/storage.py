@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from functools import cached_property
+from typing import Any
 
 from backend.core.config import settings
 
@@ -116,6 +117,58 @@ class ObjectStorage:
             raise ObjectStorageError("Failed to upload avatar to object storage") from exc
 
         return self.public_url_for(object_key)
+
+    async def download_bytes(self, object_key: str) -> bytes:
+        if not self.is_configured:
+            raise StorageNotConfiguredError(
+                "Object storage is not configured. Set STORAGE_BUCKET and storage credentials."
+            )
+
+        def _download() -> bytes:
+            response = self._client.get_object(Bucket=settings.STORAGE_BUCKET, Key=object_key)
+            return response["Body"].read()
+
+        try:
+            return await asyncio.to_thread(_download)
+        except Exception as exc:
+            raise ObjectStorageError(f"Failed to download object {object_key}") from exc
+
+    def download_bytes_sync(self, object_key: str, *, bucket: str | None = None) -> bytes:
+        if not self.is_configured and not bucket:
+            raise StorageNotConfiguredError(
+                "Object storage is not configured. Set STORAGE_BUCKET and storage credentials."
+            )
+        response = self._client.get_object(
+            Bucket=bucket or settings.STORAGE_BUCKET, Key=object_key
+        )
+        return response["Body"].read()
+
+    def upload_bytes_sync(
+        self,
+        *,
+        object_key: str,
+        body: bytes,
+        content_type: str = "application/octet-stream",
+        metadata: dict[str, str] | None = None,
+    ) -> None:
+        if not self.is_configured:
+            raise StorageNotConfiguredError(
+                "Object storage is not configured. Set STORAGE_BUCKET and storage credentials."
+            )
+        put_kwargs: dict[str, Any] = {
+            "Bucket": settings.STORAGE_BUCKET,
+            "Key": object_key,
+            "Body": body,
+            "ContentType": content_type,
+        }
+        if metadata:
+            put_kwargs["Metadata"] = metadata
+        self._client.put_object(**put_kwargs)
+
+    def delete_object_sync(self, object_key: str, *, bucket: str | None = None) -> None:
+        if not self.is_configured and not bucket:
+            return
+        self._client.delete_object(Bucket=bucket or settings.STORAGE_BUCKET, Key=object_key)
 
     async def delete_object(self, object_key: str | None) -> None:
         if not self.is_configured or not object_key:

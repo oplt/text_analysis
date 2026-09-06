@@ -5,6 +5,7 @@ import { listCodebooks, listCorpora, listLabels } from "../../../api/textResearc
 import { queryKeys } from "../../../config/queryKeys";
 import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
 import type { AnnotationLabel, Codebook, ResearchCorpus, UnitType } from "../types";
+import { resolveResearchSelectionId } from "./researchSelection";
 
 const corpusStorageKey = (projectId: string) => `text-research:corpus:${projectId}`;
 const codebookStorageKey = (projectId: string) => `text-research:codebook:${projectId}`;
@@ -56,25 +57,50 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
     const codebooks = codebooksQuery.data ?? [];
 
     useEffect(() => {
-        if (!projectId || corpora.length === 0) return;
-        const stored = localStorage.getItem(corpusStorageKey(projectId));
-        const next =
-            stored && corpora.some((c) => c.id === stored) ? stored : corpora[0]?.id ?? "";
-        setSelectedCorpusIdState(next);
-    }, [projectId, corpora]);
+        if (!projectId || corporaQuery.isLoading) return;
+        if (corporaQuery.isFetching && corporaQuery.data === undefined) return;
+
+        setSelectedCorpusIdState((current) => {
+            const next = resolveResearchSelectionId({
+                projectId,
+                storageKey: corpusStorageKey,
+                availableIds: corpora.map((corpus) => corpus.id),
+                currentId: current,
+            });
+            return current === next ? current : next;
+        });
+    }, [projectId, corpora, corporaQuery.isLoading, corporaQuery.isFetching, corporaQuery.data]);
 
     useEffect(() => {
-        if (!projectId || codebooks.length === 0) return;
-        const stored = localStorage.getItem(codebookStorageKey(projectId));
-        const next =
-            stored && codebooks.some((c) => c.id === stored) ? stored : codebooks[0]?.id ?? "";
-        setSelectedCodebookIdState(next);
-    }, [projectId, codebooks]);
+        if (!projectId || codebooksQuery.isLoading) return;
+        if (codebooksQuery.isFetching && codebooksQuery.data === undefined) return;
+
+        setSelectedCodebookIdState((current) => {
+            const next = resolveResearchSelectionId({
+                projectId,
+                storageKey: codebookStorageKey,
+                availableIds: codebooks.map((codebook) => codebook.id),
+                currentId: current,
+            });
+            return current === next ? current : next;
+        });
+    }, [
+        projectId,
+        codebooks,
+        codebooksQuery.isLoading,
+        codebooksQuery.isFetching,
+        codebooksQuery.data,
+    ]);
 
     const setSelectedCorpusId = useCallback(
         (corpusId: string) => {
             setSelectedCorpusIdState(corpusId);
-            if (projectId) localStorage.setItem(corpusStorageKey(projectId), corpusId);
+            if (!projectId) return;
+            if (corpusId) {
+                localStorage.setItem(corpusStorageKey(projectId), corpusId);
+            } else {
+                localStorage.removeItem(corpusStorageKey(projectId));
+            }
         },
         [projectId]
     );
@@ -82,7 +108,12 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
     const setSelectedCodebookId = useCallback(
         (codebookId: string) => {
             setSelectedCodebookIdState(codebookId);
-            if (projectId) localStorage.setItem(codebookStorageKey(projectId), codebookId);
+            if (!projectId) return;
+            if (codebookId) {
+                localStorage.setItem(codebookStorageKey(projectId), codebookId);
+            } else {
+                localStorage.removeItem(codebookStorageKey(projectId));
+            }
         },
         [projectId]
     );

@@ -33,7 +33,16 @@ class SegmentationService(ResearchAccessMixin):
                 corpus_id=corpus_id,
                 run_type=AnalysisRunType.SEGMENTATION.value,
                 status=AnalysisRunStatus.QUEUED.value,
+                progress_stage="queued",
                 parameters_json=dumps({"unit_type": unit_type, "document_count": len(documents)}),
+                metrics_json=dumps(
+                    {
+                        "unit_type": unit_type,
+                        "documents_total": len(documents),
+                        "documents_segmented": 0,
+                        "text_units_created": 0,
+                    }
+                ),
                 created_by=user_id,
             )
         )
@@ -63,20 +72,45 @@ class SegmentationService(ResearchAccessMixin):
         params = loads(run.parameters_json, {})
         unit_type = params.get("unit_type")
 
+        documents = await self.repo.list_documents(run.corpus_id)
+        document_total = len(documents)
+
         await self.repo.update_run(
             run,
             status=AnalysisRunStatus.RUNNING.value,
-            progress_stage="segmenting",
+            progress_stage="preparing",
             started_at=_utcnow(),
+            metrics_json=dumps(
+                {
+                    "unit_type": unit_type,
+                    "documents_total": document_total,
+                    "documents_segmented": 0,
+                    "text_units_created": 0,
+                }
+            ),
         )
         await self.db.commit()
 
         corpus_service = CorpusService(self.db)
         try:
-            documents = await self.repo.list_documents(run.corpus_id)
             total_units = 0
             per_document: list[dict] = []
-            for document in documents:
+            for index, document in enumerate(documents, start=1):
+                if index == 1:
+                    await self.repo.update_run(
+                        run,
+                        progress_stage="segmenting_documents",
+                        metrics_json=dumps(
+                            {
+                                "unit_type": unit_type,
+                                "documents_total": document_total,
+                                "documents_segmented": 0,
+                                "text_units_created": 0,
+                            }
+                        ),
+                    )
+                    await self.db.commit()
+
                 text = await corpus_service.get_source_text(document.id, user_id=run.created_by)
                 await self.repo.delete_text_units_for_document(document.id, unit_type)
                 segments = segment_text(text, unit_type)
@@ -98,13 +132,32 @@ class SegmentationService(ResearchAccessMixin):
                 total_units += len(rows)
                 per_document.append({"document_id": document.id, "unit_count": len(rows)})
 
+                await self.repo.update_run(
+                    run,
+                    progress_stage="segmenting_documents",
+                    metrics_json=dumps(
+                        {
+                            "unit_type": unit_type,
+                            "documents_total": document_total,
+                            "documents_segmented": index,
+                            "text_units_created": total_units,
+                        }
+                    ),
+                )
+                await self.db.commit()
+
             await self.repo.update_run(
                 run,
                 status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 completed_at=_utcnow(),
                 metrics_json=dumps(
-                    {"documents_segmented": len(documents), "text_units_created": total_units}
+                    {
+                        "unit_type": unit_type,
+                        "documents_total": document_total,
+                        "documents_segmented": document_total,
+                        "text_units_created": total_units,
+                    }
                 ),
                 results_json=dumps({"per_document": per_document}),
             )
@@ -113,6 +166,7 @@ class SegmentationService(ResearchAccessMixin):
             await self.repo.update_run(
                 run,
                 status=AnalysisRunStatus.FAILED.value,
+                progress_stage="failed",
                 completed_at=_utcnow(),
                 error_message=str(exc),
             )

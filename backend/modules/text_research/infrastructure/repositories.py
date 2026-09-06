@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from typing import Any
+from uuid import uuid4
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, or_, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.pagination import DEFAULT_PAGE_LIMIT, paginate_scalars
@@ -153,7 +155,111 @@ class ResearchRepository:
         )
         return result.scalar_one_or_none()
 
+    def _documents_select(
+        self,
+        corpus_id: str,
+        *,
+        organization: str | None = None,
+        organization_type: str | None = None,
+        publication_year: int | None = None,
+        publication_year_min: int | None = None,
+        publication_year_max: int | None = None,
+        region: str | None = None,
+        cultural_sphere: str | None = None,
+        language: str | None = None,
+        publication_type: str | None = None,
+        country: str | None = None,
+        search: str | None = None,
+        sort_by: str = "created_at",
+        sort_dir: str = "asc",
+    ):
+        stmt = select(CorpusDocument).where(CorpusDocument.corpus_id == corpus_id)
+        if organization:
+            stmt = stmt.where(CorpusDocument.organization == organization)
+        if organization_type:
+            stmt = stmt.where(CorpusDocument.organization_type == organization_type)
+        if publication_year:
+            stmt = stmt.where(CorpusDocument.publication_year == publication_year)
+        if publication_year_min is not None:
+            stmt = stmt.where(CorpusDocument.publication_year >= publication_year_min)
+        if publication_year_max is not None:
+            stmt = stmt.where(CorpusDocument.publication_year <= publication_year_max)
+        if region:
+            stmt = stmt.where(CorpusDocument.region == region)
+        if cultural_sphere:
+            stmt = stmt.where(CorpusDocument.cultural_sphere == cultural_sphere)
+        if language:
+            stmt = stmt.where(CorpusDocument.language == language)
+        if publication_type:
+            stmt = stmt.where(CorpusDocument.publication_type == publication_type)
+        if country:
+            stmt = stmt.where(CorpusDocument.country == country)
+        if search:
+            pattern = f"%{search.strip()}%"
+            stmt = stmt.where(
+                or_(
+                    CorpusDocument.title.ilike(pattern),
+                    CorpusDocument.organization.ilike(pattern),
+                    CorpusDocument.country.ilike(pattern),
+                )
+            )
+        sort_columns = {
+            "title": CorpusDocument.title,
+            "organization": CorpusDocument.organization,
+            "publication_year": CorpusDocument.publication_year,
+            "country": CorpusDocument.country,
+            "language": CorpusDocument.language,
+            "created_at": CorpusDocument.created_at,
+        }
+        sort_column = sort_columns.get(sort_by, CorpusDocument.created_at)
+        ordered = sort_column.desc() if sort_dir.lower() == "desc" else sort_column.asc()
+        return stmt.order_by(ordered)
+
     async def list_documents(
+        self,
+        corpus_id: str,
+        *,
+        organization: str | None = None,
+        organization_type: str | None = None,
+        publication_year: int | None = None,
+        publication_year_min: int | None = None,
+        publication_year_max: int | None = None,
+        region: str | None = None,
+        cultural_sphere: str | None = None,
+        language: str | None = None,
+        publication_type: str | None = None,
+        country: str | None = None,
+        search: str | None = None,
+        sort_by: str = "created_at",
+        sort_dir: str = "asc",
+        limit: int | None = None,
+        offset: int = 0,
+    ) -> list[CorpusDocument]:
+        stmt = self._documents_select(
+            corpus_id,
+            organization=organization,
+            organization_type=organization_type,
+            publication_year=publication_year,
+            publication_year_min=publication_year_min,
+            publication_year_max=publication_year_max,
+            region=region,
+            cultural_sphere=cultural_sphere,
+            language=language,
+            publication_type=publication_type,
+            country=country,
+            search=search,
+            sort_by=sort_by,
+            sort_dir=sort_dir,
+        )
+        if limit is not None:
+            items, _total = await paginate_scalars(
+                self.db, stmt, limit=limit, offset=offset
+            )
+            return items
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
+
+    async def paginate_documents(
         self,
         corpus_id: str,
         *,
@@ -161,29 +267,48 @@ class ResearchRepository:
         publication_year: int | None = None,
         region: str | None = None,
         cultural_sphere: str | None = None,
-        limit: int | None = None,
+        language: str | None = None,
+        search: str | None = None,
+        sort_by: str = "created_at",
+        sort_dir: str = "asc",
+        limit: int = DEFAULT_PAGE_LIMIT,
         offset: int = 0,
-    ) -> list[CorpusDocument]:
-        stmt = select(CorpusDocument).where(CorpusDocument.corpus_id == corpus_id)
-        if organization:
-            stmt = stmt.where(CorpusDocument.organization == organization)
-        if publication_year:
-            stmt = stmt.where(CorpusDocument.publication_year == publication_year)
-        if region:
-            stmt = stmt.where(CorpusDocument.region == region)
-        if cultural_sphere:
-            stmt = stmt.where(CorpusDocument.cultural_sphere == cultural_sphere)
-        stmt = stmt.order_by(CorpusDocument.created_at.asc())
-        if limit is not None:
-            stmt = stmt.offset(offset).limit(limit)
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
-
-    async def count_documents(self, corpus_id: str) -> int:
-        result = await self.db.execute(
-            select(func.count()).where(CorpusDocument.corpus_id == corpus_id)
+    ) -> tuple[list[CorpusDocument], int]:
+        stmt = self._documents_select(
+            corpus_id,
+            organization=organization,
+            publication_year=publication_year,
+            region=region,
+            cultural_sphere=cultural_sphere,
+            language=language,
+            search=search,
+            sort_by=sort_by,
+            sort_dir=sort_dir,
         )
-        return int(result.scalar() or 0)
+        return await paginate_scalars(self.db, stmt, limit=limit, offset=offset)
+
+    async def count_documents(
+        self,
+        corpus_id: str,
+        *,
+        organization: str | None = None,
+        publication_year: int | None = None,
+        region: str | None = None,
+        cultural_sphere: str | None = None,
+        language: str | None = None,
+        search: str | None = None,
+    ) -> int:
+        stmt = self._documents_select(
+            corpus_id,
+            organization=organization,
+            publication_year=publication_year,
+            region=region,
+            cultural_sphere=cultural_sphere,
+            language=language,
+            search=search,
+        )
+        count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
+        return int(await self.db.scalar(count_stmt) or 0)
 
     async def update_document(self, document: CorpusDocument, **fields: Any) -> CorpusDocument:
         for key, value in fields.items():
@@ -274,6 +399,27 @@ class ResearchRepository:
             stmt = stmt.where(TextUnit.unit_type == unit_type)
         result = await self.db.execute(stmt)
         return int(result.scalar() or 0)
+
+    async def count_text_units_grouped_by_type(self, corpus_id: str) -> dict[str, int]:
+        stmt = (
+            select(TextUnit.unit_type, func.count())
+            .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
+            .where(CorpusDocument.corpus_id == corpus_id)
+            .group_by(TextUnit.unit_type)
+        )
+        result = await self.db.execute(stmt)
+        return {str(unit_type): int(count) for unit_type, count in result.all()}
+
+    async def corpus_ids_for_text_units(self, unit_ids: list[str]) -> dict[str, str]:
+        if not unit_ids:
+            return {}
+        stmt = (
+            select(TextUnit.id, CorpusDocument.corpus_id)
+            .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
+            .where(TextUnit.id.in_(unit_ids))
+        )
+        result = await self.db.execute(stmt)
+        return {str(unit_id): str(corpus_id) for unit_id, corpus_id in result.all()}
 
     async def get_corpus_id_for_document(self, corpus_document_id: str) -> str | None:
         result = await self.db.execute(
@@ -377,6 +523,12 @@ class ResearchRepository:
         )
         return list(result.scalars().all())
 
+    async def count_codebooks(self, project_id: str) -> int:
+        result = await self.db.execute(
+            select(func.count()).select_from(Codebook).where(Codebook.project_id == project_id)
+        )
+        return int(result.scalar() or 0)
+
     async def list_codebook_versions(self, project_id: str, name: str) -> list[Codebook]:
         result = await self.db.execute(
             select(Codebook)
@@ -459,6 +611,116 @@ class ResearchRepository:
         self.db.add(row)
         await self.db.flush()
         return row
+
+    async def bulk_create_tasks(
+        self, pairs: list[tuple[str, str]], *, status: str = "assigned"
+    ) -> list[AnnotationTask]:
+        """Create missing tasks for (text_unit_id, annotator_id) pairs in bulk.
+
+        Uses PostgreSQL ``ON CONFLICT DO NOTHING`` against the unique
+        (text_unit_id, annotator_id) constraint so concurrent assigners never
+        collide and we avoid per-pair existence lookups.
+        """
+        if not pairs:
+            return []
+
+        # Deduplicate while preserving order for deterministic tests.
+        seen: set[tuple[str, str]] = set()
+        unique_pairs: list[tuple[str, str]] = []
+        for pair in pairs:
+            if pair in seen:
+                continue
+            seen.add(pair)
+            unique_pairs.append(pair)
+
+        rows = [
+            {
+                "id": str(uuid4()),
+                "text_unit_id": text_unit_id,
+                "annotator_id": annotator_id,
+                "status": status,
+                "assigned_at": _utcnow(),
+                "completed_at": None,
+            }
+            for text_unit_id, annotator_id in unique_pairs
+        ]
+        stmt = (
+            pg_insert(AnnotationTask)
+            .values(rows)
+            .on_conflict_do_nothing(constraint="uq_annotation_task_unit_annotator")
+            .returning(AnnotationTask)
+        )
+        result = await self.db.execute(stmt)
+        created = list(result.scalars().all())
+        await self.db.flush()
+        return created
+
+    async def count_annotation_tasks_for_corpus(self, corpus_id: str) -> dict[str, int]:
+        stmt = (
+            select(AnnotationTask.status, func.count())
+            .select_from(AnnotationTask)
+            .join(TextUnit, TextUnit.id == AnnotationTask.text_unit_id)
+            .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
+            .where(CorpusDocument.corpus_id == corpus_id)
+            .group_by(AnnotationTask.status)
+        )
+        result = await self.db.execute(stmt)
+        by_status = {status: int(count) for status, count in result.all()}
+        total = sum(by_status.values())
+        return {"total": total, "completed": by_status.get("completed", 0), **by_status}
+
+    async def annotation_progress_for_corpus(self, corpus_id: str) -> dict[str, Any]:
+        unit_count = await self.count_text_units_for_corpus(corpus_id)
+        counts_stmt = (
+            select(AnnotationTask.annotator_id, AnnotationTask.status, func.count())
+            .join(TextUnit, TextUnit.id == AnnotationTask.text_unit_id)
+            .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
+            .where(CorpusDocument.corpus_id == corpus_id)
+            .group_by(AnnotationTask.annotator_id, AnnotationTask.status)
+        )
+        counts_result = await self.db.execute(counts_stmt)
+        by_annotator: dict[str, dict[str, int]] = {}
+        total_tasks = 0
+        completed_tasks = 0
+        for annotator_id, status, count in counts_result.all():
+            count_int = int(count)
+            total_tasks += count_int
+            bucket = by_annotator.setdefault(str(annotator_id), {"assigned": 0, "completed": 0})
+            bucket["assigned"] += count_int
+            if status == AnnotationTaskStatus.COMPLETED.value:
+                completed_tasks += count_int
+                bucket["completed"] += count_int
+        completed_units_stmt = (
+            select(func.count(func.distinct(AnnotationTask.text_unit_id)))
+            .join(TextUnit, TextUnit.id == AnnotationTask.text_unit_id)
+            .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
+            .where(
+                CorpusDocument.corpus_id == corpus_id,
+                AnnotationTask.status == AnnotationTaskStatus.COMPLETED.value,
+            )
+        )
+        completed_units = int(await self.db.scalar(completed_units_stmt) or 0)
+        return {
+            "total_units": unit_count,
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_tasks,
+            "units_with_completed_annotation": completed_units,
+            "by_annotator": by_annotator,
+        }
+
+    async def paginate_tasks_for_annotator(
+        self,
+        annotator_id: str,
+        *,
+        status: str | None = None,
+        limit: int = DEFAULT_PAGE_LIMIT,
+        offset: int = 0,
+    ) -> tuple[list[AnnotationTask], int]:
+        stmt = select(AnnotationTask).where(AnnotationTask.annotator_id == annotator_id)
+        if status:
+            stmt = stmt.where(AnnotationTask.status == status)
+        stmt = stmt.order_by(AnnotationTask.assigned_at.asc())
+        return await paginate_scalars(self.db, stmt, limit=limit, offset=offset)
 
     async def list_tasks_for_annotator(
         self, annotator_id: str, *, text_unit_ids: list[str] | None = None
@@ -597,12 +859,14 @@ class ResearchRepository:
         *,
         text_unit_id: str,
         label_id: str,
+        codebook_version: str,
         final_value: str,
         adjudicator_id: str,
         comment: str | None = None,
     ) -> Adjudication:
         existing = await self.get_adjudication(text_unit_id=text_unit_id, label_id=label_id)
         if existing is not None:
+            existing.codebook_version = codebook_version
             existing.final_value = final_value
             existing.adjudicator_id = adjudicator_id
             existing.comment = comment
@@ -611,6 +875,7 @@ class ResearchRepository:
         row = Adjudication(
             text_unit_id=text_unit_id,
             label_id=label_id,
+            codebook_version=codebook_version,
             final_value=final_value,
             adjudicator_id=adjudicator_id,
             comment=comment,
@@ -661,6 +926,15 @@ class ResearchRepository:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
+    async def count_snapshots(self, project_id: str, *, corpus_id: str | None = None) -> int:
+        stmt = select(func.count()).select_from(TrainingDatasetSnapshot).where(
+            TrainingDatasetSnapshot.project_id == project_id
+        )
+        if corpus_id:
+            stmt = stmt.where(TrainingDatasetSnapshot.corpus_id == corpus_id)
+        result = await self.db.execute(stmt)
+        return int(result.scalar() or 0)
+
     # ------------------------------------------------------------------
     # AnalysisRun
     # ------------------------------------------------------------------
@@ -697,6 +971,40 @@ class ResearchRepository:
         stmt = stmt.order_by(AnalysisRun.created_at.desc())
         return await paginate_scalars(self.db, stmt, limit=limit, offset=offset)
 
+    async def count_runs_grouped(
+        self,
+        project_id: str,
+        *,
+        corpus_id: str | None = None,
+        group_by: str = "run_type",
+    ) -> dict[str, int]:
+        column = AnalysisRun.run_type if group_by == "run_type" else AnalysisRun.status
+        stmt = select(column, func.count()).where(AnalysisRun.project_id == project_id)
+        if corpus_id:
+            stmt = stmt.where(AnalysisRun.corpus_id == corpus_id)
+        stmt = stmt.group_by(column)
+        result = await self.db.execute(stmt)
+        return {str(key): int(count) for key, count in result.all()}
+
+    async def get_latest_run(
+        self,
+        project_id: str,
+        *,
+        corpus_id: str | None = None,
+        run_type: str | None = None,
+        status: str | None = None,
+    ) -> AnalysisRun | None:
+        stmt = select(AnalysisRun).where(AnalysisRun.project_id == project_id)
+        if corpus_id:
+            stmt = stmt.where(AnalysisRun.corpus_id == corpus_id)
+        if run_type:
+            stmt = stmt.where(AnalysisRun.run_type == run_type)
+        if status:
+            stmt = stmt.where(AnalysisRun.status == status)
+        stmt = stmt.order_by(AnalysisRun.created_at.desc()).limit(1)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     # ------------------------------------------------------------------
     # TrainedModel
     # ------------------------------------------------------------------
@@ -717,6 +1025,25 @@ class ResearchRepository:
         stmt = stmt.order_by(TrainedModel.created_at.desc())
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
+
+    async def count_models(self, project_id: str, *, corpus_id: str | None = None) -> int:
+        stmt = select(func.count()).select_from(TrainedModel).where(
+            TrainedModel.project_id == project_id
+        )
+        if corpus_id:
+            stmt = stmt.where(TrainedModel.corpus_id == corpus_id)
+        result = await self.db.execute(stmt)
+        return int(result.scalar() or 0)
+
+    async def get_latest_model(
+        self, project_id: str, *, corpus_id: str | None = None
+    ) -> TrainedModel | None:
+        stmt = select(TrainedModel).where(TrainedModel.project_id == project_id)
+        if corpus_id:
+            stmt = stmt.where(TrainedModel.corpus_id == corpus_id)
+        stmt = stmt.order_by(TrainedModel.created_at.desc()).limit(1)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def next_model_version(self, corpus_id: str) -> int:
         result = await self.db.execute(
@@ -869,7 +1196,9 @@ class ResearchRepository:
 
     async def list_contextual_datasets(self, project_id: str) -> list[ContextualDataset]:
         result = await self.db.execute(
-            select(ContextualDataset).where(ContextualDataset.project_id == project_id)
+            select(ContextualDataset)
+            .where(ContextualDataset.project_id == project_id)
+            .order_by(ContextualDataset.created_at.desc())
         )
         return list(result.scalars().all())
 
@@ -888,6 +1217,34 @@ class ResearchRepository:
 
     async def list_observations(self, dataset_id: str) -> list[ContextualObservation]:
         result = await self.db.execute(
-            select(ContextualObservation).where(ContextualObservation.dataset_id == dataset_id)
+            select(ContextualObservation)
+            .where(ContextualObservation.dataset_id == dataset_id)
+            .order_by(
+                ContextualObservation.country.asc().nulls_last(),
+                ContextualObservation.year.asc().nulls_last(),
+            )
         )
         return list(result.scalars().all())
+
+    async def delete_contextual_dataset(self, dataset: ContextualDataset) -> None:
+        await self.db.delete(dataset)
+        await self.db.flush()
+
+    async def replace_observations(
+        self, dataset_id: str, rows: list[ContextualObservation]
+    ) -> list[ContextualObservation]:
+        await self.db.execute(
+            delete(ContextualObservation).where(ContextualObservation.dataset_id == dataset_id)
+        )
+        if not rows:
+            await self.db.flush()
+            return []
+        return await self.bulk_create_observations(rows)
+
+    async def count_observations(self, dataset_id: str) -> int:
+        result = await self.db.execute(
+            select(func.count())
+            .select_from(ContextualObservation)
+            .where(ContextualObservation.dataset_id == dataset_id)
+        )
+        return int(result.scalar() or 0)

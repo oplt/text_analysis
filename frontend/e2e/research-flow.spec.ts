@@ -136,13 +136,13 @@ test.describe("Policy Text Lab research workflow", () => {
         await page.getByRole("tab", { name: "Corpus" }).click();
         await expect(page.getByText(/Showing 4 of 4 documents/i)).toBeVisible({ timeout: 15_000 });
 
-        await page.getByRole("tab", { name: "Classification" }).click();
+        await page.getByRole("tab", { name: "Classify" }).click();
         await expect(page.getByText(/Trained models/i)).toBeVisible();
         await expect(page.getByText(models[0].name ?? "E2E Classifier")).toBeVisible({
             timeout: 15_000,
         });
 
-        await page.getByRole("tab", { name: "Exports" }).click();
+        await page.getByRole("tab", { name: "Export" }).click();
         await expect(page.getByText(/export/i).first()).toBeVisible();
 
         await context.close();

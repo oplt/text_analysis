@@ -105,6 +105,12 @@ class LegacyAiDocumentService:
         )
         return [rag_document_to_ai_view(doc) for doc in documents], total
 
+    async def get_document(self, user_id: str, document_id: str) -> AiDocumentView:
+        document = await self.repo.get_document(document_id)
+        if document is None or document.user_id != user_id:
+            raise HTTPException(status_code=404, detail="Document not found")
+        return rag_document_to_ai_view(document)
+
     async def create_from_text(
         self,
         *,

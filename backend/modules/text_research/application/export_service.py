@@ -237,10 +237,92 @@ class ExportService(ResearchAccessMixin):
                         "created_at": r.created_at.isoformat() if r.created_at else None,
                         "parameters": loads(r.parameters_json, {}),
                         "metrics": loads(r.metrics_json, {}),
+                        "results": loads(r.results_json, {}),
+                        "artifact_path": r.artifact_path,
+                        "random_seed": r.random_seed,
+                        "error_message": r.error_message,
                     }
                     for r in runs
                 ],
             },
+        }
+
+    async def export_run_json(self, run_id: str, *, user_id: str) -> dict[str, Any]:
+        run = await self.get_run_or_404(run_id, user_id=user_id)
+        return {
+            "id": run.id,
+            "project_id": run.project_id,
+            "corpus_id": run.corpus_id,
+            "run_type": run.run_type,
+            "status": run.status,
+            "progress_stage": run.progress_stage,
+            "parameters": loads(run.parameters_json, {}),
+            "metrics": loads(run.metrics_json, {}),
+            "results": loads(run.results_json, {}),
+            "artifact_path": run.artifact_path,
+            "random_seed": run.random_seed,
+            "created_by": run.created_by,
+            "started_at": run.started_at.isoformat() if run.started_at else None,
+            "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+            "error_message": run.error_message,
+            "created_at": run.created_at.isoformat() if run.created_at else None,
+        }
+
+    async def export_codebook_json(self, codebook_id: str, *, user_id: str) -> dict[str, Any]:
+        codebook = await self.get_codebook_or_404(codebook_id, user_id=user_id)
+        labels = await self.repo.list_labels(codebook_id)
+        return {
+            "id": codebook.id,
+            "project_id": codebook.project_id,
+            "name": codebook.name,
+            "description": codebook.description,
+            "version": codebook.version,
+            "is_frozen": codebook.is_frozen,
+            "labels": [
+                {
+                    "id": label.id,
+                    "name": label.name,
+                    "description": label.description,
+                    "inclusion_criteria": label.inclusion_criteria,
+                    "exclusion_criteria": label.exclusion_criteria,
+                    "positive_examples": loads(label.positive_examples_json, []),
+                    "negative_examples": loads(label.negative_examples_json, []),
+                    "is_placeholder": label.is_placeholder,
+                }
+                for label in labels
+            ],
+        }
+
+    async def export_preprocessing_profile_json(
+        self, profile_id: str, *, user_id: str
+    ) -> dict[str, Any]:
+        profile = await self.get_preprocessing_profile_or_404(profile_id, user_id=user_id)
+        return {
+            "id": profile.id,
+            "project_id": profile.project_id,
+            "name": profile.name,
+            "description": profile.description,
+            "config": loads(profile.config_json, {}),
+            "created_by": profile.created_by,
+            "created_at": profile.created_at.isoformat() if profile.created_at else None,
+            "updated_at": profile.updated_at.isoformat() if profile.updated_at else None,
+        }
+
+    async def export_model_metrics(self, model_id: str, *, user_id: str) -> dict[str, Any]:
+        model = await self.get_model_or_404(model_id, user_id=user_id)
+        return {
+            "id": model.id,
+            "name": model.name,
+            "version": model.version,
+            "model_family": model.model_family,
+            "task_type": model.task_type,
+            "labels": loads(model.label_ids_json, []),
+            "feature_config": loads(model.feature_config_json, {}),
+            "training_config": loads(model.training_config_json, {}),
+            "metrics": loads(model.metrics_json, {}),
+            "model_artifact_path": model.model_artifact_path,
+            "vectorizer_artifact_path": model.vectorizer_artifact_path,
+            "created_at": model.created_at.isoformat() if model.created_at else None,
         }
 
     async def build_quanteda_script(

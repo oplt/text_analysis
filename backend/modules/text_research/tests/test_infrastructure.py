@@ -8,6 +8,7 @@ infrastructure layer only.
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
 
 from backend.modules.text_research.infrastructure import (
     classifiers,
@@ -135,6 +136,30 @@ class PreprocessingTests(unittest.TestCase):
         tokens = preprocessing.tokenize("never nations governing", config)
         self.assertIn("never", tokens)  # unstemmed despite matching no strip rule anyway
         self.assertIn("govern", tokens)  # "governing" -> "govern"
+
+    def test_lemmatization_true_is_rejected(self):
+        config = {**preprocessing.DEFAULT_PREPROCESSING_CONFIG, "lemmatization": True}
+        with self.assertRaises(ValueError):
+            preprocessing.tokenize("Policies matter.", config)
+        with self.assertRaises(ValueError):
+            preprocessing.PreprocessingConfig.from_dict(config)
+
+    def test_preview_preprocessing_reports_removed_terms(self):
+        preview = preprocessing.preview_preprocessing(
+            ["Students should not be excluded from the policy."],
+            {
+                **preprocessing.DEFAULT_PREPROCESSING_CONFIG,
+                "remove_stopwords": True,
+                "preserve_negation": True,
+            },
+        )
+        self.assertEqual(len(preview["rows"]), 1)
+        self.assertIn("not", preview["rows"][0]["processed"])
+        self.assertGreater(preview["token_count_before"], preview["token_count_after"])
+        self.assertFalse(preview["lemmatization_supported"])
+        self.assertEqual(preview["stemmer"], "snowball_english")
+        removed_terms = {row["term"] for row in preview["most_frequently_removed_terms"]}
+        self.assertTrue({"should", "be", "from", "the"} & removed_terms)
 
     def test_preprocess_text_is_space_joined_tokens(self):
         result = preprocessing.preprocess_text("The Policy IS Universal!")
@@ -553,6 +578,30 @@ class ModelStorageTests(unittest.TestCase):
     def test_load_joblib_missing_file_raises(self):
         with self.assertRaises(FileNotFoundError):
             model_storage.load_joblib("/nonexistent/path/artifact.joblib")
+
+    def test_save_artifact_with_metadata_records_integrity_fields(self):
+        import shutil
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            original_root = model_storage.ARTIFACT_ROOT
+            original_storage_configured = model_storage._storage_configured
+            model_storage.ARTIFACT_ROOT = Path(tmp_dir)
+            model_storage._storage_configured = lambda: False
+            try:
+                reference, metadata = model_storage.save_artifact_with_metadata(
+                    {"model": "test"}, category="test-models"
+                )
+                self.assertEqual(metadata["reference"], reference)
+                self.assertEqual(metadata["model_type"], "test-models")
+                self.assertEqual(len(metadata["sha256"]), 64)
+                self.assertGreater(metadata["size"], 0)
+                self.assertEqual(metadata["serialization_format"], "joblib")
+                self.assertIsNotNone(metadata["created_at"])
+            finally:
+                model_storage.ARTIFACT_ROOT = original_root
+                model_storage._storage_configured = original_storage_configured
+                shutil.rmtree(tmp_dir, ignore_errors=True)
 
     def test_ensure_artifact_dir_creates_nested_directories(self):
         import shutil

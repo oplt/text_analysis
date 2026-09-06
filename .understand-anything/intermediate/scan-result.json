@@ -1,41 +1,58 @@
 {
-  "name": "generic_app",
-  "description": "Fullstack modular monolith: FastAPI backend with AI/RAG/memory modules and React frontend.",
+  "name": "Policy Text Lab",
+  "description": "Policy Text Lab is a full-stack platform for computational text research, supporting corpus management, human annotation, reliability analysis, quantitative analysis, supervised classification, topic modeling, and reproducible exports. Built with a modular FastAPI backend and React frontend, backed by PostgreSQL with pgvector, Redis, and Celery workers. Note: this project has over 100 source files; consider scoping analysis to a subdirectory for faster results.",
   "languages": [
-    "python",
-    "typescript",
+    "config",
+    "css",
+    "dev",
+    "example",
+    "html",
     "javascript",
-    "markdown",
-    "yaml",
     "json",
+    "local",
+    "makefile",
+    "mako",
+    "markdown",
+    "python",
+    "shell",
     "sql",
-    "shell"
+    "toml",
+    "tsbuildinfo",
+    "txt",
+    "typescript",
+    "unknown",
+    "yaml"
   ],
   "frameworks": [
-    "FastAPI",
-    "React",
-    "Vite",
-    "SQLAlchemy",
+    "Alembic",
     "Celery",
-    "TanStack Query"
+    "Docker Compose",
+    "FastAPI",
+    "Pydantic",
+    "Pytest",
+    "React",
+    "SQLAlchemy",
+    "Uvicorn",
+    "Vite",
+    "Vitest"
   ],
   "files": [
     {
       "path": ".understand-anything/.understandignore",
       "language": "unknown",
-      "sizeLines": 22,
+      "sizeLines": 11,
       "fileCategory": "code"
     },
     {
-      "path": "adaptation.txt",
-      "language": "txt",
-      "sizeLines": 566,
-      "fileCategory": "docs"
+      "path": ".understand-anything/config.json",
+      "language": "json",
+      "sizeLines": 3,
+      "fileCategory": "config"
     },
     {
       "path": "AGENTS.md",
       "language": "markdown",
-      "sizeLines": 31,
+      "sizeLines": 44,
       "fileCategory": "docs"
     },
     {
@@ -47,7 +64,7 @@
     {
       "path": "backend/.env.example",
       "language": "config",
-      "sizeLines": 123,
+      "sizeLines": 144,
       "fileCategory": "config"
     },
     {
@@ -59,13 +76,13 @@
     {
       "path": "backend/alembic/env.py",
       "language": "python",
-      "sizeLines": 117,
+      "sizeLines": 118,
       "fileCategory": "code"
     },
     {
       "path": "backend/alembic/README",
       "language": "unknown",
-      "sizeLines": 0,
+      "sizeLines": 49,
       "fileCategory": "code"
     },
     {
@@ -75,33 +92,21 @@
       "fileCategory": "code"
     },
     {
-      "path": "backend/alembic/versions/3f1bfc747f3e_generate_tables.py",
+      "path": "backend/alembic/versions/28a5b9ada6fc_generate_tables.py",
       "language": "python",
-      "sizeLines": 518,
+      "sizeLines": 678,
       "fileCategory": "code"
     },
     {
-      "path": "backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py",
+      "path": "backend/alembic/versions/7f3c1a9d2e44_add_ai_run_degradation.py",
       "language": "python",
-      "sizeLines": 103,
+      "sizeLines": 62,
       "fileCategory": "code"
     },
     {
-      "path": "backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py",
+      "path": "backend/alembic/versions/d8ddea885de9_add_text_research_tables.py",
       "language": "python",
-      "sizeLines": 124,
-      "fileCategory": "code"
-    },
-    {
-      "path": "backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py",
-      "language": "python",
-      "sizeLines": 47,
-      "fileCategory": "code"
-    },
-    {
-      "path": "backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py",
-      "language": "python",
-      "sizeLines": 46,
+      "sizeLines": 410,
       "fileCategory": "code"
     },
     {
@@ -125,7 +130,7 @@
     {
       "path": "backend/api/deps/auth.py",
       "language": "python",
-      "sizeLines": 55,
+      "sizeLines": 56,
       "fileCategory": "code"
     },
     {
@@ -137,7 +142,7 @@
     {
       "path": "backend/api/main.py",
       "language": "python",
-      "sizeLines": 66,
+      "sizeLines": 91,
       "fileCategory": "code"
     },
     {
@@ -149,7 +154,7 @@
     {
       "path": "backend/api/middleware/correlation_id.py",
       "language": "python",
-      "sizeLines": 16,
+      "sizeLines": 28,
       "fileCategory": "code"
     },
     {
@@ -161,13 +166,13 @@
     {
       "path": "backend/api/middleware/public_rate_limit.py",
       "language": "python",
-      "sizeLines": 30,
+      "sizeLines": 38,
       "fileCategory": "code"
     },
     {
       "path": "backend/api/middleware/request_logging.py",
       "language": "python",
-      "sizeLines": 36,
+      "sizeLines": 47,
       "fileCategory": "code"
     },
     {
@@ -179,7 +184,7 @@
     {
       "path": "backend/api/router.py",
       "language": "python",
-      "sizeLines": 33,
+      "sizeLines": 35,
       "fileCategory": "code"
     },
     {
@@ -233,25 +238,49 @@
     {
       "path": "backend/core/cache.py",
       "language": "python",
-      "sizeLines": 249,
+      "sizeLines": 263,
       "fileCategory": "code"
     },
     {
       "path": "backend/core/config.py",
       "language": "python",
-      "sizeLines": 250,
+      "sizeLines": 304,
       "fileCategory": "code"
     },
     {
       "path": "backend/core/error_handler.py",
       "language": "python",
-      "sizeLines": 56,
+      "sizeLines": 84,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/core/log_context.py",
+      "language": "python",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/core/log_handlers.py",
+      "language": "python",
+      "sizeLines": 88,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/core/log_redaction.py",
+      "language": "python",
+      "sizeLines": 40,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/core/log_timing.py",
+      "language": "python",
+      "sizeLines": 52,
       "fileCategory": "code"
     },
     {
       "path": "backend/core/logging.py",
       "language": "python",
-      "sizeLines": 15,
+      "sizeLines": 69,
       "fileCategory": "code"
     },
     {
@@ -263,7 +292,7 @@
     {
       "path": "backend/core/rate_limit.py",
       "language": "python",
-      "sizeLines": 45,
+      "sizeLines": 66,
       "fileCategory": "code"
     },
     {
@@ -275,13 +304,13 @@
     {
       "path": "backend/core/security.py",
       "language": "python",
-      "sizeLines": 47,
+      "sizeLines": 56,
       "fileCategory": "code"
     },
     {
       "path": "backend/core/storage.py",
       "language": "python",
-      "sizeLines": 146,
+      "sizeLines": 149,
       "fileCategory": "code"
     },
     {
@@ -341,7 +370,7 @@
     {
       "path": "backend/modules/ai/agent_router.py",
       "language": "python",
-      "sizeLines": 48,
+      "sizeLines": 59,
       "fileCategory": "code"
     },
     {
@@ -353,79 +382,187 @@
     {
       "path": "backend/modules/ai/application/agent_service.py",
       "language": "python",
-      "sizeLines": 99,
+      "sizeLines": 116,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/ai/application/prompt_context_builder.py",
       "language": "python",
-      "sizeLines": 141,
+      "sizeLines": 63,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/ai/application/rag_answer_prompt.py",
       "language": "python",
-      "sizeLines": 94,
+      "sizeLines": 97,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/base_service.py",
+      "language": "python",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/dependencies.py",
+      "language": "python",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/document_routes.py",
+      "language": "python",
+      "sizeLines": 86,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/document_service.py",
+      "language": "python",
+      "sizeLines": 89,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/evaluation_routes.py",
+      "language": "python",
+      "sizeLines": 145,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/evaluation_scoring.py",
+      "language": "python",
+      "sizeLines": 56,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/evaluation_service.py",
+      "language": "python",
+      "sizeLines": 293,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/metrics.py",
+      "language": "python",
+      "sizeLines": 18,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/ai/models.py",
       "language": "python",
-      "sizeLines": 278,
+      "sizeLines": 298,
       "fileCategory": "code"
     },
     {
-      "path": "backend/modules/ai/providers.py",
+      "path": "backend/modules/ai/overview_routes.py",
       "language": "python",
-      "sizeLines": 290,
+      "sizeLines": 40,
       "fileCategory": "code"
     },
     {
-      "path": "backend/modules/ai/repository.py",
+      "path": "backend/modules/ai/prompt_routes.py",
       "language": "python",
-      "sizeLines": 498,
+      "sizeLines": 133,
       "fileCategory": "code"
     },
     {
-      "path": "backend/modules/ai/router.py",
+      "path": "backend/modules/ai/prompt_service.py",
       "language": "python",
-      "sizeLines": 545,
+      "sizeLines": 182,
       "fileCategory": "code"
     },
     {
-      "path": "backend/modules/ai/schemas.py",
-      "language": "python",
-      "sizeLines": 287,
-      "fileCategory": "code"
-    },
-    {
-      "path": "backend/modules/ai/serializers.py",
+      "path": "backend/modules/ai/provider_service.py",
       "language": "python",
       "sizeLines": 30,
       "fileCategory": "code"
     },
     {
+      "path": "backend/modules/ai/providers.py",
+      "language": "python",
+      "sizeLines": 310,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/README.md",
+      "language": "markdown",
+      "sizeLines": 50,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "backend/modules/ai/repository.py",
+      "language": "python",
+      "sizeLines": 259,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/review_routes.py",
+      "language": "python",
+      "sizeLines": 105,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/review_service.py",
+      "language": "python",
+      "sizeLines": 93,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/router.py",
+      "language": "python",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/run_routes.py",
+      "language": "python",
+      "sizeLines": 66,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/run_service.py",
+      "language": "python",
+      "sizeLines": 254,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/schemas.py",
+      "language": "python",
+      "sizeLines": 297,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/serializers.py",
+      "language": "python",
+      "sizeLines": 111,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/modules/ai/service.py",
       "language": "python",
-      "sizeLines": 789,
+      "sizeLines": 40,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/ai/tests/test_document_consolidation.py",
       "language": "python",
-      "sizeLines": 134,
+      "sizeLines": 136,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/ai/tests/test_rag_answer_run.py",
       "language": "python",
-      "sizeLines": 77,
+      "sizeLines": 120,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/ai/tests/test_retrieval_consolidation.py",
       "language": "python",
-      "sizeLines": 196,
+      "sizeLines": 188,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/ai/tests/test_route_registration.py",
+      "language": "python",
+      "sizeLines": 41,
       "fileCategory": "code"
     },
     {
@@ -444,6 +581,12 @@
       "path": "backend/modules/audit/repository.py",
       "language": "python",
       "sizeLines": 50,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/audit/request_logging.py",
+      "language": "python",
+      "sizeLines": 26,
       "fileCategory": "code"
     },
     {
@@ -479,7 +622,7 @@
     {
       "path": "backend/modules/calendar/service.py",
       "language": "python",
-      "sizeLines": 139,
+      "sizeLines": 168,
       "fileCategory": "code"
     },
     {
@@ -497,7 +640,7 @@
     {
       "path": "backend/modules/identity_access/repository.py",
       "language": "python",
-      "sizeLines": 91,
+      "sizeLines": 98,
       "fileCategory": "code"
     },
     {
@@ -515,7 +658,7 @@
     {
       "path": "backend/modules/identity_access/service.py",
       "language": "python",
-      "sizeLines": 359,
+      "sizeLines": 303,
       "fileCategory": "code"
     },
     {
@@ -527,7 +670,7 @@
     {
       "path": "backend/modules/memory/api/routes.py",
       "language": "python",
-      "sizeLines": 204,
+      "sizeLines": 205,
       "fileCategory": "code"
     },
     {
@@ -575,7 +718,7 @@
     {
       "path": "backend/modules/memory/application/memory_service.py",
       "language": "python",
-      "sizeLines": 538,
+      "sizeLines": 570,
       "fileCategory": "code"
     },
     {
@@ -623,7 +766,7 @@
     {
       "path": "backend/modules/memory/infrastructure/memory_config.py",
       "language": "python",
-      "sizeLines": 50,
+      "sizeLines": 62,
       "fileCategory": "code"
     },
     {
@@ -643,6 +786,12 @@
       "language": "markdown",
       "sizeLines": 106,
       "fileCategory": "docs"
+    },
+    {
+      "path": "backend/modules/memory/workers.py",
+      "language": "python",
+      "sizeLines": 74,
+      "fileCategory": "code"
     },
     {
       "path": "backend/modules/notifications/__init__.py",
@@ -681,21 +830,93 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/modules/platform/api_key_routes.py",
+      "language": "python",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/api_key_service.py",
+      "language": "python",
+      "sizeLines": 49,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/billing_routes.py",
+      "language": "python",
+      "sizeLines": 139,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/billing_service.py",
+      "language": "python",
+      "sizeLines": 100,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/config_routes.py",
+      "language": "python",
+      "sizeLines": 50,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/config_service.py",
+      "language": "python",
+      "sizeLines": 249,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/defaults.py",
+      "language": "python",
+      "sizeLines": 216,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/email_template_routes.py",
+      "language": "python",
+      "sizeLines": 83,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/email_template_service.py",
+      "language": "python",
+      "sizeLines": 102,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/feature_flag_routes.py",
+      "language": "python",
+      "sizeLines": 94,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/feature_flag_service.py",
+      "language": "python",
+      "sizeLines": 109,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/modules/platform/models.py",
       "language": "python",
       "sizeLines": 126,
       "fileCategory": "code"
     },
     {
+      "path": "backend/modules/platform/README.md",
+      "language": "markdown",
+      "sizeLines": 21,
+      "fileCategory": "docs"
+    },
+    {
       "path": "backend/modules/platform/repository.py",
       "language": "python",
-      "sizeLines": 153,
+      "sizeLines": 178,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/platform/router.py",
       "language": "python",
-      "sizeLines": 506,
+      "sizeLines": 16,
       "fileCategory": "code"
     },
     {
@@ -707,7 +928,19 @@
     {
       "path": "backend/modules/platform/service.py",
       "language": "python",
-      "sizeLines": 886,
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/webhook_routes.py",
+      "language": "python",
+      "sizeLines": 109,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/platform/webhook_service.py",
+      "language": "python",
+      "sizeLines": 173,
       "fileCategory": "code"
     },
     {
@@ -731,7 +964,7 @@
     {
       "path": "backend/modules/profile/router.py",
       "language": "python",
-      "sizeLines": 112,
+      "sizeLines": 102,
       "fileCategory": "code"
     },
     {
@@ -741,9 +974,15 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/modules/profile/serializers.py",
+      "language": "python",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/modules/profile/service.py",
       "language": "python",
-      "sizeLines": 58,
+      "sizeLines": 82,
       "fileCategory": "code"
     },
     {
@@ -767,7 +1006,7 @@
     {
       "path": "backend/modules/projects/router.py",
       "language": "python",
-      "sizeLines": 174,
+      "sizeLines": 169,
       "fileCategory": "code"
     },
     {
@@ -779,7 +1018,7 @@
     {
       "path": "backend/modules/projects/service.py",
       "language": "python",
-      "sizeLines": 284,
+      "sizeLines": 335,
       "fileCategory": "code"
     },
     {
@@ -791,19 +1030,13 @@
     {
       "path": "backend/modules/rag/api/routes.py",
       "language": "python",
-      "sizeLines": 311,
+      "sizeLines": 331,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/rag/api/schemas.py",
       "language": "python",
-      "sizeLines": 111,
-      "fileCategory": "code"
-    },
-    {
-      "path": "backend/modules/rag/application/agent_context_service.py",
-      "language": "python",
-      "sizeLines": 40,
+      "sizeLines": 123,
       "fileCategory": "code"
     },
     {
@@ -821,7 +1054,7 @@
     {
       "path": "backend/modules/rag/application/document_ingestion_service.py",
       "language": "python",
-      "sizeLines": 289,
+      "sizeLines": 298,
       "fileCategory": "code"
     },
     {
@@ -839,13 +1072,19 @@
     {
       "path": "backend/modules/rag/application/legacy_ai_document_service.py",
       "language": "python",
-      "sizeLines": 214,
+      "sizeLines": 212,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/rag/application/prompt_context_service.py",
+      "language": "python",
+      "sizeLines": 188,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/rag/application/rag_answer_service.py",
       "language": "python",
-      "sizeLines": 184,
+      "sizeLines": 171,
       "fileCategory": "code"
     },
     {
@@ -863,13 +1102,25 @@
     {
       "path": "backend/modules/rag/application/rag_tool.py",
       "language": "python",
-      "sizeLines": 52,
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/rag/application/retrieval_filters.py",
+      "language": "python",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/rag/application/retrieval_ranker.py",
+      "language": "python",
+      "sizeLines": 29,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/rag/application/retrieval_service.py",
       "language": "python",
-      "sizeLines": 87,
+      "sizeLines": 173,
       "fileCategory": "code"
     },
     {
@@ -881,7 +1132,7 @@
     {
       "path": "backend/modules/rag/domain/models.py",
       "language": "python",
-      "sizeLines": 107,
+      "sizeLines": 120,
       "fileCategory": "code"
     },
     {
@@ -899,7 +1150,7 @@
     {
       "path": "backend/modules/rag/infrastructure/langchain_document_loaders.py",
       "language": "python",
-      "sizeLines": 144,
+      "sizeLines": 197,
       "fileCategory": "code"
     },
     {
@@ -911,13 +1162,13 @@
     {
       "path": "backend/modules/rag/infrastructure/langchain_text_splitters.py",
       "language": "python",
-      "sizeLines": 31,
+      "sizeLines": 35,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/rag/infrastructure/metrics.py",
       "language": "python",
-      "sizeLines": 39,
+      "sizeLines": 60,
       "fileCategory": "code"
     },
     {
@@ -929,19 +1180,19 @@
     {
       "path": "backend/modules/rag/infrastructure/pgvector_adapter.py",
       "language": "python",
-      "sizeLines": 86,
+      "sizeLines": 121,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/rag/infrastructure/rag_config.py",
       "language": "python",
-      "sizeLines": 59,
+      "sizeLines": 63,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/rag/infrastructure/repositories.py",
       "language": "python",
-      "sizeLines": 452,
+      "sizeLines": 455,
       "fileCategory": "code"
     },
     {
@@ -953,7 +1204,7 @@
     {
       "path": "backend/modules/rag/README.md",
       "language": "markdown",
-      "sizeLines": 167,
+      "sizeLines": 173,
       "fileCategory": "docs"
     },
     {
@@ -977,19 +1228,19 @@
     {
       "path": "backend/modules/rag/tests/test_ingestion.py",
       "language": "python",
-      "sizeLines": 171,
+      "sizeLines": 172,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/rag/tests/test_permissions.py",
       "language": "python",
-      "sizeLines": 56,
+      "sizeLines": 77,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/rag/tests/test_rag_answer.py",
       "language": "python",
-      "sizeLines": 140,
+      "sizeLines": 147,
       "fileCategory": "code"
     },
     {
@@ -999,9 +1250,15 @@
       "fileCategory": "code"
     },
     {
+      "path": "backend/modules/rag/tests/test_retrieval_outcome.py",
+      "language": "python",
+      "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
       "path": "backend/modules/rag/tests/test_retrieval.py",
       "language": "python",
-      "sizeLines": 106,
+      "sizeLines": 107,
       "fileCategory": "code"
     },
     {
@@ -1013,13 +1270,19 @@
     {
       "path": "backend/modules/rag/workers.py",
       "language": "python",
-      "sizeLines": 81,
+      "sizeLines": 125,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/settings/__init__.py",
       "language": "python",
       "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/settings/env_file_store.py",
+      "language": "python",
+      "sizeLines": 69,
       "fileCategory": "code"
     },
     {
@@ -1031,13 +1294,13 @@
     {
       "path": "backend/modules/settings/repository.py",
       "language": "python",
-      "sizeLines": 39,
+      "sizeLines": 50,
       "fileCategory": "code"
     },
     {
       "path": "backend/modules/settings/router.py",
       "language": "python",
-      "sizeLines": 136,
+      "sizeLines": 116,
       "fileCategory": "code"
     },
     {
@@ -1049,7 +1312,265 @@
     {
       "path": "backend/modules/settings/service.py",
       "language": "python",
-      "sizeLines": 482,
+      "sizeLines": 486,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/__init__.py",
+      "language": "python",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/api/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/api/routes.py",
+      "language": "python",
+      "sizeLines": 1513,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/api/schemas.py",
+      "language": "python",
+      "sizeLines": 431,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/access.py",
+      "language": "python",
+      "sizeLines": 107,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/active_learning_service.py",
+      "language": "python",
+      "sizeLines": 45,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/adjudication_service.py",
+      "language": "python",
+      "sizeLines": 77,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/annotation_service.py",
+      "language": "python",
+      "sizeLines": 137,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/classification_service.py",
+      "language": "python",
+      "sizeLines": 243,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/codebook_service.py",
+      "language": "python",
+      "sizeLines": 177,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/comparative_analysis_service.py",
+      "language": "python",
+      "sizeLines": 190,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/corpus_service.py",
+      "language": "python",
+      "sizeLines": 264,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/dashboard_service.py",
+      "language": "python",
+      "sizeLines": 85,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/dataset_builder_service.py",
+      "language": "python",
+      "sizeLines": 234,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/demo_seed_service.py",
+      "language": "python",
+      "sizeLines": 177,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/dictionary_service.py",
+      "language": "python",
+      "sizeLines": 93,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/export_service.py",
+      "language": "python",
+      "sizeLines": 285,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/prediction_service.py",
+      "language": "python",
+      "sizeLines": 157,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/preprocessing_service.py",
+      "language": "python",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/quantitative_analysis_service.py",
+      "language": "python",
+      "sizeLines": 382,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/reliability_service.py",
+      "language": "python",
+      "sizeLines": 122,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/robustness_service.py",
+      "language": "python",
+      "sizeLines": 299,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/run_service.py",
+      "language": "python",
+      "sizeLines": 279,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/segmentation_service.py",
+      "language": "python",
+      "sizeLines": 124,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/application/topic_model_service.py",
+      "language": "python",
+      "sizeLines": 187,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/domain/__init__.py",
+      "language": "python",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/domain/enums.py",
+      "language": "python",
+      "sizeLines": 78,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/domain/exceptions.py",
+      "language": "python",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/domain/models.py",
+      "language": "python",
+      "sizeLines": 379,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/infrastructure/__init__.py",
+      "language": "python",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/infrastructure/classifiers.py",
+      "language": "python",
+      "sizeLines": 417,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/infrastructure/model_storage.py",
+      "language": "python",
+      "sizeLines": 100,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/infrastructure/preprocessing.py",
+      "language": "python",
+      "sizeLines": 332,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/infrastructure/quantitative.py",
+      "language": "python",
+      "sizeLines": 533,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/infrastructure/reliability.py",
+      "language": "python",
+      "sizeLines": 280,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/infrastructure/repositories.py",
+      "language": "python",
+      "sizeLines": 893,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/infrastructure/segmentation.py",
+      "language": "python",
+      "sizeLines": 121,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/infrastructure/topic_models.py",
+      "language": "python",
+      "sizeLines": 166,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/tests/__init__.py",
+      "language": "python",
+      "sizeLines": 1,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/tests/test_infrastructure.py",
+      "language": "python",
+      "sizeLines": 574,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/tests/test_route_registration.py",
+      "language": "python",
+      "sizeLines": 28,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/modules/text_research/workers.py",
+      "language": "python",
+      "sizeLines": 139,
       "fileCategory": "code"
     },
     {
@@ -1073,7 +1594,7 @@
     {
       "path": "backend/modules/users/router.py",
       "language": "python",
-      "sizeLines": 131,
+      "sizeLines": 114,
       "fileCategory": "code"
     },
     {
@@ -1085,7 +1606,7 @@
     {
       "path": "backend/modules/users/service.py",
       "language": "python",
-      "sizeLines": 49,
+      "sizeLines": 78,
       "fileCategory": "code"
     },
     {
@@ -1097,7 +1618,7 @@
     {
       "path": "backend/observability/config.py",
       "language": "python",
-      "sizeLines": 55,
+      "sizeLines": 64,
       "fileCategory": "code"
     },
     {
@@ -1127,7 +1648,7 @@
     {
       "path": "backend/observability/router.py",
       "language": "python",
-      "sizeLines": 23,
+      "sizeLines": 22,
       "fileCategory": "code"
     },
     {
@@ -1145,7 +1666,7 @@
     {
       "path": "backend/observability/service.py",
       "language": "python",
-      "sizeLines": 222,
+      "sizeLines": 237,
       "fileCategory": "code"
     },
     {
@@ -1163,7 +1684,7 @@
     {
       "path": "backend/pyproject.toml",
       "language": "toml",
-      "sizeLines": 47,
+      "sizeLines": 62,
       "fileCategory": "config"
     },
     {
@@ -1171,6 +1692,24 @@
       "language": "txt",
       "sizeLines": 83,
       "fileCategory": "docs"
+    },
+    {
+      "path": "backend/scripts/check_db.py",
+      "language": "python",
+      "sizeLines": 46,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/scripts/migrate.sh",
+      "language": "shell",
+      "sizeLines": 15,
+      "fileCategory": "script"
+    },
+    {
+      "path": "backend/scripts/setup-local-db.sql",
+      "language": "sql",
+      "sizeLines": 24,
+      "fileCategory": "data"
     },
     {
       "path": "backend/tests/__init__.py",
@@ -1193,19 +1732,25 @@
     {
       "path": "backend/tests/test_ai_provider_http_clients.py",
       "language": "python",
-      "sizeLines": 74,
+      "sizeLines": 91,
       "fileCategory": "code"
     },
     {
-      "path": "backend/tests/test_ai_repository.py",
+      "path": "backend/tests/test_ai_rag_hardening.py",
       "language": "python",
-      "sizeLines": 42,
+      "sizeLines": 145,
       "fileCategory": "code"
     },
     {
       "path": "backend/tests/test_api_auth.py",
       "language": "python",
       "sizeLines": 77,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/tests/test_architecture_ports.py",
+      "language": "python",
+      "sizeLines": 43,
       "fileCategory": "code"
     },
     {
@@ -1217,13 +1762,31 @@
     {
       "path": "backend/tests/test_cache.py",
       "language": "python",
-      "sizeLines": 151,
+      "sizeLines": 184,
       "fileCategory": "code"
     },
     {
       "path": "backend/tests/test_evaluation_concurrency.py",
       "language": "python",
-      "sizeLines": 89,
+      "sizeLines": 145,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/tests/test_evaluation_worker.py",
+      "language": "python",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/tests/test_extracted_backend_helpers.py",
+      "language": "python",
+      "sizeLines": 74,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/tests/test_logging.py",
+      "language": "python",
+      "sizeLines": 172,
       "fileCategory": "code"
     },
     {
@@ -1235,19 +1798,25 @@
     {
       "path": "backend/tests/test_memory_search_cache.py",
       "language": "python",
-      "sizeLines": 139,
+      "sizeLines": 146,
       "fileCategory": "code"
     },
     {
       "path": "backend/tests/test_memory.py",
       "language": "python",
-      "sizeLines": 436,
+      "sizeLines": 433,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/tests/test_module_boundaries.py",
+      "language": "python",
+      "sizeLines": 65,
       "fileCategory": "code"
     },
     {
       "path": "backend/tests/test_observability.py",
       "language": "python",
-      "sizeLines": 135,
+      "sizeLines": 156,
       "fileCategory": "code"
     },
     {
@@ -1259,13 +1828,25 @@
     {
       "path": "backend/tests/test_platform_cache.py",
       "language": "python",
-      "sizeLines": 110,
+      "sizeLines": 151,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/tests/test_platform_response_mappers.py",
+      "language": "python",
+      "sizeLines": 111,
       "fileCategory": "code"
     },
     {
       "path": "backend/tests/test_rag_permissions_integration.py",
       "language": "python",
       "sizeLines": 61,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/tests/test_resource_cache.py",
+      "language": "python",
+      "sizeLines": 59,
       "fileCategory": "code"
     },
     {
@@ -1283,7 +1864,7 @@
     {
       "path": "backend/tests/test_settings_observability_cache.py",
       "language": "python",
-      "sizeLines": 137,
+      "sizeLines": 191,
       "fileCategory": "code"
     },
     {
@@ -1313,7 +1894,7 @@
     {
       "path": "backend/workers/celery_app.py",
       "language": "python",
-      "sizeLines": 29,
+      "sizeLines": 37,
       "fileCategory": "code"
     },
     {
@@ -1323,15 +1904,21 @@
       "fileCategory": "code"
     },
     {
-      "path": "backend/workers/rag_indexing.py",
+      "path": "backend/workers/evaluation.py",
       "language": "python",
-      "sizeLines": 15,
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "backend/workers/logging_hooks.py",
+      "language": "python",
+      "sizeLines": 75,
       "fileCategory": "code"
     },
     {
       "path": "backend/workers/tasks.py",
       "language": "python",
-      "sizeLines": 38,
+      "sizeLines": 152,
       "fileCategory": "code"
     },
     {
@@ -1355,13 +1942,31 @@
     {
       "path": "docs/adr/0003-module-dependency-graph.md",
       "language": "markdown",
-      "sizeLines": 51,
+      "sizeLines": 53,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/logging.md",
+      "language": "markdown",
+      "sizeLines": 90,
       "fileCategory": "docs"
     },
     {
       "path": "docs/performance-audit.md",
       "language": "markdown",
       "sizeLines": 49,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/runbooks/ai-rag-degraded-mode.md",
+      "language": "markdown",
+      "sizeLines": 39,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "docs/text-research.md",
+      "language": "markdown",
+      "sizeLines": 169,
       "fileCategory": "docs"
     },
     {
@@ -1374,6 +1979,24 @@
       "path": "frontend/e2e/auth-rag.spec.ts",
       "language": "typescript",
       "sizeLines": 96,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/e2e/helpers/research-api.ts",
+      "language": "typescript",
+      "sizeLines": 276,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/e2e/provisioned-workspace.spec.ts",
+      "language": "typescript",
+      "sizeLines": 53,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/e2e/research-flow.spec.ts",
+      "language": "typescript",
+      "sizeLines": 150,
       "fileCategory": "code"
     },
     {
@@ -1395,9 +2018,15 @@
       "fileCategory": "config"
     },
     {
+      "path": "frontend/playwright-report/index.html",
+      "language": "html",
+      "sizeLines": 89,
+      "fileCategory": "markup"
+    },
+    {
       "path": "frontend/playwright.config.ts",
       "language": "typescript",
-      "sizeLines": 27,
+      "sizeLines": 29,
       "fileCategory": "code"
     },
     {
@@ -1415,7 +2044,7 @@
     {
       "path": "frontend/src/api/ai.ts",
       "language": "typescript",
-      "sizeLines": 380,
+      "sizeLines": 382,
       "fileCategory": "code"
     },
     {
@@ -1431,21 +2060,27 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend/src/api/client.test.ts",
+      "language": "typescript",
+      "sizeLines": 27,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend/src/api/client.ts",
       "language": "typescript",
-      "sizeLines": 84,
+      "sizeLines": 92,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/api/notifications.ts",
       "language": "typescript",
-      "sizeLines": 42,
+      "sizeLines": 41,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/api/platform.ts",
       "language": "typescript",
-      "sizeLines": 327,
+      "sizeLines": 323,
       "fileCategory": "code"
     },
     {
@@ -1457,7 +2092,7 @@
     {
       "path": "frontend/src/api/projects.ts",
       "language": "typescript",
-      "sizeLines": 111,
+      "sizeLines": 109,
       "fileCategory": "code"
     },
     {
@@ -1467,9 +2102,15 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend/src/api/textResearch.ts",
+      "language": "typescript",
+      "sizeLines": 437,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend/src/api/users.ts",
       "language": "typescript",
-      "sizeLines": 49,
+      "sizeLines": 48,
       "fileCategory": "code"
     },
     {
@@ -1499,7 +2140,7 @@
     {
       "path": "frontend/src/app/router.tsx",
       "language": "typescript",
-      "sizeLines": 120,
+      "sizeLines": 165,
       "fileCategory": "code"
     },
     {
@@ -1523,7 +2164,7 @@
     {
       "path": "frontend/src/components/auth/AuthMarketingPanel.tsx",
       "language": "typescript",
-      "sizeLines": 85,
+      "sizeLines": 86,
       "fileCategory": "code"
     },
     {
@@ -1535,7 +2176,7 @@
     {
       "path": "frontend/src/components/dashboard/DashboardCalendar.tsx",
       "language": "typescript",
-      "sizeLines": 1318,
+      "sizeLines": 30,
       "fileCategory": "code"
     },
     {
@@ -1553,31 +2194,37 @@
     {
       "path": "frontend/src/components/layout/AdminSettingsTabs.tsx",
       "language": "typescript",
-      "sizeLines": 39,
+      "sizeLines": 2,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/components/layout/AppLayout.tsx",
       "language": "typescript",
-      "sizeLines": 482,
+      "sizeLines": 502,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/layout/NotificationNavBadge.tsx",
+      "language": "typescript",
+      "sizeLines": 24,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/layout/SettingsTabs.tsx",
+      "language": "typescript",
+      "sizeLines": 38,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/components/notifications/NotificationListItem.tsx",
       "language": "typescript",
-      "sizeLines": 105,
+      "sizeLines": 109,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/components/ui/EmptyState.tsx",
       "language": "typescript",
       "sizeLines": 39,
-      "fileCategory": "code"
-    },
-    {
-      "path": "frontend/src/components/ui/PageHeader.tsx",
-      "language": "typescript",
-      "sizeLines": 59,
       "fileCategory": "code"
     },
     {
@@ -1607,7 +2254,13 @@
     {
       "path": "frontend/src/components/ui/StatCard.tsx",
       "language": "typescript",
-      "sizeLines": 74,
+      "sizeLines": 81,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/components/ui/StatCardSkeletonGrid.tsx",
+      "language": "typescript",
+      "sizeLines": 26,
       "fileCategory": "code"
     },
     {
@@ -1619,19 +2272,91 @@
     {
       "path": "frontend/src/config/queryKeys.test.ts",
       "language": "typescript",
-      "sizeLines": 27,
+      "sizeLines": 59,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/config/queryKeys.ts",
       "language": "typescript",
-      "sizeLines": 47,
+      "sizeLines": 98,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/config/queryTiming.ts",
       "language": "typescript",
-      "sizeLines": 16,
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/components/PromptLibraryPanel.tsx",
+      "language": "typescript",
+      "sizeLines": 64,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/components/RetrievalDocumentsPanel.tsx",
+      "language": "typescript",
+      "sizeLines": 57,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/components/ReviewsEvaluationsPanel.tsx",
+      "language": "typescript",
+      "sizeLines": 229,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/components/RunPlaygroundPanel.tsx",
+      "language": "typescript",
+      "sizeLines": 175,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/components/VersionBuilderPanel.tsx",
+      "language": "typescript",
+      "sizeLines": 136,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/hooks/useAiPromptAssetMutations.ts",
+      "language": "typescript",
+      "sizeLines": 43,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/hooks/useAiRunEvaluationMutations.ts",
+      "language": "typescript",
+      "sizeLines": 44,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/hooks/useAiStudioForms.ts",
+      "language": "typescript",
+      "sizeLines": 56,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/hooks/useAiStudioView.ts",
+      "language": "typescript",
+      "sizeLines": 96,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/studioUtils.test.ts",
+      "language": "typescript",
+      "sizeLines": 61,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/studioUtils.ts",
+      "language": "typescript",
+      "sizeLines": 61,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/ai/views/AiStudioView.tsx",
+      "language": "typescript",
+      "sizeLines": 47,
       "fileCategory": "code"
     },
     {
@@ -1649,7 +2374,67 @@
     {
       "path": "frontend/src/features/auth/schemas.ts",
       "language": "typescript",
-      "sizeLines": 27,
+      "sizeLines": 29,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/calendar/calendarDisplay.ts",
+      "language": "typescript",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/calendar/calendarRange.test.ts",
+      "language": "typescript",
+      "sizeLines": 23,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/calendar/calendarRange.ts",
+      "language": "typescript",
+      "sizeLines": 35,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/calendar/components/CalendarDayView.tsx",
+      "language": "typescript",
+      "sizeLines": 293,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/calendar/components/CalendarItemDrawer.tsx",
+      "language": "typescript",
+      "sizeLines": 203,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/calendar/components/CalendarViews.tsx",
+      "language": "typescript",
+      "sizeLines": 24,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/calendar/components/CalendarWeekView.tsx",
+      "language": "typescript",
+      "sizeLines": 248,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/calendar/components/DayItems.tsx",
+      "language": "typescript",
+      "sizeLines": 10,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/calendar/components/MonthDateCalendar.tsx",
+      "language": "typescript",
+      "sizeLines": 125,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/calendar/hooks/useDashboardCalendar.ts",
+      "language": "typescript",
+      "sizeLines": 12,
       "fileCategory": "code"
     },
     {
@@ -1665,9 +2450,39 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend/src/features/observability/components/InvestigationContextFields.tsx",
+      "language": "typescript",
+      "sizeLines": 35,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/observability/components/ObservabilityHealthGrid.tsx",
+      "language": "typescript",
+      "sizeLines": 63,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend/src/features/observability/components/ObservabilityShortcutCard.tsx",
       "language": "typescript",
       "sizeLines": 71,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/observability/components/ObservabilityShortcuts.tsx",
+      "language": "typescript",
+      "sizeLines": 70,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/observability/hooks/useObservabilityView.ts",
+      "language": "typescript",
+      "sizeLines": 44,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/observability/observabilityModel.ts",
+      "language": "typescript",
+      "sizeLines": 64,
       "fileCategory": "code"
     },
     {
@@ -1686,6 +2501,300 @@
       "path": "frontend/src/features/observability/urlBuilders.ts",
       "language": "typescript",
       "sizeLines": 46,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/observability/views/ObservabilityView.tsx",
+      "language": "typescript",
+      "sizeLines": 41,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform-admin/components/AdminPlatformContent.tsx",
+      "language": "typescript",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform-admin/components/AdminPlatformStats.tsx",
+      "language": "typescript",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform-admin/components/CloneConfigSection.tsx",
+      "language": "typescript",
+      "sizeLines": 43,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform-admin/components/FlagsSection.tsx",
+      "language": "typescript",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform-admin/components/PlansSection.tsx",
+      "language": "typescript",
+      "sizeLines": 35,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform-admin/components/TemplatesSection.tsx",
+      "language": "typescript",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform-admin/hooks/usePlatformAdminContent.ts",
+      "language": "typescript",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform-admin/hooks/usePlatformAdminMutations.test.ts",
+      "language": "typescript",
+      "sizeLines": 25,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform-admin/hooks/usePlatformAdminMutations.ts",
+      "language": "typescript",
+      "sizeLines": 122,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform-admin/platformAdminModel.ts",
+      "language": "typescript",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform-admin/views/AdminPlatformView.tsx",
+      "language": "typescript",
+      "sizeLines": 24,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform/components/PlatformSections.tsx",
+      "language": "typescript",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform/hooks/usePlatformView.ts",
+      "language": "typescript",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/platform/views/PlatformView.tsx",
+      "language": "typescript",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/profile/components/MfaQrCode.tsx",
+      "language": "typescript",
+      "sizeLines": 2,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/profile/components/ProfileSections.tsx",
+      "language": "typescript",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/profile/hooks/useProfileView.ts",
+      "language": "typescript",
+      "sizeLines": 21,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/profile/profileSchemas.ts",
+      "language": "typescript",
+      "sizeLines": 6,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/profile/views/ProfileView.tsx",
+      "language": "typescript",
+      "sizeLines": 2,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/projects/components/ProjectFlowSection.tsx",
+      "language": "typescript",
+      "sizeLines": 13,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/projects/components/ProjectTaskCards.tsx",
+      "language": "typescript",
+      "sizeLines": 19,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/projects/components/TaskEditorSection.tsx",
+      "language": "typescript",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/projects/hooks/useProjectDetail.ts",
+      "language": "typescript",
+      "sizeLines": 48,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/projects/projectTaskModel.ts",
+      "language": "typescript",
+      "sizeLines": 28,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/projects/taskOptions.ts",
+      "language": "typescript",
+      "sizeLines": 8,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/projects/views/ProjectDetailView.tsx",
+      "language": "typescript",
+      "sizeLines": 23,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/settings-admin/components/AdminSettingsContent.tsx",
+      "language": "typescript",
+      "sizeLines": 43,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/settings-admin/components/ConfigSettingsSection.tsx",
+      "language": "typescript",
+      "sizeLines": 37,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/settings-admin/components/DatabaseSettingsSections.tsx",
+      "language": "typescript",
+      "sizeLines": 42,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/settings-admin/components/SettingEditors.tsx",
+      "language": "typescript",
+      "sizeLines": 54,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/settings-admin/hooks/useAdminSettingsContent.ts",
+      "language": "typescript",
+      "sizeLines": 49,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/settings-admin/settingsModel.ts",
+      "language": "typescript",
+      "sizeLines": 38,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/settings-admin/views/AdminSettingsView.tsx",
+      "language": "typescript",
+      "sizeLines": 36,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/components/ResearchShared.tsx",
+      "language": "typescript",
+      "sizeLines": 132,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "language": "typescript",
+      "sizeLines": 145,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/types.ts",
+      "language": "typescript",
+      "sizeLines": 242,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/AnalysisView.tsx",
+      "language": "typescript",
+      "sizeLines": 112,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/AnnotationView.tsx",
+      "language": "typescript",
+      "sizeLines": 306,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/ClassificationView.tsx",
+      "language": "typescript",
+      "sizeLines": 354,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/CorpusView.tsx",
+      "language": "typescript",
+      "sizeLines": 222,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/DashboardView.tsx",
+      "language": "typescript",
+      "sizeLines": 182,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/ExplorerView.tsx",
+      "language": "typescript",
+      "sizeLines": 137,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/ExportsView.tsx",
+      "language": "typescript",
+      "sizeLines": 194,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/ReliabilityView.tsx",
+      "language": "typescript",
+      "sizeLines": 108,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/ResearchLayout.tsx",
+      "language": "typescript",
+      "sizeLines": 97,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/RobustnessView.tsx",
+      "language": "typescript",
+      "sizeLines": 56,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/RunsView.tsx",
+      "language": "typescript",
+      "sizeLines": 26,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/features/text-research/views/TopicsView.tsx",
+      "language": "typescript",
+      "sizeLines": 107,
       "fileCategory": "code"
     },
     {
@@ -1737,6 +2846,18 @@
       "fileCategory": "code"
     },
     {
+      "path": "frontend/src/hooks/useSettingsTabs.test.ts",
+      "language": "typescript",
+      "sizeLines": 27,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/hooks/useSettingsTabs.ts",
+      "language": "typescript",
+      "sizeLines": 77,
+      "fileCategory": "code"
+    },
+    {
       "path": "frontend/src/hooks/useUserProfile.ts",
       "language": "typescript",
       "sizeLines": 16,
@@ -1763,97 +2884,103 @@
     {
       "path": "frontend/src/pages/AdminPlatformPage.tsx",
       "language": "typescript",
-      "sizeLines": 1212,
+      "sizeLines": 1,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/AdminSettingsPage.tsx",
       "language": "typescript",
-      "sizeLines": 774,
+      "sizeLines": 1,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/AdminUsersPage.tsx",
       "language": "typescript",
-      "sizeLines": 272,
+      "sizeLines": 305,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/AiStudioPage.tsx",
       "language": "typescript",
-      "sizeLines": 911,
+      "sizeLines": 1,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/AuthHomePage.tsx",
       "language": "typescript",
-      "sizeLines": 352,
+      "sizeLines": 353,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/CalendarPage.tsx",
       "language": "typescript",
-      "sizeLines": 54,
+      "sizeLines": 66,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/DashboardPage.tsx",
       "language": "typescript",
-      "sizeLines": 317,
+      "sizeLines": 264,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/NotificationsPage.tsx",
       "language": "typescript",
-      "sizeLines": 244,
+      "sizeLines": 308,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/ObservabilityPage.test.tsx",
       "language": "typescript",
-      "sizeLines": 121,
+      "sizeLines": 131,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/ObservabilityPage.tsx",
       "language": "typescript",
-      "sizeLines": 435,
+      "sizeLines": 1,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/PlatformPage.tsx",
       "language": "typescript",
-      "sizeLines": 745,
+      "sizeLines": 1,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/ProfilePage.tsx",
       "language": "typescript",
-      "sizeLines": 716,
+      "sizeLines": 1,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/ProjectDetailPage.tsx",
       "language": "typescript",
-      "sizeLines": 812,
+      "sizeLines": 1,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/ProjectsPage.tsx",
       "language": "typescript",
-      "sizeLines": 223,
+      "sizeLines": 215,
+      "fileCategory": "code"
+    },
+    {
+      "path": "frontend/src/pages/ResearchPage.tsx",
+      "language": "typescript",
+      "sizeLines": 1,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/ResetPasswordPage.tsx",
       "language": "typescript",
-      "sizeLines": 126,
+      "sizeLines": 127,
       "fileCategory": "code"
     },
     {
       "path": "frontend/src/pages/VerifyEmailPage.tsx",
       "language": "typescript",
-      "sizeLines": 131,
+      "sizeLines": 140,
       "fileCategory": "code"
     },
     {
@@ -1879,6 +3006,12 @@
       "language": "typescript",
       "sizeLines": 3,
       "fileCategory": "code"
+    },
+    {
+      "path": "frontend/test-results/.last-run.json",
+      "language": "json",
+      "sizeLines": 3,
+      "fileCategory": "config"
     },
     {
       "path": "frontend/tsconfig.app.json",
@@ -1913,13 +3046,13 @@
     {
       "path": "frontend/vite.config.js",
       "language": "javascript",
-      "sizeLines": 49,
+      "sizeLines": 57,
       "fileCategory": "code"
     },
     {
       "path": "frontend/vite.config.ts",
       "language": "typescript",
-      "sizeLines": 50,
+      "sizeLines": 58,
       "fileCategory": "code"
     },
     {
@@ -1943,19 +3076,19 @@
     {
       "path": "infra/nginx/frontend.conf.example",
       "language": "example",
-      "sizeLines": 21,
+      "sizeLines": 29,
       "fileCategory": "code"
     },
     {
       "path": "Makefile",
       "language": "makefile",
-      "sizeLines": 38,
+      "sizeLines": 41,
       "fileCategory": "infra"
     },
     {
       "path": "Makefile.local",
       "language": "local",
-      "sizeLines": 283,
+      "sizeLines": 301,
       "fileCategory": "code"
     },
     {
@@ -2001,48 +3134,24 @@
       "fileCategory": "code"
     },
     {
+      "path": "prompt.txt",
+      "language": "txt",
+      "sizeLines": 0,
+      "fileCategory": "docs"
+    },
+    {
       "path": "README.md",
       "language": "markdown",
-      "sizeLines": 102,
+      "sizeLines": 225,
       "fileCategory": "docs"
     }
   ],
-  "totalFiles": 331,
+  "totalFiles": 518,
   "filteredByIgnore": 0,
-  "estimatedComplexity": "large",
-  "stats": {
-    "filesScanned": 331,
-    "byCategory": {
-      "code": 299,
-      "docs": 13,
-      "config": 14,
-      "markup": 3,
-      "infra": 2
-    },
-    "byLanguage": {
-      "unknown": 2,
-      "txt": 2,
-      "markdown": 11,
-      "python": 208,
-      "config": 4,
-      "mako": 1,
-      "toml": 1,
-      "typescript": 82,
-      "javascript": 2,
-      "html": 1,
-      "json": 5,
-      "css": 2,
-      "tsbuildinfo": 1,
-      "yaml": 5,
-      "example": 1,
-      "makefile": 1,
-      "local": 1,
-      "dev": 1
-    }
-  },
+  "estimatedComplexity": "very-large",
   "importMap": {
     ".understand-anything/.understandignore": [],
-    "adaptation.txt": [],
+    ".understand-anything/config.json": [],
     "AGENTS.md": [],
     "backend/__init__.py": [],
     "backend/.env.example": [],
@@ -2060,15 +3169,14 @@
       "backend/modules/profile/__init__.py",
       "backend/modules/projects/__init__.py",
       "backend/modules/settings/__init__.py",
+      "backend/modules/text_research/__init__.py",
       "backend/modules/users/__init__.py"
     ],
     "backend/alembic/README": [],
     "backend/alembic/script.py.mako": [],
-    "backend/alembic/versions/3f1bfc747f3e_generate_tables.py": [],
-    "backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py": [],
-    "backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py": [],
-    "backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py": [],
-    "backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py": [],
+    "backend/alembic/versions/28a5b9ada6fc_generate_tables.py": [],
+    "backend/alembic/versions/7f3c1a9d2e44_add_ai_run_degradation.py": [],
+    "backend/alembic/versions/d8ddea885de9_add_text_research_tables.py": [],
     "backend/api/__init__.py": [],
     "backend/api/deps/__init__.py": [],
     "backend/api/deps/admin.py": [
@@ -2096,17 +3204,22 @@
       "backend/core/cache.py",
       "backend/core/config.py",
       "backend/core/error_handler.py",
+      "backend/core/log_redaction.py",
       "backend/core/logging.py",
       "backend/core/storage.py",
       "backend/db/session.py",
       "backend/modules/ai/providers.py",
+      "backend/modules/memory/infrastructure/memory_config.py",
       "backend/modules/platform/service.py",
       "backend/modules/rag/infrastructure/rag_config.py",
       "backend/observability/__init__.py",
+      "backend/observability/service.py",
       "backend/workers/async_dispatch.py"
     ],
     "backend/api/middleware/__init__.py": [],
-    "backend/api/middleware/correlation_id.py": [],
+    "backend/api/middleware/correlation_id.py": [
+      "backend/core/log_context.py"
+    ],
     "backend/api/middleware/csrf.py": [
       "backend/core/config.py"
     ],
@@ -2114,7 +3227,9 @@
       "backend/core/cache.py",
       "backend/core/config.py"
     ],
-    "backend/api/middleware/request_logging.py": [],
+    "backend/api/middleware/request_logging.py": [
+      "backend/core/config.py"
+    ],
     "backend/api/middleware/security_headers.py": [
       "backend/core/config.py"
     ],
@@ -2131,6 +3246,7 @@
       "backend/modules/projects/router.py",
       "backend/modules/rag/api/routes.py",
       "backend/modules/settings/router.py",
+      "backend/modules/text_research/api/routes.py",
       "backend/modules/users/router.py",
       "backend/observability/router.py"
     ],
@@ -2154,13 +3270,29 @@
     "backend/core/error_handler.py": [
       "backend/core/logging.py"
     ],
+    "backend/core/log_context.py": [],
+    "backend/core/log_handlers.py": [
+      "backend/core/config.py",
+      "backend/core/logging.py"
+    ],
+    "backend/core/log_redaction.py": [
+      "backend/core/logging.py"
+    ],
+    "backend/core/log_timing.py": [
+      "backend/core/config.py",
+      "backend/core/logging.py"
+    ],
     "backend/core/logging.py": [
       "backend/core/config.py",
+      "backend/core/log_context.py",
+      "backend/core/log_handlers.py",
+      "backend/core/log_redaction.py",
       "backend/core/logging.py"
     ],
     "backend/core/pagination.py": [],
     "backend/core/rate_limit.py": [
-      "backend/core/cache.py"
+      "backend/core/cache.py",
+      "backend/core/logging.py"
     ],
     "backend/core/schemas.py": [],
     "backend/core/security.py": [
@@ -2194,50 +3326,168 @@
     "backend/modules/ai/agent_router.py": [
       "backend/api/deps/auth.py",
       "backend/api/deps/db.py",
+      "backend/core/config.py",
       "backend/modules/ai/application/agent_service.py",
+      "backend/modules/ai/dependencies.py",
       "backend/modules/ai/schemas.py",
       "backend/modules/ai/serializers.py",
       "backend/modules/identity_access/models.py"
     ],
     "backend/modules/ai/application/__init__.py": [],
     "backend/modules/ai/application/agent_service.py": [
+      "backend/modules/ai/__init__.py",
       "backend/modules/ai/application/prompt_context_builder.py",
+      "backend/modules/ai/metrics.py",
       "backend/modules/ai/service.py",
       "backend/modules/identity_access/models.py",
       "backend/modules/memory/application/memory_service.py",
       "backend/modules/memory/domain/models.py",
-      "backend/modules/memory/infrastructure/memory_config.py"
+      "backend/modules/memory/infrastructure/memory_config.py",
+      "backend/modules/memory/workers.py"
     ],
     "backend/modules/ai/application/prompt_context_builder.py": [
       "backend/modules/memory/application/memory_service.py",
       "backend/modules/memory/domain/models.py",
-      "backend/modules/memory/infrastructure/memory_config.py",
-      "backend/modules/rag/application/agent_context_service.py",
-      "backend/modules/rag/application/rag_context_builder.py"
+      "backend/modules/rag/application/prompt_context_service.py",
+      "backend/modules/rag/infrastructure/rag_config.py"
     ],
     "backend/modules/ai/application/rag_answer_prompt.py": [
       "backend/core/config.py",
+      "backend/core/pagination.py",
       "backend/modules/ai/repository.py",
       "backend/modules/identity_access/models.py"
     ],
-    "backend/modules/ai/models.py": [
-      "backend/db/base.py"
+    "backend/modules/ai/base_service.py": [
+      "backend/modules/ai/providers.py",
+      "backend/modules/ai/repository.py"
     ],
-    "backend/modules/ai/providers.py": [
-      "backend/core/config.py"
+    "backend/modules/ai/dependencies.py": [
+      "backend/api/deps/auth.py",
+      "backend/core/config.py",
+      "backend/core/rate_limit.py",
+      "backend/modules/identity_access/models.py"
     ],
-    "backend/modules/ai/repository.py": [
-      "backend/core/pagination.py",
-      "backend/modules/ai/models.py"
-    ],
-    "backend/modules/ai/router.py": [
+    "backend/modules/ai/document_routes.py": [
       "backend/api/deps/auth.py",
       "backend/api/deps/db.py",
       "backend/core/pagination.py",
+      "backend/modules/ai/document_service.py",
+      "backend/modules/ai/schemas.py",
+      "backend/modules/ai/serializers.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/document_service.py": [
+      "backend/core/config.py",
+      "backend/core/pagination.py",
+      "backend/modules/ai/base_service.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/rag/application/legacy_ai_document_service.py"
+    ],
+    "backend/modules/ai/evaluation_routes.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/modules/ai/evaluation_service.py",
+      "backend/modules/ai/schemas.py",
+      "backend/modules/ai/serializers.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/evaluation_scoring.py": [],
+    "backend/modules/ai/evaluation_service.py": [
+      "backend/core/config.py",
+      "backend/core/pagination.py",
+      "backend/modules/ai/evaluation_scoring.py",
+      "backend/modules/ai/models.py",
+      "backend/modules/ai/run_service.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/identity_access/repository.py"
+    ],
+    "backend/modules/ai/metrics.py": [],
+    "backend/modules/ai/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/ai/overview_routes.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/modules/ai/provider_service.py",
       "backend/modules/ai/schemas.py",
       "backend/modules/ai/serializers.py",
       "backend/modules/ai/service.py",
       "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/prompt_routes.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/modules/ai/prompt_service.py",
+      "backend/modules/ai/schemas.py",
+      "backend/modules/ai/serializers.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/prompt_service.py": [
+      "backend/core/pagination.py",
+      "backend/modules/ai/base_service.py",
+      "backend/modules/ai/models.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/provider_service.py": [
+      "backend/core/config.py",
+      "backend/modules/ai/base_service.py",
+      "backend/modules/ai/schemas.py"
+    ],
+    "backend/modules/ai/providers.py": [
+      "backend/core/config.py"
+    ],
+    "backend/modules/ai/README.md": [],
+    "backend/modules/ai/repository.py": [
+      "backend/core/pagination.py",
+      "backend/modules/ai/models.py"
+    ],
+    "backend/modules/ai/review_routes.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/modules/ai/review_service.py",
+      "backend/modules/ai/schemas.py",
+      "backend/modules/ai/serializers.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/review_service.py": [
+      "backend/core/pagination.py",
+      "backend/modules/ai/base_service.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/router.py": [
+      "backend/modules/ai/document_routes.py",
+      "backend/modules/ai/evaluation_routes.py",
+      "backend/modules/ai/overview_routes.py",
+      "backend/modules/ai/prompt_routes.py",
+      "backend/modules/ai/review_routes.py",
+      "backend/modules/ai/run_routes.py"
+    ],
+    "backend/modules/ai/run_routes.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/config.py",
+      "backend/core/pagination.py",
+      "backend/modules/ai/dependencies.py",
+      "backend/modules/ai/run_service.py",
+      "backend/modules/ai/schemas.py",
+      "backend/modules/ai/serializers.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/run_service.py": [
+      "backend/core/pagination.py",
+      "backend/modules/ai/__init__.py",
+      "backend/modules/ai/application/rag_answer_prompt.py",
+      "backend/modules/ai/document_service.py",
+      "backend/modules/ai/metrics.py",
+      "backend/modules/ai/models.py",
+      "backend/modules/ai/prompt_service.py",
+      "backend/modules/ai/providers.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/rag/application/prompt_context_service.py",
+      "backend/modules/rag/infrastructure/rag_config.py"
     ],
     "backend/modules/ai/schemas.py": [
       "backend/core/schemas.py"
@@ -2246,15 +3496,11 @@
       "backend/modules/ai/schemas.py"
     ],
     "backend/modules/ai/service.py": [
-      "backend/core/config.py",
       "backend/core/pagination.py",
-      "backend/modules/ai/application/rag_answer_prompt.py",
-      "backend/modules/ai/models.py",
-      "backend/modules/ai/providers.py",
-      "backend/modules/ai/repository.py",
-      "backend/modules/ai/schemas.py",
-      "backend/modules/identity_access/models.py",
-      "backend/modules/rag/application/legacy_ai_document_service.py"
+      "backend/modules/ai/evaluation_service.py",
+      "backend/modules/ai/provider_service.py",
+      "backend/modules/ai/review_service.py",
+      "backend/modules/identity_access/models.py"
     ],
     "backend/modules/ai/tests/test_document_consolidation.py": [
       "backend/modules/ai/service.py",
@@ -2269,7 +3515,12 @@
     ],
     "backend/modules/ai/tests/test_retrieval_consolidation.py": [
       "backend/modules/ai/application/agent_service.py",
-      "backend/modules/ai/application/prompt_context_builder.py"
+      "backend/modules/ai/application/prompt_context_builder.py",
+      "backend/modules/rag/application/prompt_context_service.py",
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/modules/ai/tests/test_route_registration.py": [
+      "backend/modules/ai/router.py"
     ],
     "backend/modules/audit/__init__.py": [],
     "backend/modules/audit/models.py": [
@@ -2277,6 +3528,9 @@
     ],
     "backend/modules/audit/repository.py": [
       "backend/modules/audit/models.py"
+    ],
+    "backend/modules/audit/request_logging.py": [
+      "backend/modules/audit/repository.py"
     ],
     "backend/modules/calendar/__init__.py": [],
     "backend/modules/calendar/models.py": [
@@ -2297,6 +3551,7 @@
       "backend/modules/projects/schemas.py"
     ],
     "backend/modules/calendar/service.py": [
+      "backend/core/config.py",
       "backend/modules/calendar/models.py",
       "backend/modules/calendar/repository.py",
       "backend/modules/calendar/schemas.py",
@@ -2332,7 +3587,6 @@
       "backend/core/security.py",
       "backend/modules/identity_access/models.py",
       "backend/modules/identity_access/repository.py",
-      "backend/modules/platform/service.py",
       "backend/workers/email.py"
     ],
     "backend/modules/memory/__init__.py": [],
@@ -2347,7 +3601,7 @@
       "backend/modules/memory/infrastructure/memory_config.py"
     ],
     "backend/modules/memory/api/schemas.py": [
-      "backend/modules/ai/schemas.py"
+      "backend/core/schemas.py"
     ],
     "backend/modules/memory/application/__init__.py": [],
     "backend/modules/memory/application/memory_consolidator.py": [
@@ -2371,6 +3625,7 @@
       "backend/modules/memory/domain/enums.py"
     ],
     "backend/modules/memory/application/memory_service.py": [
+      "backend/core/pagination.py",
       "backend/modules/memory/application/memory_consolidator.py",
       "backend/modules/memory/application/memory_context_builder.py",
       "backend/modules/memory/application/memory_extractor.py",
@@ -2383,8 +3638,7 @@
       "backend/modules/memory/infrastructure/mem0_client.py",
       "backend/modules/memory/infrastructure/memory_audit_repository.py",
       "backend/modules/memory/infrastructure/memory_config.py",
-      "backend/modules/memory/infrastructure/metrics.py",
-      "backend/modules/projects/repository.py"
+      "backend/modules/memory/infrastructure/metrics.py"
     ],
     "backend/modules/memory/domain/__init__.py": [
       "backend/modules/memory/domain/enums.py",
@@ -2418,6 +3672,11 @@
       "backend/db/base.py"
     ],
     "backend/modules/memory/README.md": [],
+    "backend/modules/memory/workers.py": [
+      "backend/core/cache.py",
+      "backend/core/config.py",
+      "backend/workers/async_dispatch.py"
+    ],
     "backend/modules/notifications/__init__.py": [],
     "backend/modules/notifications/models.py": [
       "backend/db/base.py"
@@ -2438,35 +3697,121 @@
       "backend/core/schemas.py"
     ],
     "backend/modules/platform/__init__.py": [],
+    "backend/modules/platform/api_key_routes.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/platform/api_key_service.py",
+      "backend/modules/platform/schemas.py"
+    ],
+    "backend/modules/platform/api_key_service.py": [
+      "backend/core/pagination.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/platform/config_service.py",
+      "backend/modules/platform/models.py"
+    ],
+    "backend/modules/platform/billing_routes.py": [
+      "backend/api/deps/admin.py",
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/modules/audit/request_logging.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/platform/billing_service.py",
+      "backend/modules/platform/schemas.py"
+    ],
+    "backend/modules/platform/billing_service.py": [
+      "backend/modules/identity_access/models.py",
+      "backend/modules/platform/config_service.py",
+      "backend/modules/platform/models.py"
+    ],
+    "backend/modules/platform/config_routes.py": [
+      "backend/api/deps/admin.py",
+      "backend/api/deps/db.py",
+      "backend/modules/audit/request_logging.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/platform/config_service.py",
+      "backend/modules/platform/schemas.py"
+    ],
+    "backend/modules/platform/config_service.py": [
+      "backend/core/cache.py",
+      "backend/core/config.py",
+      "backend/modules/platform/defaults.py",
+      "backend/modules/platform/repository.py",
+      "backend/modules/platform/schemas.py",
+      "backend/modules/settings/repository.py"
+    ],
+    "backend/modules/platform/defaults.py": [],
+    "backend/modules/platform/email_template_routes.py": [
+      "backend/api/deps/admin.py",
+      "backend/api/deps/db.py",
+      "backend/modules/audit/request_logging.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/platform/email_template_service.py",
+      "backend/modules/platform/schemas.py"
+    ],
+    "backend/modules/platform/email_template_service.py": [
+      "backend/core/cache.py",
+      "backend/core/config.py",
+      "backend/modules/platform/config_service.py",
+      "backend/modules/platform/models.py"
+    ],
+    "backend/modules/platform/feature_flag_routes.py": [
+      "backend/api/deps/admin.py",
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/modules/audit/request_logging.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/platform/feature_flag_service.py",
+      "backend/modules/platform/schemas.py"
+    ],
+    "backend/modules/platform/feature_flag_service.py": [
+      "backend/core/cache.py",
+      "backend/core/config.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/platform/config_service.py",
+      "backend/modules/platform/models.py",
+      "backend/modules/platform/schemas.py"
+    ],
     "backend/modules/platform/models.py": [
       "backend/db/base.py"
     ],
+    "backend/modules/platform/README.md": [],
     "backend/modules/platform/repository.py": [
       "backend/core/pagination.py",
       "backend/modules/platform/models.py"
     ],
     "backend/modules/platform/router.py": [
-      "backend/api/deps/admin.py",
-      "backend/api/deps/auth.py",
-      "backend/api/deps/db.py",
-      "backend/core/pagination.py",
-      "backend/modules/audit/repository.py",
-      "backend/modules/identity_access/models.py",
-      "backend/modules/platform/schemas.py",
-      "backend/modules/platform/service.py"
+      "backend/modules/platform/api_key_routes.py",
+      "backend/modules/platform/billing_routes.py",
+      "backend/modules/platform/config_routes.py",
+      "backend/modules/platform/email_template_routes.py",
+      "backend/modules/platform/feature_flag_routes.py",
+      "backend/modules/platform/webhook_routes.py"
     ],
     "backend/modules/platform/schemas.py": [
       "backend/core/schemas.py"
     ],
     "backend/modules/platform/service.py": [
-      "backend/core/cache.py",
-      "backend/core/config.py",
+      "backend/modules/platform/api_key_service.py",
+      "backend/modules/platform/billing_service.py",
+      "backend/modules/platform/email_template_service.py",
+      "backend/modules/platform/feature_flag_service.py",
+      "backend/modules/platform/webhook_service.py"
+    ],
+    "backend/modules/platform/webhook_routes.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
       "backend/core/pagination.py",
       "backend/modules/identity_access/models.py",
-      "backend/modules/platform/models.py",
-      "backend/modules/platform/repository.py",
       "backend/modules/platform/schemas.py",
-      "backend/modules/settings/repository.py"
+      "backend/modules/platform/webhook_service.py"
+    ],
+    "backend/modules/platform/webhook_service.py": [
+      "backend/core/pagination.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/platform/config_service.py",
+      "backend/modules/platform/models.py"
     ],
     "backend/modules/profile/__init__.py": [],
     "backend/modules/profile/models.py": [
@@ -2482,14 +3827,23 @@
       "backend/core/storage.py",
       "backend/modules/identity_access/models.py",
       "backend/modules/profile/schemas.py",
+      "backend/modules/profile/serializers.py",
       "backend/modules/profile/service.py"
     ],
     "backend/modules/profile/schemas.py": [
       "backend/core/schemas.py"
     ],
-    "backend/modules/profile/service.py": [
+    "backend/modules/profile/serializers.py": [
       "backend/modules/profile/models.py",
-      "backend/modules/profile/repository.py"
+      "backend/modules/profile/schemas.py"
+    ],
+    "backend/modules/profile/service.py": [
+      "backend/core/cache.py",
+      "backend/core/config.py",
+      "backend/modules/profile/models.py",
+      "backend/modules/profile/repository.py",
+      "backend/modules/profile/schemas.py",
+      "backend/modules/profile/serializers.py"
     ],
     "backend/modules/projects/__init__.py": [],
     "backend/modules/projects/models.py": [
@@ -2513,6 +3867,7 @@
       "backend/core/schemas.py"
     ],
     "backend/modules/projects/service.py": [
+      "backend/core/config.py",
       "backend/core/pagination.py",
       "backend/modules/identity_access/models.py",
       "backend/modules/notifications/repository.py",
@@ -2525,8 +3880,10 @@
     "backend/modules/rag/api/routes.py": [
       "backend/api/deps/auth.py",
       "backend/api/deps/db.py",
+      "backend/core/config.py",
       "backend/core/pagination.py",
       "backend/core/text_snippet.py",
+      "backend/modules/ai/dependencies.py",
       "backend/modules/identity_access/models.py",
       "backend/modules/rag/api/schemas.py",
       "backend/modules/rag/application/document_ingestion_service.py",
@@ -2537,11 +3894,7 @@
       "backend/modules/rag/workers.py"
     ],
     "backend/modules/rag/api/schemas.py": [
-      "backend/modules/ai/schemas.py"
-    ],
-    "backend/modules/rag/application/agent_context_service.py": [
-      "backend/modules/rag/application/rag_tool.py",
-      "backend/modules/rag/infrastructure/rag_config.py"
+      "backend/core/schemas.py"
     ],
     "backend/modules/rag/application/chunking_service.py": [
       "backend/modules/rag/domain/models.py",
@@ -2552,7 +3905,6 @@
       "backend/modules/rag/domain/models.py"
     ],
     "backend/modules/rag/application/document_ingestion_service.py": [
-      "backend/modules/projects/repository.py",
       "backend/modules/rag/application/chunking_service.py",
       "backend/modules/rag/application/document_parser_service.py",
       "backend/modules/rag/application/embedding_service.py",
@@ -2582,14 +3934,21 @@
       "backend/modules/rag/infrastructure/repositories.py",
       "backend/modules/rag/workers.py"
     ],
-    "backend/modules/rag/application/rag_answer_service.py": [
-      "backend/modules/ai/service.py",
-      "backend/modules/identity_access/models.py",
+    "backend/modules/rag/application/prompt_context_service.py": [
       "backend/modules/memory/application/memory_service.py",
       "backend/modules/memory/domain/models.py",
       "backend/modules/memory/infrastructure/memory_config.py",
-      "backend/modules/projects/repository.py",
+      "backend/modules/rag/application/rag_context_builder.py",
+      "backend/modules/rag/application/retrieval_service.py",
+      "backend/modules/rag/domain/models.py",
+      "backend/modules/rag/infrastructure/rag_config.py"
+    ],
+    "backend/modules/rag/application/rag_answer_service.py": [
+      "backend/modules/identity_access/models.py",
+      "backend/modules/memory/application/memory_service.py",
+      "backend/modules/memory/infrastructure/memory_config.py",
       "backend/modules/rag/application/citation_service.py",
+      "backend/modules/rag/application/prompt_context_service.py",
       "backend/modules/rag/application/rag_context_builder.py",
       "backend/modules/rag/application/retrieval_service.py",
       "backend/modules/rag/domain/models.py",
@@ -2607,8 +3966,17 @@
       "backend/modules/rag/domain/models.py",
       "backend/modules/rag/infrastructure/rag_config.py"
     ],
+    "backend/modules/rag/application/retrieval_filters.py": [
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/modules/rag/application/retrieval_ranker.py": [
+      "backend/modules/rag/domain/models.py"
+    ],
     "backend/modules/rag/application/retrieval_service.py": [
+      "backend/core/config.py",
       "backend/modules/rag/application/embedding_service.py",
+      "backend/modules/rag/application/retrieval_filters.py",
+      "backend/modules/rag/application/retrieval_ranker.py",
       "backend/modules/rag/domain/models.py",
       "backend/modules/rag/infrastructure/rag_config.py",
       "backend/modules/rag/infrastructure/vector_store_adapter.py"
@@ -2644,7 +4012,6 @@
       "backend/core/config.py"
     ],
     "backend/modules/rag/infrastructure/repositories.py": [
-      "backend/core/config.py",
       "backend/core/pagination.py",
       "backend/modules/rag/domain/enums.py",
       "backend/modules/rag/domain/models.py",
@@ -2680,6 +4047,11 @@
     "backend/modules/rag/tests/test_rag_config_validation.py": [
       "backend/modules/rag/infrastructure/rag_config.py"
     ],
+    "backend/modules/rag/tests/test_retrieval_outcome.py": [
+      "backend/modules/rag/application/retrieval_filters.py",
+      "backend/modules/rag/application/retrieval_service.py",
+      "backend/modules/rag/domain/models.py"
+    ],
     "backend/modules/rag/tests/test_retrieval.py": [
       "backend/modules/rag/domain/models.py",
       "backend/modules/rag/infrastructure/pgvector_adapter.py"
@@ -2690,6 +4062,7 @@
       "backend/workers/async_dispatch.py"
     ],
     "backend/modules/settings/__init__.py": [],
+    "backend/modules/settings/env_file_store.py": [],
     "backend/modules/settings/models.py": [
       "backend/db/base.py"
     ],
@@ -2699,7 +4072,7 @@
     "backend/modules/settings/router.py": [
       "backend/api/deps/admin.py",
       "backend/api/deps/db.py",
-      "backend/modules/audit/repository.py",
+      "backend/modules/audit/request_logging.py",
       "backend/modules/identity_access/models.py",
       "backend/modules/settings/schemas.py",
       "backend/modules/settings/service.py"
@@ -2710,9 +4083,215 @@
     "backend/modules/settings/service.py": [
       "backend/core/cache.py",
       "backend/core/config.py",
+      "backend/modules/settings/env_file_store.py",
       "backend/modules/settings/models.py",
       "backend/modules/settings/repository.py",
       "backend/modules/settings/schemas.py"
+    ],
+    "backend/modules/text_research/__init__.py": [],
+    "backend/modules/text_research/api/__init__.py": [],
+    "backend/modules/text_research/api/routes.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/text_research/api/schemas.py",
+      "backend/modules/text_research/application/active_learning_service.py",
+      "backend/modules/text_research/application/adjudication_service.py",
+      "backend/modules/text_research/application/annotation_service.py",
+      "backend/modules/text_research/application/classification_service.py",
+      "backend/modules/text_research/application/codebook_service.py",
+      "backend/modules/text_research/application/comparative_analysis_service.py",
+      "backend/modules/text_research/application/corpus_service.py",
+      "backend/modules/text_research/application/dashboard_service.py",
+      "backend/modules/text_research/application/dataset_builder_service.py",
+      "backend/modules/text_research/application/demo_seed_service.py",
+      "backend/modules/text_research/application/dictionary_service.py",
+      "backend/modules/text_research/application/export_service.py",
+      "backend/modules/text_research/application/prediction_service.py",
+      "backend/modules/text_research/application/preprocessing_service.py",
+      "backend/modules/text_research/application/quantitative_analysis_service.py",
+      "backend/modules/text_research/application/reliability_service.py",
+      "backend/modules/text_research/application/robustness_service.py",
+      "backend/modules/text_research/application/run_service.py",
+      "backend/modules/text_research/application/segmentation_service.py",
+      "backend/modules/text_research/application/topic_model_service.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/api/schemas.py": [],
+    "backend/modules/text_research/application/__init__.py": [],
+    "backend/modules/text_research/application/access.py": [
+      "backend/modules/text_research/domain/models.py",
+      "backend/modules/text_research/infrastructure/repositories.py"
+    ],
+    "backend/modules/text_research/application/active_learning_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/application/annotation_service.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/application/adjudication_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/domain/models.py",
+      "backend/modules/text_research/infrastructure/reliability.py"
+    ],
+    "backend/modules/text_research/application/annotation_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/domain/enums.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/application/classification_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/application/dataset_builder_service.py",
+      "backend/modules/text_research/domain/enums.py",
+      "backend/modules/text_research/domain/models.py",
+      "backend/modules/text_research/infrastructure/__init__.py",
+      "backend/modules/text_research/infrastructure/classifiers.py",
+      "backend/modules/text_research/infrastructure/model_storage.py",
+      "backend/modules/text_research/infrastructure/preprocessing.py"
+    ],
+    "backend/modules/text_research/application/codebook_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/domain/exceptions.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/application/comparative_analysis_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/application/quantitative_analysis_service.py",
+      "backend/modules/text_research/domain/enums.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/application/corpus_service.py": [
+      "backend/core/pagination.py",
+      "backend/modules/rag/infrastructure/repositories.py",
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/application/dashboard_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/domain/enums.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/application/dataset_builder_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/application/demo_seed_service.py": [
+      "backend/modules/rag/infrastructure/repositories.py",
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/application/dictionary_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/application/export_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/application/quantitative_analysis_service.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/application/prediction_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/application/quantitative_analysis_service.py",
+      "backend/modules/text_research/domain/enums.py",
+      "backend/modules/text_research/domain/models.py",
+      "backend/modules/text_research/infrastructure/__init__.py",
+      "backend/modules/text_research/infrastructure/classifiers.py",
+      "backend/modules/text_research/infrastructure/model_storage.py"
+    ],
+    "backend/modules/text_research/application/preprocessing_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/domain/models.py",
+      "backend/modules/text_research/infrastructure/preprocessing.py"
+    ],
+    "backend/modules/text_research/application/quantitative_analysis_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/application/preprocessing_service.py",
+      "backend/modules/text_research/domain/enums.py",
+      "backend/modules/text_research/domain/models.py",
+      "backend/modules/text_research/infrastructure/__init__.py",
+      "backend/modules/text_research/infrastructure/preprocessing.py",
+      "backend/modules/text_research/infrastructure/quantitative.py"
+    ],
+    "backend/modules/text_research/application/reliability_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/domain/enums.py",
+      "backend/modules/text_research/domain/models.py",
+      "backend/modules/text_research/infrastructure/reliability.py"
+    ],
+    "backend/modules/text_research/application/robustness_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/application/dataset_builder_service.py",
+      "backend/modules/text_research/domain/enums.py",
+      "backend/modules/text_research/domain/models.py",
+      "backend/modules/text_research/infrastructure/classifiers.py",
+      "backend/modules/text_research/infrastructure/preprocessing.py"
+    ],
+    "backend/modules/text_research/application/run_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/domain/enums.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/application/segmentation_service.py": [
+      "backend/core/config.py",
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/application/corpus_service.py",
+      "backend/modules/text_research/domain/enums.py",
+      "backend/modules/text_research/domain/models.py",
+      "backend/modules/text_research/infrastructure/segmentation.py"
+    ],
+    "backend/modules/text_research/application/topic_model_service.py": [
+      "backend/modules/text_research/application/access.py",
+      "backend/modules/text_research/application/quantitative_analysis_service.py",
+      "backend/modules/text_research/domain/enums.py",
+      "backend/modules/text_research/domain/models.py",
+      "backend/modules/text_research/infrastructure/__init__.py",
+      "backend/modules/text_research/infrastructure/model_storage.py",
+      "backend/modules/text_research/infrastructure/preprocessing.py",
+      "backend/modules/text_research/infrastructure/topic_models.py"
+    ],
+    "backend/modules/text_research/domain/__init__.py": [
+      "backend/modules/text_research/domain/__init__.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/domain/enums.py": [],
+    "backend/modules/text_research/domain/exceptions.py": [],
+    "backend/modules/text_research/domain/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/text_research/infrastructure/__init__.py": [],
+    "backend/modules/text_research/infrastructure/classifiers.py": [
+      "backend/modules/text_research/infrastructure/model_storage.py",
+      "backend/modules/text_research/infrastructure/preprocessing.py"
+    ],
+    "backend/modules/text_research/infrastructure/model_storage.py": [],
+    "backend/modules/text_research/infrastructure/preprocessing.py": [],
+    "backend/modules/text_research/infrastructure/quantitative.py": [
+      "backend/modules/text_research/infrastructure/preprocessing.py"
+    ],
+    "backend/modules/text_research/infrastructure/reliability.py": [],
+    "backend/modules/text_research/infrastructure/repositories.py": [
+      "backend/core/pagination.py",
+      "backend/modules/text_research/domain/models.py"
+    ],
+    "backend/modules/text_research/infrastructure/segmentation.py": [],
+    "backend/modules/text_research/infrastructure/topic_models.py": [
+      "backend/modules/text_research/infrastructure/preprocessing.py"
+    ],
+    "backend/modules/text_research/tests/__init__.py": [],
+    "backend/modules/text_research/tests/test_infrastructure.py": [
+      "backend/modules/text_research/infrastructure/__init__.py",
+      "backend/modules/text_research/infrastructure/classifiers.py",
+      "backend/modules/text_research/infrastructure/model_storage.py",
+      "backend/modules/text_research/infrastructure/preprocessing.py",
+      "backend/modules/text_research/infrastructure/quantitative.py",
+      "backend/modules/text_research/infrastructure/reliability.py",
+      "backend/modules/text_research/infrastructure/segmentation.py",
+      "backend/modules/text_research/infrastructure/topic_models.py"
+    ],
+    "backend/modules/text_research/tests/test_route_registration.py": [],
+    "backend/modules/text_research/workers.py": [
+      "backend/core/config.py",
+      "backend/workers/async_dispatch.py"
     ],
     "backend/modules/users/__init__.py": [],
     "backend/modules/users/models.py": [],
@@ -2724,7 +4303,7 @@
       "backend/api/deps/auth.py",
       "backend/api/deps/db.py",
       "backend/core/pagination.py",
-      "backend/modules/audit/repository.py",
+      "backend/modules/audit/request_logging.py",
       "backend/modules/identity_access/models.py",
       "backend/modules/users/schemas.py",
       "backend/modules/users/service.py"
@@ -2733,11 +4312,13 @@
       "backend/core/schemas.py"
     ],
     "backend/modules/users/service.py": [
+      "backend/core/config.py",
       "backend/core/pagination.py",
       "backend/core/security.py",
       "backend/modules/identity_access/models.py",
       "backend/modules/identity_access/repository.py",
-      "backend/modules/users/repository.py"
+      "backend/modules/users/repository.py",
+      "backend/modules/users/schemas.py"
     ],
     "backend/observability/__init__.py": [
       "backend/observability/instruments.py",
@@ -2759,7 +4340,6 @@
     "backend/observability/router.py": [
       "backend/api/deps/auth.py",
       "backend/core/config.py",
-      "backend/modules/identity_access/models.py",
       "backend/observability/schemas.py",
       "backend/observability/service.py"
     ],
@@ -2769,7 +4349,6 @@
       "backend/core/cache.py",
       "backend/core/config.py",
       "backend/db/session.py",
-      "backend/modules/identity_access/models.py",
       "backend/observability/schemas.py"
     ],
     "backend/observability/setup.py": [
@@ -2780,6 +4359,9 @@
     "backend/observability/tracing.py": [],
     "backend/pyproject.toml": [],
     "backend/requirements.txt": [],
+    "backend/scripts/check_db.py": [],
+    "backend/scripts/migrate.sh": [],
+    "backend/scripts/setup-local-db.sql": [],
     "backend/tests/__init__.py": [],
     "backend/tests/integration_support.py": [
       "backend/core/config.py"
@@ -2790,12 +4372,20 @@
     "backend/tests/test_ai_provider_http_clients.py": [
       "backend/modules/ai/providers.py"
     ],
-    "backend/tests/test_ai_repository.py": [
-      "backend/modules/ai/repository.py"
+    "backend/tests/test_ai_rag_hardening.py": [
+      "backend/modules/ai/dependencies.py",
+      "backend/modules/ai/evaluation_service.py",
+      "backend/modules/memory/infrastructure/memory_config.py",
+      "backend/modules/rag/application/prompt_context_service.py",
+      "backend/modules/rag/application/rag_context_builder.py",
+      "backend/modules/rag/application/retrieval_ranker.py",
+      "backend/modules/rag/domain/models.py",
+      "backend/modules/settings/env_file_store.py"
     ],
     "backend/tests/test_api_auth.py": [
       "backend/tests/integration_support.py"
     ],
+    "backend/tests/test_architecture_ports.py": [],
     "backend/tests/test_async_dispatch.py": [
       "backend/workers/async_dispatch.py"
     ],
@@ -2803,7 +4393,24 @@
       "backend/core/cache.py"
     ],
     "backend/tests/test_evaluation_concurrency.py": [
+      "backend/modules/ai/evaluation_service.py",
       "backend/modules/ai/service.py"
+    ],
+    "backend/tests/test_evaluation_worker.py": [
+      "backend/workers/evaluation.py"
+    ],
+    "backend/tests/test_extracted_backend_helpers.py": [
+      "backend/modules/audit/request_logging.py",
+      "backend/modules/profile/models.py",
+      "backend/modules/profile/serializers.py"
+    ],
+    "backend/tests/test_logging.py": [
+      "backend/api/middleware/correlation_id.py",
+      "backend/core/config.py",
+      "backend/core/log_context.py",
+      "backend/core/log_handlers.py",
+      "backend/core/log_redaction.py",
+      "backend/core/logging.py"
     ],
     "backend/tests/test_memory_ranking.py": [
       "backend/modules/memory/application/memory_context_builder.py",
@@ -2829,6 +4436,7 @@
       "backend/modules/memory/infrastructure/mem0_client.py",
       "backend/modules/memory/infrastructure/memory_config.py"
     ],
+    "backend/tests/test_module_boundaries.py": [],
     "backend/tests/test_observability.py": [
       "backend/observability/schemas.py",
       "backend/observability/service.py"
@@ -2838,11 +4446,22 @@
     ],
     "backend/tests/test_platform_cache.py": [
       "backend/core/cache.py",
+      "backend/modules/platform/router.py",
       "backend/modules/platform/schemas.py",
       "backend/modules/platform/service.py"
     ],
+    "backend/tests/test_platform_response_mappers.py": [
+      "backend/modules/platform/api_key_routes.py",
+      "backend/modules/platform/billing_routes.py",
+      "backend/modules/platform/email_template_routes.py",
+      "backend/modules/platform/feature_flag_routes.py",
+      "backend/modules/platform/webhook_routes.py"
+    ],
     "backend/tests/test_rag_permissions_integration.py": [
       "backend/tests/integration_support.py"
+    ],
+    "backend/tests/test_resource_cache.py": [
+      "backend/modules/users/schemas.py"
     ],
     "backend/tests/test_retrieval_cache.py": [
       "backend/modules/rag/domain/models.py"
@@ -2850,6 +4469,7 @@
     "backend/tests/test_runtime_observability.py": [],
     "backend/tests/test_settings_observability_cache.py": [
       "backend/core/cache.py",
+      "backend/core/config.py",
       "backend/modules/settings/schemas.py",
       "backend/modules/settings/service.py"
     ],
@@ -2864,29 +4484,48 @@
       "backend/core/config.py"
     ],
     "backend/workers/celery_app.py": [
-      "backend/core/config.py"
+      "backend/core/config.py",
+      "backend/core/logging.py",
+      "backend/workers/logging_hooks.py"
     ],
     "backend/workers/email.py": [
       "backend/core/config.py"
     ],
-    "backend/workers/rag_indexing.py": [
-      "backend/modules/rag/workers.py"
+    "backend/workers/evaluation.py": [
+      "backend/core/config.py",
+      "backend/workers/async_dispatch.py"
+    ],
+    "backend/workers/logging_hooks.py": [
+      "backend/core/config.py",
+      "backend/core/logging.py"
     ],
     "backend/workers/tasks.py": [
+      "backend/modules/memory/workers.py",
+      "backend/modules/rag/workers.py",
+      "backend/modules/text_research/workers.py",
       "backend/workers/celery_app.py",
       "backend/workers/email.py",
-      "backend/workers/rag_indexing.py"
+      "backend/workers/evaluation.py"
     ],
     "DESIGN.md": [],
     "docs/adr/0001-modular-monolith.md": [],
     "docs/adr/0002-celery-redis-async-jobs.md": [],
     "docs/adr/0003-module-dependency-graph.md": [],
+    "docs/logging.md": [],
     "docs/performance-audit.md": [],
+    "docs/runbooks/ai-rag-degraded-mode.md": [],
+    "docs/text-research.md": [],
     "frontend/.env.example": [],
     "frontend/e2e/auth-rag.spec.ts": [],
+    "frontend/e2e/helpers/research-api.ts": [],
+    "frontend/e2e/provisioned-workspace.spec.ts": [],
+    "frontend/e2e/research-flow.spec.ts": [
+      "frontend/e2e/helpers/research-api.ts"
+    ],
     "frontend/eslint.config.js": [],
     "frontend/index.html": [],
     "frontend/package.json": [],
+    "frontend/playwright-report/index.html": [],
     "frontend/playwright.config.ts": [],
     "frontend/README.md": [],
     "frontend/src/api/admin.ts": [
@@ -2901,6 +4540,9 @@
     "frontend/src/api/calendar.ts": [
       "frontend/src/api/client.ts",
       "frontend/src/api/projects.ts"
+    ],
+    "frontend/src/api/client.test.ts": [
+      "frontend/src/api/client.ts"
     ],
     "frontend/src/api/client.ts": [],
     "frontend/src/api/notifications.ts": [
@@ -2917,6 +4559,10 @@
     ],
     "frontend/src/api/settings.ts": [
       "frontend/src/api/client.ts"
+    ],
+    "frontend/src/api/textResearch.ts": [
+      "frontend/src/api/client.ts",
+      "frontend/src/features/text-research/types.ts"
     ],
     "frontend/src/api/users.ts": [
       "frontend/src/api/client.ts"
@@ -2945,18 +4591,20 @@
     "frontend/src/app/theme.ts": [
       "frontend/src/app/designTokens.ts"
     ],
-    "frontend/src/components/auth/AuthMarketingPanel.tsx": [],
+    "frontend/src/components/auth/AuthMarketingPanel.tsx": [
+      "frontend/src/app/designTokens.ts"
+    ],
     "frontend/src/components/auth/AuthShell.tsx": [
       "frontend/src/app/designTokens.ts"
     ],
     "frontend/src/components/dashboard/DashboardCalendar.tsx": [
-      "frontend/src/api/calendar.ts",
-      "frontend/src/api/projects.ts",
-      "frontend/src/app/snackbarContext.ts",
-      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
       "frontend/src/components/ui/SectionCard.tsx",
-      "frontend/src/config/queryKeys.ts",
-      "frontend/src/utils/formatters.ts"
+      "frontend/src/features/calendar/calendarDisplay.ts",
+      "frontend/src/features/calendar/calendarRange.ts",
+      "frontend/src/features/calendar/components/CalendarItemDrawer.tsx",
+      "frontend/src/features/calendar/components/CalendarViews.tsx",
+      "frontend/src/features/calendar/hooks/useDashboardCalendar.ts"
     ],
     "frontend/src/components/guards/ProtectedRoute.test.tsx": [
       "frontend/src/components/guards/ProtectedRoute.tsx"
@@ -2966,11 +4614,18 @@
     "frontend/src/components/layout/AppLayout.tsx": [
       "frontend/src/app/colorModeContext.ts",
       "frontend/src/app/designTokens.ts",
+      "frontend/src/components/layout/NotificationNavBadge.tsx",
       "frontend/src/hooks/useAuth.ts",
-      "frontend/src/hooks/useNotifications.ts",
       "frontend/src/hooks/usePlatformMetadata.ts",
+      "frontend/src/hooks/useSettingsTabs.ts",
       "frontend/src/hooks/useUserProfile.ts",
       "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/components/layout/NotificationNavBadge.tsx": [
+      "frontend/src/hooks/useNotifications.ts"
+    ],
+    "frontend/src/components/layout/SettingsTabs.tsx": [
+      "frontend/src/hooks/useSettingsTabs.ts"
     ],
     "frontend/src/components/notifications/NotificationListItem.tsx": [
       "frontend/src/api/notifications.ts",
@@ -2978,7 +4633,6 @@
       "frontend/src/utils/formatters.ts"
     ],
     "frontend/src/components/ui/EmptyState.tsx": [],
-    "frontend/src/components/ui/PageHeader.tsx": [],
     "frontend/src/components/ui/PageShell.tsx": [],
     "frontend/src/components/ui/QueryBoundary.test.tsx": [
       "frontend/src/components/ui/QueryBoundary.tsx"
@@ -2992,6 +4646,7 @@
     "frontend/src/components/ui/StatCard.tsx": [
       "frontend/src/app/designTokens.ts"
     ],
+    "frontend/src/components/ui/StatCardSkeletonGrid.tsx": [],
     "frontend/src/config/queryClient.ts": [
       "frontend/src/config/queryTiming.ts"
     ],
@@ -3000,6 +4655,82 @@
     ],
     "frontend/src/config/queryKeys.ts": [],
     "frontend/src/config/queryTiming.ts": [],
+    "frontend/src/features/ai/components/PromptLibraryPanel.tsx": [
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/ai/hooks/useAiStudioView.ts"
+    ],
+    "frontend/src/features/ai/components/RetrievalDocumentsPanel.tsx": [
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/ai/hooks/useAiStudioView.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/features/ai/components/ReviewsEvaluationsPanel.tsx": [
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/ai/hooks/useAiStudioView.ts",
+      "frontend/src/features/ai/studioUtils.ts",
+      "frontend/src/utils/formatters.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/ai/components/RunPlaygroundPanel.tsx": [
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/ai/hooks/useAiStudioView.ts",
+      "frontend/src/features/ai/studioUtils.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/features/ai/components/VersionBuilderPanel.tsx": [
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/ai/hooks/useAiStudioView.ts",
+      "frontend/src/features/ai/studioUtils.ts"
+    ],
+    "frontend/src/features/ai/hooks/useAiPromptAssetMutations.ts": [
+      "frontend/src/api/ai.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/ai/hooks/useAiStudioForms.ts",
+      "frontend/src/hooks/useMutationErrorToast.ts"
+    ],
+    "frontend/src/features/ai/hooks/useAiRunEvaluationMutations.ts": [
+      "frontend/src/api/ai.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/ai/hooks/useAiStudioForms.ts",
+      "frontend/src/hooks/useMutationErrorToast.ts"
+    ],
+    "frontend/src/features/ai/hooks/useAiStudioForms.ts": [],
+    "frontend/src/features/ai/hooks/useAiStudioView.ts": [
+      "frontend/src/api/ai.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts",
+      "frontend/src/features/ai/hooks/useAiPromptAssetMutations.ts",
+      "frontend/src/features/ai/hooks/useAiRunEvaluationMutations.ts",
+      "frontend/src/features/ai/hooks/useAiStudioForms.ts"
+    ],
+    "frontend/src/features/ai/studioUtils.test.ts": [
+      "frontend/src/features/ai/studioUtils.ts"
+    ],
+    "frontend/src/features/ai/studioUtils.ts": [
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/features/ai/views/AiStudioView.tsx": [
+      "frontend/src/components/layout/SettingsTabs.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/components/ui/StatCardSkeletonGrid.tsx",
+      "frontend/src/features/ai/components/PromptLibraryPanel.tsx",
+      "frontend/src/features/ai/components/RetrievalDocumentsPanel.tsx",
+      "frontend/src/features/ai/components/ReviewsEvaluationsPanel.tsx",
+      "frontend/src/features/ai/components/RunPlaygroundPanel.tsx",
+      "frontend/src/features/ai/components/VersionBuilderPanel.tsx",
+      "frontend/src/features/ai/hooks/useAiStudioView.ts"
+    ],
     "frontend/src/features/auth/context/authContext.ts": [
       "frontend/src/api/auth.ts"
     ],
@@ -3010,6 +4741,61 @@
       "frontend/src/features/auth/context/authContext.ts"
     ],
     "frontend/src/features/auth/schemas.ts": [],
+    "frontend/src/features/calendar/calendarDisplay.ts": [
+      "frontend/src/api/calendar.ts",
+      "frontend/src/api/projects.ts",
+      "frontend/src/features/calendar/calendarRange.ts"
+    ],
+    "frontend/src/features/calendar/calendarRange.test.ts": [
+      "frontend/src/features/calendar/calendarRange.ts"
+    ],
+    "frontend/src/features/calendar/calendarRange.ts": [],
+    "frontend/src/features/calendar/components/CalendarDayView.tsx": [
+      "frontend/src/features/calendar/calendarDisplay.ts",
+      "frontend/src/features/calendar/components/DayItems.tsx",
+      "frontend/src/features/calendar/components/MonthDateCalendar.tsx",
+      "frontend/src/features/calendar/hooks/useDashboardCalendar.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/features/calendar/components/CalendarItemDrawer.tsx": [
+      "frontend/src/api/calendar.ts",
+      "frontend/src/api/projects.ts",
+      "frontend/src/features/calendar/calendarDisplay.ts",
+      "frontend/src/features/calendar/components/DayItems.tsx",
+      "frontend/src/features/calendar/hooks/useDashboardCalendar.ts",
+      "frontend/src/features/projects/taskOptions.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/features/calendar/components/CalendarViews.tsx": [
+      "frontend/src/features/calendar/calendarRange.ts",
+      "frontend/src/features/calendar/components/CalendarDayView.tsx",
+      "frontend/src/features/calendar/components/CalendarWeekView.tsx",
+      "frontend/src/features/calendar/components/MonthDateCalendar.tsx",
+      "frontend/src/features/calendar/hooks/useDashboardCalendar.ts"
+    ],
+    "frontend/src/features/calendar/components/CalendarWeekView.tsx": [
+      "frontend/src/features/calendar/calendarDisplay.ts",
+      "frontend/src/features/calendar/hooks/useDashboardCalendar.ts"
+    ],
+    "frontend/src/features/calendar/components/DayItems.tsx": [
+      "frontend/src/api/calendar.ts",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/features/calendar/calendarDisplay.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/features/calendar/components/MonthDateCalendar.tsx": [
+      "frontend/src/features/calendar/calendarDisplay.ts",
+      "frontend/src/features/calendar/hooks/useDashboardCalendar.ts"
+    ],
+    "frontend/src/features/calendar/hooks/useDashboardCalendar.ts": [
+      "frontend/src/api/calendar.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts",
+      "frontend/src/features/calendar/calendarDisplay.ts",
+      "frontend/src/features/calendar/calendarRange.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
     "frontend/src/features/observability/api.ts": [
       "frontend/src/api/client.ts",
       "frontend/src/features/observability/types.ts"
@@ -3017,13 +4803,390 @@
     "frontend/src/features/observability/components/HealthStatusCard.tsx": [
       "frontend/src/features/observability/types.ts"
     ],
+    "frontend/src/features/observability/components/InvestigationContextFields.tsx": [
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/observability/hooks/useObservabilityView.ts",
+      "frontend/src/features/observability/observabilityModel.ts"
+    ],
+    "frontend/src/features/observability/components/ObservabilityHealthGrid.tsx": [
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "frontend/src/features/observability/hooks/useObservabilityView.ts",
+      "frontend/src/features/observability/observabilityModel.ts"
+    ],
     "frontend/src/features/observability/components/ObservabilityShortcutCard.tsx": [],
+    "frontend/src/features/observability/components/ObservabilityShortcuts.tsx": [
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/observability/components/ObservabilityShortcutCard.tsx",
+      "frontend/src/features/observability/hooks/useObservabilityView.ts",
+      "frontend/src/features/observability/types.ts",
+      "frontend/src/features/observability/urlBuilders.ts"
+    ],
+    "frontend/src/features/observability/hooks/useObservabilityView.ts": [
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/observability/api.ts",
+      "frontend/src/features/observability/observabilityModel.ts",
+      "frontend/src/hooks/useAuth.ts"
+    ],
+    "frontend/src/features/observability/observabilityModel.ts": [
+      "frontend/src/features/observability/types.ts"
+    ],
     "frontend/src/features/observability/types.ts": [],
     "frontend/src/features/observability/urlBuilders.test.ts": [
       "frontend/src/features/observability/urlBuilders.ts"
     ],
     "frontend/src/features/observability/urlBuilders.ts": [
       "frontend/src/features/observability/types.ts"
+    ],
+    "frontend/src/features/observability/views/ObservabilityView.tsx": [
+      "frontend/src/components/layout/SettingsTabs.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/features/observability/components/InvestigationContextFields.tsx",
+      "frontend/src/features/observability/components/ObservabilityHealthGrid.tsx",
+      "frontend/src/features/observability/components/ObservabilityShortcuts.tsx",
+      "frontend/src/features/observability/hooks/useObservabilityView.ts",
+      "frontend/src/features/observability/urlBuilders.ts"
+    ],
+    "frontend/src/features/platform-admin/components/AdminPlatformContent.tsx": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/features/platform-admin/components/AdminPlatformStats.tsx",
+      "frontend/src/features/platform-admin/components/CloneConfigSection.tsx",
+      "frontend/src/features/platform-admin/components/FlagsSection.tsx",
+      "frontend/src/features/platform-admin/components/PlansSection.tsx",
+      "frontend/src/features/platform-admin/components/TemplatesSection.tsx",
+      "frontend/src/features/platform-admin/hooks/usePlatformAdminContent.ts"
+    ],
+    "frontend/src/features/platform-admin/components/AdminPlatformStats.tsx": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/features/platform-admin/platformAdminModel.ts"
+    ],
+    "frontend/src/features/platform-admin/components/CloneConfigSection.tsx": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/platform-admin/hooks/usePlatformAdminContent.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/platform-admin/components/FlagsSection.tsx": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/platform-admin/hooks/usePlatformAdminContent.ts"
+    ],
+    "frontend/src/features/platform-admin/components/PlansSection.tsx": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/platform-admin/hooks/usePlatformAdminContent.ts"
+    ],
+    "frontend/src/features/platform-admin/components/TemplatesSection.tsx": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/platform-admin/hooks/usePlatformAdminContent.ts"
+    ],
+    "frontend/src/features/platform-admin/hooks/usePlatformAdminContent.ts": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/features/platform-admin/hooks/usePlatformAdminMutations.ts",
+      "frontend/src/features/platform-admin/platformAdminModel.ts"
+    ],
+    "frontend/src/features/platform-admin/hooks/usePlatformAdminMutations.test.ts": [
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/platform-admin/hooks/usePlatformAdminMutations.ts"
+    ],
+    "frontend/src/features/platform-admin/hooks/usePlatformAdminMutations.ts": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/hooks/useMutationErrorToast.ts"
+    ],
+    "frontend/src/features/platform-admin/platformAdminModel.ts": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/features/platform-admin/hooks/usePlatformAdminMutations.ts"
+    ],
+    "frontend/src/features/platform-admin/views/AdminPlatformView.tsx": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/platform-admin/components/AdminPlatformContent.tsx",
+      "frontend/src/features/platform-admin/platformAdminModel.ts"
+    ],
+    "frontend/src/features/platform/components/PlatformSections.tsx": [
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/platform/hooks/usePlatformView.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/features/platform/hooks/usePlatformView.ts": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/hooks/useMutationErrorToast.ts",
+      "frontend/src/hooks/usePlatformMetadata.ts"
+    ],
+    "frontend/src/features/platform/views/PlatformView.tsx": [
+      "frontend/src/components/layout/SettingsTabs.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/features/platform/components/PlatformSections.tsx",
+      "frontend/src/features/platform/hooks/usePlatformView.ts"
+    ],
+    "frontend/src/features/profile/components/MfaQrCode.tsx": [],
+    "frontend/src/features/profile/components/ProfileSections.tsx": [
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/profile/components/MfaQrCode.tsx",
+      "frontend/src/features/profile/hooks/useProfileView.ts",
+      "frontend/src/utils/formatters.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/profile/hooks/useProfileView.ts": [
+      "frontend/src/api/auth.ts",
+      "frontend/src/api/profile.ts",
+      "frontend/src/api/users.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/profile/profileSchemas.ts",
+      "frontend/src/hooks/useCurrentUser.ts",
+      "frontend/src/hooks/useMutationErrorToast.ts",
+      "frontend/src/hooks/useUserProfile.ts",
+      "frontend/src/hooks/useUserSessions.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/profile/profileSchemas.ts": [],
+    "frontend/src/features/profile/views/ProfileView.tsx": [
+      "frontend/src/components/layout/SettingsTabs.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/features/profile/components/ProfileSections.tsx",
+      "frontend/src/features/profile/hooks/useProfileView.ts"
+    ],
+    "frontend/src/features/projects/components/ProjectFlowSection.tsx": [
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/projects/components/ProjectTaskCards.tsx",
+      "frontend/src/features/projects/hooks/useProjectDetail.ts",
+      "frontend/src/features/projects/projectTaskModel.ts"
+    ],
+    "frontend/src/features/projects/components/ProjectTaskCards.tsx": [
+      "frontend/src/api/projects.ts",
+      "frontend/src/features/projects/projectTaskModel.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/features/projects/components/TaskEditorSection.tsx": [
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/projects/hooks/useProjectDetail.ts",
+      "frontend/src/features/projects/projectTaskModel.ts",
+      "frontend/src/utils/formatters.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/projects/hooks/useProjectDetail.ts": [
+      "frontend/src/api/projects.ts",
+      "frontend/src/api/users.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts",
+      "frontend/src/features/projects/projectTaskModel.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/projects/projectTaskModel.ts": [
+      "frontend/src/api/projects.ts",
+      "frontend/src/features/projects/taskOptions.ts"
+    ],
+    "frontend/src/features/projects/taskOptions.ts": [
+      "frontend/src/api/projects.ts"
+    ],
+    "frontend/src/features/projects/views/ProjectDetailView.tsx": [
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/components/ui/StatCardSkeletonGrid.tsx",
+      "frontend/src/features/projects/components/ProjectFlowSection.tsx",
+      "frontend/src/features/projects/components/TaskEditorSection.tsx",
+      "frontend/src/features/projects/hooks/useProjectDetail.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/settings-admin/components/AdminSettingsContent.tsx": [
+      "frontend/src/api/settings.ts",
+      "frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/features/settings-admin/components/ConfigSettingsSection.tsx",
+      "frontend/src/features/settings-admin/components/DatabaseSettingsSections.tsx",
+      "frontend/src/features/settings-admin/hooks/useAdminSettingsContent.ts",
+      "frontend/src/features/settings-admin/settingsModel.ts"
+    ],
+    "frontend/src/features/settings-admin/components/ConfigSettingsSection.tsx": [
+      "frontend/src/api/settings.ts",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/settings-admin/components/SettingEditors.tsx",
+      "frontend/src/features/settings-admin/hooks/useAdminSettingsContent.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/settings-admin/components/DatabaseSettingsSections.tsx": [
+      "frontend/src/api/settings.ts",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/settings-admin/components/SettingEditors.tsx",
+      "frontend/src/features/settings-admin/hooks/useAdminSettingsContent.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/settings-admin/components/SettingEditors.tsx": [
+      "frontend/src/api/settings.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/features/settings-admin/hooks/useAdminSettingsContent.ts": [
+      "frontend/src/api/settings.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/settings-admin/settingsModel.ts",
+      "frontend/src/hooks/useMutationErrorToast.ts"
+    ],
+    "frontend/src/features/settings-admin/settingsModel.ts": [
+      "frontend/src/api/settings.ts"
+    ],
+    "frontend/src/features/settings-admin/views/AdminSettingsView.tsx": [
+      "frontend/src/api/settings.ts",
+      "frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/settings-admin/components/AdminSettingsContent.tsx",
+      "frontend/src/features/settings-admin/settingsModel.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/text-research/components/ResearchShared.tsx": [
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/features/text-research/types.ts"
+    ],
+    "frontend/src/features/text-research/hooks/useResearchContext.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts",
+      "frontend/src/features/text-research/types.ts"
+    ],
+    "frontend/src/features/text-research/types.ts": [],
+    "frontend/src/features/text-research/views/AnalysisView.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/components/ResearchShared.tsx",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/text-research/views/AnnotationView.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/components/ResearchShared.tsx",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/text-research/views/ClassificationView.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/components/ResearchShared.tsx",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/hooks/useAuth.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/text-research/views/CorpusView.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/text-research/views/DashboardView.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx"
+    ],
+    "frontend/src/features/text-research/views/ExplorerView.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/components/ResearchShared.tsx",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/text-research/views/ExportsView.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/components/ResearchShared.tsx",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/text-research/views/ReliabilityView.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/components/ResearchShared.tsx",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/text-research/views/ResearchLayout.tsx": [
+      "frontend/src/api/projects.ts",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/components/ResearchShared.tsx",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/features/text-research/types.ts"
+    ],
+    "frontend/src/features/text-research/views/RobustnessView.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/components/ResearchShared.tsx",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/features/text-research/views/RunsView.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/components/ResearchShared.tsx",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/features/text-research/views/ExportsView.tsx"
+    ],
+    "frontend/src/features/text-research/views/TopicsView.tsx": [
+      "frontend/src/api/textResearch.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/features/text-research/components/ResearchShared.tsx",
+      "frontend/src/features/text-research/hooks/useResearchContext.tsx",
+      "frontend/src/utils/queryErrors.ts"
     ],
     "frontend/src/hooks/useAuth.ts": [],
     "frontend/src/hooks/useCurrentUser.ts": [
@@ -3056,6 +5219,13 @@
       "frontend/src/config/queryKeys.ts",
       "frontend/src/config/queryTiming.ts"
     ],
+    "frontend/src/hooks/useSettingsTabs.test.ts": [
+      "frontend/src/hooks/useSettingsTabs.ts"
+    ],
+    "frontend/src/hooks/useSettingsTabs.ts": [
+      "frontend/src/hooks/useAuth.ts",
+      "frontend/src/hooks/usePlatformMetadata.ts"
+    ],
     "frontend/src/hooks/useUserProfile.ts": [
       "frontend/src/api/profile.ts",
       "frontend/src/config/queryKeys.ts",
@@ -3072,67 +5242,36 @@
       "frontend/src/app/router.tsx",
       "frontend/src/index.css"
     ],
-    "frontend/src/pages/AdminPlatformPage.tsx": [
-      "frontend/src/api/platform.ts",
-      "frontend/src/app/snackbarContext.ts",
-      "frontend/src/components/layout/AdminSettingsTabs.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
-      "frontend/src/components/ui/PageShell.tsx",
-      "frontend/src/components/ui/QueryBoundary.tsx",
-      "frontend/src/components/ui/SectionCard.tsx",
-      "frontend/src/components/ui/StatCard.tsx",
-      "frontend/src/hooks/useMutationErrorToast.ts"
-    ],
-    "frontend/src/pages/AdminSettingsPage.tsx": [
-      "frontend/src/api/settings.ts",
-      "frontend/src/components/layout/AdminSettingsTabs.tsx",
-      "frontend/src/components/ui/EmptyState.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
-      "frontend/src/components/ui/PageShell.tsx",
-      "frontend/src/components/ui/QueryBoundary.tsx",
-      "frontend/src/components/ui/SectionCard.tsx",
-      "frontend/src/components/ui/StatCard.tsx",
-      "frontend/src/hooks/useMutationErrorToast.ts",
-      "frontend/src/utils/formatters.ts"
-    ],
+    "frontend/src/pages/AdminPlatformPage.tsx": [],
+    "frontend/src/pages/AdminSettingsPage.tsx": [],
     "frontend/src/pages/AdminUsersPage.tsx": [
       "frontend/src/api/admin.ts",
       "frontend/src/components/layout/AdminSettingsTabs.tsx",
       "frontend/src/components/ui/EmptyState.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
-      "frontend/src/components/ui/PageShell.tsx",
-      "frontend/src/components/ui/SectionCard.tsx",
-      "frontend/src/components/ui/StatCard.tsx",
-      "frontend/src/hooks/useDebounce.ts",
-      "frontend/src/utils/formatters.ts"
-    ],
-    "frontend/src/pages/AiStudioPage.tsx": [
-      "frontend/src/api/ai.ts",
-      "frontend/src/app/snackbarContext.ts",
-      "frontend/src/components/ui/EmptyState.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
       "frontend/src/components/ui/PageShell.tsx",
       "frontend/src/components/ui/QueryBoundary.tsx",
       "frontend/src/components/ui/SectionCard.tsx",
       "frontend/src/components/ui/StatCard.tsx",
       "frontend/src/config/queryKeys.ts",
-      "frontend/src/config/queryTiming.ts",
+      "frontend/src/hooks/useDebounce.ts",
       "frontend/src/hooks/useMutationErrorToast.ts",
       "frontend/src/utils/formatters.ts"
     ],
+    "frontend/src/pages/AiStudioPage.tsx": [],
     "frontend/src/pages/AuthHomePage.tsx": [
       "frontend/src/api/auth.ts",
       "frontend/src/components/auth/AuthMarketingPanel.tsx",
       "frontend/src/components/auth/AuthShell.tsx",
       "frontend/src/features/auth/schemas.ts",
       "frontend/src/hooks/useAuth.ts",
-      "frontend/src/hooks/usePlatformMetadata.ts"
+      "frontend/src/hooks/usePlatformMetadata.ts",
+      "frontend/src/utils/queryErrors.ts"
     ],
     "frontend/src/pages/CalendarPage.tsx": [
       "frontend/src/api/projects.ts",
       "frontend/src/components/dashboard/DashboardCalendar.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
       "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
       "frontend/src/config/queryKeys.ts",
       "frontend/src/hooks/usePlatformMetadata.ts"
     ],
@@ -3142,7 +5281,6 @@
       "frontend/src/components/dashboard/DashboardCalendar.tsx",
       "frontend/src/components/notifications/NotificationListItem.tsx",
       "frontend/src/components/ui/EmptyState.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
       "frontend/src/components/ui/PageShell.tsx",
       "frontend/src/components/ui/QueryBoundary.tsx",
       "frontend/src/components/ui/SectionCard.tsx",
@@ -3150,14 +5288,12 @@
       "frontend/src/config/queryKeys.ts",
       "frontend/src/hooks/useAuth.ts",
       "frontend/src/hooks/useNotifications.ts",
-      "frontend/src/hooks/usePlatformMetadata.ts",
-      "frontend/src/utils/formatters.ts"
+      "frontend/src/hooks/usePlatformMetadata.ts"
     ],
     "frontend/src/pages/NotificationsPage.tsx": [
       "frontend/src/api/notifications.ts",
       "frontend/src/components/notifications/NotificationListItem.tsx",
       "frontend/src/components/ui/EmptyState.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
       "frontend/src/components/ui/PageShell.tsx",
       "frontend/src/components/ui/QueryBoundary.tsx",
       "frontend/src/components/ui/SectionCard.tsx",
@@ -3169,90 +5305,46 @@
     ],
     "frontend/src/pages/ObservabilityPage.test.tsx": [
       "frontend/src/features/observability/api.ts",
+      "frontend/src/features/observability/types.ts",
       "frontend/src/hooks/useAuth.ts",
       "frontend/src/pages/ObservabilityPage.tsx"
     ],
-    "frontend/src/pages/ObservabilityPage.tsx": [
-      "frontend/src/components/ui/EmptyState.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
-      "frontend/src/components/ui/PageShell.tsx",
-      "frontend/src/components/ui/SectionCard.tsx",
-      "frontend/src/features/observability/api.ts",
-      "frontend/src/features/observability/components/HealthStatusCard.tsx",
-      "frontend/src/features/observability/components/ObservabilityShortcutCard.tsx",
-      "frontend/src/features/observability/types.ts",
-      "frontend/src/features/observability/urlBuilders.ts",
-      "frontend/src/hooks/useAuth.ts"
-    ],
-    "frontend/src/pages/PlatformPage.tsx": [
-      "frontend/src/api/platform.ts",
-      "frontend/src/app/snackbarContext.ts",
-      "frontend/src/components/ui/EmptyState.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
-      "frontend/src/components/ui/PageShell.tsx",
-      "frontend/src/components/ui/QueryBoundary.tsx",
-      "frontend/src/components/ui/SectionCard.tsx",
-      "frontend/src/components/ui/StatCard.tsx",
-      "frontend/src/hooks/useMutationErrorToast.ts",
-      "frontend/src/hooks/usePlatformMetadata.ts",
-      "frontend/src/utils/formatters.ts"
-    ],
-    "frontend/src/pages/ProfilePage.tsx": [
-      "frontend/src/api/auth.ts",
-      "frontend/src/api/profile.ts",
-      "frontend/src/api/users.ts",
-      "frontend/src/app/snackbarContext.ts",
-      "frontend/src/components/ui/EmptyState.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
-      "frontend/src/components/ui/PageShell.tsx",
-      "frontend/src/components/ui/QueryBoundary.tsx",
-      "frontend/src/components/ui/SectionCard.tsx",
-      "frontend/src/config/queryKeys.ts",
-      "frontend/src/hooks/useCurrentUser.ts",
-      "frontend/src/hooks/useMutationErrorToast.ts",
-      "frontend/src/hooks/useUserProfile.ts",
-      "frontend/src/hooks/useUserSessions.ts",
-      "frontend/src/utils/formatters.ts"
-    ],
-    "frontend/src/pages/ProjectDetailPage.tsx": [
-      "frontend/src/api/projects.ts",
-      "frontend/src/api/users.ts",
-      "frontend/src/app/snackbarContext.ts",
-      "frontend/src/components/ui/EmptyState.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
-      "frontend/src/components/ui/PageShell.tsx",
-      "frontend/src/components/ui/SectionCard.tsx",
-      "frontend/src/components/ui/StatCard.tsx",
-      "frontend/src/config/queryKeys.ts",
-      "frontend/src/utils/formatters.ts"
-    ],
+    "frontend/src/pages/ObservabilityPage.tsx": [],
+    "frontend/src/pages/PlatformPage.tsx": [],
+    "frontend/src/pages/ProfilePage.tsx": [],
+    "frontend/src/pages/ProjectDetailPage.tsx": [],
     "frontend/src/pages/ProjectsPage.tsx": [
       "frontend/src/api/projects.ts",
       "frontend/src/app/snackbarContext.ts",
       "frontend/src/components/ui/EmptyState.tsx",
-      "frontend/src/components/ui/PageHeader.tsx",
       "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
       "frontend/src/components/ui/SectionCard.tsx",
       "frontend/src/config/queryKeys.ts",
       "frontend/src/hooks/usePlatformMetadata.ts",
       "frontend/src/utils/formatters.ts"
     ],
+    "frontend/src/pages/ResearchPage.tsx": [],
     "frontend/src/pages/ResetPasswordPage.tsx": [
       "frontend/src/api/auth.ts",
       "frontend/src/components/auth/AuthMarketingPanel.tsx",
       "frontend/src/components/auth/AuthShell.tsx",
-      "frontend/src/hooks/usePlatformMetadata.ts"
+      "frontend/src/hooks/usePlatformMetadata.ts",
+      "frontend/src/utils/queryErrors.ts"
     ],
     "frontend/src/pages/VerifyEmailPage.tsx": [
       "frontend/src/api/auth.ts",
       "frontend/src/components/auth/AuthMarketingPanel.tsx",
       "frontend/src/components/auth/AuthShell.tsx",
-      "frontend/src/hooks/usePlatformMetadata.ts"
+      "frontend/src/features/auth/schemas.ts",
+      "frontend/src/hooks/usePlatformMetadata.ts",
+      "frontend/src/utils/queryErrors.ts"
     ],
     "frontend/src/test/setup.ts": [],
     "frontend/src/types/qrcode.d.ts": [],
     "frontend/src/utils/formatters.ts": [],
     "frontend/src/utils/queryErrors.ts": [],
+    "frontend/test-results/.last-run.json": [],
     "frontend/tsconfig.app.json": [],
     "frontend/tsconfig.json": [],
     "frontend/tsconfig.node.json": [],
@@ -3273,6 +5365,7 @@
     "observability/README.md": [],
     "observability/tempo/tempo.yml": [],
     "Procfile.dev": [],
+    "prompt.txt": [],
     "README.md": []
   }
 }

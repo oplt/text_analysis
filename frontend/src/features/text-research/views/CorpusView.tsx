@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
-    Alert,
     Box,
     Button,
+    Checkbox,
     Dialog,
     DialogActions,
     DialogContent,
@@ -12,38 +12,103 @@ import {
     TableBody,
     TableCell,
     TableHead,
+    TablePagination,
     TableRow,
     TextField,
     Typography,
 } from "@mui/material";
-import { Add as AddIcon, PlayArrow as SegmentIcon, Science as SeedIcon } from "@mui/icons-material";
+import {
+    Add as AddIcon,
+    Description as DocsIcon,
+    PlayArrow as SegmentIcon,
+    Science as SeedIcon,
+    UploadFile as CsvIcon,
+} from "@mui/icons-material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../../app/snackbarContext";
 import {
+    bulkUpdateDocumentMetadata,
     createCorpus,
+    getDashboardSummary,
+    importDocumentMetadataCsv,
     listDocuments,
-    segmentCorpus,
     seedDemoCorpus,
 } from "../../../api/textResearch";
+import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
+import { CorpusDocumentDrawer } from "../components/CorpusDocumentDrawer";
+import {
+    CorpusDocumentFilters,
+    DEFAULT_DOCUMENT_FILTERS,
+    type CorpusDocumentFiltersState,
+} from "../components/CorpusDocumentFilters";
+import { CorpusUploadPanel } from "../components/CorpusUploadPanel";
+import { NoCorpusEmptyState } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
+import type { CorpusDocument } from "../types";
+
+const PAGE_SIZE = 25;
 
 export default function CorpusView() {
     const ctx = useResearchContext();
     const client = useQueryClient();
+    const navigate = useNavigate();
     const { showToast } = useSnackbar();
+    const csvInputRef = useRef<HTMLInputElement>(null);
+
     const [createOpen, setCreateOpen] = useState(false);
     const [corpusName, setCorpusName] = useState("");
     const [corpusDescription, setCorpusDescription] = useState("");
+    const [filters, setFilters] = useState<CorpusDocumentFiltersState>(DEFAULT_DOCUMENT_FILTERS);
+    const [page, setPage] = useState(0);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [selectedDoc, setSelectedDoc] = useState<CorpusDocument | null>(null);
+    const [bulkOrg, setBulkOrg] = useState("");
+    const [bulkYear, setBulkYear] = useState("");
+    const [bulkLanguage, setBulkLanguage] = useState("");
+
+    const listParams = useMemo(
+        () => ({
+            limit: PAGE_SIZE,
+            offset: page * PAGE_SIZE,
+            organization: filters.organization.trim() || undefined,
+            publication_year: filters.publication_year.trim()
+                ? Number(filters.publication_year)
+                : undefined,
+            region: filters.region.trim() || undefined,
+            cultural_sphere: filters.cultural_sphere.trim() || undefined,
+            language: filters.language.trim() || undefined,
+            search: filters.search.trim() || undefined,
+            sort_by: filters.sort_by,
+            sort_dir: filters.sort_dir,
+        }),
+        [filters, page]
+    );
 
     const documentsQuery = useQuery({
-        queryKey: queryKeys.textResearch.documents(ctx.selectedCorpusId),
-        queryFn: () => listDocuments(ctx.selectedCorpusId, { limit: 100, offset: 0 }),
+        queryKey: queryKeys.textResearch.documents(ctx.selectedCorpusId, listParams),
+        queryFn: () => listDocuments(ctx.selectedCorpusId, listParams),
         enabled: Boolean(ctx.selectedCorpusId),
     });
+
+    const dashboardQuery = useQuery({
+        queryKey: queryKeys.textResearch.dashboard(ctx.selectedCorpusId),
+        queryFn: () => getDashboardSummary(ctx.selectedCorpusId),
+        enabled: Boolean(ctx.selectedCorpusId),
+    });
+
+    const invalidateCorpus = () => {
+        void client.invalidateQueries({
+            queryKey: ["text-research", "corpus", ctx.selectedCorpusId, "documents"],
+        });
+        void client.invalidateQueries({
+            queryKey: queryKeys.textResearch.dashboard(ctx.selectedCorpusId),
+        });
+    };
 
     const seedMutation = useMutation({
         mutationFn: () => seedDemoCorpus(ctx.projectId),
@@ -80,31 +145,80 @@ export default function CorpusView() {
             }),
     });
 
-    const segmentMutation = useMutation({
-        mutationFn: () => segmentCorpus(ctx.selectedCorpusId, ctx.unitType),
-        onSuccess: (run) => {
-            void client.invalidateQueries({
-                queryKey: queryKeys.textResearch.dashboard(ctx.selectedCorpusId),
+    const bulkMutation = useMutation({
+        mutationFn: () => {
+            const fields: Record<string, unknown> = {};
+            if (bulkOrg.trim()) fields.organization = bulkOrg.trim();
+            if (bulkYear.trim()) fields.publication_year = Number(bulkYear);
+            if (bulkLanguage.trim()) fields.language = bulkLanguage.trim();
+            if (!Object.keys(fields).length) {
+                throw new Error("Enter at least one bulk metadata field.");
+            }
+            return bulkUpdateDocumentMetadata(ctx.selectedCorpusId, {
+                document_ids: selectedIds,
+                fields,
             });
+        },
+        onSuccess: () => {
+            invalidateCorpus();
+            setSelectedIds([]);
+            showToast({ message: "Bulk metadata updated.", severity: "success" });
+        },
+        onError: (error) =>
             showToast({
-                message: `Segmentation started (${run.status}).`,
-                severity: "success",
+                message: getQueryErrorMessage(error, "Bulk update failed."),
+                severity: "error",
+            }),
+    });
+
+    const csvImportMutation = useMutation({
+        mutationFn: (file: File) => importDocumentMetadataCsv(ctx.selectedCorpusId, file),
+        onSuccess: (result) => {
+            invalidateCorpus();
+            showToast({
+                message: `CSV import: ${result.updated} updated, ${result.errors.length} error(s).`,
+                severity: result.errors.length ? "warning" : "success",
             });
         },
         onError: (error) =>
             showToast({
-                message: getQueryErrorMessage(error, "Failed to start segmentation."),
+                message: getQueryErrorMessage(error, "CSV import failed."),
                 severity: "error",
             }),
     });
+
+    if (!ctx.corporaLoading && ctx.corpora.length === 0) {
+        return <NoCorpusEmptyState />;
+    }
+
+    const documentCount = documentsQuery.data?.total ?? 0;
+    const unitCount = dashboardQuery.data?.text_unit_counts?.[ctx.unitType] ?? 0;
+    const needsSegmentation = Boolean(ctx.selectedCorpusId) && documentCount > 0 && unitCount === 0;
+    const pageItems = documentsQuery.data?.items ?? [];
+
+    function toggleSelected(id: string) {
+        setSelectedIds((current) =>
+            current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+        );
+    }
+
+    function toggleAllOnPage() {
+        const ids = pageItems.map((doc) => doc.id);
+        const allSelected = ids.every((id) => selectedIds.includes(id));
+        setSelectedIds((current) =>
+            allSelected
+                ? current.filter((id) => !ids.includes(id))
+                : Array.from(new Set([...current, ...ids]))
+        );
+    }
 
     return (
         <Stack spacing={2}>
             <SectionCard
                 title="Corpus management"
-                description="Create a corpus, seed synthetic demo data, or segment into text units."
+                description="Upload source documents through RAG ingestion, then manage research metadata."
                 action={
-                    <Stack direction="row" spacing={1}>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                         <Button
                             variant="outlined"
                             startIcon={<SeedIcon />}
@@ -122,68 +236,226 @@ export default function CorpusView() {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     Active corpus: {ctx.selectedCorpus?.name ?? "None selected"}
                 </Typography>
-                <Button
-                    variant="contained"
-                    color="secondary"
-                    startIcon={<SegmentIcon />}
-                    onClick={() => segmentMutation.mutate()}
-                    disabled={!ctx.selectedCorpusId || segmentMutation.isPending}
-                >
-                    Segment into {ctx.unitType}s
-                </Button>
-                {segmentMutation.data ? (
-                    <Alert severity="info" sx={{ mt: 2 }}>
-                        Segmentation run {segmentMutation.data.id} — status: {segmentMutation.data.status}
-                    </Alert>
-                ) : null}
+                <CorpusUploadPanel
+                    corpusId={ctx.selectedCorpusId}
+                    disabled={!ctx.selectedCorpusId}
+                    onComplete={invalidateCorpus}
+                />
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: 2 }}>
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        startIcon={<SegmentIcon />}
+                        onClick={() => navigate(`/research/${ctx.projectId}/prepare`)}
+                        disabled={!ctx.selectedCorpusId || documentCount === 0}
+                    >
+                        Prepare / Segment into {ctx.unitType}s
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        startIcon={<CsvIcon />}
+                        disabled={!ctx.selectedCorpusId || csvImportMutation.isPending}
+                        onClick={() => csvInputRef.current?.click()}
+                    >
+                        Import metadata CSV
+                    </Button>
+                    <Box
+                        component="input"
+                        ref={csvInputRef}
+                        type="file"
+                        accept=".csv,text/csv"
+                        hidden
+                        onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            if (file) csvImportMutation.mutate(file);
+                            event.target.value = "";
+                        }}
+                    />
+                </Stack>
             </SectionCard>
 
-            <SectionCard title="Documents" description="Documents linked to the selected corpus.">
+            {needsSegmentation ? (
+                <SectionCard title="Prepare corpus" description="Documents are ready — create research text units next.">
+                    <EmptyState
+                        icon={<SegmentIcon fontSize="large" />}
+                        title="Corpus not segmented yet"
+                        description={`${documentCount} document${documentCount === 1 ? "" : "s"} linked. Selected unit type: ${ctx.unitType}.`}
+                        action={
+                            <Button
+                                variant="contained"
+                                startIcon={<SegmentIcon />}
+                                onClick={() => navigate(`/research/${ctx.projectId}/prepare`)}
+                            >
+                                Open preparation workspace
+                            </Button>
+                        }
+                    />
+                </SectionCard>
+            ) : null}
+
+            <SectionCard title="Documents" description="Server-paginated corpus documents. Select a row to edit metadata and preview source text.">
                 {!ctx.selectedCorpusId ? (
-                    <Typography color="text.secondary">Select a corpus to list documents.</Typography>
+                    <EmptyState
+                        icon={<DocsIcon fontSize="large" />}
+                        title="Select a corpus"
+                        description="Choose a corpus above, or create one to list and manage documents."
+                        action={
+                            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+                                Create empty corpus
+                            </Button>
+                        }
+                    />
                 ) : (
-                    <QueryBoundary
-                        isLoading={documentsQuery.isLoading}
-                        isError={documentsQuery.isError}
-                        error={documentsQuery.error}
-                        onRetry={() => void documentsQuery.refetch()}
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gap: 2,
+                            gridTemplateColumns: { xs: "1fr", md: "220px 1fr" },
+                        }}
                     >
-                        {documentsQuery.data?.items.length ? (
-                            <Box sx={{ overflowX: "auto" }}>
-                                <Table size="small">
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Title</TableCell>
-                                            <TableCell>Organization</TableCell>
-                                            <TableCell>Year</TableCell>
-                                            <TableCell>Country</TableCell>
-                                            <TableCell>Language</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {documentsQuery.data.items.map((doc) => (
-                                            <TableRow key={doc.id}>
-                                                <TableCell>{doc.title ?? doc.id.slice(0, 8)}</TableCell>
-                                                <TableCell>{doc.organization ?? "—"}</TableCell>
-                                                <TableCell>{doc.publication_year ?? "—"}</TableCell>
-                                                <TableCell>{doc.country ?? "—"}</TableCell>
-                                                <TableCell>{doc.language ?? "—"}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-                                    Showing {documentsQuery.data.items.length} of {documentsQuery.data.total} documents
-                                </Typography>
-                            </Box>
-                        ) : (
-                            <Typography color="text.secondary">
-                                No documents yet. Seed the demo corpus or add documents via the API.
-                            </Typography>
-                        )}
-                    </QueryBoundary>
+                        <CorpusDocumentFilters
+                            value={filters}
+                            onChange={(next) => {
+                                setPage(0);
+                                setFilters(next);
+                            }}
+                        />
+                        <Box>
+                            {selectedIds.length > 0 ? (
+                                <Stack
+                                    direction={{ xs: "column", sm: "row" }}
+                                    spacing={1}
+                                    sx={{ mb: 1.5 }}
+                                    alignItems={{ sm: "center" }}
+                                >
+                                    <Typography variant="body2">{selectedIds.length} selected</Typography>
+                                    <TextField
+                                        size="small"
+                                        label="Bulk organization"
+                                        value={bulkOrg}
+                                        onChange={(e) => setBulkOrg(e.target.value)}
+                                    />
+                                    <TextField
+                                        size="small"
+                                        label="Bulk year"
+                                        value={bulkYear}
+                                        onChange={(e) => setBulkYear(e.target.value)}
+                                        sx={{ width: 110 }}
+                                    />
+                                    <TextField
+                                        size="small"
+                                        label="Bulk language"
+                                        value={bulkLanguage}
+                                        onChange={(e) => setBulkLanguage(e.target.value)}
+                                        sx={{ width: 130 }}
+                                    />
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() => bulkMutation.mutate()}
+                                        disabled={bulkMutation.isPending}
+                                    >
+                                        Apply bulk update
+                                    </Button>
+                                </Stack>
+                            ) : null}
+
+                            <QueryBoundary
+                                isLoading={documentsQuery.isLoading}
+                                isError={documentsQuery.isError}
+                                error={documentsQuery.error}
+                                onRetry={() => void documentsQuery.refetch()}
+                            >
+                                {pageItems.length ? (
+                                    <>
+                                        <Box sx={{ overflowX: "auto" }}>
+                                            <Table size="small">
+                                                <TableHead>
+                                                    <TableRow>
+                                                        <TableCell padding="checkbox">
+                                                            <Checkbox
+                                                                size="small"
+                                                                checked={
+                                                                    pageItems.length > 0 &&
+                                                                    pageItems.every((doc) =>
+                                                                        selectedIds.includes(doc.id)
+                                                                    )
+                                                                }
+                                                                indeterminate={
+                                                                    pageItems.some((doc) =>
+                                                                        selectedIds.includes(doc.id)
+                                                                    ) &&
+                                                                    !pageItems.every((doc) =>
+                                                                        selectedIds.includes(doc.id)
+                                                                    )
+                                                                }
+                                                                onChange={toggleAllOnPage}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell>Title</TableCell>
+                                                        <TableCell>Organization</TableCell>
+                                                        <TableCell>Year</TableCell>
+                                                        <TableCell>Country</TableCell>
+                                                        <TableCell>Language</TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {pageItems.map((doc) => (
+                                                        <TableRow
+                                                            key={doc.id}
+                                                            hover
+                                                            selected={selectedDoc?.id === doc.id}
+                                                            sx={{ cursor: "pointer" }}
+                                                            onClick={() => setSelectedDoc(doc)}
+                                                        >
+                                                            <TableCell
+                                                                padding="checkbox"
+                                                                onClick={(event) => event.stopPropagation()}
+                                                            >
+                                                                <Checkbox
+                                                                    size="small"
+                                                                    checked={selectedIds.includes(doc.id)}
+                                                                    onChange={() => toggleSelected(doc.id)}
+                                                                />
+                                                            </TableCell>
+                                                            <TableCell>{doc.title ?? doc.id.slice(0, 8)}</TableCell>
+                                                            <TableCell>{doc.organization ?? "—"}</TableCell>
+                                                            <TableCell>{doc.publication_year ?? "—"}</TableCell>
+                                                            <TableCell>{doc.country ?? "—"}</TableCell>
+                                                            <TableCell>{doc.language ?? "—"}</TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </Box>
+                                        <TablePagination
+                                            component="div"
+                                            count={documentsQuery.data?.total ?? 0}
+                                            page={page}
+                                            onPageChange={(_, next) => setPage(next)}
+                                            rowsPerPage={PAGE_SIZE}
+                                            rowsPerPageOptions={[PAGE_SIZE]}
+                                        />
+                                    </>
+                                ) : (
+                                    <EmptyState
+                                        icon={<DocsIcon fontSize="large" />}
+                                        title="No documents yet"
+                                        description="Upload source files above, import a metadata CSV, or load the synthetic demo."
+                                    />
+                                )}
+                            </QueryBoundary>
+                        </Box>
+                    </Box>
                 )}
             </SectionCard>
+
+            <CorpusDocumentDrawer
+                open={Boolean(selectedDoc)}
+                document={selectedDoc}
+                corpusId={ctx.selectedCorpusId}
+                onClose={() => setSelectedDoc(null)}
+            />
 
             <Dialog open={createOpen} onClose={() => setCreateOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>Create corpus</DialogTitle>

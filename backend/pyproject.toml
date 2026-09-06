@@ -38,6 +38,7 @@ dependencies = [
     "scipy",
     "scikit-learn",
     "joblib",
+    "snowballstemmer",
 ]
 
 [tool.ruff]

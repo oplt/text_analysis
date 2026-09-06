@@ -66,6 +66,7 @@ redis==7.4.0
 s3transfer==0.16.0
 sentry-sdk==2.57.0
 six==1.17.0
+snowballstemmer==3.1.1
 SQLAlchemy==2.0.48
 starlette==1.0.0
 typing-inspection==0.4.2

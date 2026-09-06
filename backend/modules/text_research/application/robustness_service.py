@@ -60,6 +60,82 @@ def _train_eval(
     return result["metrics"]
 
 
+def _safe_train_eval(
+    texts: list[str],
+    y: list[list[str]],
+    groups: list[str],
+    *,
+    label_names: list[str],
+    config: dict,
+    algorithm: str,
+    class_weight: str | None,
+    regularization_c: float,
+    random_seed: int,
+    test_size: float,
+) -> dict[str, Any]:
+    try:
+        metrics = _train_eval(
+            texts,
+            y,
+            groups,
+            label_names=label_names,
+            config=config,
+            algorithm=algorithm,
+            class_weight=class_weight,
+            regularization_c=regularization_c,
+            random_seed=random_seed,
+            test_size=test_size,
+        )
+        return {"status": "ok", "macro_f1": metrics["f1_macro"], "metrics": metrics}
+    except Exception as exc:  # noqa: BLE001 — per-check resilience
+        return {"status": "not_evaluable", "reason": str(exc), "macro_f1": None}
+
+
+def _safe_fit(
+    x_train: list[str],
+    y_train: list[list[str]],
+    x_test: list[str],
+    y_test: list[list[str]],
+    *,
+    label_names: list[str],
+    config: dict,
+    algorithm: str,
+    class_weight: str | None,
+    regularization_c: float,
+    random_seed: int,
+) -> dict[str, Any]:
+    if not x_train or not x_test:
+        return {
+            "status": "not_evaluable",
+            "reason": "Empty train or test split",
+            "macro_f1": None,
+        }
+    try:
+        fit_result = fit_tfidf_classifier(
+            x_train,
+            y_train,
+            x_test,
+            y_test,
+            task_type="multilabel",
+            algorithm=algorithm,
+            preprocessing_config=config,
+            label_names=label_names,
+            class_weight=class_weight,
+            C=regularization_c,
+            random_seed=random_seed,
+        )
+        metrics = fit_result["metrics"]
+        return {
+            "status": "ok",
+            "macro_f1": metrics["f1_macro"],
+            "precision_macro": metrics.get("precision_macro"),
+            "recall_macro": metrics.get("recall_macro"),
+            "metrics": metrics,
+        }
+    except Exception as exc:  # noqa: BLE001 — per-check resilience
+        return {"status": "not_evaluable", "reason": str(exc), "macro_f1": None}
+
+
 class RobustnessService(ResearchAccessMixin):
     async def _load_snapshot_data(self, snapshot_id: str, *, user_id: str):
         snapshot = await self.get_snapshot_or_404(snapshot_id, user_id=user_id)
@@ -140,13 +216,13 @@ class RobustnessService(ResearchAccessMixin):
             # 1. Repeated-seed stability
             seed_runs = []
             for seed in params["seeds"]:
-                metrics = _train_eval(
+                outcome = _safe_train_eval(
                     texts, y, groups,
                     label_names=label_names, config=base_config, algorithm=params["algorithm"],
                     class_weight=None, regularization_c=1.0, random_seed=seed, test_size=params["test_size"],
                 )
-                seed_runs.append({"seed": seed, "macro_f1": metrics["f1_macro"]})
-            seed_f1s = [r["macro_f1"] for r in seed_runs]
+                seed_runs.append({"seed": seed, **outcome})
+            seed_f1s = [r["macro_f1"] for r in seed_runs if r.get("status") == "ok" and r.get("macro_f1") is not None]
             results["seed_stability"] = {
                 "runs": seed_runs,
                 "mean_macro_f1": float(np.mean(seed_f1s)) if seed_f1s else None,
@@ -159,23 +235,34 @@ class RobustnessService(ResearchAccessMixin):
             n_unique_groups = len(set(groups))
             fold_count = max(2, min(params["cv_folds"], n_unique_groups))
             fold_results = []
-            if n_unique_groups >= 2:
+            if n_unique_groups < 2:
+                fold_results.append(
+                    {
+                        "fold": 0,
+                        "status": "not_evaluable",
+                        "reason": "Insufficient groups for grouped cross-validation",
+                        "macro_f1": None,
+                    }
+                )
+            else:
                 gkf = GroupKFold(n_splits=fold_count)
                 for fold_idx, (train_idx, test_idx) in enumerate(
                     gkf.split(np.zeros(len(texts)), groups=groups)
                 ):
-                    x_train = [texts[i] for i in train_idx]
-                    x_test = [texts[i] for i in test_idx]
-                    y_train = [y[i] for i in train_idx]
-                    y_test = [y[i] for i in test_idx]
-                    fit_result = fit_tfidf_classifier(
-                        x_train, y_train, x_test, y_test,
-                        task_type="multilabel", algorithm=params["algorithm"],
-                        preprocessing_config=base_config, label_names=label_names,
-                        class_weight=None, C=1.0, random_seed=42,
+                    outcome = _safe_fit(
+                        [texts[i] for i in train_idx],
+                        [y[i] for i in train_idx],
+                        [texts[i] for i in test_idx],
+                        [y[i] for i in test_idx],
+                        label_names=label_names,
+                        config=base_config,
+                        algorithm=params["algorithm"],
+                        class_weight=None,
+                        regularization_c=1.0,
+                        random_seed=42,
                     )
-                    fold_results.append({"fold": fold_idx, "macro_f1": fit_result["metrics"]["f1_macro"]})
-            fold_f1s = [r["macro_f1"] for r in fold_results]
+                    fold_results.append({"fold": fold_idx, **outcome})
+            fold_f1s = [r["macro_f1"] for r in fold_results if r.get("status") == "ok" and r.get("macro_f1") is not None]
             results["group_cross_validation"] = {
                 "folds": fold_results,
                 "mean_macro_f1": float(np.mean(fold_f1s)) if fold_f1s else None,
@@ -191,25 +278,23 @@ class RobustnessService(ResearchAccessMixin):
             preprocessing_rows = []
             for variant in preprocessing_variants:
                 config = {**base_config, **variant["overrides"]}
-                metrics = _train_eval(
+                outcome = _safe_train_eval(
                     texts, y, groups,
                     label_names=label_names, config=config, algorithm=params["algorithm"],
                     class_weight=None, regularization_c=1.0, random_seed=42, test_size=params["test_size"],
                 )
-                preprocessing_rows.append({"variant": variant["label"], "macro_f1": metrics["f1_macro"]})
+                preprocessing_rows.append({"variant": variant["label"], **outcome})
             results["preprocessing_sensitivity"] = preprocessing_rows
 
             # 4. Class-weight sensitivity
             class_weight_rows = []
             for class_weight in params["class_weights"]:
-                metrics = _train_eval(
+                outcome = _safe_train_eval(
                     texts, y, groups,
                     label_names=label_names, config=base_config, algorithm=params["algorithm"],
                     class_weight=class_weight, regularization_c=1.0, random_seed=42, test_size=params["test_size"],
                 )
-                class_weight_rows.append(
-                    {"class_weight": class_weight or "none", "macro_f1": metrics["f1_macro"]}
-                )
+                class_weight_rows.append({"class_weight": class_weight or "none", **outcome})
             results["class_weight_sensitivity"] = class_weight_rows
 
             # 5. Leave-one-organization-out
@@ -218,26 +303,47 @@ class RobustnessService(ResearchAccessMixin):
             }
             organizations = sorted({org_by_doc.get(g, "unspecified") for g in groups})
             org_rows = []
-            if len(organizations) >= 2:
+            if len(organizations) < 2:
+                org_rows.append(
+                    {
+                        "held_out_organization": None,
+                        "status": "not_evaluable",
+                        "reason": "Need at least two organizations",
+                        "macro_f1": None,
+                    }
+                )
+            else:
                 for held_out_org in organizations:
                     train_idx = [i for i, g in enumerate(groups) if org_by_doc.get(g, "unspecified") != held_out_org]
                     test_idx = [i for i, g in enumerate(groups) if org_by_doc.get(g, "unspecified") == held_out_org]
                     if not train_idx or not test_idx:
+                        org_rows.append(
+                            {
+                                "held_out_organization": held_out_org,
+                                "test_size": len(test_idx),
+                                "status": "not_evaluable",
+                                "reason": "Empty train or test data for organization holdout",
+                                "macro_f1": None,
+                            }
+                        )
                         continue
-                    fit_result = fit_tfidf_classifier(
-                        [texts[i] for i in train_idx], [y[i] for i in train_idx],
-                        [texts[i] for i in test_idx], [y[i] for i in test_idx],
-                        task_type="multilabel", algorithm=params["algorithm"],
-                        preprocessing_config=base_config, label_names=label_names,
-                        class_weight=None, C=1.0, random_seed=42,
+                    outcome = _safe_fit(
+                        [texts[i] for i in train_idx],
+                        [y[i] for i in train_idx],
+                        [texts[i] for i in test_idx],
+                        [y[i] for i in test_idx],
+                        label_names=label_names,
+                        config=base_config,
+                        algorithm=params["algorithm"],
+                        class_weight=None,
+                        regularization_c=1.0,
+                        random_seed=42,
                     )
                     org_rows.append(
                         {
                             "held_out_organization": held_out_org,
                             "test_size": len(test_idx),
-                            "macro_f1": fit_result["metrics"]["f1_macro"],
-                            "precision_macro": fit_result["metrics"]["precision_macro"],
-                            "recall_macro": fit_result["metrics"]["recall_macro"],
+                            **outcome,
                         }
                     )
             results["leave_one_organization_out"] = org_rows
@@ -246,7 +352,15 @@ class RobustnessService(ResearchAccessMixin):
             year_by_doc = {doc_id: doc.publication_year for doc_id, doc in documents_by_id.items()}
             years = sorted({year_by_doc.get(g) for g in groups if year_by_doc.get(g) is not None})
             temporal_rows = []
-            if len(years) >= 2:
+            if len(years) < 2:
+                temporal_rows.append(
+                    {
+                        "status": "not_evaluable",
+                        "reason": "Need publication years spanning at least two periods",
+                        "macro_f1": None,
+                    }
+                )
+            else:
                 split_year = years[len(years) // 2]
                 train_idx = [
                     i for i, g in enumerate(groups)
@@ -256,20 +370,36 @@ class RobustnessService(ResearchAccessMixin):
                     i for i, g in enumerate(groups)
                     if year_by_doc.get(g) is not None and year_by_doc[g] > split_year
                 ]
-                if train_idx and test_idx:
-                    fit_result = fit_tfidf_classifier(
-                        [texts[i] for i in train_idx], [y[i] for i in train_idx],
-                        [texts[i] for i in test_idx], [y[i] for i in test_idx],
-                        task_type="multilabel", algorithm=params["algorithm"],
-                        preprocessing_config=base_config, label_names=label_names,
-                        class_weight=None, C=1.0, random_seed=42,
+                if not train_idx or not test_idx:
+                    temporal_rows.append(
+                        {
+                            "split_year": split_year,
+                            "train_size": len(train_idx),
+                            "test_size": len(test_idx),
+                            "status": "not_evaluable",
+                            "reason": "Empty train or test period",
+                            "macro_f1": None,
+                        }
+                    )
+                else:
+                    outcome = _safe_fit(
+                        [texts[i] for i in train_idx],
+                        [y[i] for i in train_idx],
+                        [texts[i] for i in test_idx],
+                        [y[i] for i in test_idx],
+                        label_names=label_names,
+                        config=base_config,
+                        algorithm=params["algorithm"],
+                        class_weight=None,
+                        regularization_c=1.0,
+                        random_seed=42,
                     )
                     temporal_rows.append(
                         {
                             "split_year": split_year,
                             "train_size": len(train_idx),
                             "test_size": len(test_idx),
-                            "macro_f1": fit_result["metrics"]["f1_macro"],
+                            **outcome,
                         }
                     )
             results["temporal_holdout"] = temporal_rows

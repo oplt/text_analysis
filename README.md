@@ -1,105 +1,225 @@
-# Generic App
+# Policy Text Lab
 
-Generic full-stack starter with:
+Full-stack platform for computational text research: corpus management, human annotation, inter-coder reliability, quantitative analysis, supervised classification, topic modeling, and reproducible export.
 
-- FastAPI backend
-- React + Vite frontend
-- PostgreSQL, Redis, and MinIO for local infrastructure
-- Celery workers for asynchronous jobs, using Redis as broker/result backend
-- JWT auth with refresh rotation
-- Admin settings, notifications, profile, and project modules
-- **Policy Text Lab** — computational text research workflow ([docs/text-research.md](docs/text-research.md))
-- Optional platform modules for billing, API keys, webhooks, feature flags, and email templates
-- Sentry/OpenTelemetry hooks and S3-compatible avatar storage
+Built as a modular FastAPI backend with a React frontend, PostgreSQL (pgvector), Redis, and Celery workers.
 
-## Local Setup
+---
 
-1. Start infrastructure:
+## Features
 
-```bash
-cp infra/.env.example infra/.env
-docker compose -f infra/docker-compose.yml up -d
+| Area | Capabilities |
+|------|----------------|
+| **Identity** | Sign-up / sign-in, sessions, optional MFA, admin controls |
+| **Projects** | Multi-project workspace with membership |
+| **RAG** | Document upload (PDF/DOCX), chunking, pgvector retrieval |
+| **Policy Text Lab** | Research corpora, segmentation, annotation, reliability (κ / α), classifiers, topics, comparative explorer, exports |
+| **Platform** | Billing hooks, API keys, webhooks, feature flags, email templates |
+| **Observability** | Structured logging, Prometheus metrics, optional OpenTelemetry |
+
+Detailed research workflow: [docs/text-research.md](docs/text-research.md)
+
+---
+
+## Architecture
+
+```text
+text_analysis/
+├── backend/                 # FastAPI modular monolith
+│   ├── api/                 # App entry, middleware, routers
+│   ├── core/                # Config, security, cache, storage
+│   ├── db/                  # SQLAlchemy base / session
+│   ├── modules/             # Bounded contexts (identity, rag, text_research, …)
+│   ├── workers/             # Celery tasks
+│   └── alembic/             # Database migrations
+├── frontend/                # React + Vite + MUI
+│   └── src/features/        # Feature-oriented UI (incl. text-research)
+├── infra/                   # Docker Compose (Postgres, Redis, Mailpit, MinIO, …)
+├── observability/           # Local observability stack
+└── docs/                    # Architecture notes and runbooks
 ```
 
-Mailpit is included for local email capture:
+**Layering (backend modules):** `router → application/service → repository/infrastructure`  
+Domain code does not depend on infrastructure. Peer modules do not import each other’s routers.
 
-- SMTP server: `localhost:1025`
-- Web inbox: `http://localhost:8025`
+**Vector store:** PostgreSQL + **pgvector** only.
 
-2. Configure the backend:
+---
+
+## Tech stack
+
+| Layer | Technologies |
+|-------|----------------|
+| Backend | Python 3.12+, FastAPI, SQLAlchemy (async), Alembic, Celery, Redis, Pydantic Settings |
+| ML / text | scikit-learn, NumPy, SciPy, pandas, joblib |
+| Frontend | React 19, TypeScript, Vite, MUI, TanStack Query, React Router, Zod |
+| Data | PostgreSQL 16 + pgvector, Redis |
+| Quality | Ruff, Biome, Vitest, Playwright, pre-commit |
+
+---
+
+## Prerequisites
+
+- Python **3.12+**
+- Node.js **20+** (recommended)
+- PostgreSQL with **pgvector**
+- Redis
+- [uv](https://github.com/astral-sh/uv) or `pip` for backend deps (project uses a venv under `backend/.venv`)
+
+Optional for full local parity: Docker (infra services), Mailpit (email), MinIO (object storage).
+
+---
+
+## Quick start
+
+### 1. Clone and configure
 
 ```bash
+git clone <repository-url>
+cd text_analysis
+
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+# Optional: cp infra/.env.example infra/.env
+```
+
+Edit `backend/.env` so `DATABASE_URL` and `REDIS_URL` match your local services. Example:
+
+```env
+DATABASE_URL=postgresql+asyncpg://text_analysis:text_analysis@localhost:5432/text_analysis
+REDIS_URL=redis://127.0.0.1:6380/0
+JWT_SECRET=<at-least-32-character-secret>
+REQUIRE_EMAIL_VERIFICATION=false
+```
+
+Ensure the Postgres role and database exist and that the password in `DATABASE_URL` is correct.
+
+### 2. Install dependencies
+
+```bash
+# Backend
 cd backend
-cp .env.example .env
-uv sync
-.venv/bin/alembic upgrade head
-```
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+# or: uv sync
 
-See [docs/logging.md](../docs/logging.md) for log file location, rotation, and correlation IDs.
-
-3. Start the backend:
-
-```bash
-cd backend
-.venv/bin/uvicorn backend.api.main:app --reload
-```
-
-4. Start the Celery worker:
-
-```bash
-cd backend
-.venv/bin/celery -A backend.workers.celery_app:celery_app worker --loglevel=INFO --queues=default,email
-```
-
-5. Configure the frontend:
-
-```bash
-cd frontend
-cp .env.example .env
+# Frontend
+cd ../frontend
 npm install
 ```
 
-6. Start the frontend:
+### 3. Migrate the database
+
+From the **repository root**:
 
 ```bash
-cd frontend
-npm run dev
+make db-migrate
 ```
 
-Or start the full local development stack, including Prometheus, Grafana, and Tempo:
+Or from `backend/`:
+
+```bash
+./scripts/migrate.sh upgrade head
+# equivalent:
+.venv/bin/python -m alembic upgrade head
+```
+
+Migrations live in `backend/alembic/versions/`. Do **not** run `alembic init` at the repo root.
+
+### 4. Run the app
 
 ```bash
 make local-dev
 ```
 
-Observability setup and verification steps are documented in
-[observability/README.md](observability/README.md).
+This starts Redis (if needed), the API, Celery worker, and Vite via `Procfile.dev`.
 
-## Notes
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:5173 |
+| API docs | http://localhost:8000/docs |
+| API base | http://localhost:8000/api/v1 |
 
-- Local object storage uses MinIO on `http://localhost:9000` and its console on `http://localhost:9001`.
-- Local infrastructure secrets now come from `infra/.env`; the compose file no longer embeds credentials.
-- Redis now serves both app-level caching/token storage and the Celery broker/result backend.
-- The first Celery-backed workflow is outbound email delivery for verification and password reset flows.
-- Local `.env.example` defaults to Mailpit plus `CELERY_TASK_ALWAYS_EAGER=true`, so signup/reset emails work without a separate worker.
-- Avatar uploads are stored in the configured S3-compatible bucket instead of a placeholder path.
-- `/admin/platform` lets you rename the app, rename the core domain labels, pick a module pack, and manage plans, flags, and email templates.
-- Set `ADMIN_SIGNUP_INVITE_CODE` in `backend/.env` to allow invite-only admin registration during sign-up.
-- Authentication now uses `httpOnly` cookies plus a CSRF token cookie/header pair for state-changing requests.
-- Module packs are intended for clone-time reuse:
-  - `lean_saas`
-  - `automation_suite`
-  - `client_portal`
-  - `full_platform`
-- Observability is enabled through backend config:
-  - `SENTRY_DSN`
-  - `SENTRY_TRACES_SAMPLE_RATE`
-  - `OTLP_ENDPOINT`
-  - `OTLP_INSECURE`
-  - `OTEL_SERVICE_NAME`
-  - `OTEL_EXPORTER_OTLP_ENDPOINT`
-  - `OTEL_EXPORTER_OTLP_PROTOCOL`
-  - `OTEL_TRACES_EXPORTER`
-  - `GRAFANA_PUBLIC_URL`
-  - `PROMETHEUS_PUBLIC_URL`
-  - `TEMPO_PUBLIC_URL`
+Frontend dev requests to `/api` are proxied to the backend.
+
+Without the observability stack:
+
+```bash
+make local-dev-no-observability
+```
+
+---
+
+## Common commands
+
+| Command | Description |
+|---------|-------------|
+| `make local-dev` | Migrate DB and start the local process stack |
+| `make db-migrate` | Apply Alembic migrations to head |
+| `make check` | Lint / format / TypeScript checks |
+| `make fix` | Auto-fix lint issues |
+| `make install-hooks` | Install pre-commit hooks |
+
+Backend tests (example):
+
+```bash
+cd backend
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 .venv/bin/pytest modules/text_research/tests/ -q
+```
+
+Frontend tests:
+
+```bash
+cd frontend
+npm test
+npm run build
+```
+
+E2E (Playwright; requires running backend and test credentials):
+
+```bash
+cd frontend
+E2E_TEST_EMAIL=... E2E_TEST_PASSWORD=... npm run test:e2e
+```
+
+---
+
+## Policy Text Lab (research UI)
+
+1. Sign in and open or create a **project**.
+2. On the project detail page, choose **Open Policy Text Lab**.
+3. Work through the flow: corpus → segmentation → annotation → reliability → analysis / classification / topics → export.
+
+API prefix: `/api/v1/research`  
+UI routes: `/research/:projectId/*`
+
+See [docs/text-research.md](docs/text-research.md) for methods, Celery tasks, and demo seed behavior.
+
+---
+
+## Environment notes
+
+- **Email verification** can be disabled for local development via `REQUIRE_EMAIL_VERIFICATION=false`.
+- **Object storage** (MinIO/S3) is optional for basic auth and research flows; missing MinIO may log warnings at startup.
+- Never commit `.env`, secrets, tokens, or `dump.rdb`.
+- Prefer `backend/.venv/bin/python -m alembic` over a globally installed Alembic binary.
+
+---
+
+## Documentation
+
+| Document | Topic |
+|----------|--------|
+| [docs/text-research.md](docs/text-research.md) | Policy Text Lab module |
+| [DESIGN.md](DESIGN.md) | System design |
+| [docs/adr/](docs/adr/) | Architecture decision records |
+| [docs/logging.md](docs/logging.md) | Logging |
+| [observability/README.md](observability/README.md) | Metrics / tracing stack |
+| [AGENTS.md](AGENTS.md) | Conventions for AI-assisted development |
+
+---
+
+## License
+
+Proprietary / project license — update this section to match your organization’s terms.

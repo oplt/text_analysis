@@ -26,6 +26,10 @@ class AiDocumentService(AiBaseService):
             user.id, limit=limit, offset=offset
         )
 
+    async def get_document(self, user: User, document_id: str):
+        self._require_rag_documents()
+        return await LegacyAiDocumentService(self.db).get_document(user.id, document_id)
+
     async def create_document_from_text(
         self,
         user: User,

@@ -1,20 +1,25 @@
 """Deterministic text preprocessing for Policy Text Lab.
 
-Implements whitespace normalization, tokenization, stopword removal, a
-lightweight suffix-stripping stemmer, and negation preservation, plus
-factory functions that build scikit-learn ``CountVectorizer`` /
+Implements whitespace normalization, tokenization, stopword removal,
+Snowball English stemming, and negation preservation, plus factory
+functions that build scikit-learn ``CountVectorizer`` /
 ``TfidfVectorizer`` instances that route through the same tokenizer.
 
 Original text is never mutated; all transformations operate on copies /
 derived token lists.
+
+Lemmatization is not implemented. Configurations that request it are
+rejected so profiles never claim lemmatization occurred when it did not.
 """
 
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+import snowballstemmer
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 #: Default preprocessing configuration, matching the PreprocessingProfile
@@ -33,6 +38,13 @@ DEFAULT_PREPROCESSING_CONFIG: dict[str, Any] = {
     "max_df": 1.0,
     "max_features": None,
 }
+
+LEMMATIZATION_UNSUPPORTED_MESSAGE = (
+    "Lemmatization is not implemented. Set lemmatization to false "
+    "(or omit it) until a real lemmatizer is available."
+)
+
+_ENGLISH_STEMMER = snowballstemmer.stemmer("english")
 
 
 @dataclass
@@ -58,11 +70,16 @@ class PreprocessingConfig:
         merged = dict(DEFAULT_PREPROCESSING_CONFIG)
         if data:
             merged.update(data)
+        if merged.get("lemmatization"):
+            raise ValueError(LEMMATIZATION_UNSUPPORTED_MESSAGE)
+        merged["lemmatization"] = False
         field_names = {item.name for item in cls.__dataclass_fields__.values()}
         return cls(**{key: merged[key] for key in field_names if key in merged})
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["lemmatization"] = False
+        return payload
 
 
 #: Negation words that must never be silently dropped when preserve_negation
@@ -177,35 +194,6 @@ _TOKEN_RE = re.compile(r"[A-Za-z0-9]+(?:'[A-Za-z]+)?")
 _WHITESPACE_RE = re.compile(r"\s+")
 _NUMBER_RE = re.compile(r"^[0-9]+([.,][0-9]+)*$")
 
-# Ordered longest-first so longer, more specific suffixes are tried before
-# their shorter substrings (e.g. "ization" before "ing").
-_STEM_SUFFIXES: tuple[str, ...] = tuple(
-    sorted(
-        {
-            "ization",
-            "isation",
-            "ational",
-            "tional",
-            "fulness",
-            "ousness",
-            "iveness",
-            "edly",
-            "ingly",
-            "ing",
-            "ed",
-            "ies",
-            "ied",
-            "es",
-            "ly",
-            "er",
-            "est",
-            "s",
-        },
-        key=len,
-        reverse=True,
-    )
-)
-
 
 def normalize_whitespace(text: str) -> str:
     """Collapse all runs of whitespace to a single space and strip ends."""
@@ -216,23 +204,23 @@ def _is_number_token(token: str) -> bool:
     return bool(_NUMBER_RE.match(token))
 
 
-def simple_stem(token: str) -> str:
-    """Very simple suffix-stripping stemmer (no NLTK/Porter dependency).
+def snowball_stem(token: str) -> str:
+    """Stem ``token`` with the Snowball English stemmer."""
+    return _ENGLISH_STEMMER.stemWord(token)
 
-    Strips the longest matching known suffix as long as at least 3
-    characters remain. This is intentionally crude; it is a stand-in for a
-    real Porter stemmer when heavier NLP dependencies are unavailable.
-    """
-    for suffix in _STEM_SUFFIXES:
-        if token.endswith(suffix) and len(token) - len(suffix) >= 3:
-            return token[: -len(suffix)]
-    return token
+
+def simple_stem(token: str) -> str:
+    """Compatibility alias for :func:`snowball_stem`."""
+    return snowball_stem(token)
 
 
 def _merge_config(config: dict[str, Any] | None) -> dict[str, Any]:
     merged = dict(DEFAULT_PREPROCESSING_CONFIG)
     if config:
         merged.update(config)
+    if merged.get("lemmatization"):
+        raise ValueError(LEMMATIZATION_UNSUPPORTED_MESSAGE)
+    merged["lemmatization"] = False
     return merged
 
 
@@ -256,7 +244,7 @@ def tokenize(text: str, config: dict[str, Any] | None = None) -> list[str]:
     Pipeline: whitespace normalization -> optional lowercasing -> word
     extraction (optionally punctuation-preserving) -> optional number
     removal -> optional stopword removal (negation-safe) -> optional
-    stemming (negation-safe).
+    Snowball stemming (negation-safe).
     """
     cfg = _merge_config(config)
     negation_words = NEGATION_WORDS if cfg.get("preserve_negation", True) else frozenset()
@@ -279,7 +267,7 @@ def tokenize(text: str, config: dict[str, Any] | None = None) -> list[str]:
         tokens = [t for t in tokens if t in negation_words or t not in stop_set]
 
     if cfg.get("stemming", False):
-        tokens = [t if t in negation_words else simple_stem(t) for t in tokens]
+        tokens = [t if t in negation_words else snowball_stem(t) for t in tokens]
 
     return tokens
 
@@ -290,6 +278,67 @@ def preprocess_text(text: str, config: dict[str, Any] | None = None) -> str:
     The original ``text`` is never mutated; this returns a new string.
     """
     return " ".join(tokenize(text, config))
+
+
+def _baseline_tokens(text: str, config: dict[str, Any]) -> list[str]:
+    """Tokens before stopword/number removal and stemming (for preview diffs)."""
+    baseline = {
+        **config,
+        "remove_numbers": False,
+        "remove_stopwords": False,
+        "stemming": False,
+        "lemmatization": False,
+        "custom_stopwords": [],
+    }
+    return tokenize(text, baseline)
+
+
+def preview_preprocessing(
+    texts: list[str],
+    config: dict[str, Any] | None = None,
+    *,
+    removed_top_n: int = 20,
+) -> dict[str, Any]:
+    """Build a live preprocessing preview for sample texts.
+
+    Returns original/processed pairs, token counts before/after, vocabulary
+    size after processing, and the most frequently removed baseline terms.
+    """
+    cfg = _merge_config(config)
+    rows: list[dict[str, Any]] = []
+    removed: Counter[str] = Counter()
+    before_total = 0
+    after_total = 0
+    vocabulary: set[str] = set()
+
+    for text in texts:
+        before = _baseline_tokens(text, cfg)
+        after = tokenize(text, cfg)
+        before_total += len(before)
+        after_total += len(after)
+        vocabulary.update(after)
+        removed.update(Counter(before) - Counter(after))
+        rows.append(
+            {
+                "original": text,
+                "processed": " ".join(after),
+                "token_count_before": len(before),
+                "token_count_after": len(after),
+            }
+        )
+
+    return {
+        "rows": rows,
+        "token_count_before": before_total,
+        "token_count_after": after_total,
+        "vocabulary_size": len(vocabulary),
+        "most_frequently_removed_terms": [
+            {"term": term, "count": count} for term, count in removed.most_common(removed_top_n)
+        ],
+        "config": cfg,
+        "stemmer": "snowball_english",
+        "lemmatization_supported": False,
+    }
 
 
 def _vectorizer_kwargs(config: dict[str, Any] | None) -> dict[str, Any]:

@@ -143,6 +143,10 @@ class CorpusService(ResearchAccessMixin):
         publication_year: int | None = None,
         region: str | None = None,
         cultural_sphere: str | None = None,
+        language: str | None = None,
+        search: str | None = None,
+        sort_by: str = "created_at",
+        sort_dir: str = "asc",
         limit: int | None = None,
         offset: int = 0,
     ) -> list[CorpusDocument]:
@@ -153,6 +157,41 @@ class CorpusService(ResearchAccessMixin):
             publication_year=publication_year,
             region=region,
             cultural_sphere=cultural_sphere,
+            language=language,
+            search=search,
+            sort_by=sort_by,
+            sort_dir=sort_dir,
+            limit=limit,
+            offset=offset,
+        )
+
+    async def paginate_documents(
+        self,
+        corpus_id: str,
+        *,
+        user_id: str,
+        organization: str | None = None,
+        publication_year: int | None = None,
+        region: str | None = None,
+        cultural_sphere: str | None = None,
+        language: str | None = None,
+        search: str | None = None,
+        sort_by: str = "created_at",
+        sort_dir: str = "asc",
+        limit: int,
+        offset: int = 0,
+    ) -> tuple[list[CorpusDocument], int]:
+        await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        return await self.repo.paginate_documents(
+            corpus_id,
+            organization=organization,
+            publication_year=publication_year,
+            region=region,
+            cultural_sphere=cultural_sphere,
+            language=language,
+            search=search,
+            sort_by=sort_by,
+            sort_dir=sort_dir,
             limit=limit,
             offset=offset,
         )

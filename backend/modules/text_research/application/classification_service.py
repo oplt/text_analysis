@@ -103,6 +103,12 @@ class ClassificationService(ResearchAccessMixin):
         await self.db.commit()
 
         try:
+            from backend.modules.text_research.application.run_lifecycle import (
+                RunCancelledError,
+                ensure_not_cancelled,
+            )
+
+            run = await ensure_not_cancelled(self.repo, run)
             snapshot = await self.repo.get_snapshot(params["snapshot_id"])
             if snapshot is None:
                 raise ValueError("Training dataset snapshot no longer exists")
@@ -120,6 +126,7 @@ class ClassificationService(ResearchAccessMixin):
 
             await self.repo.update_run(run, progress_stage="splitting")
             await self.db.commit()
+            run = await ensure_not_cancelled(self.repo, run)
             split = grouped_train_test_split(
                 texts, y, groups, test_size=params["test_size"], random_seed=params["random_seed"]
             )
@@ -157,10 +164,10 @@ class ClassificationService(ResearchAccessMixin):
 
             await self.repo.update_run(run, progress_stage="saving")
             await self.db.commit()
-            model_artifact_path = model_storage.save_artifact(
+            model_artifact_path, model_artifact_metadata = model_storage.save_artifact_with_metadata(
                 fit_result["model"], category="research_classifiers"
             )
-            vectorizer_artifact_path = model_storage.save_artifact(
+            vectorizer_artifact_path, vectorizer_artifact_metadata = model_storage.save_artifact_with_metadata(
                 fit_result["vectorizer"], category="research_vectorizers"
             )
 
@@ -198,10 +205,23 @@ class ClassificationService(ResearchAccessMixin):
                         "n_test": fit_result["n_test"],
                         "vocabulary_size": fit_result["vocabulary_size"],
                         "classes": fit_result["classes"],
+                        "artifact_metadata": {
+                            "model": model_artifact_metadata,
+                            "vectorizer": vectorizer_artifact_metadata,
+                        },
                         "train_groups": sorted(set(split["groups_train"])),
                         "test_groups": sorted(set(split["groups_test"])),
                     }
                 ),
+            )
+            await self.db.commit()
+        except RunCancelledError:
+            await self.repo.update_run(
+                run,
+                status=AnalysisRunStatus.CANCELLED.value,
+                progress_stage="cancelled",
+                completed_at=_utcnow(),
+                error_message="Cancelled by user",
             )
             await self.db.commit()
         except Exception as exc:  # noqa: BLE001

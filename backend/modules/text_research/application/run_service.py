@@ -277,3 +277,97 @@ class RunService(ResearchAccessMixin):
             status_code=400,
             detail=f"Rerun is not supported for run_type '{run.run_type}'",
         )
+
+    async def cancel_run(self, run_id: str, *, user_id: str) -> AnalysisRun:
+        from datetime import UTC, datetime
+
+        from backend.modules.text_research.domain.enums import AnalysisRunStatus
+
+        run = await self.get_run_or_404(run_id, user_id=user_id)
+        if run.status not in {
+            AnalysisRunStatus.QUEUED.value,
+            AnalysisRunStatus.RUNNING.value,
+            "pending",
+        }:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Cannot cancel run in status '{run.status}'",
+            )
+        await self.repo.update_run(
+            run,
+            status=AnalysisRunStatus.CANCELLED.value,
+            progress_stage="cancelled",
+            completed_at=datetime.now(UTC),
+            error_message="Cancelled by user",
+        )
+        await self.db.commit()
+        refreshed = await self.repo.get_run(run.id)
+        assert refreshed is not None
+        return refreshed
+
+    async def compare_runs(
+        self, run_a_id: str, run_b_id: str, *, user_id: str
+    ) -> dict[str, Any]:
+        run_a = await self.get_run_or_404(run_a_id, user_id=user_id)
+        run_b = await self.get_run_or_404(run_b_id, user_id=user_id)
+        params_a = loads(run_a.parameters_json, {}) or {}
+        params_b = loads(run_b.parameters_json, {}) or {}
+        metrics_a = loads(run_a.metrics_json, {}) or {}
+        metrics_b = loads(run_b.metrics_json, {}) or {}
+
+        param_keys = sorted(set(params_a) | set(params_b))
+        metric_keys = sorted(set(metrics_a) | set(metrics_b))
+
+        def flatten(prefix: str, value: Any, out: dict[str, Any]) -> None:
+            if isinstance(value, dict):
+                for key, nested in value.items():
+                    flatten(f"{prefix}.{key}" if prefix else str(key), nested, out)
+            else:
+                out[prefix] = value
+
+        flat_a: dict[str, Any] = {}
+        flat_b: dict[str, Any] = {}
+        flatten("", params_a, flat_a)
+        flatten("", params_b, flat_b)
+        all_param_keys = sorted(set(flat_a) | set(flat_b))
+
+        parameter_diff = [
+            {
+                "parameter": key,
+                "run_a": flat_a.get(key),
+                "run_b": flat_b.get(key),
+                "changed": flat_a.get(key) != flat_b.get(key),
+            }
+            for key in all_param_keys
+        ]
+        metric_diff = [
+            {
+                "metric": key,
+                "run_a": metrics_a.get(key),
+                "run_b": metrics_b.get(key),
+                "changed": metrics_a.get(key) != metrics_b.get(key),
+            }
+            for key in metric_keys
+        ]
+        return {
+            "run_a": {
+                "id": run_a.id,
+                "run_type": run_a.run_type,
+                "status": run_a.status,
+                "created_at": run_a.created_at.isoformat() if run_a.created_at else None,
+                "artifact_path": run_a.artifact_path,
+                "random_seed": run_a.random_seed,
+            },
+            "run_b": {
+                "id": run_b.id,
+                "run_type": run_b.run_type,
+                "status": run_b.status,
+                "created_at": run_b.created_at.isoformat() if run_b.created_at else None,
+                "artifact_path": run_b.artifact_path,
+                "random_seed": run_b.random_seed,
+            },
+            "parameter_diff": parameter_diff,
+            "metric_diff": metric_diff,
+            "changed_parameters": [row for row in parameter_diff if row["changed"]],
+            "changed_metrics": [row for row in metric_diff if row["changed"]],
+        }

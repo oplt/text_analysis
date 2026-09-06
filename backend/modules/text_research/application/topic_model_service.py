@@ -10,7 +10,7 @@ from fastapi import HTTPException
 
 from backend.modules.text_research.application.access import ResearchAccessMixin
 from backend.modules.text_research.application.quantitative_analysis_service import (
-    _apply_document_filters,
+    _filter_kwargs,
 )
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import AnalysisRun, TopicLabel, dumps, loads
@@ -27,11 +27,11 @@ class TopicModelService(ResearchAccessMixin):
     async def _select_texts(
         self, corpus_id: str, *, unit_type: str, filters: dict[str, Any] | None
     ) -> list:
-        documents = await self.repo.list_documents(corpus_id)
-        filtered = _apply_document_filters(documents, filters or {})
-        doc_ids = [d.id for d in filtered]
+        filter_kwargs = _filter_kwargs(filters or {})
+        documents = await self.repo.list_documents(corpus_id, **filter_kwargs)
+        doc_ids = [document.id for document in documents]
         return await self.repo.list_text_units_for_corpus(
-            corpus_id, unit_type=unit_type, document_ids=doc_ids if filters else None
+            corpus_id, unit_type=unit_type, document_ids=doc_ids if filter_kwargs else None
         )
 
     async def train(
@@ -125,13 +125,16 @@ class TopicModelService(ResearchAccessMixin):
 
             await self.repo.update_run(run, progress_stage="saving")
             await self.db.commit()
-            model_path = model_storage.save_artifact(result["model"], category="topic_models")
-            vectorizer_path = model_storage.save_artifact(
+            model_path, model_artifact_metadata = model_storage.save_artifact_with_metadata(
+                result["model"], category="topic_models"
+            )
+            vectorizer_path, vectorizer_artifact_metadata = model_storage.save_artifact_with_metadata(
                 result["vectorizer"], category="topic_vectorizers"
             )
 
             doc_topic = result["doc_topic_distribution"]
             dominant = result["dominant_topics"]
+            documents = {document.id: document for document in await self.repo.list_documents(run.corpus_id)}
             doc_topic_rows = [
                 {
                     "text_unit_id": unit.id,
@@ -141,6 +144,40 @@ class TopicModelService(ResearchAccessMixin):
                 for i, unit in enumerate(units)
             ]
             dominant_counts = {str(k): v for k, v in Counter(dominant).items()}
+            topic_prevalence = {
+                str(topic_id): sum(float(distribution[topic_id]) for distribution in doc_topic)
+                / len(doc_topic)
+                for topic_id in range(result["n_topics"])
+            }
+            representative_units: dict[str, list[dict[str, Any]]] = {}
+            for topic_id in range(result["n_topics"]):
+                ranked = sorted(
+                    enumerate(doc_topic), key=lambda item: float(item[1][topic_id]), reverse=True
+                )[:3]
+                representative_units[str(topic_id)] = [
+                    {
+                        "text_unit_id": units[index].id,
+                        "corpus_document_id": units[index].corpus_document_id,
+                        "document_title": documents.get(units[index].corpus_document_id).title
+                        if units[index].corpus_document_id in documents
+                        else None,
+                        "text": units[index].text,
+                        "weight": float(distribution[topic_id]),
+                    }
+                    for index, distribution in ranked
+                ]
+            metadata_breakdowns: dict[str, dict[str, dict[str, int]]] = {}
+            for field in ("organization", "region", "language"):
+                breakdown: dict[str, Counter[str]] = {}
+                for index, topic_id in enumerate(dominant):
+                    document = documents.get(units[index].corpus_document_id)
+                    value = getattr(document, field, None) if document else None
+                    if value:
+                        breakdown.setdefault(str(value), Counter())[str(topic_id)] += 1
+                if breakdown:
+                    metadata_breakdowns[field] = {
+                        value: dict(counts) for value, counts in breakdown.items()
+                    }
 
             await self.repo.update_run(
                 run,
@@ -153,8 +190,15 @@ class TopicModelService(ResearchAccessMixin):
                     {
                         "topics": result["topics"],
                         "dominant_topic_counts": dominant_counts,
+                        "topic_prevalence": topic_prevalence,
+                        "representative_units": representative_units,
+                        "metadata_breakdowns": metadata_breakdowns,
                         "model_artifact_path": model_path,
                         "vectorizer_artifact_path": vectorizer_path,
+                        "artifact_metadata": {
+                            "model": model_artifact_metadata,
+                            "vectorizer": vectorizer_artifact_metadata,
+                        },
                         "doc_topic": doc_topic_rows,
                         "unit_count": len(units),
                     }

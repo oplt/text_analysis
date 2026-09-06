@@ -40,6 +40,17 @@ async def list_documents(
     )
 
 
+@router.get("/documents/{document_id}", response_model=AiDocumentResponse)
+async def get_document(
+    document_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = AiDocumentService(db)
+    document = await service.get_document(current_user, document_id)
+    return _document_to_response(document)
+
+
 @router.post("/documents", response_model=AiDocumentResponse, status_code=202)
 async def create_document(
     payload: AiDocumentCreate,

@@ -1,4 +1,4 @@
-import { apiFetch, apiFetchItems } from "./client";
+import { apiFetch, apiFetchItems, type Paginated } from "./client";
 
 export type AiProvider = {
     key: string;
@@ -236,6 +236,21 @@ export async function updatePromptVersion(
         method: "PATCH",
         body: JSON.stringify(payload),
     });
+}
+
+export async function listAiDocuments(params?: {
+    limit?: number;
+    offset?: number;
+}): Promise<Paginated<AiDocument>> {
+    const search = new URLSearchParams();
+    if (params?.limit != null) search.set("limit", String(params.limit));
+    if (params?.offset != null) search.set("offset", String(params.offset));
+    const qs = search.toString();
+    return apiFetch(`/ai/documents${qs ? `?${qs}` : ""}`);
+}
+
+export async function getAiDocument(documentId: string): Promise<AiDocument> {
+    return apiFetch(`/ai/documents/${documentId}`);
 }
 
 export async function createAiDocument(payload: {

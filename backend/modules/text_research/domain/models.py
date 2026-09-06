@@ -210,6 +210,7 @@ class Adjudication(Base):
     label_id: Mapped[str] = mapped_column(
         ForeignKey("research_annotation_labels.id", ondelete="CASCADE"), index=True
     )
+    codebook_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     final_value: Mapped[str] = mapped_column(String(32))
     adjudicator_id: Mapped[str] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), index=True
