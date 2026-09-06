@@ -1,0 +1,2486 @@
+{
+  "nodes": [
+    {
+      "id": "file:frontend/src/api/admin.ts",
+      "type": "file",
+      "name": "admin.ts",
+      "filePath": "frontend/src/api/admin.ts",
+      "summary": "Frontend code: admin.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/api/admin.ts:listAdminUsers",
+      "type": "function",
+      "name": "listAdminUsers",
+      "filePath": "frontend/src/api/admin.ts",
+      "summary": "Function listAdminUsers in frontend/src/api/admin.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/admin.ts:updateUserStatus",
+      "type": "function",
+      "name": "updateUserStatus",
+      "filePath": "frontend/src/api/admin.ts",
+      "summary": "Function updateUserStatus in frontend/src/api/admin.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/api/ai.ts",
+      "type": "file",
+      "name": "ai.ts",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Frontend code: ai.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:getAiOverview",
+      "type": "function",
+      "name": "getAiOverview",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function getAiOverview in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:listPromptVersions",
+      "type": "function",
+      "name": "listPromptVersions",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function listPromptVersions in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:createPromptTemplate",
+      "type": "function",
+      "name": "createPromptTemplate",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function createPromptTemplate in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:updatePromptTemplate",
+      "type": "function",
+      "name": "updatePromptTemplate",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function updatePromptTemplate in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:createPromptVersion",
+      "type": "function",
+      "name": "createPromptVersion",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function createPromptVersion in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:updatePromptVersion",
+      "type": "function",
+      "name": "updatePromptVersion",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function updatePromptVersion in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:createAiDocument",
+      "type": "function",
+      "name": "createAiDocument",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function createAiDocument in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:uploadAiDocument",
+      "type": "function",
+      "name": "uploadAiDocument",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function uploadAiDocument in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:retrieveAiChunks",
+      "type": "function",
+      "name": "retrieveAiChunks",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function retrieveAiChunks in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:createAiRun",
+      "type": "function",
+      "name": "createAiRun",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function createAiRun in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:listAiReviews",
+      "type": "function",
+      "name": "listAiReviews",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function listAiReviews in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:createAiReview",
+      "type": "function",
+      "name": "createAiReview",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function createAiReview in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:decideAiReview",
+      "type": "function",
+      "name": "decideAiReview",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function decideAiReview in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:listAiFeedback",
+      "type": "function",
+      "name": "listAiFeedback",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function listAiFeedback in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:createAiFeedback",
+      "type": "function",
+      "name": "createAiFeedback",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function createAiFeedback in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:listAiDatasets",
+      "type": "function",
+      "name": "listAiDatasets",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function listAiDatasets in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:createAiDataset",
+      "type": "function",
+      "name": "createAiDataset",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function createAiDataset in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:listAiDatasetCases",
+      "type": "function",
+      "name": "listAiDatasetCases",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function listAiDatasetCases in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:createAiDatasetCase",
+      "type": "function",
+      "name": "createAiDatasetCase",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function createAiDatasetCase in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:listAiEvaluationRuns",
+      "type": "function",
+      "name": "listAiEvaluationRuns",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function listAiEvaluationRuns in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/ai.ts:runAiEvaluation",
+      "type": "function",
+      "name": "runAiEvaluation",
+      "filePath": "frontend/src/api/ai.ts",
+      "summary": "Function runAiEvaluation in frontend/src/api/ai.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/api/calendar.ts",
+      "type": "file",
+      "name": "calendar.ts",
+      "filePath": "frontend/src/api/calendar.ts",
+      "summary": "Frontend code: calendar.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/api/calendar.ts:listCalendarItems",
+      "type": "function",
+      "name": "listCalendarItems",
+      "filePath": "frontend/src/api/calendar.ts",
+      "summary": "Function listCalendarItems in frontend/src/api/calendar.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/calendar.ts:createCalendarItem",
+      "type": "function",
+      "name": "createCalendarItem",
+      "filePath": "frontend/src/api/calendar.ts",
+      "summary": "Function createCalendarItem in frontend/src/api/calendar.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/api/client.ts",
+      "type": "file",
+      "name": "client.ts",
+      "filePath": "frontend/src/api/client.ts",
+      "summary": "Frontend code: client.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/api/client.ts:readCookie",
+      "type": "function",
+      "name": "readCookie",
+      "filePath": "frontend/src/api/client.ts",
+      "summary": "Function readCookie in frontend/src/api/client.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/client.ts:refreshAccessToken",
+      "type": "function",
+      "name": "refreshAccessToken",
+      "filePath": "frontend/src/api/client.ts",
+      "summary": "Function refreshAccessToken in frontend/src/api/client.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/client.ts:buildCsrfHeaders",
+      "type": "function",
+      "name": "buildCsrfHeaders",
+      "filePath": "frontend/src/api/client.ts",
+      "summary": "Function buildCsrfHeaders in frontend/src/api/client.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/client.ts:apiFetch",
+      "type": "function",
+      "name": "apiFetch",
+      "filePath": "frontend/src/api/client.ts",
+      "summary": "Function apiFetch in frontend/src/api/client.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/api/notifications.ts",
+      "type": "file",
+      "name": "notifications.ts",
+      "filePath": "frontend/src/api/notifications.ts",
+      "summary": "Frontend code: notifications.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/api/notifications.ts:getNotifications",
+      "type": "function",
+      "name": "getNotifications",
+      "filePath": "frontend/src/api/notifications.ts",
+      "summary": "Function getNotifications in frontend/src/api/notifications.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/notifications.ts:markRead",
+      "type": "function",
+      "name": "markRead",
+      "filePath": "frontend/src/api/notifications.ts",
+      "summary": "Function markRead in frontend/src/api/notifications.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/notifications.ts:markAllRead",
+      "type": "function",
+      "name": "markAllRead",
+      "filePath": "frontend/src/api/notifications.ts",
+      "summary": "Function markAllRead in frontend/src/api/notifications.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/notifications.ts:getPreferences",
+      "type": "function",
+      "name": "getPreferences",
+      "filePath": "frontend/src/api/notifications.ts",
+      "summary": "Function getPreferences in frontend/src/api/notifications.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/notifications.ts:updatePreferences",
+      "type": "function",
+      "name": "updatePreferences",
+      "filePath": "frontend/src/api/notifications.ts",
+      "summary": "Function updatePreferences in frontend/src/api/notifications.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/api/platform.ts",
+      "type": "file",
+      "name": "platform.ts",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Frontend code: platform.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:getPlatformMetadata",
+      "type": "function",
+      "name": "getPlatformMetadata",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function getPlatformMetadata in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:getPlatformConfig",
+      "type": "function",
+      "name": "getPlatformConfig",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function getPlatformConfig in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:updatePlatformConfig",
+      "type": "function",
+      "name": "updatePlatformConfig",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function updatePlatformConfig in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:listSubscriptionPlans",
+      "type": "function",
+      "name": "listSubscriptionPlans",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function listSubscriptionPlans in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:getMySubscription",
+      "type": "function",
+      "name": "getMySubscription",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function getMySubscription in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:selectMyPlan",
+      "type": "function",
+      "name": "selectMyPlan",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function selectMyPlan in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:listAdminPlans",
+      "type": "function",
+      "name": "listAdminPlans",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function listAdminPlans in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:createAdminPlan",
+      "type": "function",
+      "name": "createAdminPlan",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function createAdminPlan in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:updateAdminPlan",
+      "type": "function",
+      "name": "updateAdminPlan",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function updateAdminPlan in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:listApiKeys",
+      "type": "function",
+      "name": "listApiKeys",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function listApiKeys in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:createApiKey",
+      "type": "function",
+      "name": "createApiKey",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function createApiKey in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:revokeApiKey",
+      "type": "function",
+      "name": "revokeApiKey",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function revokeApiKey in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:listWebhooks",
+      "type": "function",
+      "name": "listWebhooks",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function listWebhooks in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:createWebhook",
+      "type": "function",
+      "name": "createWebhook",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function createWebhook in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:updateWebhook",
+      "type": "function",
+      "name": "updateWebhook",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function updateWebhook in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:deleteWebhook",
+      "type": "function",
+      "name": "deleteWebhook",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function deleteWebhook in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:testWebhook",
+      "type": "function",
+      "name": "testWebhook",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function testWebhook in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:listMyFeatureFlags",
+      "type": "function",
+      "name": "listMyFeatureFlags",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function listMyFeatureFlags in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:listAdminFeatureFlags",
+      "type": "function",
+      "name": "listAdminFeatureFlags",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function listAdminFeatureFlags in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:createAdminFeatureFlag",
+      "type": "function",
+      "name": "createAdminFeatureFlag",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function createAdminFeatureFlag in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:updateAdminFeatureFlag",
+      "type": "function",
+      "name": "updateAdminFeatureFlag",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function updateAdminFeatureFlag in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:listAdminEmailTemplates",
+      "type": "function",
+      "name": "listAdminEmailTemplates",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function listAdminEmailTemplates in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:createAdminEmailTemplate",
+      "type": "function",
+      "name": "createAdminEmailTemplate",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function createAdminEmailTemplate in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/platform.ts:updateAdminEmailTemplate",
+      "type": "function",
+      "name": "updateAdminEmailTemplate",
+      "filePath": "frontend/src/api/platform.ts",
+      "summary": "Function updateAdminEmailTemplate in frontend/src/api/platform.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/api/profile.ts",
+      "type": "file",
+      "name": "profile.ts",
+      "filePath": "frontend/src/api/profile.ts",
+      "summary": "Frontend code: profile.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/api/profile.ts:getProfile",
+      "type": "function",
+      "name": "getProfile",
+      "filePath": "frontend/src/api/profile.ts",
+      "summary": "Function getProfile in frontend/src/api/profile.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/profile.ts:updateProfile",
+      "type": "function",
+      "name": "updateProfile",
+      "filePath": "frontend/src/api/profile.ts",
+      "summary": "Function updateProfile in frontend/src/api/profile.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/profile.ts:uploadAvatar",
+      "type": "function",
+      "name": "uploadAvatar",
+      "filePath": "frontend/src/api/profile.ts",
+      "summary": "Function uploadAvatar in frontend/src/api/profile.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/profile.ts:deleteAvatar",
+      "type": "function",
+      "name": "deleteAvatar",
+      "filePath": "frontend/src/api/profile.ts",
+      "summary": "Function deleteAvatar in frontend/src/api/profile.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/api/projects.ts",
+      "type": "file",
+      "name": "projects.ts",
+      "filePath": "frontend/src/api/projects.ts",
+      "summary": "Frontend code: projects.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/api/projects.ts:listProjects",
+      "type": "function",
+      "name": "listProjects",
+      "filePath": "frontend/src/api/projects.ts",
+      "summary": "Function listProjects in frontend/src/api/projects.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/projects.ts:getProject",
+      "type": "function",
+      "name": "getProject",
+      "filePath": "frontend/src/api/projects.ts",
+      "summary": "Function getProject in frontend/src/api/projects.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/projects.ts:createProject",
+      "type": "function",
+      "name": "createProject",
+      "filePath": "frontend/src/api/projects.ts",
+      "summary": "Function createProject in frontend/src/api/projects.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/projects.ts:listProjectTasks",
+      "type": "function",
+      "name": "listProjectTasks",
+      "filePath": "frontend/src/api/projects.ts",
+      "summary": "Function listProjectTasks in frontend/src/api/projects.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/projects.ts:createProjectTask",
+      "type": "function",
+      "name": "createProjectTask",
+      "filePath": "frontend/src/api/projects.ts",
+      "summary": "Function createProjectTask in frontend/src/api/projects.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/projects.ts:updateProjectTask",
+      "type": "function",
+      "name": "updateProjectTask",
+      "filePath": "frontend/src/api/projects.ts",
+      "summary": "Function updateProjectTask in frontend/src/api/projects.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/projects.ts:deleteProjectTask",
+      "type": "function",
+      "name": "deleteProjectTask",
+      "filePath": "frontend/src/api/projects.ts",
+      "summary": "Function deleteProjectTask in frontend/src/api/projects.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/projects.ts:reorderProjectTasks",
+      "type": "function",
+      "name": "reorderProjectTasks",
+      "filePath": "frontend/src/api/projects.ts",
+      "summary": "Function reorderProjectTasks in frontend/src/api/projects.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/api/settings.ts",
+      "type": "file",
+      "name": "settings.ts",
+      "filePath": "frontend/src/api/settings.ts",
+      "summary": "Frontend code: settings.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/api/settings.ts:getConfigSettings",
+      "type": "function",
+      "name": "getConfigSettings",
+      "filePath": "frontend/src/api/settings.ts",
+      "summary": "Function getConfigSettings in frontend/src/api/settings.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/settings.ts:updateConfigSettings",
+      "type": "function",
+      "name": "updateConfigSettings",
+      "filePath": "frontend/src/api/settings.ts",
+      "summary": "Function updateConfigSettings in frontend/src/api/settings.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/settings.ts:listDatabaseSettings",
+      "type": "function",
+      "name": "listDatabaseSettings",
+      "filePath": "frontend/src/api/settings.ts",
+      "summary": "Function listDatabaseSettings in frontend/src/api/settings.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/settings.ts:createDatabaseSetting",
+      "type": "function",
+      "name": "createDatabaseSetting",
+      "filePath": "frontend/src/api/settings.ts",
+      "summary": "Function createDatabaseSetting in frontend/src/api/settings.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/settings.ts:updateDatabaseSetting",
+      "type": "function",
+      "name": "updateDatabaseSetting",
+      "filePath": "frontend/src/api/settings.ts",
+      "summary": "Function updateDatabaseSetting in frontend/src/api/settings.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/settings.ts:deleteDatabaseSetting",
+      "type": "function",
+      "name": "deleteDatabaseSetting",
+      "filePath": "frontend/src/api/settings.ts",
+      "summary": "Function deleteDatabaseSetting in frontend/src/api/settings.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/api/users.ts",
+      "type": "file",
+      "name": "users.ts",
+      "filePath": "frontend/src/api/users.ts",
+      "summary": "Frontend code: users.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/api/users.ts:getMe",
+      "type": "function",
+      "name": "getMe",
+      "filePath": "frontend/src/api/users.ts",
+      "summary": "Function getMe in frontend/src/api/users.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/users.ts:updateMe",
+      "type": "function",
+      "name": "updateMe",
+      "filePath": "frontend/src/api/users.ts",
+      "summary": "Function updateMe in frontend/src/api/users.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/users.ts:changePassword",
+      "type": "function",
+      "name": "changePassword",
+      "filePath": "frontend/src/api/users.ts",
+      "summary": "Function changePassword in frontend/src/api/users.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/users.ts:getSessions",
+      "type": "function",
+      "name": "getSessions",
+      "filePath": "frontend/src/api/users.ts",
+      "summary": "Function getSessions in frontend/src/api/users.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/users.ts:revokeSession",
+      "type": "function",
+      "name": "revokeSession",
+      "filePath": "frontend/src/api/users.ts",
+      "summary": "Function revokeSession in frontend/src/api/users.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/users.ts:listUserDirectory",
+      "type": "function",
+      "name": "listUserDirectory",
+      "filePath": "frontend/src/api/users.ts",
+      "summary": "Function listUserDirectory in frontend/src/api/users.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/app/designTokens.ts",
+      "type": "file",
+      "name": "designTokens.ts",
+      "filePath": "frontend/src/app/designTokens.ts",
+      "summary": "Frontend code: designTokens.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/src/app/snackbarContext.ts",
+      "type": "file",
+      "name": "snackbarContext.ts",
+      "filePath": "frontend/src/app/snackbarContext.ts",
+      "summary": "Frontend code: snackbarContext.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/app/snackbarContext.ts:useSnackbar",
+      "type": "function",
+      "name": "useSnackbar",
+      "filePath": "frontend/src/app/snackbarContext.ts",
+      "summary": "Function useSnackbar in frontend/src/app/snackbarContext.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "type": "file",
+      "name": "DashboardCalendar.tsx",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Frontend code: DashboardCalendar.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:buildEmptyDraft",
+      "type": "function",
+      "name": "buildEmptyDraft",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function buildEmptyDraft in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:formatTimeValue",
+      "type": "function",
+      "name": "formatTimeValue",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function formatTimeValue in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:formatItemTime",
+      "type": "function",
+      "name": "formatItemTime",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function formatItemTime in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getMinutesFromTimeString",
+      "type": "function",
+      "name": "getMinutesFromTimeString",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function getMinutesFromTimeString in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getWeekItemColor",
+      "type": "function",
+      "name": "getWeekItemColor",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function getWeekItemColor in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getItemIcon",
+      "type": "function",
+      "name": "getItemIcon",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function getItemIcon in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getDateCalendarSx",
+      "type": "function",
+      "name": "getDateCalendarSx",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function getDateCalendarSx in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getMonthGridColumns",
+      "type": "function",
+      "name": "getMonthGridColumns",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function getMonthGridColumns in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getQueryRange",
+      "type": "function",
+      "name": "getQueryRange",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function getQueryRange in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:shiftAnchorDate",
+      "type": "function",
+      "name": "shiftAnchorDate",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function shiftAnchorDate in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:DayItems",
+      "type": "function",
+      "name": "DayItems",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function DayItems in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:DashboardCalendar",
+      "type": "function",
+      "name": "DashboardCalendar",
+      "filePath": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "summary": "Function DashboardCalendar in frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "type": "file",
+      "name": "AdminSettingsTabs.tsx",
+      "filePath": "frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "summary": "Frontend code: AdminSettingsTabs.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/layout/AdminSettingsTabs.tsx:AdminSettingsTabs",
+      "type": "function",
+      "name": "AdminSettingsTabs",
+      "filePath": "frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "summary": "Function AdminSettingsTabs in frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/layout/AppLayout.tsx",
+      "type": "file",
+      "name": "AppLayout.tsx",
+      "filePath": "frontend/src/components/layout/AppLayout.tsx",
+      "summary": "Frontend code: AppLayout.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/layout/AppLayout.tsx:ThemeToggle",
+      "type": "function",
+      "name": "ThemeToggle",
+      "filePath": "frontend/src/components/layout/AppLayout.tsx",
+      "summary": "Function ThemeToggle in frontend/src/components/layout/AppLayout.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/layout/AppLayout.tsx:NavBlock",
+      "type": "function",
+      "name": "NavBlock",
+      "filePath": "frontend/src/components/layout/AppLayout.tsx",
+      "summary": "Function NavBlock in frontend/src/components/layout/AppLayout.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:frontend/src/components/layout/AppLayout.tsx:AppLayout",
+      "type": "function",
+      "name": "AppLayout",
+      "filePath": "frontend/src/components/layout/AppLayout.tsx",
+      "summary": "Function AppLayout in frontend/src/components/layout/AppLayout.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/components/notifications/NotificationListItem.tsx",
+      "type": "file",
+      "name": "NotificationListItem.tsx",
+      "filePath": "frontend/src/components/notifications/NotificationListItem.tsx",
+      "summary": "Frontend code: NotificationListItem.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/notifications/NotificationListItem.tsx:NotificationListItem",
+      "type": "function",
+      "name": "NotificationListItem",
+      "filePath": "frontend/src/components/notifications/NotificationListItem.tsx",
+      "summary": "Function NotificationListItem in frontend/src/components/notifications/NotificationListItem.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "file",
+      "name": "EmptyState.tsx",
+      "filePath": "frontend/src/components/ui/EmptyState.tsx",
+      "summary": "Frontend code: EmptyState.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/ui/EmptyState.tsx:EmptyState",
+      "type": "function",
+      "name": "EmptyState",
+      "filePath": "frontend/src/components/ui/EmptyState.tsx",
+      "summary": "Function EmptyState in frontend/src/components/ui/EmptyState.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "file",
+      "name": "PageHeader.tsx",
+      "filePath": "frontend/src/components/ui/PageHeader.tsx",
+      "summary": "Frontend code: PageHeader.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/ui/PageHeader.tsx:PageHeader",
+      "type": "function",
+      "name": "PageHeader",
+      "filePath": "frontend/src/components/ui/PageHeader.tsx",
+      "summary": "Function PageHeader in frontend/src/components/ui/PageHeader.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "file",
+      "name": "PageShell.tsx",
+      "filePath": "frontend/src/components/ui/PageShell.tsx",
+      "summary": "Frontend code: PageShell.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/ui/PageShell.tsx:PageShell",
+      "type": "function",
+      "name": "PageShell",
+      "filePath": "frontend/src/components/ui/PageShell.tsx",
+      "summary": "Function PageShell in frontend/src/components/ui/PageShell.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/ui/QueryBoundary.test.tsx",
+      "type": "file",
+      "name": "QueryBoundary.test.tsx",
+      "filePath": "frontend/src/components/ui/QueryBoundary.test.tsx",
+      "summary": "Frontend code: QueryBoundary.test.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "test",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "type": "file",
+      "name": "QueryBoundary.tsx",
+      "filePath": "frontend/src/components/ui/QueryBoundary.tsx",
+      "summary": "Frontend code: QueryBoundary.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/ui/QueryBoundary.tsx:QueryErrorAlert",
+      "type": "function",
+      "name": "QueryErrorAlert",
+      "filePath": "frontend/src/components/ui/QueryBoundary.tsx",
+      "summary": "Function QueryErrorAlert in frontend/src/components/ui/QueryBoundary.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/components/ui/QueryBoundary.tsx:QueryBoundary",
+      "type": "function",
+      "name": "QueryBoundary",
+      "filePath": "frontend/src/components/ui/QueryBoundary.tsx",
+      "summary": "Function QueryBoundary in frontend/src/components/ui/QueryBoundary.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "file",
+      "name": "SectionCard.tsx",
+      "filePath": "frontend/src/components/ui/SectionCard.tsx",
+      "summary": "Frontend code: SectionCard.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/ui/SectionCard.tsx:SectionCard",
+      "type": "function",
+      "name": "SectionCard",
+      "filePath": "frontend/src/components/ui/SectionCard.tsx",
+      "summary": "Function SectionCard in frontend/src/components/ui/SectionCard.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/ui/StatCard.tsx",
+      "type": "file",
+      "name": "StatCard.tsx",
+      "filePath": "frontend/src/components/ui/StatCard.tsx",
+      "summary": "Frontend code: StatCard.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/ui/StatCard.tsx:StatCard",
+      "type": "function",
+      "name": "StatCard",
+      "filePath": "frontend/src/components/ui/StatCard.tsx",
+      "summary": "Function StatCard in frontend/src/components/ui/StatCard.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/config/queryKeys.test.ts",
+      "type": "file",
+      "name": "queryKeys.test.ts",
+      "filePath": "frontend/src/config/queryKeys.test.ts",
+      "summary": "Frontend code: queryKeys.test.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "test",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:frontend/src/api/admin.ts",
+      "target": "file:frontend/src/api/client.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/api/admin.ts",
+      "target": "function:frontend/src/api/admin.ts:listAdminUsers",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/admin.ts",
+      "target": "function:frontend/src/api/admin.ts:updateUserStatus",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "file:frontend/src/api/client.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:getAiOverview",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:listPromptVersions",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:createPromptTemplate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:updatePromptTemplate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:createPromptVersion",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:updatePromptVersion",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:createAiDocument",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:uploadAiDocument",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:retrieveAiChunks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:createAiRun",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:listAiReviews",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:createAiReview",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:decideAiReview",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:listAiFeedback",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:createAiFeedback",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:listAiDatasets",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:createAiDataset",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:listAiDatasetCases",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:createAiDatasetCase",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:listAiEvaluationRuns",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/ai.ts",
+      "target": "function:frontend/src/api/ai.ts:runAiEvaluation",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/calendar.ts",
+      "target": "file:frontend/src/api/client.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/api/calendar.ts",
+      "target": "file:frontend/src/api/projects.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/api/calendar.ts",
+      "target": "function:frontend/src/api/calendar.ts:listCalendarItems",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/calendar.ts",
+      "target": "function:frontend/src/api/calendar.ts:createCalendarItem",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/client.ts",
+      "target": "function:frontend/src/api/client.ts:readCookie",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/client.ts",
+      "target": "function:frontend/src/api/client.ts:refreshAccessToken",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/client.ts",
+      "target": "function:frontend/src/api/client.ts:buildCsrfHeaders",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/client.ts",
+      "target": "function:frontend/src/api/client.ts:apiFetch",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/notifications.ts",
+      "target": "file:frontend/src/api/client.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/api/notifications.ts",
+      "target": "function:frontend/src/api/notifications.ts:getNotifications",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/notifications.ts",
+      "target": "function:frontend/src/api/notifications.ts:markRead",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/notifications.ts",
+      "target": "function:frontend/src/api/notifications.ts:markAllRead",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/notifications.ts",
+      "target": "function:frontend/src/api/notifications.ts:getPreferences",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/notifications.ts",
+      "target": "function:frontend/src/api/notifications.ts:updatePreferences",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "file:frontend/src/api/client.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:getPlatformMetadata",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:getPlatformConfig",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:updatePlatformConfig",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:listSubscriptionPlans",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:getMySubscription",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:selectMyPlan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:listAdminPlans",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:createAdminPlan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:updateAdminPlan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:listApiKeys",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:createApiKey",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:revokeApiKey",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:listWebhooks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:createWebhook",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:updateWebhook",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:deleteWebhook",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:testWebhook",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:listMyFeatureFlags",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:listAdminFeatureFlags",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:createAdminFeatureFlag",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:updateAdminFeatureFlag",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:listAdminEmailTemplates",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:createAdminEmailTemplate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/platform.ts",
+      "target": "function:frontend/src/api/platform.ts:updateAdminEmailTemplate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/profile.ts",
+      "target": "file:frontend/src/api/client.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/api/profile.ts",
+      "target": "function:frontend/src/api/profile.ts:getProfile",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/profile.ts",
+      "target": "function:frontend/src/api/profile.ts:updateProfile",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/profile.ts",
+      "target": "function:frontend/src/api/profile.ts:uploadAvatar",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/profile.ts",
+      "target": "function:frontend/src/api/profile.ts:deleteAvatar",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/projects.ts",
+      "target": "file:frontend/src/api/client.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/api/projects.ts",
+      "target": "function:frontend/src/api/projects.ts:listProjects",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/projects.ts",
+      "target": "function:frontend/src/api/projects.ts:getProject",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/projects.ts",
+      "target": "function:frontend/src/api/projects.ts:createProject",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/projects.ts",
+      "target": "function:frontend/src/api/projects.ts:listProjectTasks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/projects.ts",
+      "target": "function:frontend/src/api/projects.ts:createProjectTask",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/projects.ts",
+      "target": "function:frontend/src/api/projects.ts:updateProjectTask",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/projects.ts",
+      "target": "function:frontend/src/api/projects.ts:deleteProjectTask",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/projects.ts",
+      "target": "function:frontend/src/api/projects.ts:reorderProjectTasks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/settings.ts",
+      "target": "file:frontend/src/api/client.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/api/settings.ts",
+      "target": "function:frontend/src/api/settings.ts:getConfigSettings",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/settings.ts",
+      "target": "function:frontend/src/api/settings.ts:updateConfigSettings",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/settings.ts",
+      "target": "function:frontend/src/api/settings.ts:listDatabaseSettings",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/settings.ts",
+      "target": "function:frontend/src/api/settings.ts:createDatabaseSetting",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/settings.ts",
+      "target": "function:frontend/src/api/settings.ts:updateDatabaseSetting",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/settings.ts",
+      "target": "function:frontend/src/api/settings.ts:deleteDatabaseSetting",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/users.ts",
+      "target": "file:frontend/src/api/client.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/api/users.ts",
+      "target": "function:frontend/src/api/users.ts:getMe",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/users.ts",
+      "target": "function:frontend/src/api/users.ts:updateMe",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/users.ts",
+      "target": "function:frontend/src/api/users.ts:changePassword",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/users.ts",
+      "target": "function:frontend/src/api/users.ts:getSessions",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/users.ts",
+      "target": "function:frontend/src/api/users.ts:revokeSession",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/users.ts",
+      "target": "function:frontend/src/api/users.ts:listUserDirectory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/app/snackbarContext.ts",
+      "target": "function:frontend/src/app/snackbarContext.ts:useSnackbar",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "file:frontend/src/api/calendar.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "file:frontend/src/api/projects.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "file:frontend/src/app/snackbarContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "file:frontend/src/utils/formatters.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:buildEmptyDraft",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:formatTimeValue",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:formatItemTime",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getMinutesFromTimeString",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getWeekItemColor",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getItemIcon",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getDateCalendarSx",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getMonthGridColumns",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:getQueryRange",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:shiftAnchorDate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:DayItems",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "target": "function:frontend/src/components/dashboard/DashboardCalendar.tsx:DashboardCalendar",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "target": "function:frontend/src/components/layout/AdminSettingsTabs.tsx:AdminSettingsTabs",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/layout/AppLayout.tsx",
+      "target": "file:frontend/src/app/colorModeContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/layout/AppLayout.tsx",
+      "target": "file:frontend/src/app/designTokens.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/layout/AppLayout.tsx",
+      "target": "file:frontend/src/hooks/useAuth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/layout/AppLayout.tsx",
+      "target": "file:frontend/src/hooks/useNotifications.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/layout/AppLayout.tsx",
+      "target": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/layout/AppLayout.tsx",
+      "target": "file:frontend/src/hooks/useUserProfile.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/layout/AppLayout.tsx",
+      "target": "file:frontend/src/utils/formatters.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/layout/AppLayout.tsx",
+      "target": "function:frontend/src/components/layout/AppLayout.tsx:ThemeToggle",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/layout/AppLayout.tsx",
+      "target": "function:frontend/src/components/layout/AppLayout.tsx:NavBlock",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/layout/AppLayout.tsx",
+      "target": "function:frontend/src/components/layout/AppLayout.tsx:AppLayout",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/notifications/NotificationListItem.tsx",
+      "target": "file:frontend/src/api/notifications.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/notifications/NotificationListItem.tsx",
+      "target": "file:frontend/src/app/designTokens.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/notifications/NotificationListItem.tsx",
+      "target": "file:frontend/src/utils/formatters.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/notifications/NotificationListItem.tsx",
+      "target": "function:frontend/src/components/notifications/NotificationListItem.tsx:NotificationListItem",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/ui/EmptyState.tsx",
+      "target": "function:frontend/src/components/ui/EmptyState.tsx:EmptyState",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/ui/PageHeader.tsx",
+      "target": "function:frontend/src/components/ui/PageHeader.tsx:PageHeader",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/ui/PageShell.tsx",
+      "target": "function:frontend/src/components/ui/PageShell.tsx:PageShell",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/ui/QueryBoundary.test.tsx",
+      "target": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "target": "file:frontend/src/utils/queryErrors.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "target": "function:frontend/src/components/ui/QueryBoundary.tsx:QueryErrorAlert",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "target": "function:frontend/src/components/ui/QueryBoundary.tsx:QueryBoundary",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/ui/SectionCard.tsx",
+      "target": "file:frontend/src/app/designTokens.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/ui/SectionCard.tsx",
+      "target": "function:frontend/src/components/ui/SectionCard.tsx:SectionCard",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/ui/StatCard.tsx",
+      "target": "file:frontend/src/app/designTokens.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/ui/StatCard.tsx",
+      "target": "function:frontend/src/components/ui/StatCard.tsx:StatCard",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/config/queryKeys.test.ts",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    }
+  ]
+}

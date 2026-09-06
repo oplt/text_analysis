@@ -1,0 +1,4722 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 21,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "backend/modules/ai/application/agent_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 99,
+      "nonEmptyLines": 85,
+      "classes": [
+        {
+          "name": "AgentService",
+          "startLine": 21,
+          "endLine": 99,
+          "methods": [
+            "__init__",
+            "run_agent_prompt"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AgentService",
+          "line": 21,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "AiService",
+          "lineNumber": 30
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryService",
+          "lineNumber": 31
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryConfig.from_settings",
+          "lineNumber": 32
+        },
+        {
+          "caller": "__init__",
+          "callee": "AgentPromptContextBuilder",
+          "lineNumber": 33
+        },
+        {
+          "caller": "run_agent_prompt",
+          "callee": "str",
+          "lineNumber": 51
+        },
+        {
+          "caller": "run_agent_prompt",
+          "callee": "uuid4",
+          "lineNumber": 51
+        },
+        {
+          "caller": "run_agent_prompt",
+          "callee": "WorkingMemoryContext",
+          "lineNumber": 52
+        },
+        {
+          "caller": "run_agent_prompt",
+          "callee": "str",
+          "lineNumber": 53
+        },
+        {
+          "caller": "run_agent_prompt",
+          "callee": "variables.get",
+          "lineNumber": 53
+        },
+        {
+          "caller": "run_agent_prompt",
+          "callee": "str",
+          "lineNumber": 58
+        },
+        {
+          "caller": "run_agent_prompt",
+          "callee": "variables.get",
+          "lineNumber": 58
+        },
+        {
+          "caller": "run_agent_prompt",
+          "callee": "self.prompt_context.build",
+          "lineNumber": 59
+        },
+        {
+          "caller": "run_agent_prompt",
+          "callee": "self.ai.run_prompt",
+          "lineNumber": 71
+        },
+        {
+          "caller": "run_agent_prompt",
+          "callee": "self.memory.process_turn_memories",
+          "lineNumber": 85
+        },
+        {
+          "caller": "run_agent_prompt",
+          "callee": "logger.exception",
+          "lineNumber": 95
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/ai/application/prompt_context_builder.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 141,
+      "nonEmptyLines": 123,
+      "classes": [
+        {
+          "name": "AgentPromptContext",
+          "startLine": 22,
+          "endLine": 25,
+          "methods": [],
+          "properties": [
+            "additional_system_context",
+            "effective_retrieval_query",
+            "retrieved_memories"
+          ]
+        },
+        {
+          "name": "AgentPromptContextBuilder",
+          "startLine": 28,
+          "endLine": 141,
+          "methods": [
+            "__init__",
+            "build",
+            "_load_memory_context",
+            "_load_document_context"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AgentPromptContext",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "AgentPromptContextBuilder",
+          "line": 28,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "MemoryConfig.from_settings",
+          "lineNumber": 39
+        },
+        {
+          "caller": "__init__",
+          "callee": "RagContextBuilder",
+          "lineNumber": 40
+        },
+        {
+          "caller": "build",
+          "callee": "MemorySearchRequest",
+          "lineNumber": 54
+        },
+        {
+          "caller": "build",
+          "callee": "self._load_memory_context",
+          "lineNumber": 62
+        },
+        {
+          "caller": "build",
+          "callee": "self._load_document_context",
+          "lineNumber": 63
+        },
+        {
+          "caller": "build",
+          "callee": "asyncio.gather",
+          "lineNumber": 70
+        },
+        {
+          "caller": "build",
+          "callee": "isinstance",
+          "lineNumber": 78
+        },
+        {
+          "caller": "build",
+          "callee": "logger.error",
+          "lineNumber": 79
+        },
+        {
+          "caller": "build",
+          "callee": "isinstance",
+          "lineNumber": 89
+        },
+        {
+          "caller": "build",
+          "callee": "logger.error",
+          "lineNumber": 90
+        },
+        {
+          "caller": "build",
+          "callee": "isinstance",
+          "lineNumber": 96
+        },
+        {
+          "caller": "build",
+          "callee": "self.rag_context_builder.assemble_agent_system_context",
+          "lineNumber": 99
+        },
+        {
+          "caller": "build",
+          "callee": "rag_handles_prompt_retrieval",
+          "lineNumber": 104
+        },
+        {
+          "caller": "build",
+          "callee": "AgentPromptContext",
+          "lineNumber": 107
+        },
+        {
+          "caller": "_load_memory_context",
+          "callee": "self.memory.recall_for_prompt",
+          "lineNumber": 121
+        },
+        {
+          "caller": "_load_document_context",
+          "callee": "build_agent_document_context",
+          "lineNumber": 134
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 196,
+      "nonEmptyLines": 175,
+      "classes": [
+        {
+          "name": "AgentPromptContextBuilderTest",
+          "startLine": 12,
+          "endLine": 69,
+          "methods": [
+            "asyncSetUp",
+            "test_single_memory_recall_and_assembled_context",
+            "test_legacy_retrieval_when_rag_disabled"
+          ],
+          "properties": []
+        },
+        {
+          "name": "AgentRetrievalConsolidationTest",
+          "startLine": 72,
+          "endLine": 196,
+          "methods": [
+            "asyncSetUp",
+            "test_uses_unified_prompt_context",
+            "test_agent_reuses_prompt_context_memories_without_second_recall",
+            "test_working_memory_populated_from_prompt_context"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AgentPromptContextBuilderTest",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "AgentRetrievalConsolidationTest",
+          "line": 72,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "asyncSetUp",
+          "callee": "AsyncMock",
+          "lineNumber": 14
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "MagicMock",
+          "lineNumber": 15
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "AsyncMock",
+          "lineNumber": 16
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "AgentPromptContextBuilder",
+          "lineNumber": 17
+        },
+        {
+          "caller": "test_single_memory_recall_and_assembled_context",
+          "callee": "self.builder.build",
+          "lineNumber": 31
+        },
+        {
+          "caller": "test_single_memory_recall_and_assembled_context",
+          "callee": "self.memory.recall_for_prompt.assert_awaited_once",
+          "lineNumber": 42
+        },
+        {
+          "caller": "test_single_memory_recall_and_assembled_context",
+          "callee": "self.memory.recall.assert_not_called",
+          "lineNumber": 43
+        },
+        {
+          "caller": "test_single_memory_recall_and_assembled_context",
+          "callee": "mock_document_context.assert_awaited_once",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_single_memory_recall_and_assembled_context",
+          "callee": "self.assertIsNone",
+          "lineNumber": 45
+        },
+        {
+          "caller": "test_single_memory_recall_and_assembled_context",
+          "callee": "self.assertIn",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_single_memory_recall_and_assembled_context",
+          "callee": "self.assertIn",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_legacy_retrieval_when_rag_disabled",
+          "callee": "self.builder.build",
+          "lineNumber": 59
+        },
+        {
+          "caller": "test_legacy_retrieval_when_rag_disabled",
+          "callee": "self.assertEqual",
+          "lineNumber": 69
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "AsyncMock",
+          "lineNumber": 74
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "MagicMock",
+          "lineNumber": 75
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "AsyncMock",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "AgentPromptContext",
+          "lineNumber": 81
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "AgentService",
+          "lineNumber": 88
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "MagicMock",
+          "lineNumber": 89
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "AsyncMock",
+          "lineNumber": 90
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "MagicMock",
+          "lineNumber": 90
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "service.run_agent_prompt",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "builder.build.assert_awaited_once",
+          "lineNumber": 103
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "self.assertEqual",
+          "lineNumber": 105
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "self.assertEqual",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "self.assertIsNone",
+          "lineNumber": 109
+        },
+        {
+          "caller": "test_uses_unified_prompt_context",
+          "callee": "self.assertEqual",
+          "lineNumber": 110
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "SimpleNamespace",
+          "lineNumber": 134
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "SimpleNamespace",
+          "lineNumber": 135
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "MagicMock",
+          "lineNumber": 139
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "AsyncMock",
+          "lineNumber": 141
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "AsyncMock",
+          "lineNumber": 144
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "AsyncMock",
+          "lineNumber": 146
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "MagicMock",
+          "lineNumber": 147
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "AgentService",
+          "lineNumber": 150
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "service.run_agent_prompt",
+          "lineNumber": 152
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "memory_instance.recall_for_prompt.assert_awaited_once",
+          "lineNumber": 163
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "memory_instance.recall.assert_not_called",
+          "lineNumber": 164
+        },
+        {
+          "caller": "test_agent_reuses_prompt_context_memories_without_second_recall",
+          "callee": "self.assertEqual",
+          "lineNumber": 165
+        },
+        {
+          "caller": "test_working_memory_populated_from_prompt_context",
+          "callee": "MagicMock",
+          "lineNumber": 169
+        },
+        {
+          "caller": "test_working_memory_populated_from_prompt_context",
+          "callee": "AsyncMock",
+          "lineNumber": 171
+        },
+        {
+          "caller": "test_working_memory_populated_from_prompt_context",
+          "callee": "AgentPromptContext",
+          "lineNumber": 172
+        },
+        {
+          "caller": "test_working_memory_populated_from_prompt_context",
+          "callee": "AgentService",
+          "lineNumber": 179
+        },
+        {
+          "caller": "test_working_memory_populated_from_prompt_context",
+          "callee": "MagicMock",
+          "lineNumber": 180
+        },
+        {
+          "caller": "test_working_memory_populated_from_prompt_context",
+          "callee": "AsyncMock",
+          "lineNumber": 181
+        },
+        {
+          "caller": "test_working_memory_populated_from_prompt_context",
+          "callee": "MagicMock",
+          "lineNumber": 181
+        },
+        {
+          "caller": "test_working_memory_populated_from_prompt_context",
+          "callee": "AsyncMock",
+          "lineNumber": 182
+        },
+        {
+          "caller": "test_working_memory_populated_from_prompt_context",
+          "callee": "service.run_agent_prompt",
+          "lineNumber": 184
+        },
+        {
+          "caller": "test_working_memory_populated_from_prompt_context",
+          "callee": "service.memory.recall.assert_not_called",
+          "lineNumber": 195
+        },
+        {
+          "caller": "test_working_memory_populated_from_prompt_context",
+          "callee": "self.assertEqual",
+          "lineNumber": 196
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/modules/memory/application/memory_consolidator.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 72,
+      "nonEmptyLines": 61,
+      "classes": [
+        {
+          "name": "MemoryConsolidator",
+          "startLine": 6,
+          "endLine": 72,
+          "methods": [
+            "consolidate",
+            "mark_contradictions",
+            "_similarity_key",
+            "_recency_score",
+            "_pick_preferred",
+            "_contradicts"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "MemoryConsolidator",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "consolidate",
+          "callee": "self._similarity_key",
+          "lineNumber": 15
+        },
+        {
+          "caller": "consolidate",
+          "callee": "grouped.get",
+          "lineNumber": 16
+        },
+        {
+          "caller": "consolidate",
+          "callee": "self._pick_preferred",
+          "lineNumber": 20
+        },
+        {
+          "caller": "consolidate",
+          "callee": "list",
+          "lineNumber": 21
+        },
+        {
+          "caller": "consolidate",
+          "callee": "grouped.values",
+          "lineNumber": 21
+        },
+        {
+          "caller": "mark_contradictions",
+          "callee": "by_type.setdefault(key, []).append",
+          "lineNumber": 28
+        },
+        {
+          "caller": "mark_contradictions",
+          "callee": "by_type.setdefault",
+          "lineNumber": 28
+        },
+        {
+          "caller": "mark_contradictions",
+          "callee": "by_type.values",
+          "lineNumber": 31
+        },
+        {
+          "caller": "mark_contradictions",
+          "callee": "len",
+          "lineNumber": 32
+        },
+        {
+          "caller": "mark_contradictions",
+          "callee": "result.append",
+          "lineNumber": 33
+        },
+        {
+          "caller": "mark_contradictions",
+          "callee": "group.sort",
+          "lineNumber": 35
+        },
+        {
+          "caller": "mark_contradictions",
+          "callee": "self._contradicts",
+          "lineNumber": 38
+        },
+        {
+          "caller": "mark_contradictions",
+          "callee": "result.append",
+          "lineNumber": 40
+        },
+        {
+          "caller": "mark_contradictions",
+          "callee": "result.append",
+          "lineNumber": 41
+        },
+        {
+          "caller": "_similarity_key",
+          "callee": "\" \".join",
+          "lineNumber": 45
+        },
+        {
+          "caller": "_similarity_key",
+          "callee": "content.lower().split",
+          "lineNumber": 45
+        },
+        {
+          "caller": "_similarity_key",
+          "callee": "content.lower",
+          "lineNumber": 45
+        },
+        {
+          "caller": "_recency_score",
+          "callee": "confirmed.timestamp",
+          "lineNumber": 53
+        },
+        {
+          "caller": "_recency_score",
+          "callee": "seen.timestamp",
+          "lineNumber": 55
+        },
+        {
+          "caller": "_pick_preferred",
+          "callee": "self._recency_score",
+          "lineNumber": 61
+        },
+        {
+          "caller": "_pick_preferred",
+          "callee": "self._recency_score",
+          "lineNumber": 61
+        },
+        {
+          "caller": "_contradicts",
+          "callee": "left.lower",
+          "lineNumber": 64
+        },
+        {
+          "caller": "_contradicts",
+          "callee": "right.lower",
+          "lineNumber": 65
+        },
+        {
+          "caller": "_contradicts",
+          "callee": "right_l.replace",
+          "lineNumber": 68
+        },
+        {
+          "caller": "_contradicts",
+          "callee": "left_l.replace",
+          "lineNumber": 70
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/memory/application/memory_context_builder.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 93,
+      "nonEmptyLines": 78,
+      "classes": [
+        {
+          "name": "MemoryContextBuilder",
+          "startLine": 27,
+          "endLine": 79,
+          "methods": [
+            "__init__",
+            "build_context_block",
+            "format_context_block",
+            "recall_ranked",
+            "_rank_score"
+          ],
+          "properties": []
+        },
+        {
+          "name": "MemoryServiceProtocol",
+          "startLine": 82,
+          "endLine": 93,
+          "methods": [
+            "recall"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "MemoryContextBuilder",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryServiceProtocol",
+          "line": 82,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "MemoryConsolidator",
+          "lineNumber": 34
+        },
+        {
+          "caller": "build_context_block",
+          "callee": "self.recall_ranked",
+          "lineNumber": 37
+        },
+        {
+          "caller": "build_context_block",
+          "callee": "self.format_context_block",
+          "lineNumber": 38
+        },
+        {
+          "caller": "format_context_block",
+          "callee": "retrieved_memory_count.inc",
+          "lineNumber": 41
+        },
+        {
+          "caller": "format_context_block",
+          "callee": "len",
+          "lineNumber": 41
+        },
+        {
+          "caller": "format_context_block",
+          "callee": "enumerate",
+          "lineNumber": 46
+        },
+        {
+          "caller": "format_context_block",
+          "callee": "lines.append",
+          "lineNumber": 49
+        },
+        {
+          "caller": "format_context_block",
+          "callee": "\"\\n\".join",
+          "lineNumber": 50
+        },
+        {
+          "caller": "recall_ranked",
+          "callee": "list",
+          "lineNumber": 53
+        },
+        {
+          "caller": "recall_ranked",
+          "callee": "self.memory_service.recall",
+          "lineNumber": 58
+        },
+        {
+          "caller": "recall_ranked",
+          "callee": "self.consolidator.mark_contradictions",
+          "lineNumber": 68
+        },
+        {
+          "caller": "recall_ranked",
+          "callee": "deduped.sort",
+          "lineNumber": 69
+        },
+        {
+          "caller": "_rank_score",
+          "callee": "LEVEL_WEIGHTS.get",
+          "lineNumber": 74
+        },
+        {
+          "caller": "_rank_score",
+          "callee": "memory_recency_weight",
+          "lineNumber": 78
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/modules/memory/application/memory_extractor.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 106,
+      "nonEmptyLines": 94,
+      "classes": [
+        {
+          "name": "ExtractionCandidate",
+          "startLine": 21,
+          "endLine": 24,
+          "methods": [],
+          "properties": [
+            "content",
+            "routed",
+            "source_message_id"
+          ]
+        },
+        {
+          "name": "MemoryExtractor",
+          "startLine": 27,
+          "endLine": 106,
+          "methods": [
+            "__init__",
+            "extract_from_turn",
+            "_iter_sentences",
+            "_looks_durable",
+            "_dedupe_candidates"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ExtractionCandidate",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryExtractor",
+          "line": 27,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "MemoryRouter",
+          "lineNumber": 31
+        },
+        {
+          "caller": "extract_from_turn",
+          "callee": "self._iter_sentences",
+          "lineNumber": 42
+        },
+        {
+          "caller": "extract_from_turn",
+          "callee": "match.strip",
+          "lineNumber": 43
+        },
+        {
+          "caller": "extract_from_turn",
+          "callee": "len",
+          "lineNumber": 44
+        },
+        {
+          "caller": "extract_from_turn",
+          "callee": "contains_secret",
+          "lineNumber": 46
+        },
+        {
+          "caller": "extract_from_turn",
+          "callee": "is_ephemeral_statement",
+          "lineNumber": 48
+        },
+        {
+          "caller": "extract_from_turn",
+          "callee": "self._looks_durable",
+          "lineNumber": 50
+        },
+        {
+          "caller": "extract_from_turn",
+          "callee": "self.router.route",
+          "lineNumber": 52
+        },
+        {
+          "caller": "extract_from_turn",
+          "callee": "candidates.append",
+          "lineNumber": 53
+        },
+        {
+          "caller": "extract_from_turn",
+          "callee": "ExtractionCandidate",
+          "lineNumber": 54
+        },
+        {
+          "caller": "extract_from_turn",
+          "callee": "self._dedupe_candidates",
+          "lineNumber": 60
+        },
+        {
+          "caller": "_iter_sentences",
+          "callee": "re.split",
+          "lineNumber": 63
+        },
+        {
+          "caller": "_iter_sentences",
+          "callee": "text.strip",
+          "lineNumber": 63
+        },
+        {
+          "caller": "_iter_sentences",
+          "callee": "part.strip",
+          "lineNumber": 66
+        },
+        {
+          "caller": "_iter_sentences",
+          "callee": "extracted.append",
+          "lineNumber": 68
+        },
+        {
+          "caller": "_iter_sentences",
+          "callee": "pattern.findall",
+          "lineNumber": 70
+        },
+        {
+          "caller": "_iter_sentences",
+          "callee": "isinstance",
+          "lineNumber": 71
+        },
+        {
+          "caller": "_iter_sentences",
+          "callee": "extracted.append",
+          "lineNumber": 72
+        },
+        {
+          "caller": "_iter_sentences",
+          "callee": "\" \".join",
+          "lineNumber": 72
+        },
+        {
+          "caller": "_iter_sentences",
+          "callee": "extracted.append",
+          "lineNumber": 74
+        },
+        {
+          "caller": "_iter_sentences",
+          "callee": "str",
+          "lineNumber": 74
+        },
+        {
+          "caller": "_looks_durable",
+          "callee": "any",
+          "lineNumber": 78
+        },
+        {
+          "caller": "_looks_durable",
+          "callee": "pattern.search",
+          "lineNumber": 78
+        },
+        {
+          "caller": "_looks_durable",
+          "callee": "text.lower",
+          "lineNumber": 92
+        },
+        {
+          "caller": "_looks_durable",
+          "callee": "any",
+          "lineNumber": 93
+        },
+        {
+          "caller": "_dedupe_candidates",
+          "callee": "set",
+          "lineNumber": 98
+        },
+        {
+          "caller": "_dedupe_candidates",
+          "callee": "candidate.content.strip().lower",
+          "lineNumber": 101
+        },
+        {
+          "caller": "_dedupe_candidates",
+          "callee": "candidate.content.strip",
+          "lineNumber": 101
+        },
+        {
+          "caller": "_dedupe_candidates",
+          "callee": "seen.add",
+          "lineNumber": 104
+        },
+        {
+          "caller": "_dedupe_candidates",
+          "callee": "unique.append",
+          "lineNumber": 105
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/modules/memory/application/memory_policy_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 28,
+      "nonEmptyLines": 23,
+      "classes": [
+        {
+          "name": "MemoryPolicyService",
+          "startLine": 6,
+          "endLine": 28,
+          "methods": [
+            "__init__",
+            "evaluate"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "MemoryPolicyService",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "evaluate",
+          "callee": "evaluate_storage_policy",
+          "lineNumber": 21
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/memory/application/memory_router.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 108,
+      "nonEmptyLines": 90,
+      "classes": [
+        {
+          "name": "RoutedMemory",
+          "startLine": 33,
+          "endLine": 38,
+          "methods": [],
+          "properties": [
+            "content",
+            "memory_level",
+            "memory_type",
+            "confidence",
+            "source"
+          ]
+        },
+        {
+          "name": "MemoryRouter",
+          "startLine": 41,
+          "endLine": 108,
+          "methods": [
+            "route"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RoutedMemory",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryRouter",
+          "line": 41,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "route",
+          "callee": "RoutedMemory",
+          "lineNumber": 56
+        },
+        {
+          "caller": "route",
+          "callee": "any",
+          "lineNumber": 63
+        },
+        {
+          "caller": "route",
+          "callee": "p.search",
+          "lineNumber": 63
+        },
+        {
+          "caller": "route",
+          "callee": "RoutedMemory",
+          "lineNumber": 64
+        },
+        {
+          "caller": "route",
+          "callee": "any",
+          "lineNumber": 71
+        },
+        {
+          "caller": "route",
+          "callee": "p.search",
+          "lineNumber": 71
+        },
+        {
+          "caller": "route",
+          "callee": "RoutedMemory",
+          "lineNumber": 72
+        },
+        {
+          "caller": "route",
+          "callee": "any",
+          "lineNumber": 79
+        },
+        {
+          "caller": "route",
+          "callee": "p.search",
+          "lineNumber": 79
+        },
+        {
+          "caller": "route",
+          "callee": "RoutedMemory",
+          "lineNumber": 80
+        },
+        {
+          "caller": "route",
+          "callee": "any",
+          "lineNumber": 87
+        },
+        {
+          "caller": "route",
+          "callee": "p.search",
+          "lineNumber": 87
+        },
+        {
+          "caller": "route",
+          "callee": "RoutedMemory",
+          "lineNumber": 88
+        },
+        {
+          "caller": "route",
+          "callee": "any",
+          "lineNumber": 95
+        },
+        {
+          "caller": "route",
+          "callee": "p.search",
+          "lineNumber": 95
+        },
+        {
+          "caller": "route",
+          "callee": "RoutedMemory",
+          "lineNumber": 96
+        },
+        {
+          "caller": "route",
+          "callee": "RoutedMemory",
+          "lineNumber": 103
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/modules/memory/application/memory_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 538,
+      "nonEmptyLines": 492,
+      "classes": [
+        {
+          "name": "MemoryService",
+          "startLine": 49,
+          "endLine": 538,
+          "methods": [
+            "__init__",
+            "remember",
+            "recall",
+            "forget",
+            "list_user_memories",
+            "get_memory",
+            "build_prompt_context",
+            "recall_for_prompt",
+            "process_turn_memories",
+            "_authorize_write",
+            "_authorize_read_item",
+            "_filter_authorized_read_items",
+            "_item_authorized_for_read",
+            "_ensure_project_access",
+            "_extract_memory_id"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "MemoryService",
+          "line": 49,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "MemoryConfig.from_settings",
+          "lineNumber": 52
+        },
+        {
+          "caller": "__init__",
+          "callee": "Mem0Client",
+          "lineNumber": 53
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryAuditRepository",
+          "lineNumber": 54
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryRegistryRepository",
+          "lineNumber": 55
+        },
+        {
+          "caller": "__init__",
+          "callee": "ProjectsRepository",
+          "lineNumber": 56
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryPolicyService",
+          "lineNumber": 57
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryRouter",
+          "lineNumber": 58
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryExtractor",
+          "lineNumber": 59
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryConsolidator",
+          "lineNumber": 60
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryContextBuilder",
+          "lineNumber": 61
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryWriteResult",
+          "lineNumber": 81
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryLevel",
+          "lineNumber": 83
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryType",
+          "lineNumber": 84
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryWriteResult",
+          "lineNumber": 90
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryLevel",
+          "lineNumber": 92
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryType",
+          "lineNumber": 93
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryLevel",
+          "lineNumber": 98
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryType",
+          "lineNumber": 99
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryPrivacy",
+          "lineNumber": 100
+        },
+        {
+          "caller": "remember",
+          "callee": "self._authorize_write",
+          "lineNumber": 102
+        },
+        {
+          "caller": "remember",
+          "callee": "self.policy.evaluate",
+          "lineNumber": 109
+        },
+        {
+          "caller": "remember",
+          "callee": "metrics.rejected_memory_count.labels(reason=decision.reason or \"unknown\").inc",
+          "lineNumber": 117
+        },
+        {
+          "caller": "remember",
+          "callee": "metrics.rejected_memory_count.labels",
+          "lineNumber": 117
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryWriteResult",
+          "lineNumber": 118
+        },
+        {
+          "caller": "remember",
+          "callee": "datetime.now",
+          "lineNumber": 128
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryMetadata",
+          "lineNumber": 129
+        },
+        {
+          "caller": "remember",
+          "callee": "MemorySource",
+          "lineNumber": 136
+        },
+        {
+          "caller": "remember",
+          "callee": "session_expires_at",
+          "lineNumber": 144
+        },
+        {
+          "caller": "remember",
+          "callee": "meta.to_dict",
+          "lineNumber": 146
+        },
+        {
+          "caller": "remember",
+          "callee": "self.mem0.add",
+          "lineNumber": 149
+        },
+        {
+          "caller": "remember",
+          "callee": "self._extract_memory_id",
+          "lineNumber": 158
+        },
+        {
+          "caller": "remember",
+          "callee": "metrics.memory_add_success.inc",
+          "lineNumber": 159
+        },
+        {
+          "caller": "remember",
+          "callee": "metrics.memory_add_failure.inc",
+          "lineNumber": 161
+        },
+        {
+          "caller": "remember",
+          "callee": "logger.exception",
+          "lineNumber": 162
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryWriteResult",
+          "lineNumber": 163
+        },
+        {
+          "caller": "remember",
+          "callee": "self.registry_repo.register",
+          "lineNumber": 172
+        },
+        {
+          "caller": "remember",
+          "callee": "invalidate_memory_search_cache",
+          "lineNumber": 181
+        },
+        {
+          "caller": "remember",
+          "callee": "self.audit_repo.log_operation",
+          "lineNumber": 184
+        },
+        {
+          "caller": "remember",
+          "callee": "self.db.commit",
+          "lineNumber": 196
+        },
+        {
+          "caller": "remember",
+          "callee": "MemoryWriteResult",
+          "lineNumber": 198
+        },
+        {
+          "caller": "remember",
+          "callee": "str",
+          "lineNumber": 199
+        },
+        {
+          "caller": "remember",
+          "callee": "uuid4",
+          "lineNumber": 199
+        },
+        {
+          "caller": "remember",
+          "callee": "bool",
+          "lineNumber": 202
+        },
+        {
+          "caller": "recall",
+          "callee": "MemoryLevel",
+          "lineNumber": 221
+        },
+        {
+          "caller": "recall",
+          "callee": "self._ensure_project_access",
+          "lineNumber": 223
+        },
+        {
+          "caller": "recall",
+          "callee": "get_cached_memory_search",
+          "lineNumber": 230
+        },
+        {
+          "caller": "recall",
+          "callee": "list",
+          "lineNumber": 243
+        },
+        {
+          "caller": "recall",
+          "callee": "perf_counter",
+          "lineNumber": 244
+        },
+        {
+          "caller": "_search_level",
+          "callee": "self.mem0.search",
+          "lineNumber": 251
+        },
+        {
+          "caller": "_search_level",
+          "callee": "self._filter_authorized_read_items",
+          "lineNumber": 260
+        },
+        {
+          "caller": "recall",
+          "callee": "asyncio.gather",
+          "lineNumber": 263
+        },
+        {
+          "caller": "recall",
+          "callee": "_search_level",
+          "lineNumber": 264
+        },
+        {
+          "caller": "recall",
+          "callee": "collected.extend",
+          "lineNumber": 267
+        },
+        {
+          "caller": "recall",
+          "callee": "metrics.memory_search_success.inc",
+          "lineNumber": 268
+        },
+        {
+          "caller": "recall",
+          "callee": "metrics.memory_search_failure.inc",
+          "lineNumber": 270
+        },
+        {
+          "caller": "recall",
+          "callee": "logger.exception",
+          "lineNumber": 271
+        },
+        {
+          "caller": "recall",
+          "callee": "perf_counter",
+          "lineNumber": 274
+        },
+        {
+          "caller": "recall",
+          "callee": "metrics.memory_search_latency_ms.observe",
+          "lineNumber": 275
+        },
+        {
+          "caller": "recall",
+          "callee": "self.audit_repo.log_operation",
+          "lineNumber": 278
+        },
+        {
+          "caller": "recall",
+          "callee": "\",\".join",
+          "lineNumber": 285
+        },
+        {
+          "caller": "recall",
+          "callee": "len",
+          "lineNumber": 287
+        },
+        {
+          "caller": "recall",
+          "callee": "self.db.commit",
+          "lineNumber": 290
+        },
+        {
+          "caller": "recall",
+          "callee": "self.consolidator.consolidate",
+          "lineNumber": 292
+        },
+        {
+          "caller": "recall",
+          "callee": "set_cached_memory_search",
+          "lineNumber": 294
+        },
+        {
+          "caller": "forget",
+          "callee": "self.registry_repo.get_by_external_id",
+          "lineNumber": 314
+        },
+        {
+          "caller": "forget",
+          "callee": "HTTPException",
+          "lineNumber": 316
+        },
+        {
+          "caller": "forget",
+          "callee": "HTTPException",
+          "lineNumber": 319
+        },
+        {
+          "caller": "forget",
+          "callee": "HTTPException",
+          "lineNumber": 325
+        },
+        {
+          "caller": "forget",
+          "callee": "self._ensure_project_access",
+          "lineNumber": 328
+        },
+        {
+          "caller": "forget",
+          "callee": "self.mem0.delete",
+          "lineNumber": 331
+        },
+        {
+          "caller": "forget",
+          "callee": "logger.exception",
+          "lineNumber": 333
+        },
+        {
+          "caller": "forget",
+          "callee": "HTTPException",
+          "lineNumber": 334
+        },
+        {
+          "caller": "forget",
+          "callee": "self.registry_repo.mark_deleted",
+          "lineNumber": 336
+        },
+        {
+          "caller": "forget",
+          "callee": "self.audit_repo.log_operation",
+          "lineNumber": 338
+        },
+        {
+          "caller": "forget",
+          "callee": "self.db.commit",
+          "lineNumber": 350
+        },
+        {
+          "caller": "forget",
+          "callee": "invalidate_memory_search_cache",
+          "lineNumber": 352
+        },
+        {
+          "caller": "list_user_memories",
+          "callee": "self._ensure_project_access",
+          "lineNumber": 367
+        },
+        {
+          "caller": "list_user_memories",
+          "callee": "MemoryLevel",
+          "lineNumber": 370
+        },
+        {
+          "caller": "list_user_memories",
+          "callee": "self.mem0.get_all",
+          "lineNumber": 373
+        },
+        {
+          "caller": "list_user_memories",
+          "callee": "items.extend",
+          "lineNumber": 381
+        },
+        {
+          "caller": "list_user_memories",
+          "callee": "self._filter_authorized_read_items",
+          "lineNumber": 381
+        },
+        {
+          "caller": "list_user_memories",
+          "callee": "self.consolidator.consolidate",
+          "lineNumber": 382
+        },
+        {
+          "caller": "get_memory",
+          "callee": "self.registry_repo.get_by_external_id",
+          "lineNumber": 385
+        },
+        {
+          "caller": "get_memory",
+          "callee": "HTTPException",
+          "lineNumber": 387
+        },
+        {
+          "caller": "get_memory",
+          "callee": "HTTPException",
+          "lineNumber": 389
+        },
+        {
+          "caller": "get_memory",
+          "callee": "self._ensure_project_access",
+          "lineNumber": 391
+        },
+        {
+          "caller": "get_memory",
+          "callee": "self.mem0.get",
+          "lineNumber": 393
+        },
+        {
+          "caller": "get_memory",
+          "callee": "HTTPException",
+          "lineNumber": 395
+        },
+        {
+          "caller": "get_memory",
+          "callee": "self._authorize_read_item",
+          "lineNumber": 396
+        },
+        {
+          "caller": "get_memory",
+          "callee": "HTTPException",
+          "lineNumber": 397
+        },
+        {
+          "caller": "build_prompt_context",
+          "callee": "self.recall_for_prompt",
+          "lineNumber": 401
+        },
+        {
+          "caller": "recall_for_prompt",
+          "callee": "self.context_builder.recall_ranked",
+          "lineNumber": 410
+        },
+        {
+          "caller": "recall_for_prompt",
+          "callee": "self.context_builder.format_context_block",
+          "lineNumber": 411
+        },
+        {
+          "caller": "recall_for_prompt",
+          "callee": "logger.exception",
+          "lineNumber": 413
+        },
+        {
+          "caller": "process_turn_memories",
+          "callee": "self.extractor.extract_from_turn",
+          "lineNumber": 431
+        },
+        {
+          "caller": "process_turn_memories",
+          "callee": "self.remember",
+          "lineNumber": 437
+        },
+        {
+          "caller": "process_turn_memories",
+          "callee": "results.append",
+          "lineNumber": 451
+        },
+        {
+          "caller": "_authorize_write",
+          "callee": "HTTPException",
+          "lineNumber": 463
+        },
+        {
+          "caller": "_authorize_write",
+          "callee": "self._ensure_project_access",
+          "lineNumber": 467
+        },
+        {
+          "caller": "_authorize_read_item",
+          "callee": "self._filter_authorized_read_items",
+          "lineNumber": 470
+        },
+        {
+          "caller": "_authorize_read_item",
+          "callee": "bool",
+          "lineNumber": 471
+        },
+        {
+          "caller": "_filter_authorized_read_items",
+          "callee": "self.projects_repo.filter_accessible_project_ids",
+          "lineNumber": 488
+        },
+        {
+          "caller": "_filter_authorized_read_items",
+          "callee": "self._item_authorized_for_read",
+          "lineNumber": 495
+        },
+        {
+          "caller": "_ensure_project_access",
+          "callee": "self.projects_repo.get_by_id_for_user",
+          "lineNumber": 521
+        },
+        {
+          "caller": "_ensure_project_access",
+          "callee": "HTTPException",
+          "lineNumber": 523
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "result.get",
+          "lineNumber": 529
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "str",
+          "lineNumber": 530
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "result.get",
+          "lineNumber": 531
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "isinstance",
+          "lineNumber": 532
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "isinstance",
+          "lineNumber": 534
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "first.get",
+          "lineNumber": 534
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "str",
+          "lineNumber": 535
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "isinstance",
+          "lineNumber": 536
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "first.get",
+          "lineNumber": 536
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "str",
+          "lineNumber": 537
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "str",
+          "lineNumber": 538
+        },
+        {
+          "caller": "_extract_memory_id",
+          "callee": "result.get",
+          "lineNumber": 538
+        }
+      ],
+      "metrics": {
+        "importCount": 14,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/memory/domain/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 29,
+      "nonEmptyLines": 28,
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/memory/domain/enums.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 52,
+      "nonEmptyLines": 40,
+      "classes": [
+        {
+          "name": "MemoryLevel",
+          "startLine": 4,
+          "endLine": 9,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "MemoryType",
+          "startLine": 12,
+          "endLine": 22,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "MemorySource",
+          "startLine": 25,
+          "endLine": 33,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "MemoryPrivacy",
+          "startLine": 36,
+          "endLine": 39,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "MemoryOperation",
+          "startLine": 42,
+          "endLine": 47,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "AgentScope",
+          "startLine": 50,
+          "endLine": 52,
+          "methods": [],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "MemoryLevel",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryType",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "MemorySource",
+          "line": 25,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryPrivacy",
+          "line": 36,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryOperation",
+          "line": 42,
+          "isDefault": false
+        },
+        {
+          "name": "AgentScope",
+          "line": 50,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 6,
+        "functionCount": 0,
+        "classCount": 6
+      }
+    },
+    {
+      "path": "backend/modules/memory/domain/models.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 131,
+      "nonEmptyLines": 116,
+      "classes": [
+        {
+          "name": "MemoryMetadata",
+          "startLine": 17,
+          "endLine": 89,
+          "methods": [
+            "to_dict",
+            "from_dict"
+          ],
+          "properties": [
+            "memory_level",
+            "memory_type",
+            "user_id",
+            "agent_id",
+            "run_id",
+            "project_id",
+            "source",
+            "source_ref",
+            "confidence",
+            "created_at",
+            "last_seen_at",
+            "last_confirmed_at",
+            "privacy",
+            "version",
+            "scope",
+            "event_type",
+            "occurred_at",
+            "expires_at",
+            "extra"
+          ]
+        },
+        {
+          "name": "MemoryItem",
+          "startLine": 93,
+          "endLine": 99,
+          "methods": [],
+          "properties": [
+            "id",
+            "content",
+            "metadata",
+            "score",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "MemoryWriteResult",
+          "startLine": 103,
+          "endLine": 108,
+          "methods": [],
+          "properties": [
+            "memory_id",
+            "memory_level",
+            "memory_type",
+            "accepted",
+            "rejection_reason"
+          ]
+        },
+        {
+          "name": "MemorySearchRequest",
+          "startLine": 112,
+          "endLine": 119,
+          "methods": [],
+          "properties": [
+            "user_id",
+            "agent_id",
+            "query",
+            "run_id",
+            "project_id",
+            "memory_levels",
+            "limit"
+          ]
+        },
+        {
+          "name": "WorkingMemoryContext",
+          "startLine": 123,
+          "endLine": 131,
+          "methods": [],
+          "properties": [
+            "user_message",
+            "tool_results",
+            "reasoning_inputs",
+            "retrieved_memories",
+            "run_id",
+            "project_id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "MemoryMetadata",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryItem",
+          "line": 92,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryWriteResult",
+          "line": 102,
+          "isDefault": false
+        },
+        {
+          "name": "MemorySearchRequest",
+          "line": 111,
+          "isDefault": false
+        },
+        {
+          "name": "WorkingMemoryContext",
+          "line": 122,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "to_dict",
+          "callee": "self.created_at.isoformat",
+          "lineNumber": 56
+        },
+        {
+          "caller": "to_dict",
+          "callee": "self.last_seen_at.isoformat",
+          "lineNumber": 58
+        },
+        {
+          "caller": "to_dict",
+          "callee": "self.last_confirmed_at.isoformat",
+          "lineNumber": 60
+        },
+        {
+          "caller": "to_dict",
+          "callee": "self.occurred_at.isoformat",
+          "lineNumber": 66
+        },
+        {
+          "caller": "to_dict",
+          "callee": "self.expires_at.isoformat",
+          "lineNumber": 68
+        },
+        {
+          "caller": "to_dict",
+          "callee": "payload.update",
+          "lineNumber": 70
+        },
+        {
+          "caller": "from_dict",
+          "callee": "cls",
+          "lineNumber": 75
+        },
+        {
+          "caller": "from_dict",
+          "callee": "MemoryLevel",
+          "lineNumber": 76
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 76
+        },
+        {
+          "caller": "from_dict",
+          "callee": "MemoryType",
+          "lineNumber": 77
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 77
+        },
+        {
+          "caller": "from_dict",
+          "callee": "str",
+          "lineNumber": 78
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 78
+        },
+        {
+          "caller": "from_dict",
+          "callee": "str",
+          "lineNumber": 79
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 79
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 80
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 81
+        },
+        {
+          "caller": "from_dict",
+          "callee": "MemorySource",
+          "lineNumber": 82
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 82
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 83
+        },
+        {
+          "caller": "from_dict",
+          "callee": "float",
+          "lineNumber": 84
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 84
+        },
+        {
+          "caller": "from_dict",
+          "callee": "MemoryPrivacy",
+          "lineNumber": 85
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 85
+        },
+        {
+          "caller": "from_dict",
+          "callee": "int",
+          "lineNumber": 86
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 86
+        },
+        {
+          "caller": "from_dict",
+          "callee": "AgentScope",
+          "lineNumber": 87
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 87
+        },
+        {
+          "caller": "from_dict",
+          "callee": "data.get",
+          "lineNumber": 88
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 5,
+        "functionCount": 0,
+        "classCount": 5
+      }
+    },
+    {
+      "path": "backend/modules/memory/domain/policies.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 100,
+      "nonEmptyLines": 79,
+      "functions": [
+        {
+          "name": "contains_secret",
+          "startLine": 52,
+          "endLine": 53,
+          "params": [
+            "content"
+          ]
+        },
+        {
+          "name": "is_ephemeral_statement",
+          "startLine": 56,
+          "endLine": 58,
+          "params": [
+            "content"
+          ]
+        },
+        {
+          "name": "evaluate_storage_policy",
+          "startLine": 61,
+          "endLine": 96,
+          "params": [
+            "content",
+            "memory_level",
+            "memory_type",
+            "confidence",
+            "privacy",
+            "min_confidence"
+          ]
+        },
+        {
+          "name": "session_expires_at",
+          "startLine": 99,
+          "endLine": 100,
+          "params": [
+            "ttl_days"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "PolicyDecision",
+          "startLine": 45,
+          "endLine": 49,
+          "methods": [],
+          "properties": [
+            "allowed",
+            "reason",
+            "adjusted_confidence",
+            "privacy"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "PolicyDecision",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "contains_secret",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "is_ephemeral_statement",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "evaluate_storage_policy",
+          "line": 61,
+          "isDefault": false
+        },
+        {
+          "name": "session_expires_at",
+          "line": 99,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "contains_secret",
+          "callee": "any",
+          "lineNumber": 53
+        },
+        {
+          "caller": "contains_secret",
+          "callee": "pattern.search",
+          "lineNumber": 53
+        },
+        {
+          "caller": "is_ephemeral_statement",
+          "callee": "content.strip().lower",
+          "lineNumber": 57
+        },
+        {
+          "caller": "is_ephemeral_statement",
+          "callee": "content.strip",
+          "lineNumber": 57
+        },
+        {
+          "caller": "is_ephemeral_statement",
+          "callee": "any",
+          "lineNumber": 58
+        },
+        {
+          "caller": "evaluate_storage_policy",
+          "callee": "PolicyDecision",
+          "lineNumber": 71
+        },
+        {
+          "caller": "evaluate_storage_policy",
+          "callee": "contains_secret",
+          "lineNumber": 73
+        },
+        {
+          "caller": "evaluate_storage_policy",
+          "callee": "PolicyDecision",
+          "lineNumber": 74
+        },
+        {
+          "caller": "evaluate_storage_policy",
+          "callee": "is_ephemeral_statement",
+          "lineNumber": 76
+        },
+        {
+          "caller": "evaluate_storage_policy",
+          "callee": "PolicyDecision",
+          "lineNumber": 77
+        },
+        {
+          "caller": "evaluate_storage_policy",
+          "callee": "PolicyDecision",
+          "lineNumber": 80
+        },
+        {
+          "caller": "evaluate_storage_policy",
+          "callee": "PolicyDecision",
+          "lineNumber": 90
+        },
+        {
+          "caller": "evaluate_storage_policy",
+          "callee": "min",
+          "lineNumber": 94
+        },
+        {
+          "caller": "evaluate_storage_policy",
+          "callee": "PolicyDecision",
+          "lineNumber": 96
+        },
+        {
+          "caller": "session_expires_at",
+          "callee": "datetime.now",
+          "lineNumber": 100
+        },
+        {
+          "caller": "session_expires_at",
+          "callee": "timedelta",
+          "lineNumber": 100
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 5,
+        "functionCount": 4,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/memory/infrastructure/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/memory/infrastructure/mem0_client.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 376,
+      "nonEmptyLines": 320,
+      "functions": [
+        {
+          "name": "build_entity_filters",
+          "startLine": 23,
+          "endLine": 58,
+          "params": [
+            "memory_level",
+            "user_id",
+            "agent_id",
+            "run_id",
+            "project_id",
+            "app_id",
+            "extra_metadata"
+          ]
+        },
+        {
+          "name": "_parse_memory_item",
+          "startLine": 61,
+          "endLine": 87,
+          "params": [
+            "raw"
+          ]
+        },
+        {
+          "name": "_parse_dt",
+          "startLine": 90,
+          "endLine": 98,
+          "params": [
+            "value"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "Mem0Adapter",
+          "startLine": 101,
+          "endLine": 130,
+          "methods": [
+            "available",
+            "add",
+            "search",
+            "get",
+            "get_all",
+            "delete"
+          ],
+          "properties": []
+        },
+        {
+          "name": "NullMem0Adapter",
+          "startLine": 133,
+          "endLine": 163,
+          "methods": [
+            "__init__",
+            "available",
+            "add",
+            "search",
+            "get",
+            "get_all",
+            "delete"
+          ],
+          "properties": []
+        },
+        {
+          "name": "Mem0Client",
+          "startLine": 166,
+          "endLine": 261,
+          "methods": [
+            "__init__",
+            "available",
+            "_build_adapter",
+            "add",
+            "search",
+            "get",
+            "get_all",
+            "delete"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_HostedMem0Adapter",
+          "startLine": 264,
+          "endLine": 319,
+          "methods": [
+            "__init__",
+            "available",
+            "add",
+            "search",
+            "get",
+            "get_all",
+            "delete"
+          ],
+          "properties": []
+        },
+        {
+          "name": "_OssMem0Adapter",
+          "startLine": 322,
+          "endLine": 376,
+          "methods": [
+            "__init__",
+            "available",
+            "add",
+            "search",
+            "get",
+            "get_all",
+            "delete"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "build_entity_filters",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "_parse_memory_item",
+          "line": 61,
+          "isDefault": false
+        },
+        {
+          "name": "_parse_dt",
+          "line": 90,
+          "isDefault": false
+        },
+        {
+          "name": "Mem0Adapter",
+          "line": 101,
+          "isDefault": false
+        },
+        {
+          "name": "NullMem0Adapter",
+          "line": 133,
+          "isDefault": false
+        },
+        {
+          "name": "Mem0Client",
+          "line": 166,
+          "isDefault": false
+        },
+        {
+          "name": "_HostedMem0Adapter",
+          "line": 264,
+          "isDefault": false
+        },
+        {
+          "name": "_OssMem0Adapter",
+          "line": 322,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "build_entity_filters",
+          "callee": "extra_metadata.items",
+          "lineNumber": 55
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "raw.get",
+          "lineNumber": 62
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "raw.get",
+          "lineNumber": 62
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "raw.get",
+          "lineNumber": 63
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "raw.get",
+          "lineNumber": 63
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "raw.get",
+          "lineNumber": 63
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "raw.get",
+          "lineNumber": 66
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "isinstance",
+          "lineNumber": 67
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "MemoryMetadata.from_dict",
+          "lineNumber": 70
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "MemoryMetadata",
+          "lineNumber": 72
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "MemoryLevel",
+          "lineNumber": 73
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "metadata_raw.get",
+          "lineNumber": 73
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "metadata_raw.get",
+          "lineNumber": 74
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "str",
+          "lineNumber": 75
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "metadata_raw.get",
+          "lineNumber": 75
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "str",
+          "lineNumber": 76
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "metadata_raw.get",
+          "lineNumber": 76
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "metadata_raw.get",
+          "lineNumber": 77
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "metadata_raw.get",
+          "lineNumber": 78
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "MemoryItem",
+          "lineNumber": 80
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "str",
+          "lineNumber": 81
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "str",
+          "lineNumber": 82
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "raw.get",
+          "lineNumber": 84
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "_parse_dt",
+          "lineNumber": 85
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "raw.get",
+          "lineNumber": 85
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "_parse_dt",
+          "lineNumber": 86
+        },
+        {
+          "caller": "_parse_memory_item",
+          "callee": "raw.get",
+          "lineNumber": 86
+        },
+        {
+          "caller": "_parse_dt",
+          "callee": "isinstance",
+          "lineNumber": 93
+        },
+        {
+          "caller": "_parse_dt",
+          "callee": "datetime.fromisoformat",
+          "lineNumber": 96
+        },
+        {
+          "caller": "_parse_dt",
+          "callee": "str(value).replace",
+          "lineNumber": 96
+        },
+        {
+          "caller": "_parse_dt",
+          "callee": "str",
+          "lineNumber": 96
+        },
+        {
+          "caller": "add",
+          "callee": "metrics.mem0_unavailable_count.inc",
+          "lineNumber": 144
+        },
+        {
+          "caller": "add",
+          "callee": "logger.warning",
+          "lineNumber": 145
+        },
+        {
+          "caller": "search",
+          "callee": "metrics.mem0_unavailable_count.inc",
+          "lineNumber": 149
+        },
+        {
+          "caller": "search",
+          "callee": "logger.warning",
+          "lineNumber": 150
+        },
+        {
+          "caller": "get",
+          "callee": "metrics.mem0_unavailable_count.inc",
+          "lineNumber": 154
+        },
+        {
+          "caller": "get_all",
+          "callee": "metrics.mem0_unavailable_count.inc",
+          "lineNumber": 158
+        },
+        {
+          "caller": "delete",
+          "callee": "metrics.mem0_unavailable_count.inc",
+          "lineNumber": 162
+        },
+        {
+          "caller": "delete",
+          "callee": "logger.warning",
+          "lineNumber": 163
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryConfig.from_settings",
+          "lineNumber": 170
+        },
+        {
+          "caller": "__init__",
+          "callee": "self._build_adapter",
+          "lineNumber": 171
+        },
+        {
+          "caller": "_build_adapter",
+          "callee": "NullMem0Adapter",
+          "lineNumber": 179
+        },
+        {
+          "caller": "_build_adapter",
+          "callee": "_OssMem0Adapter",
+          "lineNumber": 183
+        },
+        {
+          "caller": "_build_adapter",
+          "callee": "_HostedMem0Adapter",
+          "lineNumber": 184
+        },
+        {
+          "caller": "_build_adapter",
+          "callee": "logger.exception",
+          "lineNumber": 186
+        },
+        {
+          "caller": "_build_adapter",
+          "callee": "NullMem0Adapter",
+          "lineNumber": 187
+        },
+        {
+          "caller": "_build_adapter",
+          "callee": "str",
+          "lineNumber": 187
+        },
+        {
+          "caller": "add",
+          "callee": "build_entity_filters",
+          "lineNumber": 200
+        },
+        {
+          "caller": "add",
+          "callee": "self._adapter.add",
+          "lineNumber": 208
+        },
+        {
+          "caller": "search",
+          "callee": "build_entity_filters",
+          "lineNumber": 226
+        },
+        {
+          "caller": "search",
+          "callee": "self._adapter.search",
+          "lineNumber": 235
+        },
+        {
+          "caller": "get",
+          "callee": "self._adapter.get",
+          "lineNumber": 238
+        },
+        {
+          "caller": "get_all",
+          "callee": "build_entity_filters",
+          "lineNumber": 250
+        },
+        {
+          "caller": "get_all",
+          "callee": "self._adapter.get_all",
+          "lineNumber": 258
+        },
+        {
+          "caller": "delete",
+          "callee": "self._adapter.delete",
+          "lineNumber": 261
+        },
+        {
+          "caller": "__init__",
+          "callee": "AsyncMemoryClient",
+          "lineNumber": 269
+        },
+        {
+          "caller": "add",
+          "callee": "self._client.add",
+          "lineNumber": 283
+        },
+        {
+          "caller": "add",
+          "callee": "isinstance",
+          "lineNumber": 289
+        },
+        {
+          "caller": "search",
+          "callee": "self._client.search",
+          "lineNumber": 298
+        },
+        {
+          "caller": "search",
+          "callee": "result.get",
+          "lineNumber": 299
+        },
+        {
+          "caller": "search",
+          "callee": "isinstance",
+          "lineNumber": 299
+        },
+        {
+          "caller": "search",
+          "callee": "_parse_memory_item",
+          "lineNumber": 300
+        },
+        {
+          "caller": "get",
+          "callee": "self._client.get",
+          "lineNumber": 303
+        },
+        {
+          "caller": "get",
+          "callee": "isinstance",
+          "lineNumber": 304
+        },
+        {
+          "caller": "get",
+          "callee": "_parse_memory_item",
+          "lineNumber": 305
+        },
+        {
+          "caller": "get_all",
+          "callee": "self._client.get_all",
+          "lineNumber": 314
+        },
+        {
+          "caller": "get_all",
+          "callee": "result.get",
+          "lineNumber": 315
+        },
+        {
+          "caller": "get_all",
+          "callee": "isinstance",
+          "lineNumber": 315
+        },
+        {
+          "caller": "get_all",
+          "callee": "_parse_memory_item",
+          "lineNumber": 316
+        },
+        {
+          "caller": "delete",
+          "callee": "self._client.delete",
+          "lineNumber": 319
+        },
+        {
+          "caller": "__init__",
+          "callee": "AsyncMemory",
+          "lineNumber": 326
+        },
+        {
+          "caller": "add",
+          "callee": "filters.get",
+          "lineNumber": 343
+        },
+        {
+          "caller": "add",
+          "callee": "self._client.add",
+          "lineNumber": 345
+        },
+        {
+          "caller": "add",
+          "callee": "isinstance",
+          "lineNumber": 346
+        },
+        {
+          "caller": "search",
+          "callee": "self._client.search",
+          "lineNumber": 355
+        },
+        {
+          "caller": "search",
+          "callee": "result.get",
+          "lineNumber": 356
+        },
+        {
+          "caller": "search",
+          "callee": "isinstance",
+          "lineNumber": 356
+        },
+        {
+          "caller": "search",
+          "callee": "_parse_memory_item",
+          "lineNumber": 357
+        },
+        {
+          "caller": "get",
+          "callee": "self._client.get",
+          "lineNumber": 360
+        },
+        {
+          "caller": "get",
+          "callee": "isinstance",
+          "lineNumber": 361
+        },
+        {
+          "caller": "get",
+          "callee": "_parse_memory_item",
+          "lineNumber": 362
+        },
+        {
+          "caller": "get_all",
+          "callee": "self._client.get_all",
+          "lineNumber": 371
+        },
+        {
+          "caller": "get_all",
+          "callee": "result.get",
+          "lineNumber": 372
+        },
+        {
+          "caller": "get_all",
+          "callee": "isinstance",
+          "lineNumber": 372
+        },
+        {
+          "caller": "get_all",
+          "callee": "_parse_memory_item",
+          "lineNumber": 373
+        },
+        {
+          "caller": "delete",
+          "callee": "self._client.delete",
+          "lineNumber": 376
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 8,
+        "functionCount": 3,
+        "classCount": 5
+      }
+    },
+    {
+      "path": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 149,
+      "nonEmptyLines": 134,
+      "classes": [
+        {
+          "name": "MemoryAuditRepository",
+          "startLine": 14,
+          "endLine": 60,
+          "methods": [
+            "__init__",
+            "log_operation",
+            "list_for_user"
+          ],
+          "properties": []
+        },
+        {
+          "name": "MemoryRegistryRepository",
+          "startLine": 63,
+          "endLine": 149,
+          "methods": [
+            "__init__",
+            "register",
+            "get_by_external_id",
+            "mark_deleted",
+            "list_for_user",
+            "user_owns_memory"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "MemoryAuditRepository",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryRegistryRepository",
+          "line": 63,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "log_operation",
+          "callee": "MemoryAuditLog",
+          "lineNumber": 32
+        },
+        {
+          "caller": "log_operation",
+          "callee": "json.dumps",
+          "lineNumber": 41
+        },
+        {
+          "caller": "log_operation",
+          "callee": "self.db.add",
+          "lineNumber": 44
+        },
+        {
+          "caller": "log_operation",
+          "callee": "self.db.flush",
+          "lineNumber": 45
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "select(MemoryAuditLog)\n            .where(MemoryAuditLog.user_id == user_id)\n            .order_by",
+          "lineNumber": 56
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "select(MemoryAuditLog)\n            .where",
+          "lineNumber": 56
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "select",
+          "lineNumber": 56
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "MemoryAuditLog.created_at.desc",
+          "lineNumber": 58
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "paginate_scalars",
+          "lineNumber": 60
+        },
+        {
+          "caller": "register",
+          "callee": "self.get_by_external_id",
+          "lineNumber": 78
+        },
+        {
+          "caller": "register",
+          "callee": "datetime.now",
+          "lineNumber": 87
+        },
+        {
+          "caller": "register",
+          "callee": "self.db.flush",
+          "lineNumber": 89
+        },
+        {
+          "caller": "register",
+          "callee": "MemoryRegistry",
+          "lineNumber": 92
+        },
+        {
+          "caller": "register",
+          "callee": "self.db.add",
+          "lineNumber": 102
+        },
+        {
+          "caller": "register",
+          "callee": "self.db.flush",
+          "lineNumber": 103
+        },
+        {
+          "caller": "get_by_external_id",
+          "callee": "self.db.execute",
+          "lineNumber": 107
+        },
+        {
+          "caller": "get_by_external_id",
+          "callee": "select(MemoryRegistry).where",
+          "lineNumber": 108
+        },
+        {
+          "caller": "get_by_external_id",
+          "callee": "select",
+          "lineNumber": 108
+        },
+        {
+          "caller": "get_by_external_id",
+          "callee": "result.scalar_one_or_none",
+          "lineNumber": 112
+        },
+        {
+          "caller": "mark_deleted",
+          "callee": "self.get_by_external_id",
+          "lineNumber": 115
+        },
+        {
+          "caller": "mark_deleted",
+          "callee": "datetime.now",
+          "lineNumber": 119
+        },
+        {
+          "caller": "mark_deleted",
+          "callee": "datetime.now",
+          "lineNumber": 120
+        },
+        {
+          "caller": "mark_deleted",
+          "callee": "self.db.flush",
+          "lineNumber": 121
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "select(MemoryRegistry).where",
+          "lineNumber": 131
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "select",
+          "lineNumber": 131
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "stmt.where",
+          "lineNumber": 136
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "stmt.where",
+          "lineNumber": 138
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "stmt.order_by",
+          "lineNumber": 139
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "MemoryRegistry.created_at.desc",
+          "lineNumber": 139
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "self.db.execute",
+          "lineNumber": 140
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "list",
+          "lineNumber": 141
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "result.scalars().all",
+          "lineNumber": 141
+        },
+        {
+          "caller": "list_for_user",
+          "callee": "result.scalars",
+          "lineNumber": 141
+        },
+        {
+          "caller": "user_owns_memory",
+          "callee": "self.get_by_external_id",
+          "lineNumber": 144
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/modules/memory/infrastructure/memory_config.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 50,
+      "nonEmptyLines": 43,
+      "classes": [
+        {
+          "name": "MemoryConfig",
+          "startLine": 9,
+          "endLine": 50,
+          "methods": [
+            "from_settings",
+            "is_hosted",
+            "mem0_configured"
+          ],
+          "properties": [
+            "enabled",
+            "write_enabled",
+            "audit_enabled",
+            "default_limit",
+            "min_confidence",
+            "session_ttl_days",
+            "mem0_mode",
+            "mem0_api_key",
+            "mem0_org_id",
+            "mem0_project_id",
+            "mem0_base_url",
+            "app_id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "MemoryConfig",
+          "line": 8,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "from_settings",
+          "callee": "cls",
+          "lineNumber": 25
+        },
+        {
+          "caller": "mem0_configured",
+          "callee": "bool",
+          "lineNumber": 50
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/memory/infrastructure/metrics.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 23,
+      "nonEmptyLines": 21,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/tests/test_memory.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 436,
+      "nonEmptyLines": 390,
+      "functions": [
+        {
+          "name": "_item",
+          "startLine": 23,
+          "endLine": 47,
+          "params": [
+            "memory_id",
+            "content",
+            "user_id",
+            "level",
+            "run_id",
+            "project_id",
+            "score"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "MemoryPolicyTest",
+          "startLine": 50,
+          "endLine": 62,
+          "methods": [
+            "test_secrets_rejected"
+          ],
+          "properties": []
+        },
+        {
+          "name": "MemoryRouterTest",
+          "startLine": 65,
+          "endLine": 82,
+          "methods": [
+            "test_preference_routes_to_user_memory",
+            "test_task_state_routes_to_session_memory",
+            "test_project_decision_routes_to_project_memory"
+          ],
+          "properties": []
+        },
+        {
+          "name": "MemoryConsolidatorTest",
+          "startLine": 85,
+          "endLine": 92,
+          "methods": [
+            "test_duplicate_memories_consolidated"
+          ],
+          "properties": []
+        },
+        {
+          "name": "MemoryContextBuilderTest",
+          "startLine": 95,
+          "endLine": 130,
+          "methods": [
+            "test_memory_retrieval_included_in_prompt_context",
+            "test_recall_ranked_uses_single_recall_with_all_levels"
+          ],
+          "properties": []
+        },
+        {
+          "name": "MemoryRecallForPromptTest",
+          "startLine": 133,
+          "endLine": 166,
+          "methods": [
+            "test_recall_for_prompt_returns_context_and_items_once"
+          ],
+          "properties": []
+        },
+        {
+          "name": "Mem0FilterTest",
+          "startLine": 169,
+          "endLine": 191,
+          "methods": [
+            "test_session_memory_requires_run_id_filter",
+            "test_project_memory_includes_project_id"
+          ],
+          "properties": []
+        },
+        {
+          "name": "MemoryServiceIsolationTest",
+          "startLine": 194,
+          "endLine": 375,
+          "methods": [
+            "asyncSetUp",
+            "_service_with_items",
+            "test_user_a_cannot_read_user_b_memory",
+            "test_session_memory_only_for_matching_run_id",
+            "test_project_memory_requires_project_id",
+            "test_recall_searches_multiple_levels_in_parallel",
+            "test_recall_bulk_authorizes_project_memories_with_one_query",
+            "test_deleted_memory_not_returned_from_registry_get",
+            "test_secrets_not_stored"
+          ],
+          "properties": []
+        },
+        {
+          "name": "MemoryExtractorTest",
+          "startLine": 378,
+          "endLine": 386,
+          "methods": [
+            "test_extracts_durable_preference_not_every_message"
+          ],
+          "properties": []
+        },
+        {
+          "name": "NullMem0AdapterTest",
+          "startLine": 389,
+          "endLine": 394,
+          "methods": [
+            "test_ai_works_when_mem0_unavailable"
+          ],
+          "properties": []
+        },
+        {
+          "name": "AgentServiceDegradedTest",
+          "startLine": 397,
+          "endLine": 432,
+          "methods": [
+            "test_agent_run_without_memory"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_item",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryPolicyTest",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryRouterTest",
+          "line": 65,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryConsolidatorTest",
+          "line": 85,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryContextBuilderTest",
+          "line": 95,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryRecallForPromptTest",
+          "line": 133,
+          "isDefault": false
+        },
+        {
+          "name": "Mem0FilterTest",
+          "line": 169,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryServiceIsolationTest",
+          "line": 194,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryExtractorTest",
+          "line": 378,
+          "isDefault": false
+        },
+        {
+          "name": "NullMem0AdapterTest",
+          "line": 389,
+          "isDefault": false
+        },
+        {
+          "name": "AgentServiceDegradedTest",
+          "line": 397,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_item",
+          "callee": "MemoryItem",
+          "lineNumber": 33
+        },
+        {
+          "caller": "_item",
+          "callee": "MemoryMetadata",
+          "lineNumber": 37
+        },
+        {
+          "caller": "_item",
+          "callee": "datetime.now",
+          "lineNumber": 45
+        },
+        {
+          "caller": "test_secrets_rejected",
+          "callee": "self.assertTrue",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_secrets_rejected",
+          "callee": "contains_secret",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_secrets_rejected",
+          "callee": "evaluate_storage_policy",
+          "lineNumber": 53
+        },
+        {
+          "caller": "test_secrets_rejected",
+          "callee": "self.assertFalse",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_secrets_rejected",
+          "callee": "self.assertEqual",
+          "lineNumber": 62
+        },
+        {
+          "caller": "test_preference_routes_to_user_memory",
+          "callee": "MemoryRouter().route",
+          "lineNumber": 67
+        },
+        {
+          "caller": "test_preference_routes_to_user_memory",
+          "callee": "MemoryRouter",
+          "lineNumber": 67
+        },
+        {
+          "caller": "test_preference_routes_to_user_memory",
+          "callee": "self.assertEqual",
+          "lineNumber": 68
+        },
+        {
+          "caller": "test_preference_routes_to_user_memory",
+          "callee": "self.assertEqual",
+          "lineNumber": 69
+        },
+        {
+          "caller": "test_task_state_routes_to_session_memory",
+          "callee": "MemoryRouter().route",
+          "lineNumber": 72
+        },
+        {
+          "caller": "test_task_state_routes_to_session_memory",
+          "callee": "MemoryRouter",
+          "lineNumber": 72
+        },
+        {
+          "caller": "test_task_state_routes_to_session_memory",
+          "callee": "self.assertEqual",
+          "lineNumber": 73
+        },
+        {
+          "caller": "test_task_state_routes_to_session_memory",
+          "callee": "self.assertEqual",
+          "lineNumber": 74
+        },
+        {
+          "caller": "test_project_decision_routes_to_project_memory",
+          "callee": "MemoryRouter().route",
+          "lineNumber": 77
+        },
+        {
+          "caller": "test_project_decision_routes_to_project_memory",
+          "callee": "MemoryRouter",
+          "lineNumber": 77
+        },
+        {
+          "caller": "test_project_decision_routes_to_project_memory",
+          "callee": "self.assertEqual",
+          "lineNumber": 81
+        },
+        {
+          "caller": "test_project_decision_routes_to_project_memory",
+          "callee": "self.assertEqual",
+          "lineNumber": 82
+        },
+        {
+          "caller": "test_duplicate_memories_consolidated",
+          "callee": "_item",
+          "lineNumber": 88
+        },
+        {
+          "caller": "test_duplicate_memories_consolidated",
+          "callee": "_item",
+          "lineNumber": 89
+        },
+        {
+          "caller": "test_duplicate_memories_consolidated",
+          "callee": "MemoryConsolidator().consolidate",
+          "lineNumber": 91
+        },
+        {
+          "caller": "test_duplicate_memories_consolidated",
+          "callee": "MemoryConsolidator",
+          "lineNumber": 91
+        },
+        {
+          "caller": "test_duplicate_memories_consolidated",
+          "callee": "self.assertEqual",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_duplicate_memories_consolidated",
+          "callee": "len",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_memory_retrieval_included_in_prompt_context",
+          "callee": "AsyncMock",
+          "lineNumber": 97
+        },
+        {
+          "caller": "test_memory_retrieval_included_in_prompt_context",
+          "callee": "AsyncMock",
+          "lineNumber": 98
+        },
+        {
+          "caller": "test_memory_retrieval_included_in_prompt_context",
+          "callee": "_item",
+          "lineNumber": 99
+        },
+        {
+          "caller": "test_memory_retrieval_included_in_prompt_context",
+          "callee": "MemoryContextBuilder",
+          "lineNumber": 101
+        },
+        {
+          "caller": "test_memory_retrieval_included_in_prompt_context",
+          "callee": "builder.build_context_block",
+          "lineNumber": 102
+        },
+        {
+          "caller": "test_memory_retrieval_included_in_prompt_context",
+          "callee": "MemorySearchRequest",
+          "lineNumber": 103
+        },
+        {
+          "caller": "test_memory_retrieval_included_in_prompt_context",
+          "callee": "mock_service.recall.assert_awaited_once",
+          "lineNumber": 109
+        },
+        {
+          "caller": "test_memory_retrieval_included_in_prompt_context",
+          "callee": "self.assertIn",
+          "lineNumber": 110
+        },
+        {
+          "caller": "test_memory_retrieval_included_in_prompt_context",
+          "callee": "self.assertIn",
+          "lineNumber": 111
+        },
+        {
+          "caller": "test_memory_retrieval_included_in_prompt_context",
+          "callee": "self.assertIn",
+          "lineNumber": 112
+        },
+        {
+          "caller": "test_recall_ranked_uses_single_recall_with_all_levels",
+          "callee": "AsyncMock",
+          "lineNumber": 115
+        },
+        {
+          "caller": "test_recall_ranked_uses_single_recall_with_all_levels",
+          "callee": "AsyncMock",
+          "lineNumber": 116
+        },
+        {
+          "caller": "test_recall_ranked_uses_single_recall_with_all_levels",
+          "callee": "MemoryContextBuilder",
+          "lineNumber": 117
+        },
+        {
+          "caller": "test_recall_ranked_uses_single_recall_with_all_levels",
+          "callee": "builder.recall_ranked",
+          "lineNumber": 118
+        },
+        {
+          "caller": "test_recall_ranked_uses_single_recall_with_all_levels",
+          "callee": "MemorySearchRequest",
+          "lineNumber": 119
+        },
+        {
+          "caller": "test_recall_ranked_uses_single_recall_with_all_levels",
+          "callee": "mock_service.recall.assert_awaited_once",
+          "lineNumber": 125
+        },
+        {
+          "caller": "test_recall_ranked_uses_single_recall_with_all_levels",
+          "callee": "self.assertEqual",
+          "lineNumber": 127
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "MemoryConfig",
+          "lineNumber": 136
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "MemoryService",
+          "lineNumber": 150
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "AsyncMock",
+          "lineNumber": 150
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "_item",
+          "lineNumber": 151
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "AsyncMock",
+          "lineNumber": 152
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "MagicMock",
+          "lineNumber": 153
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "service.recall_for_prompt",
+          "lineNumber": 155
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "MemorySearchRequest",
+          "lineNumber": 156
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "service.context_builder.recall_ranked.assert_awaited_once",
+          "lineNumber": 163
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "service.context_builder.format_context_block.assert_called_once_with",
+          "lineNumber": 164
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "self.assertEqual",
+          "lineNumber": 165
+        },
+        {
+          "caller": "test_recall_for_prompt_returns_context_and_items_once",
+          "callee": "self.assertEqual",
+          "lineNumber": 166
+        },
+        {
+          "caller": "test_session_memory_requires_run_id_filter",
+          "callee": "build_entity_filters",
+          "lineNumber": 171
+        },
+        {
+          "caller": "test_session_memory_requires_run_id_filter",
+          "callee": "self.assertEqual",
+          "lineNumber": 179
+        },
+        {
+          "caller": "test_session_memory_requires_run_id_filter",
+          "callee": "self.assertEqual",
+          "lineNumber": 180
+        },
+        {
+          "caller": "test_project_memory_includes_project_id",
+          "callee": "build_entity_filters",
+          "lineNumber": 183
+        },
+        {
+          "caller": "test_project_memory_includes_project_id",
+          "callee": "self.assertEqual",
+          "lineNumber": 191
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "AsyncMock",
+          "lineNumber": 196
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "SimpleNamespace",
+          "lineNumber": 197
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "MemoryService",
+          "lineNumber": 212
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "MagicMock",
+          "lineNumber": 213
+        },
+        {
+          "caller": "search",
+          "callee": "items_by_level.get",
+          "lineNumber": 217
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "AsyncMock",
+          "lineNumber": 219
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "AsyncMock",
+          "lineNumber": 220
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "AsyncMock",
+          "lineNumber": 221
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "AsyncMock",
+          "lineNumber": 222
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "MagicMock",
+          "lineNumber": 223
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "AsyncMock",
+          "lineNumber": 224
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "SimpleNamespace",
+          "lineNumber": 225
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "AsyncMock",
+          "lineNumber": 227
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "set",
+          "lineNumber": 228
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "MagicMock",
+          "lineNumber": 230
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "MagicMock",
+          "lineNumber": 231
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "AsyncMock",
+          "lineNumber": 232
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "AsyncMock",
+          "lineNumber": 233
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "AsyncMock",
+          "lineNumber": 234
+        },
+        {
+          "caller": "_service_with_items",
+          "callee": "AsyncMock",
+          "lineNumber": 235
+        },
+        {
+          "caller": "test_user_a_cannot_read_user_b_memory",
+          "callee": "self._service_with_items",
+          "lineNumber": 239
+        },
+        {
+          "caller": "test_user_a_cannot_read_user_b_memory",
+          "callee": "_item",
+          "lineNumber": 242
+        },
+        {
+          "caller": "test_user_a_cannot_read_user_b_memory",
+          "callee": "service.recall",
+          "lineNumber": 246
+        },
+        {
+          "caller": "test_user_a_cannot_read_user_b_memory",
+          "callee": "self.assertEqual",
+          "lineNumber": 252
+        },
+        {
+          "caller": "test_session_memory_only_for_matching_run_id",
+          "callee": "self._service_with_items",
+          "lineNumber": 255
+        },
+        {
+          "caller": "test_session_memory_only_for_matching_run_id",
+          "callee": "_item",
+          "lineNumber": 258
+        },
+        {
+          "caller": "test_session_memory_only_for_matching_run_id",
+          "callee": "service.recall",
+          "lineNumber": 262
+        },
+        {
+          "caller": "test_session_memory_only_for_matching_run_id",
+          "callee": "self.assertEqual",
+          "lineNumber": 269
+        },
+        {
+          "caller": "test_session_memory_only_for_matching_run_id",
+          "callee": "len",
+          "lineNumber": 269
+        },
+        {
+          "caller": "test_session_memory_only_for_matching_run_id",
+          "callee": "service.mem0.search.assert_called",
+          "lineNumber": 270
+        },
+        {
+          "caller": "test_session_memory_only_for_matching_run_id",
+          "callee": "self.assertEqual",
+          "lineNumber": 272
+        },
+        {
+          "caller": "test_project_memory_requires_project_id",
+          "callee": "self._service_with_items",
+          "lineNumber": 275
+        },
+        {
+          "caller": "test_project_memory_requires_project_id",
+          "callee": "_item",
+          "lineNumber": 278
+        },
+        {
+          "caller": "test_project_memory_requires_project_id",
+          "callee": "service.recall",
+          "lineNumber": 282
+        },
+        {
+          "caller": "test_project_memory_requires_project_id",
+          "callee": "self.assertEqual",
+          "lineNumber": 289
+        },
+        {
+          "caller": "test_project_memory_requires_project_id",
+          "callee": "len",
+          "lineNumber": 289
+        },
+        {
+          "caller": "test_project_memory_requires_project_id",
+          "callee": "service.projects_repo.get_by_id_for_user.assert_called_with",
+          "lineNumber": 290
+        },
+        {
+          "caller": "test_recall_searches_multiple_levels_in_parallel",
+          "callee": "self._service_with_items",
+          "lineNumber": 293
+        },
+        {
+          "caller": "test_recall_searches_multiple_levels_in_parallel",
+          "callee": "_item",
+          "lineNumber": 295
+        },
+        {
+          "caller": "test_recall_searches_multiple_levels_in_parallel",
+          "callee": "_item",
+          "lineNumber": 296
+        },
+        {
+          "caller": "test_recall_searches_multiple_levels_in_parallel",
+          "callee": "patch",
+          "lineNumber": 299
+        },
+        {
+          "caller": "test_recall_searches_multiple_levels_in_parallel",
+          "callee": "service.recall",
+          "lineNumber": 300
+        },
+        {
+          "caller": "test_recall_searches_multiple_levels_in_parallel",
+          "callee": "gather_fn.assert_called",
+          "lineNumber": 306
+        },
+        {
+          "caller": "test_recall_searches_multiple_levels_in_parallel",
+          "callee": "self.assertEqual",
+          "lineNumber": 307
+        },
+        {
+          "caller": "test_recall_searches_multiple_levels_in_parallel",
+          "callee": "len",
+          "lineNumber": 307
+        },
+        {
+          "caller": "test_recall_searches_multiple_levels_in_parallel",
+          "callee": "self.assertEqual",
+          "lineNumber": 308
+        },
+        {
+          "caller": "test_recall_bulk_authorizes_project_memories_with_one_query",
+          "callee": "self._service_with_items",
+          "lineNumber": 311
+        },
+        {
+          "caller": "test_recall_bulk_authorizes_project_memories_with_one_query",
+          "callee": "_item",
+          "lineNumber": 314
+        },
+        {
+          "caller": "test_recall_bulk_authorizes_project_memories_with_one_query",
+          "callee": "_item",
+          "lineNumber": 320
+        },
+        {
+          "caller": "test_recall_bulk_authorizes_project_memories_with_one_query",
+          "callee": "AsyncMock",
+          "lineNumber": 329
+        },
+        {
+          "caller": "test_recall_bulk_authorizes_project_memories_with_one_query",
+          "callee": "service.recall",
+          "lineNumber": 333
+        },
+        {
+          "caller": "test_recall_bulk_authorizes_project_memories_with_one_query",
+          "callee": "service.projects_repo.filter_accessible_project_ids.assert_awaited_once",
+          "lineNumber": 341
+        },
+        {
+          "caller": "test_recall_bulk_authorizes_project_memories_with_one_query",
+          "callee": "self.assertEqual",
+          "lineNumber": 343
+        },
+        {
+          "caller": "test_recall_bulk_authorizes_project_memories_with_one_query",
+          "callee": "self.assertEqual",
+          "lineNumber": 344
+        },
+        {
+          "caller": "test_recall_bulk_authorizes_project_memories_with_one_query",
+          "callee": "len",
+          "lineNumber": 344
+        },
+        {
+          "caller": "test_recall_bulk_authorizes_project_memories_with_one_query",
+          "callee": "self.assertEqual",
+          "lineNumber": 345
+        },
+        {
+          "caller": "test_deleted_memory_not_returned_from_registry_get",
+          "callee": "self._service_with_items",
+          "lineNumber": 348
+        },
+        {
+          "caller": "test_deleted_memory_not_returned_from_registry_get",
+          "callee": "AsyncMock",
+          "lineNumber": 349
+        },
+        {
+          "caller": "test_deleted_memory_not_returned_from_registry_get",
+          "callee": "SimpleNamespace",
+          "lineNumber": 350
+        },
+        {
+          "caller": "test_deleted_memory_not_returned_from_registry_get",
+          "callee": "self.assertRaises",
+          "lineNumber": 362
+        },
+        {
+          "caller": "test_deleted_memory_not_returned_from_registry_get",
+          "callee": "service.get_memory",
+          "lineNumber": 363
+        },
+        {
+          "caller": "test_deleted_memory_not_returned_from_registry_get",
+          "callee": "self.assertEqual",
+          "lineNumber": 364
+        },
+        {
+          "caller": "test_secrets_not_stored",
+          "callee": "self._service_with_items",
+          "lineNumber": 367
+        },
+        {
+          "caller": "test_secrets_not_stored",
+          "callee": "service.remember",
+          "lineNumber": 368
+        },
+        {
+          "caller": "test_secrets_not_stored",
+          "callee": "self.assertFalse",
+          "lineNumber": 374
+        },
+        {
+          "caller": "test_secrets_not_stored",
+          "callee": "service.mem0.add.assert_not_called",
+          "lineNumber": 375
+        },
+        {
+          "caller": "test_extracts_durable_preference_not_every_message",
+          "callee": "MemoryExtractor",
+          "lineNumber": 380
+        },
+        {
+          "caller": "test_extracts_durable_preference_not_every_message",
+          "callee": "extractor.extract_from_turn",
+          "lineNumber": 381
+        },
+        {
+          "caller": "test_extracts_durable_preference_not_every_message",
+          "callee": "self.assertTrue",
+          "lineNumber": 385
+        },
+        {
+          "caller": "test_extracts_durable_preference_not_every_message",
+          "callee": "any",
+          "lineNumber": 385
+        },
+        {
+          "caller": "test_extracts_durable_preference_not_every_message",
+          "callee": "c.content.lower",
+          "lineNumber": 385
+        },
+        {
+          "caller": "test_extracts_durable_preference_not_every_message",
+          "callee": "self.assertFalse",
+          "lineNumber": 386
+        },
+        {
+          "caller": "test_extracts_durable_preference_not_every_message",
+          "callee": "any",
+          "lineNumber": 386
+        },
+        {
+          "caller": "test_extracts_durable_preference_not_every_message",
+          "callee": "c.content.lower",
+          "lineNumber": 386
+        },
+        {
+          "caller": "test_ai_works_when_mem0_unavailable",
+          "callee": "NullMem0Adapter",
+          "lineNumber": 391
+        },
+        {
+          "caller": "test_ai_works_when_mem0_unavailable",
+          "callee": "self.assertFalse",
+          "lineNumber": 392
+        },
+        {
+          "caller": "test_ai_works_when_mem0_unavailable",
+          "callee": "adapter.search",
+          "lineNumber": 393
+        },
+        {
+          "caller": "test_ai_works_when_mem0_unavailable",
+          "callee": "self.assertEqual",
+          "lineNumber": 394
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "SimpleNamespace",
+          "lineNumber": 405
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "AsyncMock",
+          "lineNumber": 409
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "SimpleNamespace",
+          "lineNumber": 410
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "AsyncMock",
+          "lineNumber": 413
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "AgentService",
+          "lineNumber": 417
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "AsyncMock",
+          "lineNumber": 417
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "SimpleNamespace",
+          "lineNumber": 418
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "service.run_agent_prompt",
+          "lineNumber": 419
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "self.assertEqual",
+          "lineNumber": 429
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "memory_instance.recall_for_prompt.assert_not_awaited",
+          "lineNumber": 430
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "memory_instance.build_prompt_context.assert_not_called",
+          "lineNumber": 431
+        },
+        {
+          "caller": "test_agent_run_without_memory",
+          "callee": "ai_instance.run_prompt.assert_awaited_once",
+          "lineNumber": 432
+        }
+      ],
+      "metrics": {
+        "importCount": 10,
+        "exportCount": 11,
+        "functionCount": 1,
+        "classCount": 10
+      }
+    },
+    {
+      "path": "backend/tests/test_memory_ranking.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 90,
+      "nonEmptyLines": 80,
+      "classes": [
+        {
+          "name": "MemoryRecencyWeightTest",
+          "startLine": 13,
+          "endLine": 22,
+          "methods": [
+            "test_fresh_memory_scores_higher_than_old",
+            "test_missing_timestamp_returns_zero"
+          ],
+          "properties": []
+        },
+        {
+          "name": "MemoryRankScoreTest",
+          "startLine": 25,
+          "endLine": 58,
+          "methods": [
+            "test_recent_memory_ranks_above_stale_with_same_level"
+          ],
+          "properties": []
+        },
+        {
+          "name": "RagContextBudgetTest",
+          "startLine": 61,
+          "endLine": 90,
+          "methods": [
+            "_chunk",
+            "test_trim_chunks_respects_token_budget",
+            "test_trim_chunks_prefers_higher_scores"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "MemoryRecencyWeightTest",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "MemoryRankScoreTest",
+          "line": 25,
+          "isDefault": false
+        },
+        {
+          "name": "RagContextBudgetTest",
+          "line": 61,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_fresh_memory_scores_higher_than_old",
+          "callee": "datetime.now",
+          "lineNumber": 15
+        },
+        {
+          "caller": "test_fresh_memory_scores_higher_than_old",
+          "callee": "memory_recency_weight",
+          "lineNumber": 16
+        },
+        {
+          "caller": "test_fresh_memory_scores_higher_than_old",
+          "callee": "memory_recency_weight",
+          "lineNumber": 17
+        },
+        {
+          "caller": "test_fresh_memory_scores_higher_than_old",
+          "callee": "timedelta",
+          "lineNumber": 17
+        },
+        {
+          "caller": "test_fresh_memory_scores_higher_than_old",
+          "callee": "self.assertGreater",
+          "lineNumber": 18
+        },
+        {
+          "caller": "test_fresh_memory_scores_higher_than_old",
+          "callee": "self.assertAlmostEqual",
+          "lineNumber": 19
+        },
+        {
+          "caller": "test_missing_timestamp_returns_zero",
+          "callee": "self.assertEqual",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_missing_timestamp_returns_zero",
+          "callee": "memory_recency_weight",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "datetime.now",
+          "lineNumber": 27
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "MemoryItem",
+          "lineNumber": 28
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "MemoryMetadata",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "MemoryItem",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "MemoryMetadata",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "timedelta",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "AsyncMock",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "AsyncMock",
+          "lineNumber": 53
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "MemoryContextBuilder",
+          "lineNumber": 54
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "builder.recall_ranked",
+          "lineNumber": 55
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "MemorySearchRequest",
+          "lineNumber": 56
+        },
+        {
+          "caller": "test_recent_memory_ranks_above_stale_with_same_level",
+          "callee": "self.assertEqual",
+          "lineNumber": 58
+        },
+        {
+          "caller": "_chunk",
+          "callee": "RetrievedChunk",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_trim_chunks_respects_token_budget",
+          "callee": "RagContextBuilder",
+          "lineNumber": 73
+        },
+        {
+          "caller": "test_trim_chunks_respects_token_budget",
+          "callee": "self._chunk",
+          "lineNumber": 75
+        },
+        {
+          "caller": "test_trim_chunks_respects_token_budget",
+          "callee": "self._chunk",
+          "lineNumber": 76
+        },
+        {
+          "caller": "test_trim_chunks_respects_token_budget",
+          "callee": "self._chunk",
+          "lineNumber": 77
+        },
+        {
+          "caller": "test_trim_chunks_respects_token_budget",
+          "callee": "builder.trim_chunks_to_token_budget",
+          "lineNumber": 79
+        },
+        {
+          "caller": "test_trim_chunks_respects_token_budget",
+          "callee": "self.assertGreaterEqual",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_trim_chunks_respects_token_budget",
+          "callee": "len",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_trim_chunks_respects_token_budget",
+          "callee": "self.assertLess",
+          "lineNumber": 81
+        },
+        {
+          "caller": "test_trim_chunks_respects_token_budget",
+          "callee": "len",
+          "lineNumber": 81
+        },
+        {
+          "caller": "test_trim_chunks_respects_token_budget",
+          "callee": "len",
+          "lineNumber": 81
+        },
+        {
+          "caller": "test_trim_chunks_prefers_higher_scores",
+          "callee": "RagContextBuilder",
+          "lineNumber": 84
+        },
+        {
+          "caller": "test_trim_chunks_prefers_higher_scores",
+          "callee": "self._chunk",
+          "lineNumber": 86
+        },
+        {
+          "caller": "test_trim_chunks_prefers_higher_scores",
+          "callee": "self._chunk",
+          "lineNumber": 87
+        },
+        {
+          "caller": "test_trim_chunks_prefers_higher_scores",
+          "callee": "builder.trim_chunks_to_token_budget",
+          "lineNumber": 89
+        },
+        {
+          "caller": "test_trim_chunks_prefers_higher_scores",
+          "callee": "self.assertEqual",
+          "lineNumber": 90
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 3,
+        "functionCount": 0,
+        "classCount": 3
+      }
+    },
+    {
+      "path": "backend/tests/test_memory_search_cache.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 139,
+      "nonEmptyLines": 126,
+      "classes": [
+        {
+          "name": "StorageCacheControlTest",
+          "startLine": 18,
+          "endLine": 44,
+          "methods": [
+            "test_upload_bytes_applies_requested_cache_control",
+            "test_private_upload_cache_control_constant"
+          ],
+          "properties": []
+        },
+        {
+          "name": "MemorySearchCacheTest",
+          "startLine": 47,
+          "endLine": 139,
+          "methods": [
+            "test_cache_key_changes_with_query",
+            "test_serialize_and_deserialize_memory_items",
+            "test_get_and_set_cached_memory_search",
+            "test_invalidate_memory_search_cache_deletes_user_pattern"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "StorageCacheControlTest",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "MemorySearchCacheTest",
+          "line": 47,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_upload_bytes_applies_requested_cache_control",
+          "callee": "ObjectStorage",
+          "lineNumber": 20
+        },
+        {
+          "caller": "test_upload_bytes_applies_requested_cache_control",
+          "callee": "MagicMock",
+          "lineNumber": 21
+        },
+        {
+          "caller": "test_upload_bytes_applies_requested_cache_control",
+          "callee": "patch",
+          "lineNumber": 25
+        },
+        {
+          "caller": "test_upload_bytes_applies_requested_cache_control",
+          "callee": "asyncio.run",
+          "lineNumber": 28
+        },
+        {
+          "caller": "test_upload_bytes_applies_requested_cache_control",
+          "callee": "storage.upload_bytes",
+          "lineNumber": 29
+        },
+        {
+          "caller": "test_upload_bytes_applies_requested_cache_control",
+          "callee": "storage._client.put_object.assert_called_once",
+          "lineNumber": 37
+        },
+        {
+          "caller": "test_upload_bytes_applies_requested_cache_control",
+          "callee": "self.assertEqual",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_private_upload_cache_control_constant",
+          "callee": "self.assertIn",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_cache_key_changes_with_query",
+          "callee": "memory_search_cache_key",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_cache_key_changes_with_query",
+          "callee": "memory_search_cache_key",
+          "lineNumber": 58
+        },
+        {
+          "caller": "test_cache_key_changes_with_query",
+          "callee": "self.assertNotEqual",
+          "lineNumber": 67
+        },
+        {
+          "caller": "test_serialize_and_deserialize_memory_items",
+          "callee": "MemoryItem",
+          "lineNumber": 70
+        },
+        {
+          "caller": "test_serialize_and_deserialize_memory_items",
+          "callee": "MemoryMetadata",
+          "lineNumber": 73
+        },
+        {
+          "caller": "test_serialize_and_deserialize_memory_items",
+          "callee": "datetime.now",
+          "lineNumber": 81
+        },
+        {
+          "caller": "test_serialize_and_deserialize_memory_items",
+          "callee": "deserialize_memory_items",
+          "lineNumber": 83
+        },
+        {
+          "caller": "test_serialize_and_deserialize_memory_items",
+          "callee": "serialize_memory_items",
+          "lineNumber": 83
+        },
+        {
+          "caller": "test_serialize_and_deserialize_memory_items",
+          "callee": "self.assertIsNotNone",
+          "lineNumber": 84
+        },
+        {
+          "caller": "test_serialize_and_deserialize_memory_items",
+          "callee": "self.assertEqual",
+          "lineNumber": 86
+        },
+        {
+          "caller": "test_serialize_and_deserialize_memory_items",
+          "callee": "self.assertEqual",
+          "lineNumber": 87
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "MemoryItem",
+          "lineNumber": 90
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "MemoryMetadata",
+          "lineNumber": 93
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "patch",
+          "lineNumber": 101
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "AsyncMock",
+          "lineNumber": 101
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "patch",
+          "lineNumber": 102
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "AsyncMock",
+          "lineNumber": 102
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "set_cached_memory_search",
+          "lineNumber": 104
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "cache_set.assert_awaited_once",
+          "lineNumber": 114
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "patch",
+          "lineNumber": 116
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "AsyncMock",
+          "lineNumber": 118
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "serialize_memory_items",
+          "lineNumber": 118
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "get_cached_memory_search",
+          "lineNumber": 120
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "self.assertIsNotNone",
+          "lineNumber": 129
+        },
+        {
+          "caller": "test_get_and_set_cached_memory_search",
+          "callee": "self.assertEqual",
+          "lineNumber": 131
+        },
+        {
+          "caller": "test_invalidate_memory_search_cache_deletes_user_pattern",
+          "callee": "patch",
+          "lineNumber": 134
+        },
+        {
+          "caller": "test_invalidate_memory_search_cache_deletes_user_pattern",
+          "callee": "AsyncMock",
+          "lineNumber": 136
+        },
+        {
+          "caller": "test_invalidate_memory_search_cache_deletes_user_pattern",
+          "callee": "invalidate_memory_search_cache",
+          "lineNumber": 138
+        },
+        {
+          "caller": "test_invalidate_memory_search_cache_deletes_user_pattern",
+          "callee": "delete_pattern.assert_awaited_once",
+          "lineNumber": 139
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "nodes": [
+    {
+      "id": "file:frontend/vitest.config.ts",
+      "type": "file",
+      "name": "vitest.config.ts",
+      "filePath": "frontend/vitest.config.ts",
+      "summary": "code file: vitest.config.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "config:infra/.env.example",
+      "type": "config",
+      "name": ".env.example",
+      "filePath": "infra/.env.example",
+      "summary": "Infrastructure: .env.example",
+      "tags": [
+        "config"
+      ],
+      "complexity": "simple",
+      "language": "config",
+      "layerHint": "infra"
+    },
+    {
+      "id": "service:infra/docker-compose.yml",
+      "type": "service",
+      "name": "docker-compose.yml",
+      "filePath": "infra/docker-compose.yml",
+      "summary": "Infrastructure: docker-compose.yml",
+      "tags": [
+        "infra",
+        "yaml"
+      ],
+      "complexity": "simple",
+      "language": "yaml",
+      "layerHint": "infra"
+    },
+    {
+      "id": "file:infra/nginx/frontend.conf.example",
+      "type": "file",
+      "name": "frontend.conf.example",
+      "filePath": "infra/nginx/frontend.conf.example",
+      "summary": "Infrastructure: frontend.conf.example",
+      "tags": [
+        "code",
+        "example"
+      ],
+      "complexity": "simple",
+      "language": "example",
+      "layerHint": "infra"
+    },
+    {
+      "id": "file:Makefile.local",
+      "type": "file",
+      "name": "Makefile.local",
+      "filePath": "Makefile.local",
+      "summary": "code file: Makefile.local",
+      "tags": [
+        "code",
+        "local"
+      ],
+      "complexity": "moderate",
+      "language": "local",
+      "layerHint": "other"
+    },
+    {
+      "id": "config:observability/grafana/dashboards/fastapi-overview.json",
+      "type": "config",
+      "name": "fastapi-overview.json",
+      "filePath": "observability/grafana/dashboards/fastapi-overview.json",
+      "summary": "Infrastructure: fastapi-overview.json",
+      "tags": [
+        "config",
+        "json"
+      ],
+      "complexity": "complex",
+      "language": "json",
+      "layerHint": "infra"
+    },
+    {
+      "id": "config:observability/grafana/provisioning/dashboards/dashboards.yml",
+      "type": "config",
+      "name": "dashboards.yml",
+      "filePath": "observability/grafana/provisioning/dashboards/dashboards.yml",
+      "summary": "Infrastructure: dashboards.yml",
+      "tags": [
+        "config",
+        "yaml"
+      ],
+      "complexity": "simple",
+      "language": "yaml",
+      "layerHint": "infra"
+    },
+    {
+      "id": "config:observability/grafana/provisioning/datasources/datasources.yml",
+      "type": "config",
+      "name": "datasources.yml",
+      "filePath": "observability/grafana/provisioning/datasources/datasources.yml",
+      "summary": "Infrastructure: datasources.yml",
+      "tags": [
+        "config",
+        "yaml"
+      ],
+      "complexity": "simple",
+      "language": "yaml",
+      "layerHint": "infra"
+    },
+    {
+      "id": "config:observability/prometheus/prometheus.yml",
+      "type": "config",
+      "name": "prometheus.yml",
+      "filePath": "observability/prometheus/prometheus.yml",
+      "summary": "Infrastructure: prometheus.yml",
+      "tags": [
+        "config",
+        "yaml"
+      ],
+      "complexity": "simple",
+      "language": "yaml",
+      "layerHint": "infra"
+    },
+    {
+      "id": "document:observability/README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "observability/README.md",
+      "summary": "Infrastructure: README.md",
+      "tags": [
+        "docs",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown",
+      "layerHint": "infra"
+    },
+    {
+      "id": "config:observability/tempo/tempo.yml",
+      "type": "config",
+      "name": "tempo.yml",
+      "filePath": "observability/tempo/tempo.yml",
+      "summary": "Infrastructure: tempo.yml",
+      "tags": [
+        "config",
+        "yaml"
+      ],
+      "complexity": "simple",
+      "language": "yaml",
+      "layerHint": "infra"
+    },
+    {
+      "id": "file:Procfile.dev",
+      "type": "file",
+      "name": "Procfile.dev",
+      "filePath": "Procfile.dev",
+      "summary": "code file: Procfile.dev",
+      "tags": [
+        "code",
+        "dev"
+      ],
+      "complexity": "simple",
+      "language": "dev",
+      "layerHint": "other"
+    }
+  ],
+  "edges": []
+}

@@ -1,0 +1,542 @@
+{
+  "nodes": [
+    {
+      "id": "file:.understand-anything/.understandignore",
+      "type": "file",
+      "name": ".understandignore",
+      "filePath": ".understand-anything/.understandignore",
+      "summary": "code file: .understandignore",
+      "tags": [
+        "code",
+        "unknown"
+      ],
+      "complexity": "simple",
+      "language": "unknown",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/__init__.py",
+      "summary": "code file: __init__.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/alembic/README",
+      "type": "file",
+      "name": "README",
+      "filePath": "backend/alembic/README",
+      "summary": "code file: README",
+      "tags": [
+        "code",
+        "unknown"
+      ],
+      "complexity": "simple",
+      "language": "unknown",
+      "layerHint": "database"
+    },
+    {
+      "id": "file:backend/alembic/script.py.mako",
+      "type": "file",
+      "name": "script.py.mako",
+      "filePath": "backend/alembic/script.py.mako",
+      "summary": "code file: script.py.mako",
+      "tags": [
+        "code",
+        "mako"
+      ],
+      "complexity": "simple",
+      "language": "mako",
+      "layerHint": "database"
+    },
+    {
+      "id": "file:backend/alembic/versions/3f1bfc747f3e_generate_tables.py",
+      "type": "file",
+      "name": "3f1bfc747f3e_generate_tables.py",
+      "filePath": "backend/alembic/versions/3f1bfc747f3e_generate_tables.py",
+      "summary": "3f1bfc747f3e_generate_tables.py (2 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "complex",
+      "language": "python",
+      "layerHint": "database"
+    },
+    {
+      "id": "function:backend/alembic/versions/3f1bfc747f3e_generate_tables.py:upgrade",
+      "type": "function",
+      "name": "upgrade",
+      "filePath": "backend/alembic/versions/3f1bfc747f3e_generate_tables.py",
+      "summary": "Function upgrade in backend/alembic/versions/3f1bfc747f3e_generate_tables.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/alembic/versions/3f1bfc747f3e_generate_tables.py:downgrade",
+      "type": "function",
+      "name": "downgrade",
+      "filePath": "backend/alembic/versions/3f1bfc747f3e_generate_tables.py",
+      "summary": "Function downgrade in backend/alembic/versions/3f1bfc747f3e_generate_tables.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py",
+      "type": "file",
+      "name": "a8c4e2f91b03_add_memory_tables.py",
+      "filePath": "backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py",
+      "summary": "a8c4e2f91b03_add_memory_tables.py (2 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "database"
+    },
+    {
+      "id": "function:backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py:upgrade",
+      "type": "function",
+      "name": "upgrade",
+      "filePath": "backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py",
+      "summary": "Function upgrade in backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py:downgrade",
+      "type": "function",
+      "name": "downgrade",
+      "filePath": "backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py",
+      "summary": "Function downgrade in backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py",
+      "type": "file",
+      "name": "b7d2a1c94e08_add_rag_tables.py",
+      "filePath": "backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py",
+      "summary": "b7d2a1c94e08_add_rag_tables.py (2 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "database"
+    },
+    {
+      "id": "function:backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py:upgrade",
+      "type": "function",
+      "name": "upgrade",
+      "filePath": "backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py",
+      "summary": "Function upgrade in backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py:downgrade",
+      "type": "function",
+      "name": "downgrade",
+      "filePath": "backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py",
+      "summary": "Function downgrade in backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py",
+      "type": "file",
+      "name": "c4e8f2a91d03_add_pgvector_embeddings.py",
+      "filePath": "backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py",
+      "summary": "c4e8f2a91d03_add_pgvector_embeddings.py (2 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "database"
+    },
+    {
+      "id": "function:backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py:upgrade",
+      "type": "function",
+      "name": "upgrade",
+      "filePath": "backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py",
+      "summary": "Function upgrade in backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py:downgrade",
+      "type": "function",
+      "name": "downgrade",
+      "filePath": "backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py",
+      "summary": "Function downgrade in backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py",
+      "type": "file",
+      "name": "d6f9a3b82e14_add_ai_chunk_pgvector.py",
+      "filePath": "backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py",
+      "summary": "d6f9a3b82e14_add_ai_chunk_pgvector.py (2 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "database"
+    },
+    {
+      "id": "function:backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py:upgrade",
+      "type": "function",
+      "name": "upgrade",
+      "filePath": "backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py",
+      "summary": "Function upgrade in backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py:downgrade",
+      "type": "function",
+      "name": "downgrade",
+      "filePath": "backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py",
+      "summary": "Function downgrade in backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/api/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/api/__init__.py",
+      "summary": "API layer: __init__.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "file:backend/api/deps/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/api/deps/__init__.py",
+      "summary": "API layer: __init__.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "file:backend/api/middleware/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/api/middleware/__init__.py",
+      "summary": "API layer: __init__.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "file:backend/api/v1/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/api/v1/__init__.py",
+      "summary": "API layer: __init__.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "file:backend/api/v1/auth.py",
+      "type": "file",
+      "name": "auth.py",
+      "filePath": "backend/api/v1/auth.py",
+      "summary": "API layer: auth.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "file:backend/api/v1/projects.py",
+      "type": "file",
+      "name": "projects.py",
+      "filePath": "backend/api/v1/projects.py",
+      "summary": "API layer: projects.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "file:backend/api/v1/router.py",
+      "type": "file",
+      "name": "router.py",
+      "filePath": "backend/api/v1/router.py",
+      "summary": "API layer: router.py",
+      "tags": [
+        "code",
+        "python",
+        "api-route"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "file:backend/api/v1/users.py",
+      "type": "file",
+      "name": "users.py",
+      "filePath": "backend/api/v1/users.py",
+      "summary": "API layer: users.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "file:backend/api/v1/workspaces.py",
+      "type": "file",
+      "name": "workspaces.py",
+      "filePath": "backend/api/v1/workspaces.py",
+      "summary": "API layer: workspaces.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "file:backend/core/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/core/__init__.py",
+      "summary": "Core shared: __init__.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "core"
+    },
+    {
+      "id": "file:backend/db/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/db/__init__.py",
+      "summary": "code file: __init__.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/__init__.py",
+      "summary": "__init__.py module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/admin/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/admin/__init__.py",
+      "summary": "admin module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/ai/application/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/ai/application/__init__.py",
+      "summary": "ai module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "file:backend/modules/memory/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/memory/__init__.py",
+      "summary": "memory module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/memory/application/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/memory/application/__init__.py",
+      "summary": "memory module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:backend/alembic/versions/3f1bfc747f3e_generate_tables.py",
+      "target": "function:backend/alembic/versions/3f1bfc747f3e_generate_tables.py:upgrade",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/versions/3f1bfc747f3e_generate_tables.py",
+      "target": "function:backend/alembic/versions/3f1bfc747f3e_generate_tables.py:downgrade",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py",
+      "target": "function:backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py:upgrade",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py",
+      "target": "function:backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py:downgrade",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py",
+      "target": "function:backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py:upgrade",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py",
+      "target": "function:backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py:downgrade",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py",
+      "target": "function:backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py:upgrade",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py",
+      "target": "function:backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py:downgrade",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py",
+      "target": "function:backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py:upgrade",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py",
+      "target": "function:backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py:downgrade",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

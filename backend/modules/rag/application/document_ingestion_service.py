@@ -1,0 +1,298 @@
+from __future__ import annotations
+
+import json
+import logging
+from datetime import UTC, datetime
+
+from backend.lib.project_access import ProjectAccessPort, SqlAlchemyProjectAccessPort
+from backend.lib.retrieval_cache import invalidate_retrieval_cache_for_document
+from backend.modules.rag.application.chunking_service import ChunkingService
+from backend.modules.rag.application.document_parser_service import DocumentParserService
+from backend.modules.rag.application.embedding_service import EmbeddingService
+from backend.modules.rag.application.rag_policy_service import RagPolicyService
+from backend.modules.rag.domain.enums import DocumentStatus, IngestionJobStatus
+from backend.modules.rag.infrastructure import metrics
+from backend.modules.rag.infrastructure.file_storage_adapter import FileStorageAdapter
+from backend.modules.rag.infrastructure.rag_config import RagConfig
+from backend.modules.rag.infrastructure.repositories import RagRepository
+from backend.modules.rag.infrastructure.vector_store_adapter import build_vector_store
+from backend.modules.rag.workers import queue_document_cleanup, queue_document_indexing
+from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
+
+
+class DocumentIngestionService:
+    def __init__(self, db: AsyncSession, config: RagConfig | None = None):
+        self.db = db
+        self.config = config or RagConfig.from_settings()
+        self.repo = RagRepository(db)
+        self.project_access: ProjectAccessPort = SqlAlchemyProjectAccessPort(db)
+        self.parser = DocumentParserService()
+        self.chunker = ChunkingService(self.config)
+        self.embeddings = EmbeddingService(self.config)
+        self.policy = RagPolicyService()
+        self.storage = FileStorageAdapter()
+        self.vector_store = build_vector_store(db, self.config)
+
+    async def upload_document(
+        self,
+        *,
+        user_id: str,
+        filename: str,
+        content: bytes,
+        content_type: str,
+        project_id: str | None = None,
+        organization_id: str | None = None,
+        metadata: dict | None = None,
+    ):
+        if not self.config.enabled:
+            raise HTTPException(status_code=503, detail="RAG is disabled")
+
+        if len(content) > self.config.max_file_bytes:
+            raise HTTPException(status_code=413, detail="File too large")
+
+        if not self.policy.is_allowed_file_type(filename, self.config.allowed_file_types):
+            raise HTTPException(status_code=400, detail="Unsupported file type")
+
+        if project_id:
+            await self._ensure_project_access(user_id, project_id)
+
+        storage_path = await self.storage.store_document(
+            user_id=user_id,
+            filename=filename,
+            content=content,
+            content_type=content_type,
+        )
+
+        document = await self.repo.create_document(
+            user_id=user_id,
+            filename=filename,
+            original_filename=filename,
+            content_type=content_type,
+            storage_path=storage_path,
+            project_id=project_id,
+            organization_id=organization_id,
+            source_type="upload",
+            metadata={"size_bytes": len(content), **(metadata or {})},
+        )
+        job = await self.repo.create_ingestion_job(
+            document_id=document.id,
+            user_id=user_id,
+            project_id=project_id,
+        )
+        await self.db.commit()
+        await self.db.refresh(document)
+        await self.db.refresh(job)
+        metrics.rag_document_upload_total.inc()
+
+        return document, job, content
+
+    async def enqueue_document_indexing(
+        self,
+        *,
+        document_id: str,
+        user_id: str,
+        file_content: bytes | None = None,
+        is_admin: bool = False,
+    ):
+        document = await self._get_document_for_indexing(
+            document_id=document_id,
+            user_id=user_id,
+            is_admin=is_admin,
+        )
+        job = await self.repo.create_ingestion_job(
+            document_id=document.id,
+            user_id=user_id,
+            project_id=document.project_id,
+        )
+        await self.db.commit()
+        await self.db.refresh(job)
+        queue_document_indexing(
+            document_id=document.id,
+            user_id=user_id,
+            job_id=job.id,
+        )
+        return job
+
+    async def index_document(
+        self,
+        *,
+        document_id: str,
+        user_id: str,
+        file_content: bytes | None = None,
+        is_admin: bool = False,
+        job_id: str | None = None,
+    ):
+        document = await self._get_document_for_indexing(
+            document_id=document_id,
+            user_id=user_id,
+            is_admin=is_admin,
+        )
+        if job_id:
+            job = await self.repo.get_ingestion_job(job_id)
+            if not job or job.document_id != document.id:
+                raise HTTPException(status_code=404, detail="Ingestion job not found")
+        else:
+            job = await self.repo.create_ingestion_job(
+                document_id=document.id,
+                user_id=user_id,
+                project_id=document.project_id,
+            )
+        await self.repo.update_ingestion_job(job, status=IngestionJobStatus.RUNNING, started=True)
+        await self.repo.update_document_status(document, DocumentStatus.PARSING)
+        await self.db.commit()
+
+        try:
+            content = file_content
+            if content is None and document.storage_path:
+                content = await self.storage.download_document(document.storage_path)
+            if content is None:
+                raise HTTPException(
+                    status_code=422,
+                    detail="No file content available for indexing",
+                )
+
+            parsed = await self.parser.parse_bytes(
+                content=content,
+                filename=document.original_filename,
+                content_type=document.content_type,
+                metadata={"document_id": document.id},
+            )
+            if not parsed:
+                raise ValueError("No text extracted from document")
+            metrics.rag_parse_success_total.inc()
+
+            await self.repo.update_document_status(document, DocumentStatus.CHUNKING)
+            await self.db.commit()
+
+            chunks = await self.chunker.chunk(
+                parsed,
+                document_id=document.id,
+                user_id=document.user_id,
+                filename=document.original_filename,
+                project_id=document.project_id,
+                organization_id=document.organization_id,
+            )
+            injection_flags = 0
+            for chunk in chunks:
+                if self.policy.contains_prompt_injection(chunk.content):
+                    chunk.metadata = {
+                        **chunk.metadata,
+                        "prompt_injection_suspected": True,
+                    }
+                    injection_flags += 1
+            if injection_flags:
+                logger.warning(
+                    "Suspected prompt injection in %s chunk(s) for document=%s user=%s",
+                    injection_flags,
+                    document.id,
+                    document.user_id,
+                )
+            metrics.rag_chunk_count.observe(len(chunks))
+
+            await self.repo.update_document_status(document, DocumentStatus.EMBEDDING)
+            await self.db.commit()
+
+            texts = [chunk.content for chunk in chunks]
+            vectors = await self.embeddings.embed_texts(texts)
+            for chunk, vector in zip(chunks, vectors, strict=True):
+                chunk.embedding = vector
+
+            chunk_rows = await self.repo.replace_chunks(
+                document,
+                [
+                    {
+                        "chunk_index": c.chunk_index,
+                        "content": c.content,
+                        "token_count": c.token_count,
+                        "metadata": c.metadata,
+                        "embedding": c.embedding or [],
+                        "vector_external_id": c.id,
+                    }
+                    for c in chunks
+                ],
+            )
+
+            await self.repo.update_document_status(document, DocumentStatus.INDEXED)
+            metadata = json.loads(document.metadata_json or "{}")
+            metadata["chunk_count"] = len(chunk_rows)
+            document.metadata_json = json.dumps(metadata, ensure_ascii=True)
+            await self.repo.update_ingestion_job(
+                job, status=IngestionJobStatus.COMPLETED, finished=True
+            )
+            document.updated_at = datetime.now(UTC)
+            await self.db.commit()
+            await self.db.refresh(document)
+            await invalidate_retrieval_cache_for_document(
+                user_id=document.user_id,
+                project_id=document.project_id,
+            )
+            return document, chunk_rows, job
+        except HTTPException:
+            raise
+        except Exception as exc:
+            logger.exception("Document indexing failed for %s", document_id)
+            metrics.rag_parse_failure_total.inc()
+            metrics.rag_vector_upsert_failure_total.inc()
+            await self.repo.update_document_status(document, DocumentStatus.FAILED)
+            await self.repo.update_ingestion_job(
+                job,
+                status=IngestionJobStatus.FAILED,
+                error_message=str(exc)[:500],
+                finished=True,
+            )
+            await self.db.commit()
+            raise HTTPException(status_code=502, detail="Document indexing failed") from exc
+
+    async def delete_document(self, *, document_id: str, user_id: str, is_admin: bool = False):
+        document = await self.repo.get_document(document_id)
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        if document.user_id != user_id and not is_admin:
+            metrics.rag_permission_denied_total.inc()
+            raise HTTPException(status_code=403, detail="You cannot delete this document")
+
+        await self.repo.soft_delete_document(document)
+        await self.db.commit()
+        await invalidate_retrieval_cache_for_document(
+            user_id=document.user_id,
+            project_id=document.project_id,
+        )
+        queue_document_cleanup(
+            document_id=document_id,
+            user_id=document.user_id,
+            storage_path=document.storage_path,
+        )
+
+    async def cleanup_deleted_document(
+        self,
+        *,
+        document_id: str,
+        user_id: str,
+        storage_path: str | None,
+    ) -> None:
+        await self.vector_store.delete_document(document_id, user_id)
+        await self.storage.delete_document(storage_path)
+        await self.db.commit()
+        logger.info("RAG document cleanup completed document=%s user=%s", document_id, user_id)
+
+    async def _get_document_for_indexing(
+        self,
+        *,
+        document_id: str,
+        user_id: str,
+        is_admin: bool,
+    ):
+        document = await self.repo.get_document(document_id)
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        if document.user_id != user_id and not is_admin:
+            raise HTTPException(status_code=403, detail="You cannot index this document")
+        if document.project_id:
+            await self._ensure_project_access(user_id, document.project_id)
+        return document
+
+    async def _ensure_project_access(self, user_id: str, project_id: str) -> None:
+        await self.project_access.ensure_project_access(user_id, project_id)

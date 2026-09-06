@@ -1,0 +1,22 @@
+# .understandignore — patterns for files/dirs to exclude from analysis
+node_modules/
+.git/
+venv/
+.venv/
+__pycache__/
+dist/
+build/
+coverage/
+.next/
+.cache/
+target/
+*.lock
+package-lock.json
+uv.lock
+*.png
+*.jpg
+*.svg
+*.min.js
+*.map
+.idea/
+.vscode/

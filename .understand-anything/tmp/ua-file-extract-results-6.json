@@ -1,0 +1,4191 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 24,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "backend/observability/instruments.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 60,
+      "nonEmptyLines": 51,
+      "functions": [
+        {
+          "name": "_attrs",
+          "startLine": 10,
+          "endLine": 20,
+          "params": [
+            "kwargs"
+          ]
+        },
+        {
+          "name": "observed_span",
+          "startLine": 24,
+          "endLine": 44,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "structured_error",
+          "startLine": 47,
+          "endLine": 60,
+          "params": [
+            "logger",
+            "message",
+            "exc"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "_attrs",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "observed_span",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "structured_error",
+          "line": 47,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_attrs",
+          "callee": "kwargs.items",
+          "lineNumber": 12
+        },
+        {
+          "caller": "_attrs",
+          "callee": "key.replace",
+          "lineNumber": 15
+        },
+        {
+          "caller": "_attrs",
+          "callee": "isinstance",
+          "lineNumber": 16
+        },
+        {
+          "caller": "_attrs",
+          "callee": "str",
+          "lineNumber": 19
+        },
+        {
+          "caller": "observed_span",
+          "callee": "trace.get_tracer",
+          "lineNumber": 34
+        },
+        {
+          "caller": "observed_span",
+          "callee": "tracer.start_as_current_span",
+          "lineNumber": 35
+        },
+        {
+          "caller": "observed_span",
+          "callee": "_attrs",
+          "lineNumber": 35
+        },
+        {
+          "caller": "observed_span",
+          "callee": "time.monotonic",
+          "lineNumber": 36
+        },
+        {
+          "caller": "observed_span",
+          "callee": "span.record_exception",
+          "lineNumber": 40
+        },
+        {
+          "caller": "observed_span",
+          "callee": "span.set_status",
+          "lineNumber": 41
+        },
+        {
+          "caller": "observed_span",
+          "callee": "Status",
+          "lineNumber": 41
+        },
+        {
+          "caller": "observed_span",
+          "callee": "type",
+          "lineNumber": 41
+        },
+        {
+          "caller": "observed_span",
+          "callee": "span.set_attribute",
+          "lineNumber": 44
+        },
+        {
+          "caller": "observed_span",
+          "callee": "time.monotonic",
+          "lineNumber": 44
+        },
+        {
+          "caller": "structured_error",
+          "callee": "fields.items",
+          "lineNumber": 55
+        },
+        {
+          "caller": "structured_error",
+          "callee": "isinstance",
+          "lineNumber": 56
+        },
+        {
+          "caller": "structured_error",
+          "callee": "type",
+          "lineNumber": 58
+        },
+        {
+          "caller": "structured_error",
+          "callee": "str",
+          "lineNumber": 59
+        },
+        {
+          "caller": "structured_error",
+          "callee": "logger.error",
+          "lineNumber": 60
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/observability/metrics.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 134,
+      "nonEmptyLines": 108,
+      "functions": [
+        {
+          "name": "_safe_attrs",
+          "startLine": 15,
+          "endLine": 24,
+          "params": [
+            "attrs"
+          ]
+        },
+        {
+          "name": "_meter",
+          "startLine": 28,
+          "endLine": 31,
+          "params": []
+        },
+        {
+          "name": "_instruments",
+          "startLine": 35,
+          "endLine": 44,
+          "params": []
+        },
+        {
+          "name": "add",
+          "startLine": 47,
+          "endLine": 51,
+          "params": [
+            "name",
+            "value",
+            "attrs"
+          ]
+        },
+        {
+          "name": "record",
+          "startLine": 54,
+          "endLine": 58,
+          "params": [
+            "name",
+            "value",
+            "attrs"
+          ]
+        },
+        {
+          "name": "setup_metrics",
+          "startLine": 61,
+          "endLine": 126,
+          "params": [
+            "app"
+          ]
+        },
+        {
+          "name": "_route_path",
+          "startLine": 129,
+          "endLine": 134,
+          "params": [
+            "request"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "_safe_attrs",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "_meter",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "_instruments",
+          "line": 34,
+          "isDefault": false
+        },
+        {
+          "name": "add",
+          "line": 47,
+          "isDefault": false
+        },
+        {
+          "name": "record",
+          "line": 54,
+          "isDefault": false
+        },
+        {
+          "name": "setup_metrics",
+          "line": 61,
+          "isDefault": false
+        },
+        {
+          "name": "_route_path",
+          "line": 129,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_safe_attrs",
+          "callee": "(attrs or {}).items",
+          "lineNumber": 17
+        },
+        {
+          "caller": "_safe_attrs",
+          "callee": "isinstance",
+          "lineNumber": 20
+        },
+        {
+          "caller": "_safe_attrs",
+          "callee": "str",
+          "lineNumber": 23
+        },
+        {
+          "caller": "_meter",
+          "callee": "metrics.get_meter",
+          "lineNumber": 31
+        },
+        {
+          "caller": "_instruments",
+          "callee": "_meter",
+          "lineNumber": 36
+        },
+        {
+          "caller": "_instruments",
+          "callee": "meter.create_counter",
+          "lineNumber": 38
+        },
+        {
+          "caller": "_instruments",
+          "callee": "meter.create_counter",
+          "lineNumber": 39
+        },
+        {
+          "caller": "_instruments",
+          "callee": "meter.create_histogram",
+          "lineNumber": 40
+        },
+        {
+          "caller": "add",
+          "callee": "_instruments()[name].add",
+          "lineNumber": 49
+        },
+        {
+          "caller": "add",
+          "callee": "_instruments",
+          "lineNumber": 49
+        },
+        {
+          "caller": "add",
+          "callee": "_safe_attrs",
+          "lineNumber": 49
+        },
+        {
+          "caller": "record",
+          "callee": "_instruments()[name].record",
+          "lineNumber": 56
+        },
+        {
+          "caller": "record",
+          "callee": "_instruments",
+          "lineNumber": 56
+        },
+        {
+          "caller": "record",
+          "callee": "_safe_attrs",
+          "lineNumber": 56
+        },
+        {
+          "caller": "setup_metrics",
+          "callee": "load_config",
+          "lineNumber": 64
+        },
+        {
+          "caller": "setup_metrics",
+          "callee": "logger.info",
+          "lineNumber": 66
+        },
+        {
+          "caller": "setup_metrics",
+          "callee": "getattr",
+          "lineNumber": 68
+        },
+        {
+          "caller": "setup_metrics",
+          "callee": "logger.warning",
+          "lineNumber": 75
+        },
+        {
+          "caller": "setup_metrics",
+          "callee": "app.middleware",
+          "lineNumber": 78
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "_route_path",
+          "lineNumber": 80
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "call_next",
+          "lineNumber": 82
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "time.perf_counter",
+          "lineNumber": 84
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "call_next",
+          "lineNumber": 86
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "time.perf_counter",
+          "lineNumber": 88
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "prometheus_metrics.http_request_duration_seconds.labels(\n                request.method,\n                route,\n            ).observe",
+          "lineNumber": 89
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "prometheus_metrics.http_request_duration_seconds.labels",
+          "lineNumber": 89
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "prometheus_metrics.http_requests_total.labels(\n                request.method,\n                route,\n                \"500\",\n            ).inc",
+          "lineNumber": 93
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "prometheus_metrics.http_requests_total.labels",
+          "lineNumber": 93
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "prometheus_metrics.http_exceptions_total.labels(\n                request.method,\n                route,\n                type(exc).__name__,\n            ).inc",
+          "lineNumber": 98
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "prometheus_metrics.http_exceptions_total.labels",
+          "lineNumber": 98
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "type",
+          "lineNumber": 101
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "time.perf_counter",
+          "lineNumber": 105
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "prometheus_metrics.http_request_duration_seconds.labels(\n            request.method,\n            route,\n        ).observe",
+          "lineNumber": 106
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "prometheus_metrics.http_request_duration_seconds.labels",
+          "lineNumber": 106
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "prometheus_metrics.http_requests_total.labels(\n            request.method,\n            route,\n            str(response.status_code),\n        ).inc",
+          "lineNumber": 110
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "prometheus_metrics.http_requests_total.labels",
+          "lineNumber": 110
+        },
+        {
+          "caller": "prometheus_metrics_middleware",
+          "callee": "str",
+          "lineNumber": 113
+        },
+        {
+          "caller": "metrics_endpoint",
+          "callee": "Response",
+          "lineNumber": 118
+        },
+        {
+          "caller": "metrics_endpoint",
+          "callee": "generate_latest",
+          "lineNumber": 118
+        },
+        {
+          "caller": "setup_metrics",
+          "callee": "app.add_api_route",
+          "lineNumber": 120
+        },
+        {
+          "caller": "_route_path",
+          "callee": "request.scope.get",
+          "lineNumber": 130
+        },
+        {
+          "caller": "_route_path",
+          "callee": "getattr",
+          "lineNumber": 131
+        },
+        {
+          "caller": "_route_path",
+          "callee": "isinstance",
+          "lineNumber": 132
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 7,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/observability/otel.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 131,
+      "nonEmptyLines": 99,
+      "functions": [
+        {
+          "name": "_signal_endpoint",
+          "startLine": 15,
+          "endLine": 20,
+          "params": [
+            "signal",
+            "base_endpoint"
+          ]
+        },
+        {
+          "name": "_resource",
+          "startLine": 23,
+          "endLine": 32,
+          "params": [
+            "service_name",
+            "environment"
+          ]
+        },
+        {
+          "name": "setup_observability",
+          "startLine": 35,
+          "endLine": 42,
+          "params": [
+            "app",
+            "service_name"
+          ]
+        },
+        {
+          "name": "setup_traces",
+          "startLine": 45,
+          "endLine": 85,
+          "params": [
+            "app",
+            "service_name"
+          ]
+        },
+        {
+          "name": "_setup_trace_exporter",
+          "startLine": 88,
+          "endLine": 104,
+          "params": [
+            "config",
+            "resource"
+          ]
+        },
+        {
+          "name": "_setup_library_instrumentation",
+          "startLine": 107,
+          "endLine": 119,
+          "params": []
+        },
+        {
+          "name": "_instrument_app",
+          "startLine": 122,
+          "endLine": 131,
+          "params": [
+            "app"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "_signal_endpoint",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "_resource",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "setup_observability",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "setup_traces",
+          "line": 45,
+          "isDefault": false
+        },
+        {
+          "name": "_setup_trace_exporter",
+          "line": 88,
+          "isDefault": false
+        },
+        {
+          "name": "_setup_library_instrumentation",
+          "line": 107,
+          "isDefault": false
+        },
+        {
+          "name": "_instrument_app",
+          "line": 122,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_signal_endpoint",
+          "callee": "base_endpoint.rstrip",
+          "lineNumber": 16
+        },
+        {
+          "caller": "_signal_endpoint",
+          "callee": "endpoint.split",
+          "lineNumber": 17
+        },
+        {
+          "caller": "_signal_endpoint",
+          "callee": "len",
+          "lineNumber": 18
+        },
+        {
+          "caller": "_signal_endpoint",
+          "callee": "\"/\".join",
+          "lineNumber": 19
+        },
+        {
+          "caller": "_resource",
+          "callee": "Resource.create",
+          "lineNumber": 26
+        },
+        {
+          "caller": "setup_observability",
+          "callee": "setup_metrics",
+          "lineNumber": 41
+        },
+        {
+          "caller": "setup_observability",
+          "callee": "setup_traces",
+          "lineNumber": 42
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "_instrument_app",
+          "lineNumber": 51
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "load_config",
+          "lineNumber": 54
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "logger.info",
+          "lineNumber": 56
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "logger.info",
+          "lineNumber": 59
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "logger.warning",
+          "lineNumber": 62
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "_resource",
+          "lineNumber": 71
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "_setup_trace_exporter",
+          "lineNumber": 72
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "_setup_library_instrumentation",
+          "lineNumber": 73
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "_instrument_app",
+          "lineNumber": 75
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "logger.info",
+          "lineNumber": 77
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "logger.warning",
+          "lineNumber": 83
+        },
+        {
+          "caller": "setup_traces",
+          "callee": "logger.warning",
+          "lineNumber": 85
+        },
+        {
+          "caller": "_setup_trace_exporter",
+          "callee": "TracerProvider",
+          "lineNumber": 93
+        },
+        {
+          "caller": "_setup_trace_exporter",
+          "callee": "OTLPSpanExporter",
+          "lineNumber": 97
+        },
+        {
+          "caller": "_setup_trace_exporter",
+          "callee": "OTLPSpanExporter",
+          "lineNumber": 101
+        },
+        {
+          "caller": "_setup_trace_exporter",
+          "callee": "_signal_endpoint",
+          "lineNumber": 101
+        },
+        {
+          "caller": "_setup_trace_exporter",
+          "callee": "provider.add_span_processor",
+          "lineNumber": 103
+        },
+        {
+          "caller": "_setup_trace_exporter",
+          "callee": "BatchSpanProcessor",
+          "lineNumber": 103
+        },
+        {
+          "caller": "_setup_trace_exporter",
+          "callee": "trace.set_tracer_provider",
+          "lineNumber": 104
+        },
+        {
+          "caller": "_setup_library_instrumentation",
+          "callee": "SQLAlchemyInstrumentor().instrument",
+          "lineNumber": 116
+        },
+        {
+          "caller": "_setup_library_instrumentation",
+          "callee": "SQLAlchemyInstrumentor",
+          "lineNumber": 116
+        },
+        {
+          "caller": "_setup_library_instrumentation",
+          "callee": "logger.debug",
+          "lineNumber": 118
+        },
+        {
+          "caller": "_instrument_app",
+          "callee": "getattr",
+          "lineNumber": 123
+        },
+        {
+          "caller": "_instrument_app",
+          "callee": "FastAPIInstrumentor.instrument_app",
+          "lineNumber": 128
+        },
+        {
+          "caller": "_instrument_app",
+          "callee": "logger.debug",
+          "lineNumber": 131
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 7,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/observability/schemas.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 52,
+      "nonEmptyLines": 40,
+      "classes": [
+        {
+          "name": "ObservabilityToolLink",
+          "startLine": 8,
+          "endLine": 11,
+          "methods": [],
+          "properties": [
+            "url",
+            "configured",
+            "allowed"
+          ]
+        },
+        {
+          "name": "ObservabilityDashboards",
+          "startLine": 14,
+          "endLine": 22,
+          "methods": [],
+          "properties": [
+            "application_overview",
+            "api",
+            "frontend",
+            "database",
+            "cache",
+            "workers",
+            "scheduled_tasks",
+            "errors"
+          ]
+        },
+        {
+          "name": "ObservabilityLinks",
+          "startLine": 25,
+          "endLine": 29,
+          "methods": [],
+          "properties": [
+            "grafana_base_url",
+            "prometheus_url",
+            "tempo_explore_url",
+            "dashboards"
+          ]
+        },
+        {
+          "name": "ObservabilityStatusItem",
+          "startLine": 32,
+          "endLine": 38,
+          "methods": [],
+          "properties": [
+            "status",
+            "detail",
+            "url",
+            "value",
+            "queue_depth",
+            "last_checked_at"
+          ]
+        },
+        {
+          "name": "ObservabilityStatus",
+          "startLine": 41,
+          "endLine": 52,
+          "methods": [],
+          "properties": [
+            "api",
+            "frontend",
+            "database",
+            "cache",
+            "workers",
+            "background_jobs",
+            "error_rate",
+            "request_latency",
+            "prometheus",
+            "grafana",
+            "tempo"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ObservabilityToolLink",
+          "line": 8,
+          "isDefault": false
+        },
+        {
+          "name": "ObservabilityDashboards",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "ObservabilityLinks",
+          "line": 25,
+          "isDefault": false
+        },
+        {
+          "name": "ObservabilityStatusItem",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "ObservabilityStatus",
+          "line": 41,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 5,
+        "functionCount": 0,
+        "classCount": 5
+      }
+    },
+    {
+      "path": "backend/observability/sentry.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 22,
+      "nonEmptyLines": 18,
+      "functions": [
+        {
+          "name": "setup_sentry",
+          "startLine": 6,
+          "endLine": 22,
+          "params": [
+            "dsn",
+            "environment",
+            "traces_sample_rate"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "setup_sentry",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "setup_sentry",
+          "callee": "sentry_sdk.init",
+          "lineNumber": 14
+        },
+        {
+          "caller": "setup_sentry",
+          "callee": "FastApiIntegration",
+          "lineNumber": 18
+        },
+        {
+          "caller": "setup_sentry",
+          "callee": "SqlalchemyIntegration",
+          "lineNumber": 18
+        },
+        {
+          "caller": "setup_sentry",
+          "callee": "logger.info",
+          "lineNumber": 20
+        },
+        {
+          "caller": "setup_sentry",
+          "callee": "logger.warning",
+          "lineNumber": 22
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/observability/service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 222,
+      "nonEmptyLines": 199,
+      "functions": [
+        {
+          "name": "build_public_url",
+          "startLine": 27,
+          "endLine": 41,
+          "params": [
+            "base_url",
+            "path"
+          ]
+        },
+        {
+          "name": "_tool_link",
+          "startLine": 44,
+          "endLine": 49,
+          "params": [
+            "url",
+            "allowed"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ObservabilityService",
+          "startLine": 52,
+          "endLine": 222,
+          "methods": [
+            "__init__",
+            "get_links",
+            "get_status",
+            "_build_status",
+            "_database_status",
+            "_cache_status",
+            "_http_status"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "build_public_url",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "_tool_link",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "ObservabilityService",
+          "line": 52,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "build_public_url",
+          "callee": "base_url.strip",
+          "lineNumber": 28
+        },
+        {
+          "caller": "build_public_url",
+          "callee": "urlsplit",
+          "lineNumber": 31
+        },
+        {
+          "caller": "build_public_url",
+          "callee": "parts.path.rstrip",
+          "lineNumber": 35
+        },
+        {
+          "caller": "build_public_url",
+          "callee": "path.strip",
+          "lineNumber": 36
+        },
+        {
+          "caller": "build_public_url",
+          "callee": "normalized_path.strip",
+          "lineNumber": 38
+        },
+        {
+          "caller": "build_public_url",
+          "callee": "urlunsplit",
+          "lineNumber": 41
+        },
+        {
+          "caller": "_tool_link",
+          "callee": "ObservabilityToolLink",
+          "lineNumber": 45
+        },
+        {
+          "caller": "get_links",
+          "callee": "bool",
+          "lineNumber": 57
+        },
+        {
+          "caller": "get_links",
+          "callee": "build_public_url",
+          "lineNumber": 58
+        },
+        {
+          "caller": "get_links",
+          "callee": "build_public_url",
+          "lineNumber": 59
+        },
+        {
+          "caller": "get_links",
+          "callee": "build_public_url",
+          "lineNumber": 60
+        },
+        {
+          "caller": "dashboard",
+          "callee": "build_public_url",
+          "lineNumber": 67
+        },
+        {
+          "caller": "dashboard",
+          "callee": "path.strip",
+          "lineNumber": 68
+        },
+        {
+          "caller": "dashboard",
+          "callee": "_tool_link",
+          "lineNumber": 71
+        },
+        {
+          "caller": "get_links",
+          "callee": "ObservabilityLinks",
+          "lineNumber": 73
+        },
+        {
+          "caller": "get_links",
+          "callee": "_tool_link",
+          "lineNumber": 74
+        },
+        {
+          "caller": "get_links",
+          "callee": "_tool_link",
+          "lineNumber": 75
+        },
+        {
+          "caller": "get_links",
+          "callee": "_tool_link",
+          "lineNumber": 76
+        },
+        {
+          "caller": "get_links",
+          "callee": "ObservabilityDashboards",
+          "lineNumber": 77
+        },
+        {
+          "caller": "get_links",
+          "callee": "dashboard",
+          "lineNumber": 78
+        },
+        {
+          "caller": "get_links",
+          "callee": "dashboard",
+          "lineNumber": 79
+        },
+        {
+          "caller": "get_links",
+          "callee": "dashboard",
+          "lineNumber": 80
+        },
+        {
+          "caller": "get_links",
+          "callee": "dashboard",
+          "lineNumber": 81
+        },
+        {
+          "caller": "get_links",
+          "callee": "dashboard",
+          "lineNumber": 82
+        },
+        {
+          "caller": "get_links",
+          "callee": "dashboard",
+          "lineNumber": 83
+        },
+        {
+          "caller": "get_links",
+          "callee": "dashboard",
+          "lineNumber": 84
+        },
+        {
+          "caller": "get_links",
+          "callee": "dashboard",
+          "lineNumber": 85
+        },
+        {
+          "caller": "get_status",
+          "callee": "cache_get_or_load_model",
+          "lineNumber": 90
+        },
+        {
+          "caller": "_build_status",
+          "callee": "datetime.now(UTC).isoformat",
+          "lineNumber": 98
+        },
+        {
+          "caller": "_build_status",
+          "callee": "datetime.now",
+          "lineNumber": 98
+        },
+        {
+          "caller": "_build_status",
+          "callee": "build_public_url",
+          "lineNumber": 100
+        },
+        {
+          "caller": "_build_status",
+          "callee": "build_public_url",
+          "lineNumber": 101
+        },
+        {
+          "caller": "_build_status",
+          "callee": "build_public_url",
+          "lineNumber": 102
+        },
+        {
+          "caller": "_build_status",
+          "callee": "asyncio.gather",
+          "lineNumber": 104
+        },
+        {
+          "caller": "_build_status",
+          "callee": "self._database_status",
+          "lineNumber": 105
+        },
+        {
+          "caller": "_build_status",
+          "callee": "self._cache_status",
+          "lineNumber": 106
+        },
+        {
+          "caller": "_build_status",
+          "callee": "self._http_status",
+          "lineNumber": 107
+        },
+        {
+          "caller": "_build_status",
+          "callee": "self._http_status",
+          "lineNumber": 108
+        },
+        {
+          "caller": "_build_status",
+          "callee": "self._http_status",
+          "lineNumber": 109
+        },
+        {
+          "caller": "_build_status",
+          "callee": "ObservabilityStatus",
+          "lineNumber": 112
+        },
+        {
+          "caller": "_build_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 113
+        },
+        {
+          "caller": "_build_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 118
+        },
+        {
+          "caller": "_build_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 125
+        },
+        {
+          "caller": "_build_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 131
+        },
+        {
+          "caller": "_build_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 136
+        },
+        {
+          "caller": "_build_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 142
+        },
+        {
+          "caller": "_database_status",
+          "callee": "engine.connect",
+          "lineNumber": 157
+        },
+        {
+          "caller": "_database_status",
+          "callee": "conn.execute",
+          "lineNumber": 158
+        },
+        {
+          "caller": "_database_status",
+          "callee": "text",
+          "lineNumber": 158
+        },
+        {
+          "caller": "_database_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 159
+        },
+        {
+          "caller": "_database_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 165
+        },
+        {
+          "caller": "_cache_status",
+          "callee": "redis_client.ping",
+          "lineNumber": 173
+        },
+        {
+          "caller": "_cache_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 174
+        },
+        {
+          "caller": "_cache_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 180
+        },
+        {
+          "caller": "_http_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 193
+        },
+        {
+          "caller": "_http_status",
+          "callee": "httpx.AsyncClient",
+          "lineNumber": 201
+        },
+        {
+          "caller": "_http_status",
+          "callee": "client.get",
+          "lineNumber": 202
+        },
+        {
+          "caller": "_http_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 204
+        },
+        {
+          "caller": "_http_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 210
+        },
+        {
+          "caller": "_http_status",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 217
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 3,
+        "functionCount": 2,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/observability/setup.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 14,
+      "nonEmptyLines": 11,
+      "functions": [
+        {
+          "name": "setup_observability",
+          "startLine": 8,
+          "endLine": 14,
+          "params": [
+            "app"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "setup_observability",
+          "line": 8,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "setup_observability",
+          "callee": "setup_sentry",
+          "lineNumber": 9
+        },
+        {
+          "caller": "setup_observability",
+          "callee": "setup_runtime_observability",
+          "lineNumber": 14
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/observability/tracing.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 9,
+      "nonEmptyLines": 5,
+      "functions": [
+        {
+          "name": "setup_tracing",
+          "startLine": 6,
+          "endLine": 9,
+          "params": [
+            "app",
+            "engine"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "setup_tracing",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "setup_tracing",
+          "callee": "setup_traces",
+          "lineNumber": 9
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/tests/integration_support.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 166,
+      "nonEmptyLines": 129,
+      "functions": [
+        {
+          "name": "integration_enabled",
+          "startLine": 27,
+          "endLine": 28,
+          "params": []
+        },
+        {
+          "name": "rag_integration_ready",
+          "startLine": 31,
+          "endLine": 55,
+          "params": []
+        },
+        {
+          "name": "unique_email",
+          "startLine": 58,
+          "endLine": 59,
+          "params": [
+            "prefix"
+          ]
+        },
+        {
+          "name": "prepare_integration_runtime",
+          "startLine": 62,
+          "endLine": 94,
+          "params": []
+        },
+        {
+          "name": "api_client",
+          "startLine": 98,
+          "endLine": 106,
+          "params": []
+        },
+        {
+          "name": "csrf_headers",
+          "startLine": 109,
+          "endLine": 113,
+          "params": [
+            "client"
+          ]
+        },
+        {
+          "name": "register_user",
+          "startLine": 116,
+          "endLine": 130,
+          "params": [
+            "client",
+            "email",
+            "password",
+            "full_name"
+          ]
+        },
+        {
+          "name": "sign_in",
+          "startLine": 133,
+          "endLine": 144,
+          "params": [
+            "client",
+            "email",
+            "password"
+          ]
+        },
+        {
+          "name": "register_and_sign_in",
+          "startLine": 147,
+          "endLine": 161,
+          "params": [
+            "client",
+            "email",
+            "password",
+            "full_name"
+          ]
+        },
+        {
+          "name": "auth_request",
+          "startLine": 164,
+          "endLine": 166,
+          "params": [
+            "client",
+            "method",
+            "url"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "integration_enabled",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "rag_integration_ready",
+          "line": 31,
+          "isDefault": false
+        },
+        {
+          "name": "unique_email",
+          "line": 58,
+          "isDefault": false
+        },
+        {
+          "name": "prepare_integration_runtime",
+          "line": 62,
+          "isDefault": false
+        },
+        {
+          "name": "api_client",
+          "line": 97,
+          "isDefault": false
+        },
+        {
+          "name": "csrf_headers",
+          "line": 109,
+          "isDefault": false
+        },
+        {
+          "name": "register_user",
+          "line": 116,
+          "isDefault": false
+        },
+        {
+          "name": "sign_in",
+          "line": 133,
+          "isDefault": false
+        },
+        {
+          "name": "register_and_sign_in",
+          "line": 147,
+          "isDefault": false
+        },
+        {
+          "name": "auth_request",
+          "line": 164,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "integration_enabled",
+          "callee": "os.getenv(\"RUN_INTEGRATION_TESTS\", \"\").lower",
+          "lineNumber": 28
+        },
+        {
+          "caller": "integration_enabled",
+          "callee": "os.getenv",
+          "lineNumber": 28
+        },
+        {
+          "caller": "rag_integration_ready",
+          "callee": "integration_enabled",
+          "lineNumber": 36
+        },
+        {
+          "caller": "_probe",
+          "callee": "prepare_integration_runtime",
+          "lineNumber": 41
+        },
+        {
+          "caller": "_probe",
+          "callee": "SessionLocal",
+          "lineNumber": 45
+        },
+        {
+          "caller": "_probe",
+          "callee": "db.execute",
+          "lineNumber": 46
+        },
+        {
+          "caller": "_probe",
+          "callee": "text",
+          "lineNumber": 46
+        },
+        {
+          "caller": "_probe",
+          "callee": "db.execute",
+          "lineNumber": 47
+        },
+        {
+          "caller": "_probe",
+          "callee": "text",
+          "lineNumber": 47
+        },
+        {
+          "caller": "rag_integration_ready",
+          "callee": "asyncio.run",
+          "lineNumber": 54
+        },
+        {
+          "caller": "rag_integration_ready",
+          "callee": "_probe",
+          "lineNumber": 54
+        },
+        {
+          "caller": "unique_email",
+          "callee": "uuid.uuid4",
+          "lineNumber": 59
+        },
+        {
+          "caller": "prepare_integration_runtime",
+          "callee": "cache.redis_client.aclose",
+          "lineNumber": 75
+        },
+        {
+          "caller": "prepare_integration_runtime",
+          "callee": "redis.from_url",
+          "lineNumber": 78
+        },
+        {
+          "caller": "prepare_integration_runtime",
+          "callee": "db_session.engine.dispose",
+          "lineNumber": 81
+        },
+        {
+          "caller": "prepare_integration_runtime",
+          "callee": "create_async_engine",
+          "lineNumber": 85
+        },
+        {
+          "caller": "prepare_integration_runtime",
+          "callee": "async_sessionmaker",
+          "lineNumber": 90
+        },
+        {
+          "caller": "api_client",
+          "callee": "prepare_integration_runtime",
+          "lineNumber": 99
+        },
+        {
+          "caller": "api_client",
+          "callee": "app.router.lifespan_context",
+          "lineNumber": 103
+        },
+        {
+          "caller": "api_client",
+          "callee": "ASGITransport",
+          "lineNumber": 104
+        },
+        {
+          "caller": "api_client",
+          "callee": "AsyncClient",
+          "lineNumber": 105
+        },
+        {
+          "caller": "csrf_headers",
+          "callee": "client.cookies.get",
+          "lineNumber": 110
+        },
+        {
+          "caller": "register_user",
+          "callee": "unique_email",
+          "lineNumber": 123
+        },
+        {
+          "caller": "register_user",
+          "callee": "client.post",
+          "lineNumber": 124
+        },
+        {
+          "caller": "register_user",
+          "callee": "AssertionError",
+          "lineNumber": 129
+        },
+        {
+          "caller": "sign_in",
+          "callee": "client.post",
+          "lineNumber": 139
+        },
+        {
+          "caller": "sign_in",
+          "callee": "AssertionError",
+          "lineNumber": 144
+        },
+        {
+          "caller": "register_and_sign_in",
+          "callee": "register_user",
+          "lineNumber": 154
+        },
+        {
+          "caller": "register_and_sign_in",
+          "callee": "sign_in",
+          "lineNumber": 160
+        },
+        {
+          "caller": "auth_request",
+          "callee": "csrf_headers",
+          "lineNumber": 165
+        },
+        {
+          "caller": "auth_request",
+          "callee": "kwargs.pop",
+          "lineNumber": 165
+        },
+        {
+          "caller": "auth_request",
+          "callee": "client.request",
+          "lineNumber": 166
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 10,
+        "functionCount": 10,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/tests/test_agent_run_smoke.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 66,
+      "nonEmptyLines": 59,
+      "classes": [
+        {
+          "name": "AgentRunSmokeTest",
+          "startLine": 17,
+          "endLine": 66,
+          "methods": [
+            "test_agent_run_returns_completed_response"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AgentRunSmokeTest",
+          "line": 13,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "api_client",
+          "lineNumber": 19
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "register_and_sign_in",
+          "lineNumber": 20
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "uuid.uuid4",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "auth_request",
+          "lineNumber": 24
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "self.assertEqual",
+          "lineNumber": 34
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "template.json",
+          "lineNumber": 35
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "auth_request",
+          "lineNumber": 37
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "self.assertEqual",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "auth_request",
+          "lineNumber": 51
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "self.assertEqual",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "run.json",
+          "lineNumber": 62
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "self.assertEqual",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "self.assertTrue",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "self.assertTrue",
+          "lineNumber": 65
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "self.assertIsNotNone",
+          "lineNumber": 66
+        },
+        {
+          "caller": "test_agent_run_returns_completed_response",
+          "callee": "body.get",
+          "lineNumber": 66
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/tests/test_ai_provider_http_clients.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 74,
+      "nonEmptyLines": 57,
+      "functions": [
+        {
+          "name": "reset_http_clients",
+          "startLine": 17,
+          "endLine": 22,
+          "params": []
+        },
+        {
+          "name": "test_openai_provider_reuses_shared_http_client",
+          "startLine": 25,
+          "endLine": 62,
+          "params": [
+            "monkeypatch"
+          ]
+        },
+        {
+          "name": "test_close_ai_provider_http_clients_closes_open_clients",
+          "startLine": 65,
+          "endLine": 74,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "reset_http_clients",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "test_openai_provider_reuses_shared_http_client",
+          "line": 25,
+          "isDefault": false
+        },
+        {
+          "name": "test_close_ai_provider_http_clients_closes_open_clients",
+          "line": 65,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "created_clients.append",
+          "lineNumber": 33
+        },
+        {
+          "caller": "post",
+          "callee": "MagicMock",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_openai_provider_reuses_shared_http_client",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 45
+        },
+        {
+          "caller": "test_openai_provider_reuses_shared_http_client",
+          "callee": "monkeypatch.setattr",
+          "lineNumber": 46
+        },
+        {
+          "caller": "_run",
+          "callee": "OpenAIProvider",
+          "lineNumber": 49
+        },
+        {
+          "caller": "_run",
+          "callee": "provider.embed_texts",
+          "lineNumber": 50
+        },
+        {
+          "caller": "_run",
+          "callee": "provider.generate",
+          "lineNumber": 51
+        },
+        {
+          "caller": "_run",
+          "callee": "ProviderGenerateRequest",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_openai_provider_reuses_shared_http_client",
+          "callee": "asyncio.run",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_openai_provider_reuses_shared_http_client",
+          "callee": "_run",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_openai_provider_reuses_shared_http_client",
+          "callee": "len",
+          "lineNumber": 62
+        },
+        {
+          "caller": "test_close_ai_provider_http_clients_closes_open_clients",
+          "callee": "MagicMock",
+          "lineNumber": 66
+        },
+        {
+          "caller": "test_close_ai_provider_http_clients_closes_open_clients",
+          "callee": "AsyncMock",
+          "lineNumber": 68
+        },
+        {
+          "caller": "test_close_ai_provider_http_clients_closes_open_clients",
+          "callee": "asyncio.run",
+          "lineNumber": 71
+        },
+        {
+          "caller": "test_close_ai_provider_http_clients_closes_open_clients",
+          "callee": "close_ai_provider_http_clients",
+          "lineNumber": 71
+        },
+        {
+          "caller": "test_close_ai_provider_http_clients_closes_open_clients",
+          "callee": "open_client.aclose.assert_awaited_once",
+          "lineNumber": 73
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/tests/test_api_auth.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 77,
+      "nonEmptyLines": 61,
+      "classes": [
+        {
+          "name": "AuthApiIntegrationTest",
+          "startLine": 15,
+          "endLine": 69,
+          "methods": [
+            "test_sign_up_sign_in_me_and_logout",
+            "test_me_requires_authentication",
+            "test_csrf_blocks_mutating_request_without_header",
+            "test_refresh_rotates_session",
+            "test_invalid_credentials_return_unauthorized"
+          ],
+          "properties": []
+        },
+        {
+          "name": "AuthApiUnitTest",
+          "startLine": 72,
+          "endLine": 77,
+          "methods": [
+            "test_unique_email_generates_distinct_values"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AuthApiIntegrationTest",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "AuthApiUnitTest",
+          "line": 72,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_sign_up_sign_in_me_and_logout",
+          "callee": "api_client",
+          "lineNumber": 17
+        },
+        {
+          "caller": "test_sign_up_sign_in_me_and_logout",
+          "callee": "register_and_sign_in",
+          "lineNumber": 18
+        },
+        {
+          "caller": "test_sign_up_sign_in_me_and_logout",
+          "callee": "client.get",
+          "lineNumber": 20
+        },
+        {
+          "caller": "test_sign_up_sign_in_me_and_logout",
+          "callee": "self.assertEqual",
+          "lineNumber": 21
+        },
+        {
+          "caller": "test_sign_up_sign_in_me_and_logout",
+          "callee": "self.assertEqual",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_sign_up_sign_in_me_and_logout",
+          "callee": "me.json",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_sign_up_sign_in_me_and_logout",
+          "callee": "auth_request",
+          "lineNumber": 24
+        },
+        {
+          "caller": "test_sign_up_sign_in_me_and_logout",
+          "callee": "self.assertEqual",
+          "lineNumber": 25
+        },
+        {
+          "caller": "test_sign_up_sign_in_me_and_logout",
+          "callee": "client.get",
+          "lineNumber": 27
+        },
+        {
+          "caller": "test_sign_up_sign_in_me_and_logout",
+          "callee": "self.assertEqual",
+          "lineNumber": 28
+        },
+        {
+          "caller": "test_me_requires_authentication",
+          "callee": "api_client",
+          "lineNumber": 31
+        },
+        {
+          "caller": "test_me_requires_authentication",
+          "callee": "client.get",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_me_requires_authentication",
+          "callee": "self.assertEqual",
+          "lineNumber": 33
+        },
+        {
+          "caller": "test_csrf_blocks_mutating_request_without_header",
+          "callee": "api_client",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_csrf_blocks_mutating_request_without_header",
+          "callee": "register_and_sign_in",
+          "lineNumber": 37
+        },
+        {
+          "caller": "test_csrf_blocks_mutating_request_without_header",
+          "callee": "client.post",
+          "lineNumber": 39
+        },
+        {
+          "caller": "test_csrf_blocks_mutating_request_without_header",
+          "callee": "self.assertEqual",
+          "lineNumber": 43
+        },
+        {
+          "caller": "test_csrf_blocks_mutating_request_without_header",
+          "callee": "self.assertIn",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_csrf_blocks_mutating_request_without_header",
+          "callee": "response.json",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_csrf_blocks_mutating_request_without_header",
+          "callee": "client.get",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_csrf_blocks_mutating_request_without_header",
+          "callee": "self.assertEqual",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_csrf_blocks_mutating_request_without_header",
+          "callee": "self.assertEqual",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_csrf_blocks_mutating_request_without_header",
+          "callee": "me.json",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_refresh_rotates_session",
+          "callee": "api_client",
+          "lineNumber": 51
+        },
+        {
+          "caller": "test_refresh_rotates_session",
+          "callee": "register_user",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_refresh_rotates_session",
+          "callee": "sign_in",
+          "lineNumber": 53
+        },
+        {
+          "caller": "test_refresh_rotates_session",
+          "callee": "auth_request",
+          "lineNumber": 55
+        },
+        {
+          "caller": "test_refresh_rotates_session",
+          "callee": "self.assertEqual",
+          "lineNumber": 56
+        },
+        {
+          "caller": "test_refresh_rotates_session",
+          "callee": "self.assertEqual",
+          "lineNumber": 57
+        },
+        {
+          "caller": "test_refresh_rotates_session",
+          "callee": "refresh.json",
+          "lineNumber": 57
+        },
+        {
+          "caller": "test_refresh_rotates_session",
+          "callee": "client.get",
+          "lineNumber": 59
+        },
+        {
+          "caller": "test_refresh_rotates_session",
+          "callee": "self.assertEqual",
+          "lineNumber": 60
+        },
+        {
+          "caller": "test_invalid_credentials_return_unauthorized",
+          "callee": "api_client",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_invalid_credentials_return_unauthorized",
+          "callee": "register_user",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_invalid_credentials_return_unauthorized",
+          "callee": "client.post",
+          "lineNumber": 65
+        },
+        {
+          "caller": "test_invalid_credentials_return_unauthorized",
+          "callee": "self.assertEqual",
+          "lineNumber": 69
+        },
+        {
+          "caller": "test_unique_email_generates_distinct_values",
+          "callee": "unique_email",
+          "lineNumber": 74
+        },
+        {
+          "caller": "test_unique_email_generates_distinct_values",
+          "callee": "unique_email",
+          "lineNumber": 75
+        },
+        {
+          "caller": "test_unique_email_generates_distinct_values",
+          "callee": "self.assertNotEqual",
+          "lineNumber": 76
+        },
+        {
+          "caller": "test_unique_email_generates_distinct_values",
+          "callee": "self.assertTrue",
+          "lineNumber": 77
+        },
+        {
+          "caller": "test_unique_email_generates_distinct_values",
+          "callee": "first.endswith",
+          "lineNumber": 77
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/tests/test_async_dispatch.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 96,
+      "nonEmptyLines": 73,
+      "functions": [
+        {
+          "name": "reset_eager_warning_flag",
+          "startLine": 11,
+          "endLine": 14,
+          "params": []
+        },
+        {
+          "name": "test_run_async_in_sync_context_executes_coroutine",
+          "startLine": 17,
+          "endLine": 24,
+          "params": []
+        },
+        {
+          "name": "test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+          "startLine": 29,
+          "endLine": 53,
+          "params": [
+            "mock_thread_cls"
+          ]
+        },
+        {
+          "name": "test_dispatch_background_sync_job_uses_celery_when_not_eager",
+          "startLine": 58,
+          "endLine": 76,
+          "params": [
+            "mock_thread_cls"
+          ]
+        },
+        {
+          "name": "test_log_eager_mode_startup_warning_in_production",
+          "startLine": 82,
+          "endLine": 86,
+          "params": [
+            "mock_logger"
+          ]
+        },
+        {
+          "name": "test_log_eager_mode_startup_warning_in_dev",
+          "startLine": 92,
+          "endLine": 96,
+          "params": [
+            "mock_logger"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "reset_eager_warning_flag",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "test_run_async_in_sync_context_executes_coroutine",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "test_dispatch_background_sync_job_uses_celery_when_not_eager",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "test_log_eager_mode_startup_warning_in_production",
+          "line": 79,
+          "isDefault": false
+        },
+        {
+          "name": "test_log_eager_mode_startup_warning_in_dev",
+          "line": 89,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_work",
+          "callee": "seen.append",
+          "lineNumber": 21
+        },
+        {
+          "caller": "test_run_async_in_sync_context_executes_coroutine",
+          "callee": "async_dispatch.run_async_in_sync_context",
+          "lineNumber": 23
+        },
+        {
+          "caller": "test_run_async_in_sync_context_executes_coroutine",
+          "callee": "_work",
+          "lineNumber": 23
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+          "callee": "MagicMock",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+          "callee": "MagicMock",
+          "lineNumber": 34
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+          "callee": "MagicMock",
+          "lineNumber": 35
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+          "callee": "async_dispatch.dispatch_background_sync_job",
+          "lineNumber": 37
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+          "callee": "mock_thread_cls.assert_called_once_with",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+          "callee": "mock_thread.start.assert_called_once",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+          "callee": "celery_task.apply_async.assert_not_called",
+          "lineNumber": 53
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_celery_when_not_eager",
+          "callee": "MagicMock",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_celery_when_not_eager",
+          "callee": "async_dispatch.dispatch_background_sync_job",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_celery_when_not_eager",
+          "callee": "MagicMock",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_celery_when_not_eager",
+          "callee": "mock_thread_cls.assert_not_called",
+          "lineNumber": 72
+        },
+        {
+          "caller": "test_dispatch_background_sync_job_uses_celery_when_not_eager",
+          "callee": "celery_task.apply_async.assert_called_once_with",
+          "lineNumber": 73
+        },
+        {
+          "caller": "test_log_eager_mode_startup_warning_in_production",
+          "callee": "async_dispatch.log_eager_mode_startup_warning",
+          "lineNumber": 83
+        },
+        {
+          "caller": "test_log_eager_mode_startup_warning_in_production",
+          "callee": "mock_logger.warning.assert_called_once",
+          "lineNumber": 85
+        },
+        {
+          "caller": "test_log_eager_mode_startup_warning_in_production",
+          "callee": "mock_logger.info.assert_not_called",
+          "lineNumber": 86
+        },
+        {
+          "caller": "test_log_eager_mode_startup_warning_in_dev",
+          "callee": "async_dispatch.log_eager_mode_startup_warning",
+          "lineNumber": 93
+        },
+        {
+          "caller": "test_log_eager_mode_startup_warning_in_dev",
+          "callee": "mock_logger.info.assert_called_once",
+          "lineNumber": 95
+        },
+        {
+          "caller": "test_log_eager_mode_startup_warning_in_dev",
+          "callee": "mock_logger.warning.assert_not_called",
+          "lineNumber": 96
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/tests/test_cache.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 151,
+      "nonEmptyLines": 127,
+      "classes": [
+        {
+          "name": "CacheHelpersTest",
+          "startLine": 15,
+          "endLine": 68,
+          "methods": [
+            "test_cache_get_returns_none_when_disabled",
+            "test_cache_set_skips_when_disabled",
+            "test_cache_round_trip_json",
+            "test_embedding_cache_key_is_stable_and_namespaced",
+            "test_invalidate_platform_caches_deletes_known_keys"
+          ],
+          "properties": []
+        },
+        {
+          "name": "EmbeddingCacheTest",
+          "startLine": 71,
+          "endLine": 151,
+          "methods": [
+            "test_embed_texts_uses_cache_for_repeat_query",
+            "test_embed_texts_skips_cache_for_overlong_text",
+            "test_ai_embed_retrieval_queries_uses_cache"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "CacheHelpersTest",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "EmbeddingCacheTest",
+          "line": 71,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_cache_get_returns_none_when_disabled",
+          "callee": "patch",
+          "lineNumber": 17
+        },
+        {
+          "caller": "test_cache_get_returns_none_when_disabled",
+          "callee": "cache_get_json",
+          "lineNumber": 19
+        },
+        {
+          "caller": "test_cache_get_returns_none_when_disabled",
+          "callee": "self.assertIsNone",
+          "lineNumber": 20
+        },
+        {
+          "caller": "test_cache_set_skips_when_disabled",
+          "callee": "AsyncMock",
+          "lineNumber": 23
+        },
+        {
+          "caller": "test_cache_set_skips_when_disabled",
+          "callee": "patch",
+          "lineNumber": 25
+        },
+        {
+          "caller": "test_cache_set_skips_when_disabled",
+          "callee": "patch",
+          "lineNumber": 26
+        },
+        {
+          "caller": "test_cache_set_skips_when_disabled",
+          "callee": "cache_set_json",
+          "lineNumber": 29
+        },
+        {
+          "caller": "test_cache_set_skips_when_disabled",
+          "callee": "client.setex.assert_not_called",
+          "lineNumber": 30
+        },
+        {
+          "caller": "test_cache_round_trip_json",
+          "callee": "AsyncMock",
+          "lineNumber": 33
+        },
+        {
+          "caller": "test_cache_round_trip_json",
+          "callee": "AsyncMock",
+          "lineNumber": 34
+        },
+        {
+          "caller": "test_cache_round_trip_json",
+          "callee": "patch",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_cache_round_trip_json",
+          "callee": "patch",
+          "lineNumber": 37
+        },
+        {
+          "caller": "test_cache_round_trip_json",
+          "callee": "cache_set_json",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_cache_round_trip_json",
+          "callee": "client.setex.assert_awaited_once",
+          "lineNumber": 41
+        },
+        {
+          "caller": "test_cache_round_trip_json",
+          "callee": "AsyncMock",
+          "lineNumber": 43
+        },
+        {
+          "caller": "test_cache_round_trip_json",
+          "callee": "cache_get_json",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_cache_round_trip_json",
+          "callee": "self.assertEqual",
+          "lineNumber": 45
+        },
+        {
+          "caller": "test_embedding_cache_key_is_stable_and_namespaced",
+          "callee": "embedding_cache_key",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_embedding_cache_key_is_stable_and_namespaced",
+          "callee": "embedding_cache_key",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_embedding_cache_key_is_stable_and_namespaced",
+          "callee": "embedding_cache_key",
+          "lineNumber": 50
+        },
+        {
+          "caller": "test_embedding_cache_key_is_stable_and_namespaced",
+          "callee": "self.assertEqual",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_embedding_cache_key_is_stable_and_namespaced",
+          "callee": "self.assertNotEqual",
+          "lineNumber": 53
+        },
+        {
+          "caller": "test_embedding_cache_key_is_stable_and_namespaced",
+          "callee": "self.assertTrue",
+          "lineNumber": 54
+        },
+        {
+          "caller": "test_embedding_cache_key_is_stable_and_namespaced",
+          "callee": "first.startswith",
+          "lineNumber": 54
+        },
+        {
+          "caller": "test_invalidate_platform_caches_deletes_known_keys",
+          "callee": "AsyncMock",
+          "lineNumber": 57
+        },
+        {
+          "caller": "test_invalidate_platform_caches_deletes_known_keys",
+          "callee": "patch",
+          "lineNumber": 59
+        },
+        {
+          "caller": "test_invalidate_platform_caches_deletes_known_keys",
+          "callee": "patch",
+          "lineNumber": 60
+        },
+        {
+          "caller": "test_invalidate_platform_caches_deletes_known_keys",
+          "callee": "invalidate_platform_caches",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_invalidate_platform_caches_deletes_known_keys",
+          "callee": "client.delete.assert_awaited_once_with",
+          "lineNumber": 65
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "EmbeddingService",
+          "lineNumber": 75
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "AsyncMock",
+          "lineNumber": 76
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "AsyncMock",
+          "lineNumber": 77
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "patch",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "patch",
+          "lineNumber": 81
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "AsyncMock",
+          "lineNumber": 83
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "patch",
+          "lineNumber": 85
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "AsyncMock",
+          "lineNumber": 87
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "service.embed_texts",
+          "lineNumber": 94
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "service.embed_texts",
+          "lineNumber": 95
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "self.assertEqual",
+          "lineNumber": 97
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "self.assertEqual",
+          "lineNumber": 98
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "service._adapter.embed_texts.assert_awaited_once_with",
+          "lineNumber": 99
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "cache_set.assert_awaited_once",
+          "lineNumber": 100
+        },
+        {
+          "caller": "test_embed_texts_uses_cache_for_repeat_query",
+          "callee": "self.assertEqual",
+          "lineNumber": 101
+        },
+        {
+          "caller": "test_embed_texts_skips_cache_for_overlong_text",
+          "callee": "AsyncMock",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_embed_texts_skips_cache_for_overlong_text",
+          "callee": "patch",
+          "lineNumber": 108
+        },
+        {
+          "caller": "test_embed_texts_skips_cache_for_overlong_text",
+          "callee": "patch",
+          "lineNumber": 109
+        },
+        {
+          "caller": "test_embed_texts_skips_cache_for_overlong_text",
+          "callee": "AsyncMock",
+          "lineNumber": 109
+        },
+        {
+          "caller": "test_embed_texts_skips_cache_for_overlong_text",
+          "callee": "patch",
+          "lineNumber": 110
+        },
+        {
+          "caller": "test_embed_texts_skips_cache_for_overlong_text",
+          "callee": "AsyncMock",
+          "lineNumber": 110
+        },
+        {
+          "caller": "test_embed_texts_skips_cache_for_overlong_text",
+          "callee": "embed_texts_with_cache",
+          "lineNumber": 113
+        },
+        {
+          "caller": "test_embed_texts_skips_cache_for_overlong_text",
+          "callee": "self.assertEqual",
+          "lineNumber": 120
+        },
+        {
+          "caller": "test_embed_texts_skips_cache_for_overlong_text",
+          "callee": "embed_fn.assert_awaited_once_with",
+          "lineNumber": 121
+        },
+        {
+          "caller": "test_embed_texts_skips_cache_for_overlong_text",
+          "callee": "cache_get.assert_not_awaited",
+          "lineNumber": 122
+        },
+        {
+          "caller": "test_embed_texts_skips_cache_for_overlong_text",
+          "callee": "cache_set.assert_not_awaited",
+          "lineNumber": 123
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "AiProviderRegistry",
+          "lineNumber": 128
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "AsyncMock",
+          "lineNumber": 129
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "AsyncMock",
+          "lineNumber": 131
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "MagicMock",
+          "lineNumber": 132
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "patch",
+          "lineNumber": 135
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "patch",
+          "lineNumber": 136
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "AsyncMock",
+          "lineNumber": 138
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "patch",
+          "lineNumber": 140
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "AsyncMock",
+          "lineNumber": 140
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "registry.embed_retrieval_queries",
+          "lineNumber": 145
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "registry.embed_retrieval_queries",
+          "lineNumber": 146
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "self.assertEqual",
+          "lineNumber": 148
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "self.assertEqual",
+          "lineNumber": 149
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "provider.embed_texts.assert_awaited_once_with",
+          "lineNumber": 150
+        },
+        {
+          "caller": "test_ai_embed_retrieval_queries_uses_cache",
+          "callee": "cache_set.assert_awaited_once",
+          "lineNumber": 151
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/tests/test_observability.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 135,
+      "nonEmptyLines": 109,
+      "functions": [
+        {
+          "name": "make_settings",
+          "startLine": 9,
+          "endLine": 26,
+          "params": [
+            "**overrides"
+          ]
+        },
+        {
+          "name": "make_status_item",
+          "startLine": 29,
+          "endLine": 32,
+          "params": [
+            "**overrides"
+          ]
+        },
+        {
+          "name": "make_observability_status",
+          "startLine": 35,
+          "endLine": 49,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "ObservabilityServiceTest",
+          "startLine": 52,
+          "endLine": 83,
+          "methods": [
+            "test_url_joining_trims_duplicate_slashes",
+            "test_links_return_configured_urls_for_admin",
+            "test_missing_optional_urls_are_not_configured",
+            "test_non_admin_does_not_receive_technical_urls"
+          ],
+          "properties": []
+        },
+        {
+          "name": "ObservabilityStatusTest",
+          "startLine": 86,
+          "endLine": 131,
+          "methods": [
+            "test_status_does_not_crash_when_tools_are_unconfigured",
+            "test_status_uses_cached_payload_on_repeat_calls"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "make_settings",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "make_status_item",
+          "line": 29,
+          "isDefault": false
+        },
+        {
+          "name": "make_observability_status",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "ObservabilityServiceTest",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "ObservabilityStatusTest",
+          "line": 86,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "make_settings",
+          "callee": "defaults.update",
+          "lineNumber": 25
+        },
+        {
+          "caller": "make_settings",
+          "callee": "SimpleNamespace",
+          "lineNumber": 26
+        },
+        {
+          "caller": "make_status_item",
+          "callee": "payload.update",
+          "lineNumber": 31
+        },
+        {
+          "caller": "make_status_item",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 32
+        },
+        {
+          "caller": "make_observability_status",
+          "callee": "make_status_item",
+          "lineNumber": 36
+        },
+        {
+          "caller": "make_observability_status",
+          "callee": "ObservabilityStatus",
+          "lineNumber": 37
+        },
+        {
+          "caller": "test_url_joining_trims_duplicate_slashes",
+          "callee": "build_public_url",
+          "lineNumber": 54
+        },
+        {
+          "caller": "test_url_joining_trims_duplicate_slashes",
+          "callee": "self.assertEqual",
+          "lineNumber": 56
+        },
+        {
+          "caller": "test_links_return_configured_urls_for_admin",
+          "callee": "SimpleNamespace",
+          "lineNumber": 59
+        },
+        {
+          "caller": "test_links_return_configured_urls_for_admin",
+          "callee": "ObservabilityService(make_settings()).get_links",
+          "lineNumber": 60
+        },
+        {
+          "caller": "test_links_return_configured_urls_for_admin",
+          "callee": "ObservabilityService",
+          "lineNumber": 60
+        },
+        {
+          "caller": "test_links_return_configured_urls_for_admin",
+          "callee": "make_settings",
+          "lineNumber": 60
+        },
+        {
+          "caller": "test_links_return_configured_urls_for_admin",
+          "callee": "self.assertEqual",
+          "lineNumber": 62
+        },
+        {
+          "caller": "test_links_return_configured_urls_for_admin",
+          "callee": "self.assertEqual",
+          "lineNumber": 66
+        },
+        {
+          "caller": "test_links_return_configured_urls_for_admin",
+          "callee": "self.assertTrue",
+          "lineNumber": 67
+        },
+        {
+          "caller": "test_missing_optional_urls_are_not_configured",
+          "callee": "SimpleNamespace",
+          "lineNumber": 70
+        },
+        {
+          "caller": "test_missing_optional_urls_are_not_configured",
+          "callee": "ObservabilityService(\n            make_settings(GRAFANA_FRONTEND_DASHBOARD_PATH=\"\")\n        ).get_links",
+          "lineNumber": 71
+        },
+        {
+          "caller": "test_missing_optional_urls_are_not_configured",
+          "callee": "ObservabilityService",
+          "lineNumber": 71
+        },
+        {
+          "caller": "test_missing_optional_urls_are_not_configured",
+          "callee": "make_settings",
+          "lineNumber": 72
+        },
+        {
+          "caller": "test_missing_optional_urls_are_not_configured",
+          "callee": "self.assertIsNone",
+          "lineNumber": 75
+        },
+        {
+          "caller": "test_missing_optional_urls_are_not_configured",
+          "callee": "self.assertFalse",
+          "lineNumber": 76
+        },
+        {
+          "caller": "test_non_admin_does_not_receive_technical_urls",
+          "callee": "SimpleNamespace",
+          "lineNumber": 79
+        },
+        {
+          "caller": "test_non_admin_does_not_receive_technical_urls",
+          "callee": "ObservabilityService(make_settings()).get_links",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_non_admin_does_not_receive_technical_urls",
+          "callee": "ObservabilityService",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_non_admin_does_not_receive_technical_urls",
+          "callee": "make_settings",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_non_admin_does_not_receive_technical_urls",
+          "callee": "self.assertIsNone",
+          "lineNumber": 82
+        },
+        {
+          "caller": "test_non_admin_does_not_receive_technical_urls",
+          "callee": "self.assertFalse",
+          "lineNumber": 83
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "ObservabilityService",
+          "lineNumber": 88
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "make_settings",
+          "lineNumber": 89
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 95
+        },
+        {
+          "caller": "passthrough_get_or_load_model",
+          "callee": "loader",
+          "lineNumber": 98
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "patch",
+          "lineNumber": 101
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "patch.object",
+          "lineNumber": 105
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "AsyncMock",
+          "lineNumber": 105
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "patch.object",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "AsyncMock",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "service.get_status",
+          "lineNumber": 108
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "self.assertIn",
+          "lineNumber": 110
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "self.assertIn",
+          "lineNumber": 111
+        },
+        {
+          "caller": "test_status_does_not_crash_when_tools_are_unconfigured",
+          "callee": "self.assertIn",
+          "lineNumber": 112
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "ObservabilityService",
+          "lineNumber": 115
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "make_settings",
+          "lineNumber": 115
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "make_observability_status",
+          "lineNumber": 116
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "AsyncMock",
+          "lineNumber": 117
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "patch.object",
+          "lineNumber": 120
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "patch",
+          "lineNumber": 121
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "AsyncMock",
+          "lineNumber": 123
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "service.get_status",
+          "lineNumber": 126
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "service.get_status",
+          "lineNumber": 127
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "self.assertEqual",
+          "lineNumber": 129
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "self.assertEqual",
+          "lineNumber": 130
+        },
+        {
+          "caller": "test_status_uses_cached_payload_on_repeat_calls",
+          "callee": "build_mock.assert_not_called",
+          "lineNumber": 131
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 5,
+        "functionCount": 3,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/tests/test_platform_cache.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 110,
+      "nonEmptyLines": 93,
+      "classes": [
+        {
+          "name": "PlatformConfigCacheTest",
+          "startLine": 16,
+          "endLine": 110,
+          "methods": [
+            "asyncSetUp",
+            "test_get_platform_config_uses_cache_loader_once",
+            "test_local_cache_serves_platform_config_without_second_redis_read",
+            "test_list_feature_flags_uses_shared_cache_loader",
+            "test_invalidate_platform_caches_clears_local_entries"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "PlatformConfigCacheTest",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "asyncSetUp",
+          "callee": "_local_cache.delete",
+          "lineNumber": 18
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "AsyncMock",
+          "lineNumber": 21
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "PlatformService",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "PlatformConfigResponse",
+          "lineNumber": 23
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "AsyncMock",
+          "lineNumber": 34
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "patch",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "AsyncMock",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "service.get_platform_config",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "service.get_platform_config",
+          "lineNumber": 41
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "self.assertEqual",
+          "lineNumber": 43
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "self.assertEqual",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "self.assertEqual",
+          "lineNumber": 45
+        },
+        {
+          "caller": "test_get_platform_config_uses_cache_loader_once",
+          "callee": "service._load_platform_config.assert_not_called",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_local_cache_serves_platform_config_without_second_redis_read",
+          "callee": "AsyncMock",
+          "lineNumber": 50
+        },
+        {
+          "caller": "test_local_cache_serves_platform_config_without_second_redis_read",
+          "callee": "AsyncMock",
+          "lineNumber": 51
+        },
+        {
+          "caller": "test_local_cache_serves_platform_config_without_second_redis_read",
+          "callee": "patch",
+          "lineNumber": 54
+        },
+        {
+          "caller": "test_local_cache_serves_platform_config_without_second_redis_read",
+          "callee": "patch",
+          "lineNumber": 55
+        },
+        {
+          "caller": "test_local_cache_serves_platform_config_without_second_redis_read",
+          "callee": "cache_set_json",
+          "lineNumber": 60
+        },
+        {
+          "caller": "test_local_cache_serves_platform_config_without_second_redis_read",
+          "callee": "redis_client.get.reset_mock",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_local_cache_serves_platform_config_without_second_redis_read",
+          "callee": "cache_get_json",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_local_cache_serves_platform_config_without_second_redis_read",
+          "callee": "cache_get_json",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_local_cache_serves_platform_config_without_second_redis_read",
+          "callee": "self.assertEqual",
+          "lineNumber": 66
+        },
+        {
+          "caller": "test_local_cache_serves_platform_config_without_second_redis_read",
+          "callee": "self.assertEqual",
+          "lineNumber": 67
+        },
+        {
+          "caller": "test_local_cache_serves_platform_config_without_second_redis_read",
+          "callee": "redis_client.get.assert_not_awaited",
+          "lineNumber": 68
+        },
+        {
+          "caller": "test_list_feature_flags_uses_shared_cache_loader",
+          "callee": "AsyncMock",
+          "lineNumber": 71
+        },
+        {
+          "caller": "test_list_feature_flags_uses_shared_cache_loader",
+          "callee": "PlatformService",
+          "lineNumber": 72
+        },
+        {
+          "caller": "test_list_feature_flags_uses_shared_cache_loader",
+          "callee": "AsyncMock",
+          "lineNumber": 85
+        },
+        {
+          "caller": "test_list_feature_flags_uses_shared_cache_loader",
+          "callee": "patch",
+          "lineNumber": 87
+        },
+        {
+          "caller": "test_list_feature_flags_uses_shared_cache_loader",
+          "callee": "AsyncMock",
+          "lineNumber": 89
+        },
+        {
+          "caller": "test_list_feature_flags_uses_shared_cache_loader",
+          "callee": "service.list_feature_flags",
+          "lineNumber": 91
+        },
+        {
+          "caller": "test_list_feature_flags_uses_shared_cache_loader",
+          "callee": "service.list_feature_flags",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_list_feature_flags_uses_shared_cache_loader",
+          "callee": "self.assertEqual",
+          "lineNumber": 94
+        },
+        {
+          "caller": "test_list_feature_flags_uses_shared_cache_loader",
+          "callee": "self.assertEqual",
+          "lineNumber": 95
+        },
+        {
+          "caller": "test_list_feature_flags_uses_shared_cache_loader",
+          "callee": "self.assertEqual",
+          "lineNumber": 96
+        },
+        {
+          "caller": "test_list_feature_flags_uses_shared_cache_loader",
+          "callee": "service._load_feature_flags_for_cache.assert_not_called",
+          "lineNumber": 97
+        },
+        {
+          "caller": "test_invalidate_platform_caches_clears_local_entries",
+          "callee": "patch",
+          "lineNumber": 100
+        },
+        {
+          "caller": "test_invalidate_platform_caches_clears_local_entries",
+          "callee": "AsyncMock",
+          "lineNumber": 100
+        },
+        {
+          "caller": "test_invalidate_platform_caches_clears_local_entries",
+          "callee": "cache_set_json",
+          "lineNumber": 101
+        },
+        {
+          "caller": "test_invalidate_platform_caches_clears_local_entries",
+          "callee": "invalidate_platform_caches",
+          "lineNumber": 102
+        },
+        {
+          "caller": "test_invalidate_platform_caches_clears_local_entries",
+          "callee": "cache_get_json",
+          "lineNumber": 104
+        },
+        {
+          "caller": "test_invalidate_platform_caches_clears_local_entries",
+          "callee": "self.assertIsNone",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_invalidate_platform_caches_clears_local_entries",
+          "callee": "redis_client.delete.assert_awaited_once_with",
+          "lineNumber": 107
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/tests/test_rag_permissions_integration.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 61,
+      "nonEmptyLines": 51,
+      "classes": [
+        {
+          "name": "RagPermissionsIntegrationTest",
+          "startLine": 17,
+          "endLine": 61,
+          "methods": [
+            "test_cross_user_document_access_is_blocked",
+            "test_upload_to_foreign_project_is_forbidden"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RagPermissionsIntegrationTest",
+          "line": 13,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "api_client",
+          "lineNumber": 19
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "register_and_sign_in",
+          "lineNumber": 20
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "patch",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "auth_request",
+          "lineNumber": 23
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "self.assertEqual",
+          "lineNumber": 29
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "upload.json",
+          "lineNumber": 30
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "owner_client.get",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "self.assertEqual",
+          "lineNumber": 33
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "api_client",
+          "lineNumber": 35
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "register_and_sign_in",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "other_client.get",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "self.assertEqual",
+          "lineNumber": 39
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "auth_request",
+          "lineNumber": 41
+        },
+        {
+          "caller": "test_cross_user_document_access_is_blocked",
+          "callee": "self.assertEqual",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_upload_to_foreign_project_is_forbidden",
+          "callee": "api_client",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_upload_to_foreign_project_is_forbidden",
+          "callee": "register_and_sign_in",
+          "lineNumber": 50
+        },
+        {
+          "caller": "test_upload_to_foreign_project_is_forbidden",
+          "callee": "patch",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_upload_to_foreign_project_is_forbidden",
+          "callee": "auth_request",
+          "lineNumber": 53
+        },
+        {
+          "caller": "test_upload_to_foreign_project_is_forbidden",
+          "callee": "self.assertEqual",
+          "lineNumber": 60
+        },
+        {
+          "caller": "test_upload_to_foreign_project_is_forbidden",
+          "callee": "self.assertIn",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_upload_to_foreign_project_is_forbidden",
+          "callee": "upload.json",
+          "lineNumber": 61
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/tests/test_settings_observability_cache.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 137,
+      "nonEmptyLines": 117,
+      "classes": [
+        {
+          "name": "SettingsCacheTest",
+          "startLine": 19,
+          "endLine": 137,
+          "methods": [
+            "asyncSetUp",
+            "test_list_database_settings_uses_shared_cache_loader",
+            "test_list_config_entries_uses_local_cache",
+            "test_invalidate_settings_config_cache_clears_entries",
+            "test_settings_local_cache_avoids_second_redis_read",
+            "test_observability_status_uses_local_only_cache"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "SettingsCacheTest",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "asyncSetUp",
+          "callee": "_local_cache.delete",
+          "lineNumber": 21
+        },
+        {
+          "caller": "test_list_database_settings_uses_shared_cache_loader",
+          "callee": "AsyncMock",
+          "lineNumber": 29
+        },
+        {
+          "caller": "test_list_database_settings_uses_shared_cache_loader",
+          "callee": "SettingsService",
+          "lineNumber": 30
+        },
+        {
+          "caller": "test_list_database_settings_uses_shared_cache_loader",
+          "callee": "AsyncMock",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_list_database_settings_uses_shared_cache_loader",
+          "callee": "patch",
+          "lineNumber": 42
+        },
+        {
+          "caller": "test_list_database_settings_uses_shared_cache_loader",
+          "callee": "AsyncMock",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_list_database_settings_uses_shared_cache_loader",
+          "callee": "service.list_database_settings",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_list_database_settings_uses_shared_cache_loader",
+          "callee": "service.list_database_settings",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_list_database_settings_uses_shared_cache_loader",
+          "callee": "self.assertEqual",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_list_database_settings_uses_shared_cache_loader",
+          "callee": "self.assertEqual",
+          "lineNumber": 50
+        },
+        {
+          "caller": "test_list_database_settings_uses_shared_cache_loader",
+          "callee": "self.assertEqual",
+          "lineNumber": 51
+        },
+        {
+          "caller": "test_list_database_settings_uses_shared_cache_loader",
+          "callee": "service._load_database_settings_for_cache.assert_not_called",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_list_config_entries_uses_local_cache",
+          "callee": "ConfigSettingsResponse",
+          "lineNumber": 55
+        },
+        {
+          "caller": "test_list_config_entries_uses_local_cache",
+          "callee": "patch.object",
+          "lineNumber": 57
+        },
+        {
+          "caller": "test_list_config_entries_uses_local_cache",
+          "callee": "SettingsService.list_config_entries",
+          "lineNumber": 62
+        },
+        {
+          "caller": "test_list_config_entries_uses_local_cache",
+          "callee": "SettingsService.list_config_entries",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_list_config_entries_uses_local_cache",
+          "callee": "self.assertEqual",
+          "lineNumber": 65
+        },
+        {
+          "caller": "test_list_config_entries_uses_local_cache",
+          "callee": "build.assert_called_once",
+          "lineNumber": 66
+        },
+        {
+          "caller": "test_invalidate_settings_config_cache_clears_entries",
+          "callee": "set_local_cached_json",
+          "lineNumber": 71
+        },
+        {
+          "caller": "test_invalidate_settings_config_cache_clears_entries",
+          "callee": "invalidate_settings_config_cache",
+          "lineNumber": 76
+        },
+        {
+          "caller": "test_invalidate_settings_config_cache_clears_entries",
+          "callee": "self.assertIsNone",
+          "lineNumber": 77
+        },
+        {
+          "caller": "test_invalidate_settings_config_cache_clears_entries",
+          "callee": "get_local_cached_json",
+          "lineNumber": 77
+        },
+        {
+          "caller": "test_settings_local_cache_avoids_second_redis_read",
+          "callee": "AsyncMock",
+          "lineNumber": 81
+        },
+        {
+          "caller": "test_settings_local_cache_avoids_second_redis_read",
+          "callee": "AsyncMock",
+          "lineNumber": 82
+        },
+        {
+          "caller": "test_settings_local_cache_avoids_second_redis_read",
+          "callee": "patch",
+          "lineNumber": 85
+        },
+        {
+          "caller": "test_settings_local_cache_avoids_second_redis_read",
+          "callee": "patch",
+          "lineNumber": 86
+        },
+        {
+          "caller": "test_settings_local_cache_avoids_second_redis_read",
+          "callee": "cache_set_json",
+          "lineNumber": 91
+        },
+        {
+          "caller": "test_settings_local_cache_avoids_second_redis_read",
+          "callee": "redis_client.get.reset_mock",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_settings_local_cache_avoids_second_redis_read",
+          "callee": "cache_get_json",
+          "lineNumber": 94
+        },
+        {
+          "caller": "test_settings_local_cache_avoids_second_redis_read",
+          "callee": "cache_get_json",
+          "lineNumber": 95
+        },
+        {
+          "caller": "test_settings_local_cache_avoids_second_redis_read",
+          "callee": "self.assertEqual",
+          "lineNumber": 97
+        },
+        {
+          "caller": "test_settings_local_cache_avoids_second_redis_read",
+          "callee": "self.assertEqual",
+          "lineNumber": 98
+        },
+        {
+          "caller": "test_settings_local_cache_avoids_second_redis_read",
+          "callee": "redis_client.get.assert_not_awaited",
+          "lineNumber": 99
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "ObservabilityStatusItem",
+          "lineNumber": 105
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "ObservabilityStatus",
+          "lineNumber": 110
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "ObservabilityService",
+          "lineNumber": 123
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "type",
+          "lineNumber": 124
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "AsyncMock",
+          "lineNumber": 126
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "AsyncMock",
+          "lineNumber": 127
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "patch",
+          "lineNumber": 129
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "service.get_status",
+          "lineNumber": 130
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "service.get_status",
+          "lineNumber": 131
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "self.assertEqual",
+          "lineNumber": 133
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "self.assertEqual",
+          "lineNumber": 134
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "service._build_status.assert_awaited_once",
+          "lineNumber": 135
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "redis_client.get.assert_not_awaited",
+          "lineNumber": 136
+        },
+        {
+          "caller": "test_observability_status_uses_local_only_cache",
+          "callee": "redis_client.setex.assert_not_awaited",
+          "lineNumber": 137
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/workers/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 3,
+      "nonEmptyLines": 2,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/workers/async_dispatch.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 71,
+      "nonEmptyLines": 57,
+      "functions": [
+        {
+          "name": "run_async_in_sync_context",
+          "startLine": 20,
+          "endLine": 22,
+          "params": [
+            "coro"
+          ]
+        },
+        {
+          "name": "dispatch_background_sync_job",
+          "startLine": 25,
+          "endLine": 55,
+          "params": [
+            "target",
+            "kwargs",
+            "celery_task",
+            "celery_kwargs",
+            "queue",
+            "job_name"
+          ]
+        },
+        {
+          "name": "log_eager_mode_startup_warning",
+          "startLine": 58,
+          "endLine": 71,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "run_async_in_sync_context",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "dispatch_background_sync_job",
+          "line": 25,
+          "isDefault": false
+        },
+        {
+          "name": "log_eager_mode_startup_warning",
+          "line": 58,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "run_async_in_sync_context",
+          "callee": "asyncio.run",
+          "lineNumber": 22
+        },
+        {
+          "caller": "dispatch_background_sync_job",
+          "callee": "logger.warning",
+          "lineNumber": 39
+        },
+        {
+          "caller": "dispatch_background_sync_job",
+          "callee": "threading.Thread",
+          "lineNumber": 46
+        },
+        {
+          "caller": "dispatch_background_sync_job",
+          "callee": "thread.start",
+          "lineNumber": 52
+        },
+        {
+          "caller": "dispatch_background_sync_job",
+          "callee": "celery_task.apply_async",
+          "lineNumber": 55
+        },
+        {
+          "caller": "log_eager_mode_startup_warning",
+          "callee": "logger.warning",
+          "lineNumber": 63
+        },
+        {
+          "caller": "log_eager_mode_startup_warning",
+          "callee": "logger.info",
+          "lineNumber": 68
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/workers/celery_app.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 29,
+      "nonEmptyLines": 26,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/workers/email.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 115,
+      "nonEmptyLines": 95,
+      "functions": [
+        {
+          "name": "send_email",
+          "startLine": 13,
+          "endLine": 43,
+          "params": [
+            "to",
+            "subject",
+            "html_body",
+            "text_body"
+          ]
+        },
+        {
+          "name": "send_email_sync",
+          "startLine": 46,
+          "endLine": 56,
+          "params": [
+            "to",
+            "subject",
+            "html_body",
+            "text_body"
+          ]
+        },
+        {
+          "name": "queue_email",
+          "startLine": 59,
+          "endLine": 79,
+          "params": [
+            "to",
+            "subject",
+            "html_body",
+            "text_body"
+          ]
+        },
+        {
+          "name": "send_verification_email",
+          "startLine": 82,
+          "endLine": 97,
+          "params": [
+            "to",
+            "token"
+          ]
+        },
+        {
+          "name": "send_password_reset_email",
+          "startLine": 100,
+          "endLine": 115,
+          "params": [
+            "to",
+            "token"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "send_email",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "send_email_sync",
+          "line": 46,
+          "isDefault": false
+        },
+        {
+          "name": "queue_email",
+          "line": 59,
+          "isDefault": false
+        },
+        {
+          "name": "send_verification_email",
+          "line": 82,
+          "isDefault": false
+        },
+        {
+          "name": "send_password_reset_email",
+          "line": 100,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "send_email",
+          "callee": "logger.info",
+          "lineNumber": 17
+        },
+        {
+          "caller": "send_email",
+          "callee": "MIMEMultipart",
+          "lineNumber": 23
+        },
+        {
+          "caller": "send_email",
+          "callee": "msg.attach",
+          "lineNumber": 28
+        },
+        {
+          "caller": "send_email",
+          "callee": "MIMEText",
+          "lineNumber": 28
+        },
+        {
+          "caller": "send_email",
+          "callee": "msg.attach",
+          "lineNumber": 29
+        },
+        {
+          "caller": "send_email",
+          "callee": "MIMEText",
+          "lineNumber": 29
+        },
+        {
+          "caller": "send_email",
+          "callee": "aiosmtplib.send",
+          "lineNumber": 31
+        },
+        {
+          "caller": "send_email",
+          "callee": "logger.info",
+          "lineNumber": 39
+        },
+        {
+          "caller": "send_email",
+          "callee": "logger.warning",
+          "lineNumber": 41
+        },
+        {
+          "caller": "send_email",
+          "callee": "logger.error",
+          "lineNumber": 43
+        },
+        {
+          "caller": "send_email_sync",
+          "callee": "run_async_in_sync_context",
+          "lineNumber": 49
+        },
+        {
+          "caller": "send_email_sync",
+          "callee": "send_email",
+          "lineNumber": 50
+        },
+        {
+          "caller": "queue_email",
+          "callee": "asyncio.get_running_loop",
+          "lineNumber": 70
+        },
+        {
+          "caller": "queue_email",
+          "callee": "send_email_sync",
+          "lineNumber": 72
+        },
+        {
+          "caller": "queue_email",
+          "callee": "loop.create_task",
+          "lineNumber": 74
+        },
+        {
+          "caller": "queue_email",
+          "callee": "send_email",
+          "lineNumber": 74
+        },
+        {
+          "caller": "queue_email",
+          "callee": "send_email_task.apply_async",
+          "lineNumber": 79
+        },
+        {
+          "caller": "send_verification_email",
+          "callee": "send_email",
+          "lineNumber": 84
+        },
+        {
+          "caller": "send_password_reset_email",
+          "callee": "send_email",
+          "lineNumber": 102
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/workers/rag_indexing.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 15,
+      "nonEmptyLines": 13,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/workers/tasks.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 38,
+      "nonEmptyLines": 34,
+      "functions": [
+        {
+          "name": "send_email_task",
+          "startLine": 13,
+          "endLine": 25,
+          "params": [
+            "to",
+            "subject",
+            "html_body",
+            "text_body"
+          ]
+        },
+        {
+          "name": "index_rag_document_task",
+          "startLine": 35,
+          "endLine": 38,
+          "params": [
+            "document_id",
+            "user_id",
+            "job_id"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "send_email_task",
+          "line": 6,
+          "isDefault": false
+        },
+        {
+          "name": "index_rag_document_task",
+          "line": 28,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "send_email_task",
+          "callee": "send_email_sync",
+          "lineNumber": 20
+        },
+        {
+          "caller": "index_rag_document_task",
+          "callee": "index_document_sync",
+          "lineNumber": 38
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,4245 @@
+{
+  "nodes": [
+    {
+      "id": "file:backend/modules/ai/application/agent_service.py",
+      "type": "file",
+      "name": "agent_service.py",
+      "filePath": "backend/modules/ai/application/agent_service.py",
+      "summary": "ai module file: agent_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/ai/application/agent_service.py:AgentService",
+      "type": "class",
+      "name": "AgentService",
+      "filePath": "backend/modules/ai/application/agent_service.py",
+      "summary": "Class AgentService in backend/modules/ai/application/agent_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/application/agent_service.py:AgentService.__init__",
+      "type": "function",
+      "name": "AgentService.__init__",
+      "filePath": "backend/modules/ai/application/agent_service.py",
+      "summary": "Method __init__ on AgentService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/application/agent_service.py:AgentService.run_agent_prompt",
+      "type": "function",
+      "name": "AgentService.run_agent_prompt",
+      "filePath": "backend/modules/ai/application/agent_service.py",
+      "summary": "Method run_agent_prompt on AgentService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/ai/application/prompt_context_builder.py",
+      "type": "file",
+      "name": "prompt_context_builder.py",
+      "filePath": "backend/modules/ai/application/prompt_context_builder.py",
+      "summary": "ai module file: prompt_context_builder.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContext",
+      "type": "class",
+      "name": "AgentPromptContext",
+      "filePath": "backend/modules/ai/application/prompt_context_builder.py",
+      "summary": "Class AgentPromptContext in backend/modules/ai/application/prompt_context_builder.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder",
+      "type": "class",
+      "name": "AgentPromptContextBuilder",
+      "filePath": "backend/modules/ai/application/prompt_context_builder.py",
+      "summary": "Class AgentPromptContextBuilder in backend/modules/ai/application/prompt_context_builder.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder.__init__",
+      "type": "function",
+      "name": "AgentPromptContextBuilder.__init__",
+      "filePath": "backend/modules/ai/application/prompt_context_builder.py",
+      "summary": "Method __init__ on AgentPromptContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder.build",
+      "type": "function",
+      "name": "AgentPromptContextBuilder.build",
+      "filePath": "backend/modules/ai/application/prompt_context_builder.py",
+      "summary": "Method build on AgentPromptContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder._load_memory_context",
+      "type": "function",
+      "name": "AgentPromptContextBuilder._load_memory_context",
+      "filePath": "backend/modules/ai/application/prompt_context_builder.py",
+      "summary": "Method _load_memory_context on AgentPromptContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder._load_document_context",
+      "type": "function",
+      "name": "AgentPromptContextBuilder._load_document_context",
+      "filePath": "backend/modules/ai/application/prompt_context_builder.py",
+      "summary": "Method _load_document_context on AgentPromptContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "type": "file",
+      "name": "test_retrieval_consolidation.py",
+      "filePath": "backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "summary": "ai module file: test_retrieval_consolidation.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentPromptContextBuilderTest",
+      "type": "class",
+      "name": "AgentPromptContextBuilderTest",
+      "filePath": "backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "summary": "Class AgentPromptContextBuilderTest in backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentPromptContextBuilderTest.asyncSetUp",
+      "type": "function",
+      "name": "AgentPromptContextBuilderTest.asyncSetUp",
+      "filePath": "backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "summary": "Method asyncSetUp on AgentPromptContextBuilderTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentPromptContextBuilderTest.test_single_memory_recall_and_assembled_context",
+      "type": "function",
+      "name": "AgentPromptContextBuilderTest.test_single_memory_recall_and_assembled_context",
+      "filePath": "backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "summary": "Method test_single_memory_recall_and_assembled_context on AgentPromptContextBuilderTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentPromptContextBuilderTest.test_legacy_retrieval_when_rag_disabled",
+      "type": "function",
+      "name": "AgentPromptContextBuilderTest.test_legacy_retrieval_when_rag_disabled",
+      "filePath": "backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "summary": "Method test_legacy_retrieval_when_rag_disabled on AgentPromptContextBuilderTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest",
+      "type": "class",
+      "name": "AgentRetrievalConsolidationTest",
+      "filePath": "backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "summary": "Class AgentRetrievalConsolidationTest in backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest.asyncSetUp",
+      "type": "function",
+      "name": "AgentRetrievalConsolidationTest.asyncSetUp",
+      "filePath": "backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "summary": "Method asyncSetUp on AgentRetrievalConsolidationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest.test_uses_unified_prompt_context",
+      "type": "function",
+      "name": "AgentRetrievalConsolidationTest.test_uses_unified_prompt_context",
+      "filePath": "backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "summary": "Method test_uses_unified_prompt_context on AgentRetrievalConsolidationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest.test_agent_reuses_prompt_context_memories_without_second_recall",
+      "type": "function",
+      "name": "AgentRetrievalConsolidationTest.test_agent_reuses_prompt_context_memories_without_second_recall",
+      "filePath": "backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "summary": "Method test_agent_reuses_prompt_context_memories_without_second_recall on AgentRetrievalConsolidationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest.test_working_memory_populated_from_prompt_context",
+      "type": "function",
+      "name": "AgentRetrievalConsolidationTest.test_working_memory_populated_from_prompt_context",
+      "filePath": "backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "summary": "Method test_working_memory_populated_from_prompt_context on AgentRetrievalConsolidationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/application/memory_consolidator.py",
+      "type": "file",
+      "name": "memory_consolidator.py",
+      "filePath": "backend/modules/memory/application/memory_consolidator.py",
+      "summary": "memory module file: memory_consolidator.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator",
+      "type": "class",
+      "name": "MemoryConsolidator",
+      "filePath": "backend/modules/memory/application/memory_consolidator.py",
+      "summary": "Class MemoryConsolidator in backend/modules/memory/application/memory_consolidator.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator.consolidate",
+      "type": "function",
+      "name": "MemoryConsolidator.consolidate",
+      "filePath": "backend/modules/memory/application/memory_consolidator.py",
+      "summary": "Method consolidate on MemoryConsolidator",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator.mark_contradictions",
+      "type": "function",
+      "name": "MemoryConsolidator.mark_contradictions",
+      "filePath": "backend/modules/memory/application/memory_consolidator.py",
+      "summary": "Method mark_contradictions on MemoryConsolidator",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator._similarity_key",
+      "type": "function",
+      "name": "MemoryConsolidator._similarity_key",
+      "filePath": "backend/modules/memory/application/memory_consolidator.py",
+      "summary": "Method _similarity_key on MemoryConsolidator",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator._recency_score",
+      "type": "function",
+      "name": "MemoryConsolidator._recency_score",
+      "filePath": "backend/modules/memory/application/memory_consolidator.py",
+      "summary": "Method _recency_score on MemoryConsolidator",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator._pick_preferred",
+      "type": "function",
+      "name": "MemoryConsolidator._pick_preferred",
+      "filePath": "backend/modules/memory/application/memory_consolidator.py",
+      "summary": "Method _pick_preferred on MemoryConsolidator",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator._contradicts",
+      "type": "function",
+      "name": "MemoryConsolidator._contradicts",
+      "filePath": "backend/modules/memory/application/memory_consolidator.py",
+      "summary": "Method _contradicts on MemoryConsolidator",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/application/memory_context_builder.py",
+      "type": "file",
+      "name": "memory_context_builder.py",
+      "filePath": "backend/modules/memory/application/memory_context_builder.py",
+      "summary": "memory module file: memory_context_builder.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder",
+      "type": "class",
+      "name": "MemoryContextBuilder",
+      "filePath": "backend/modules/memory/application/memory_context_builder.py",
+      "summary": "Class MemoryContextBuilder in backend/modules/memory/application/memory_context_builder.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder.__init__",
+      "type": "function",
+      "name": "MemoryContextBuilder.__init__",
+      "filePath": "backend/modules/memory/application/memory_context_builder.py",
+      "summary": "Method __init__ on MemoryContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder.build_context_block",
+      "type": "function",
+      "name": "MemoryContextBuilder.build_context_block",
+      "filePath": "backend/modules/memory/application/memory_context_builder.py",
+      "summary": "Method build_context_block on MemoryContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder.format_context_block",
+      "type": "function",
+      "name": "MemoryContextBuilder.format_context_block",
+      "filePath": "backend/modules/memory/application/memory_context_builder.py",
+      "summary": "Method format_context_block on MemoryContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder.recall_ranked",
+      "type": "function",
+      "name": "MemoryContextBuilder.recall_ranked",
+      "filePath": "backend/modules/memory/application/memory_context_builder.py",
+      "summary": "Method recall_ranked on MemoryContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder._rank_score",
+      "type": "function",
+      "name": "MemoryContextBuilder._rank_score",
+      "filePath": "backend/modules/memory/application/memory_context_builder.py",
+      "summary": "Method _rank_score on MemoryContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/application/memory_context_builder.py:MemoryServiceProtocol",
+      "type": "class",
+      "name": "MemoryServiceProtocol",
+      "filePath": "backend/modules/memory/application/memory_context_builder.py",
+      "summary": "Class MemoryServiceProtocol in backend/modules/memory/application/memory_context_builder.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_context_builder.py:MemoryServiceProtocol.recall",
+      "type": "function",
+      "name": "MemoryServiceProtocol.recall",
+      "filePath": "backend/modules/memory/application/memory_context_builder.py",
+      "summary": "Method recall on MemoryServiceProtocol",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/application/memory_extractor.py",
+      "type": "file",
+      "name": "memory_extractor.py",
+      "filePath": "backend/modules/memory/application/memory_extractor.py",
+      "summary": "memory module file: memory_extractor.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/memory/application/memory_extractor.py:ExtractionCandidate",
+      "type": "class",
+      "name": "ExtractionCandidate",
+      "filePath": "backend/modules/memory/application/memory_extractor.py",
+      "summary": "Class ExtractionCandidate in backend/modules/memory/application/memory_extractor.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/application/memory_extractor.py:MemoryExtractor",
+      "type": "class",
+      "name": "MemoryExtractor",
+      "filePath": "backend/modules/memory/application/memory_extractor.py",
+      "summary": "Class MemoryExtractor in backend/modules/memory/application/memory_extractor.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_extractor.py:MemoryExtractor.__init__",
+      "type": "function",
+      "name": "MemoryExtractor.__init__",
+      "filePath": "backend/modules/memory/application/memory_extractor.py",
+      "summary": "Method __init__ on MemoryExtractor",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_extractor.py:MemoryExtractor.extract_from_turn",
+      "type": "function",
+      "name": "MemoryExtractor.extract_from_turn",
+      "filePath": "backend/modules/memory/application/memory_extractor.py",
+      "summary": "Method extract_from_turn on MemoryExtractor",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_extractor.py:MemoryExtractor._iter_sentences",
+      "type": "function",
+      "name": "MemoryExtractor._iter_sentences",
+      "filePath": "backend/modules/memory/application/memory_extractor.py",
+      "summary": "Method _iter_sentences on MemoryExtractor",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_extractor.py:MemoryExtractor._looks_durable",
+      "type": "function",
+      "name": "MemoryExtractor._looks_durable",
+      "filePath": "backend/modules/memory/application/memory_extractor.py",
+      "summary": "Method _looks_durable on MemoryExtractor",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_extractor.py:MemoryExtractor._dedupe_candidates",
+      "type": "function",
+      "name": "MemoryExtractor._dedupe_candidates",
+      "filePath": "backend/modules/memory/application/memory_extractor.py",
+      "summary": "Method _dedupe_candidates on MemoryExtractor",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/application/memory_policy_service.py",
+      "type": "file",
+      "name": "memory_policy_service.py",
+      "filePath": "backend/modules/memory/application/memory_policy_service.py",
+      "summary": "memory module file: memory_policy_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/memory/application/memory_policy_service.py:MemoryPolicyService",
+      "type": "class",
+      "name": "MemoryPolicyService",
+      "filePath": "backend/modules/memory/application/memory_policy_service.py",
+      "summary": "Class MemoryPolicyService in backend/modules/memory/application/memory_policy_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_policy_service.py:MemoryPolicyService.__init__",
+      "type": "function",
+      "name": "MemoryPolicyService.__init__",
+      "filePath": "backend/modules/memory/application/memory_policy_service.py",
+      "summary": "Method __init__ on MemoryPolicyService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_policy_service.py:MemoryPolicyService.evaluate",
+      "type": "function",
+      "name": "MemoryPolicyService.evaluate",
+      "filePath": "backend/modules/memory/application/memory_policy_service.py",
+      "summary": "Method evaluate on MemoryPolicyService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/application/memory_router.py",
+      "type": "file",
+      "name": "memory_router.py",
+      "filePath": "backend/modules/memory/application/memory_router.py",
+      "summary": "memory module file: memory_router.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/memory/application/memory_router.py:RoutedMemory",
+      "type": "class",
+      "name": "RoutedMemory",
+      "filePath": "backend/modules/memory/application/memory_router.py",
+      "summary": "Class RoutedMemory in backend/modules/memory/application/memory_router.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/application/memory_router.py:MemoryRouter",
+      "type": "class",
+      "name": "MemoryRouter",
+      "filePath": "backend/modules/memory/application/memory_router.py",
+      "summary": "Class MemoryRouter in backend/modules/memory/application/memory_router.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_router.py:MemoryRouter.route",
+      "type": "function",
+      "name": "MemoryRouter.route",
+      "filePath": "backend/modules/memory/application/memory_router.py",
+      "summary": "Method route on MemoryRouter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/application/memory_service.py",
+      "type": "file",
+      "name": "memory_service.py",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "memory module file: memory_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "complex",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "type": "class",
+      "name": "MemoryService",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Class MemoryService in backend/modules/memory/application/memory_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService.__init__",
+      "type": "function",
+      "name": "MemoryService.__init__",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method __init__ on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService.remember",
+      "type": "function",
+      "name": "MemoryService.remember",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method remember on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService.recall",
+      "type": "function",
+      "name": "MemoryService.recall",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method recall on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService.forget",
+      "type": "function",
+      "name": "MemoryService.forget",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method forget on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService.list_user_memories",
+      "type": "function",
+      "name": "MemoryService.list_user_memories",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method list_user_memories on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService.get_memory",
+      "type": "function",
+      "name": "MemoryService.get_memory",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method get_memory on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService.build_prompt_context",
+      "type": "function",
+      "name": "MemoryService.build_prompt_context",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method build_prompt_context on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService.recall_for_prompt",
+      "type": "function",
+      "name": "MemoryService.recall_for_prompt",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method recall_for_prompt on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService.process_turn_memories",
+      "type": "function",
+      "name": "MemoryService.process_turn_memories",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method process_turn_memories on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService._authorize_write",
+      "type": "function",
+      "name": "MemoryService._authorize_write",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method _authorize_write on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService._authorize_read_item",
+      "type": "function",
+      "name": "MemoryService._authorize_read_item",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method _authorize_read_item on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService._filter_authorized_read_items",
+      "type": "function",
+      "name": "MemoryService._filter_authorized_read_items",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method _filter_authorized_read_items on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService._item_authorized_for_read",
+      "type": "function",
+      "name": "MemoryService._item_authorized_for_read",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method _item_authorized_for_read on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService._ensure_project_access",
+      "type": "function",
+      "name": "MemoryService._ensure_project_access",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method _ensure_project_access on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/application/memory_service.py:MemoryService._extract_memory_id",
+      "type": "function",
+      "name": "MemoryService._extract_memory_id",
+      "filePath": "backend/modules/memory/application/memory_service.py",
+      "summary": "Method _extract_memory_id on MemoryService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/domain/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/memory/domain/__init__.py",
+      "summary": "memory module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "file:backend/modules/memory/domain/enums.py",
+      "type": "file",
+      "name": "enums.py",
+      "filePath": "backend/modules/memory/domain/enums.py",
+      "summary": "memory module file: enums.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/enums.py:MemoryLevel",
+      "type": "class",
+      "name": "MemoryLevel",
+      "filePath": "backend/modules/memory/domain/enums.py",
+      "summary": "Class MemoryLevel in backend/modules/memory/domain/enums.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/enums.py:MemoryType",
+      "type": "class",
+      "name": "MemoryType",
+      "filePath": "backend/modules/memory/domain/enums.py",
+      "summary": "Class MemoryType in backend/modules/memory/domain/enums.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/enums.py:MemorySource",
+      "type": "class",
+      "name": "MemorySource",
+      "filePath": "backend/modules/memory/domain/enums.py",
+      "summary": "Class MemorySource in backend/modules/memory/domain/enums.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/enums.py:MemoryPrivacy",
+      "type": "class",
+      "name": "MemoryPrivacy",
+      "filePath": "backend/modules/memory/domain/enums.py",
+      "summary": "Class MemoryPrivacy in backend/modules/memory/domain/enums.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/enums.py:MemoryOperation",
+      "type": "class",
+      "name": "MemoryOperation",
+      "filePath": "backend/modules/memory/domain/enums.py",
+      "summary": "Class MemoryOperation in backend/modules/memory/domain/enums.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/enums.py:AgentScope",
+      "type": "class",
+      "name": "AgentScope",
+      "filePath": "backend/modules/memory/domain/enums.py",
+      "summary": "Class AgentScope in backend/modules/memory/domain/enums.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/domain/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "backend/modules/memory/domain/models.py",
+      "summary": "memory module file: models.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/models.py:MemoryMetadata",
+      "type": "class",
+      "name": "MemoryMetadata",
+      "filePath": "backend/modules/memory/domain/models.py",
+      "summary": "Class MemoryMetadata in backend/modules/memory/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/domain/models.py:MemoryMetadata.to_dict",
+      "type": "function",
+      "name": "MemoryMetadata.to_dict",
+      "filePath": "backend/modules/memory/domain/models.py",
+      "summary": "Method to_dict on MemoryMetadata",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/domain/models.py:MemoryMetadata.from_dict",
+      "type": "function",
+      "name": "MemoryMetadata.from_dict",
+      "filePath": "backend/modules/memory/domain/models.py",
+      "summary": "Method from_dict on MemoryMetadata",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/models.py:MemoryItem",
+      "type": "class",
+      "name": "MemoryItem",
+      "filePath": "backend/modules/memory/domain/models.py",
+      "summary": "Class MemoryItem in backend/modules/memory/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/models.py:MemoryWriteResult",
+      "type": "class",
+      "name": "MemoryWriteResult",
+      "filePath": "backend/modules/memory/domain/models.py",
+      "summary": "Class MemoryWriteResult in backend/modules/memory/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/models.py:MemorySearchRequest",
+      "type": "class",
+      "name": "MemorySearchRequest",
+      "filePath": "backend/modules/memory/domain/models.py",
+      "summary": "Class MemorySearchRequest in backend/modules/memory/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/models.py:WorkingMemoryContext",
+      "type": "class",
+      "name": "WorkingMemoryContext",
+      "filePath": "backend/modules/memory/domain/models.py",
+      "summary": "Class WorkingMemoryContext in backend/modules/memory/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/domain/policies.py",
+      "type": "file",
+      "name": "policies.py",
+      "filePath": "backend/modules/memory/domain/policies.py",
+      "summary": "memory module file: policies.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "function:backend/modules/memory/domain/policies.py:contains_secret",
+      "type": "function",
+      "name": "contains_secret",
+      "filePath": "backend/modules/memory/domain/policies.py",
+      "summary": "Function contains_secret in backend/modules/memory/domain/policies.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/domain/policies.py:is_ephemeral_statement",
+      "type": "function",
+      "name": "is_ephemeral_statement",
+      "filePath": "backend/modules/memory/domain/policies.py",
+      "summary": "Function is_ephemeral_statement in backend/modules/memory/domain/policies.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/domain/policies.py:evaluate_storage_policy",
+      "type": "function",
+      "name": "evaluate_storage_policy",
+      "filePath": "backend/modules/memory/domain/policies.py",
+      "summary": "Function evaluate_storage_policy in backend/modules/memory/domain/policies.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/domain/policies.py:session_expires_at",
+      "type": "function",
+      "name": "session_expires_at",
+      "filePath": "backend/modules/memory/domain/policies.py",
+      "summary": "Function session_expires_at in backend/modules/memory/domain/policies.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/domain/policies.py:PolicyDecision",
+      "type": "class",
+      "name": "PolicyDecision",
+      "filePath": "backend/modules/memory/domain/policies.py",
+      "summary": "Class PolicyDecision in backend/modules/memory/domain/policies.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/infrastructure/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/memory/infrastructure/__init__.py",
+      "summary": "memory module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "type": "file",
+      "name": "mem0_client.py",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "memory module file: mem0_client.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:build_entity_filters",
+      "type": "function",
+      "name": "build_entity_filters",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Function build_entity_filters in backend/modules/memory/infrastructure/mem0_client.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_parse_memory_item",
+      "type": "function",
+      "name": "_parse_memory_item",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Function _parse_memory_item in backend/modules/memory/infrastructure/mem0_client.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_parse_dt",
+      "type": "function",
+      "name": "_parse_dt",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Function _parse_dt in backend/modules/memory/infrastructure/mem0_client.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter",
+      "type": "class",
+      "name": "Mem0Adapter",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Class Mem0Adapter in backend/modules/memory/infrastructure/mem0_client.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.available",
+      "type": "function",
+      "name": "Mem0Adapter.available",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method available on Mem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.add",
+      "type": "function",
+      "name": "Mem0Adapter.add",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method add on Mem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.search",
+      "type": "function",
+      "name": "Mem0Adapter.search",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method search on Mem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.get",
+      "type": "function",
+      "name": "Mem0Adapter.get",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method get on Mem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.get_all",
+      "type": "function",
+      "name": "Mem0Adapter.get_all",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method get_all on Mem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.delete",
+      "type": "function",
+      "name": "Mem0Adapter.delete",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method delete on Mem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter",
+      "type": "class",
+      "name": "NullMem0Adapter",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Class NullMem0Adapter in backend/modules/memory/infrastructure/mem0_client.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.__init__",
+      "type": "function",
+      "name": "NullMem0Adapter.__init__",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method __init__ on NullMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.available",
+      "type": "function",
+      "name": "NullMem0Adapter.available",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method available on NullMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.add",
+      "type": "function",
+      "name": "NullMem0Adapter.add",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method add on NullMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.search",
+      "type": "function",
+      "name": "NullMem0Adapter.search",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method search on NullMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.get",
+      "type": "function",
+      "name": "NullMem0Adapter.get",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method get on NullMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.get_all",
+      "type": "function",
+      "name": "NullMem0Adapter.get_all",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method get_all on NullMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.delete",
+      "type": "function",
+      "name": "NullMem0Adapter.delete",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method delete on NullMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client",
+      "type": "class",
+      "name": "Mem0Client",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Class Mem0Client in backend/modules/memory/infrastructure/mem0_client.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.__init__",
+      "type": "function",
+      "name": "Mem0Client.__init__",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method __init__ on Mem0Client",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.available",
+      "type": "function",
+      "name": "Mem0Client.available",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method available on Mem0Client",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client._build_adapter",
+      "type": "function",
+      "name": "Mem0Client._build_adapter",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method _build_adapter on Mem0Client",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.add",
+      "type": "function",
+      "name": "Mem0Client.add",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method add on Mem0Client",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.search",
+      "type": "function",
+      "name": "Mem0Client.search",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method search on Mem0Client",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.get",
+      "type": "function",
+      "name": "Mem0Client.get",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method get on Mem0Client",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.get_all",
+      "type": "function",
+      "name": "Mem0Client.get_all",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method get_all on Mem0Client",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.delete",
+      "type": "function",
+      "name": "Mem0Client.delete",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method delete on Mem0Client",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter",
+      "type": "class",
+      "name": "_HostedMem0Adapter",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Class _HostedMem0Adapter in backend/modules/memory/infrastructure/mem0_client.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.__init__",
+      "type": "function",
+      "name": "_HostedMem0Adapter.__init__",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method __init__ on _HostedMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.available",
+      "type": "function",
+      "name": "_HostedMem0Adapter.available",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method available on _HostedMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.add",
+      "type": "function",
+      "name": "_HostedMem0Adapter.add",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method add on _HostedMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.search",
+      "type": "function",
+      "name": "_HostedMem0Adapter.search",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method search on _HostedMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.get",
+      "type": "function",
+      "name": "_HostedMem0Adapter.get",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method get on _HostedMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.get_all",
+      "type": "function",
+      "name": "_HostedMem0Adapter.get_all",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method get_all on _HostedMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.delete",
+      "type": "function",
+      "name": "_HostedMem0Adapter.delete",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method delete on _HostedMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter",
+      "type": "class",
+      "name": "_OssMem0Adapter",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Class _OssMem0Adapter in backend/modules/memory/infrastructure/mem0_client.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.__init__",
+      "type": "function",
+      "name": "_OssMem0Adapter.__init__",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method __init__ on _OssMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.available",
+      "type": "function",
+      "name": "_OssMem0Adapter.available",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method available on _OssMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.add",
+      "type": "function",
+      "name": "_OssMem0Adapter.add",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method add on _OssMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.search",
+      "type": "function",
+      "name": "_OssMem0Adapter.search",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method search on _OssMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.get",
+      "type": "function",
+      "name": "_OssMem0Adapter.get",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method get on _OssMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.get_all",
+      "type": "function",
+      "name": "_OssMem0Adapter.get_all",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method get_all on _OssMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.delete",
+      "type": "function",
+      "name": "_OssMem0Adapter.delete",
+      "filePath": "backend/modules/memory/infrastructure/mem0_client.py",
+      "summary": "Method delete on _OssMem0Adapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "type": "file",
+      "name": "memory_audit_repository.py",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "memory module file: memory_audit_repository.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryAuditRepository",
+      "type": "class",
+      "name": "MemoryAuditRepository",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "Class MemoryAuditRepository in backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryAuditRepository.__init__",
+      "type": "function",
+      "name": "MemoryAuditRepository.__init__",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "Method __init__ on MemoryAuditRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryAuditRepository.log_operation",
+      "type": "function",
+      "name": "MemoryAuditRepository.log_operation",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "Method log_operation on MemoryAuditRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryAuditRepository.list_for_user",
+      "type": "function",
+      "name": "MemoryAuditRepository.list_for_user",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "Method list_for_user on MemoryAuditRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository",
+      "type": "class",
+      "name": "MemoryRegistryRepository",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "Class MemoryRegistryRepository in backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.__init__",
+      "type": "function",
+      "name": "MemoryRegistryRepository.__init__",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "Method __init__ on MemoryRegistryRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.register",
+      "type": "function",
+      "name": "MemoryRegistryRepository.register",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "Method register on MemoryRegistryRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.get_by_external_id",
+      "type": "function",
+      "name": "MemoryRegistryRepository.get_by_external_id",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "Method get_by_external_id on MemoryRegistryRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.mark_deleted",
+      "type": "function",
+      "name": "MemoryRegistryRepository.mark_deleted",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "Method mark_deleted on MemoryRegistryRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.list_for_user",
+      "type": "function",
+      "name": "MemoryRegistryRepository.list_for_user",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "Method list_for_user on MemoryRegistryRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.user_owns_memory",
+      "type": "function",
+      "name": "MemoryRegistryRepository.user_owns_memory",
+      "filePath": "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "summary": "Method user_owns_memory on MemoryRegistryRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/infrastructure/memory_config.py",
+      "type": "file",
+      "name": "memory_config.py",
+      "filePath": "backend/modules/memory/infrastructure/memory_config.py",
+      "summary": "memory module file: memory_config.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "class:backend/modules/memory/infrastructure/memory_config.py:MemoryConfig",
+      "type": "class",
+      "name": "MemoryConfig",
+      "filePath": "backend/modules/memory/infrastructure/memory_config.py",
+      "summary": "Class MemoryConfig in backend/modules/memory/infrastructure/memory_config.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_config.py:MemoryConfig.from_settings",
+      "type": "function",
+      "name": "MemoryConfig.from_settings",
+      "filePath": "backend/modules/memory/infrastructure/memory_config.py",
+      "summary": "Method from_settings on MemoryConfig",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_config.py:MemoryConfig.is_hosted",
+      "type": "function",
+      "name": "MemoryConfig.is_hosted",
+      "filePath": "backend/modules/memory/infrastructure/memory_config.py",
+      "summary": "Method is_hosted on MemoryConfig",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/infrastructure/memory_config.py:MemoryConfig.mem0_configured",
+      "type": "function",
+      "name": "MemoryConfig.mem0_configured",
+      "filePath": "backend/modules/memory/infrastructure/memory_config.py",
+      "summary": "Method mem0_configured on MemoryConfig",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/infrastructure/metrics.py",
+      "type": "file",
+      "name": "metrics.py",
+      "filePath": "backend/modules/memory/infrastructure/metrics.py",
+      "summary": "memory module file: metrics.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "file:backend/tests/test_memory.py",
+      "type": "file",
+      "name": "test_memory.py",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "test_memory.py (1 functions, 10 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "complex",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:_item",
+      "type": "function",
+      "name": "_item",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Function _item in backend/tests/test_memory.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory.py:MemoryPolicyTest",
+      "type": "class",
+      "name": "MemoryPolicyTest",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Class MemoryPolicyTest in backend/tests/test_memory.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryPolicyTest.test_secrets_rejected",
+      "type": "function",
+      "name": "MemoryPolicyTest.test_secrets_rejected",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_secrets_rejected on MemoryPolicyTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory.py:MemoryRouterTest",
+      "type": "class",
+      "name": "MemoryRouterTest",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Class MemoryRouterTest in backend/tests/test_memory.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryRouterTest.test_preference_routes_to_user_memory",
+      "type": "function",
+      "name": "MemoryRouterTest.test_preference_routes_to_user_memory",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_preference_routes_to_user_memory on MemoryRouterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryRouterTest.test_task_state_routes_to_session_memory",
+      "type": "function",
+      "name": "MemoryRouterTest.test_task_state_routes_to_session_memory",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_task_state_routes_to_session_memory on MemoryRouterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryRouterTest.test_project_decision_routes_to_project_memory",
+      "type": "function",
+      "name": "MemoryRouterTest.test_project_decision_routes_to_project_memory",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_project_decision_routes_to_project_memory on MemoryRouterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory.py:MemoryConsolidatorTest",
+      "type": "class",
+      "name": "MemoryConsolidatorTest",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Class MemoryConsolidatorTest in backend/tests/test_memory.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryConsolidatorTest.test_duplicate_memories_consolidated",
+      "type": "function",
+      "name": "MemoryConsolidatorTest.test_duplicate_memories_consolidated",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_duplicate_memories_consolidated on MemoryConsolidatorTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory.py:MemoryContextBuilderTest",
+      "type": "class",
+      "name": "MemoryContextBuilderTest",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Class MemoryContextBuilderTest in backend/tests/test_memory.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryContextBuilderTest.test_memory_retrieval_included_in_prompt_context",
+      "type": "function",
+      "name": "MemoryContextBuilderTest.test_memory_retrieval_included_in_prompt_context",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_memory_retrieval_included_in_prompt_context on MemoryContextBuilderTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryContextBuilderTest.test_recall_ranked_uses_single_recall_with_all_levels",
+      "type": "function",
+      "name": "MemoryContextBuilderTest.test_recall_ranked_uses_single_recall_with_all_levels",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_recall_ranked_uses_single_recall_with_all_levels on MemoryContextBuilderTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory.py:MemoryRecallForPromptTest",
+      "type": "class",
+      "name": "MemoryRecallForPromptTest",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Class MemoryRecallForPromptTest in backend/tests/test_memory.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryRecallForPromptTest.test_recall_for_prompt_returns_context_and_items_once",
+      "type": "function",
+      "name": "MemoryRecallForPromptTest.test_recall_for_prompt_returns_context_and_items_once",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_recall_for_prompt_returns_context_and_items_once on MemoryRecallForPromptTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory.py:Mem0FilterTest",
+      "type": "class",
+      "name": "Mem0FilterTest",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Class Mem0FilterTest in backend/tests/test_memory.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:Mem0FilterTest.test_session_memory_requires_run_id_filter",
+      "type": "function",
+      "name": "Mem0FilterTest.test_session_memory_requires_run_id_filter",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_session_memory_requires_run_id_filter on Mem0FilterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:Mem0FilterTest.test_project_memory_includes_project_id",
+      "type": "function",
+      "name": "Mem0FilterTest.test_project_memory_includes_project_id",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_project_memory_includes_project_id on Mem0FilterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory.py:MemoryServiceIsolationTest",
+      "type": "class",
+      "name": "MemoryServiceIsolationTest",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Class MemoryServiceIsolationTest in backend/tests/test_memory.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.asyncSetUp",
+      "type": "function",
+      "name": "MemoryServiceIsolationTest.asyncSetUp",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method asyncSetUp on MemoryServiceIsolationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest._service_with_items",
+      "type": "function",
+      "name": "MemoryServiceIsolationTest._service_with_items",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method _service_with_items on MemoryServiceIsolationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_user_a_cannot_read_user_b_memory",
+      "type": "function",
+      "name": "MemoryServiceIsolationTest.test_user_a_cannot_read_user_b_memory",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_user_a_cannot_read_user_b_memory on MemoryServiceIsolationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_session_memory_only_for_matching_run_id",
+      "type": "function",
+      "name": "MemoryServiceIsolationTest.test_session_memory_only_for_matching_run_id",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_session_memory_only_for_matching_run_id on MemoryServiceIsolationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_project_memory_requires_project_id",
+      "type": "function",
+      "name": "MemoryServiceIsolationTest.test_project_memory_requires_project_id",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_project_memory_requires_project_id on MemoryServiceIsolationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_recall_searches_multiple_levels_in_parallel",
+      "type": "function",
+      "name": "MemoryServiceIsolationTest.test_recall_searches_multiple_levels_in_parallel",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_recall_searches_multiple_levels_in_parallel on MemoryServiceIsolationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_recall_bulk_authorizes_project_memories_with_one_query",
+      "type": "function",
+      "name": "MemoryServiceIsolationTest.test_recall_bulk_authorizes_project_memories_with_one_query",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_recall_bulk_authorizes_project_memories_with_one_query on MemoryServiceIsolationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_deleted_memory_not_returned_from_registry_get",
+      "type": "function",
+      "name": "MemoryServiceIsolationTest.test_deleted_memory_not_returned_from_registry_get",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_deleted_memory_not_returned_from_registry_get on MemoryServiceIsolationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_secrets_not_stored",
+      "type": "function",
+      "name": "MemoryServiceIsolationTest.test_secrets_not_stored",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_secrets_not_stored on MemoryServiceIsolationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory.py:MemoryExtractorTest",
+      "type": "class",
+      "name": "MemoryExtractorTest",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Class MemoryExtractorTest in backend/tests/test_memory.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:MemoryExtractorTest.test_extracts_durable_preference_not_every_message",
+      "type": "function",
+      "name": "MemoryExtractorTest.test_extracts_durable_preference_not_every_message",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_extracts_durable_preference_not_every_message on MemoryExtractorTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory.py:NullMem0AdapterTest",
+      "type": "class",
+      "name": "NullMem0AdapterTest",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Class NullMem0AdapterTest in backend/tests/test_memory.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:NullMem0AdapterTest.test_ai_works_when_mem0_unavailable",
+      "type": "function",
+      "name": "NullMem0AdapterTest.test_ai_works_when_mem0_unavailable",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_ai_works_when_mem0_unavailable on NullMem0AdapterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory.py:AgentServiceDegradedTest",
+      "type": "class",
+      "name": "AgentServiceDegradedTest",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Class AgentServiceDegradedTest in backend/tests/test_memory.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory.py:AgentServiceDegradedTest.test_agent_run_without_memory",
+      "type": "function",
+      "name": "AgentServiceDegradedTest.test_agent_run_without_memory",
+      "filePath": "backend/tests/test_memory.py",
+      "summary": "Method test_agent_run_without_memory on AgentServiceDegradedTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_memory_ranking.py",
+      "type": "file",
+      "name": "test_memory_ranking.py",
+      "filePath": "backend/tests/test_memory_ranking.py",
+      "summary": "test_memory_ranking.py (0 functions, 3 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_memory_ranking.py:MemoryRecencyWeightTest",
+      "type": "class",
+      "name": "MemoryRecencyWeightTest",
+      "filePath": "backend/tests/test_memory_ranking.py",
+      "summary": "Class MemoryRecencyWeightTest in backend/tests/test_memory_ranking.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_ranking.py:MemoryRecencyWeightTest.test_fresh_memory_scores_higher_than_old",
+      "type": "function",
+      "name": "MemoryRecencyWeightTest.test_fresh_memory_scores_higher_than_old",
+      "filePath": "backend/tests/test_memory_ranking.py",
+      "summary": "Method test_fresh_memory_scores_higher_than_old on MemoryRecencyWeightTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_ranking.py:MemoryRecencyWeightTest.test_missing_timestamp_returns_zero",
+      "type": "function",
+      "name": "MemoryRecencyWeightTest.test_missing_timestamp_returns_zero",
+      "filePath": "backend/tests/test_memory_ranking.py",
+      "summary": "Method test_missing_timestamp_returns_zero on MemoryRecencyWeightTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory_ranking.py:MemoryRankScoreTest",
+      "type": "class",
+      "name": "MemoryRankScoreTest",
+      "filePath": "backend/tests/test_memory_ranking.py",
+      "summary": "Class MemoryRankScoreTest in backend/tests/test_memory_ranking.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_ranking.py:MemoryRankScoreTest.test_recent_memory_ranks_above_stale_with_same_level",
+      "type": "function",
+      "name": "MemoryRankScoreTest.test_recent_memory_ranks_above_stale_with_same_level",
+      "filePath": "backend/tests/test_memory_ranking.py",
+      "summary": "Method test_recent_memory_ranks_above_stale_with_same_level on MemoryRankScoreTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory_ranking.py:RagContextBudgetTest",
+      "type": "class",
+      "name": "RagContextBudgetTest",
+      "filePath": "backend/tests/test_memory_ranking.py",
+      "summary": "Class RagContextBudgetTest in backend/tests/test_memory_ranking.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_ranking.py:RagContextBudgetTest._chunk",
+      "type": "function",
+      "name": "RagContextBudgetTest._chunk",
+      "filePath": "backend/tests/test_memory_ranking.py",
+      "summary": "Method _chunk on RagContextBudgetTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_ranking.py:RagContextBudgetTest.test_trim_chunks_respects_token_budget",
+      "type": "function",
+      "name": "RagContextBudgetTest.test_trim_chunks_respects_token_budget",
+      "filePath": "backend/tests/test_memory_ranking.py",
+      "summary": "Method test_trim_chunks_respects_token_budget on RagContextBudgetTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_ranking.py:RagContextBudgetTest.test_trim_chunks_prefers_higher_scores",
+      "type": "function",
+      "name": "RagContextBudgetTest.test_trim_chunks_prefers_higher_scores",
+      "filePath": "backend/tests/test_memory_ranking.py",
+      "summary": "Method test_trim_chunks_prefers_higher_scores on RagContextBudgetTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_memory_search_cache.py",
+      "type": "file",
+      "name": "test_memory_search_cache.py",
+      "filePath": "backend/tests/test_memory_search_cache.py",
+      "summary": "test_memory_search_cache.py (0 functions, 2 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_memory_search_cache.py:StorageCacheControlTest",
+      "type": "class",
+      "name": "StorageCacheControlTest",
+      "filePath": "backend/tests/test_memory_search_cache.py",
+      "summary": "Class StorageCacheControlTest in backend/tests/test_memory_search_cache.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_search_cache.py:StorageCacheControlTest.test_upload_bytes_applies_requested_cache_control",
+      "type": "function",
+      "name": "StorageCacheControlTest.test_upload_bytes_applies_requested_cache_control",
+      "filePath": "backend/tests/test_memory_search_cache.py",
+      "summary": "Method test_upload_bytes_applies_requested_cache_control on StorageCacheControlTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_search_cache.py:StorageCacheControlTest.test_private_upload_cache_control_constant",
+      "type": "function",
+      "name": "StorageCacheControlTest.test_private_upload_cache_control_constant",
+      "filePath": "backend/tests/test_memory_search_cache.py",
+      "summary": "Method test_private_upload_cache_control_constant on StorageCacheControlTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest",
+      "type": "class",
+      "name": "MemorySearchCacheTest",
+      "filePath": "backend/tests/test_memory_search_cache.py",
+      "summary": "Class MemorySearchCacheTest in backend/tests/test_memory_search_cache.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest.test_cache_key_changes_with_query",
+      "type": "function",
+      "name": "MemorySearchCacheTest.test_cache_key_changes_with_query",
+      "filePath": "backend/tests/test_memory_search_cache.py",
+      "summary": "Method test_cache_key_changes_with_query on MemorySearchCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest.test_serialize_and_deserialize_memory_items",
+      "type": "function",
+      "name": "MemorySearchCacheTest.test_serialize_and_deserialize_memory_items",
+      "filePath": "backend/tests/test_memory_search_cache.py",
+      "summary": "Method test_serialize_and_deserialize_memory_items on MemorySearchCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest.test_get_and_set_cached_memory_search",
+      "type": "function",
+      "name": "MemorySearchCacheTest.test_get_and_set_cached_memory_search",
+      "filePath": "backend/tests/test_memory_search_cache.py",
+      "summary": "Method test_get_and_set_cached_memory_search on MemorySearchCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest.test_invalidate_memory_search_cache_deletes_user_pattern",
+      "type": "function",
+      "name": "MemorySearchCacheTest.test_invalidate_memory_search_cache_deletes_user_pattern",
+      "filePath": "backend/tests/test_memory_search_cache.py",
+      "summary": "Method test_invalidate_memory_search_cache_deletes_user_pattern on MemorySearchCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:backend/modules/ai/application/agent_service.py",
+      "target": "file:backend/modules/ai/application/prompt_context_builder.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/agent_service.py",
+      "target": "file:backend/modules/ai/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/agent_service.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/agent_service.py",
+      "target": "file:backend/modules/memory/application/memory_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/agent_service.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/agent_service.py",
+      "target": "file:backend/modules/memory/infrastructure/memory_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/agent_service.py",
+      "target": "class:backend/modules/ai/application/agent_service.py:AgentService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/application/agent_service.py:AgentService",
+      "target": "function:backend/modules/ai/application/agent_service.py:AgentService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/application/agent_service.py:AgentService",
+      "target": "function:backend/modules/ai/application/agent_service.py:AgentService.run_agent_prompt",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/application/prompt_context_builder.py",
+      "target": "file:backend/modules/memory/application/memory_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/prompt_context_builder.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/prompt_context_builder.py",
+      "target": "file:backend/modules/memory/infrastructure/memory_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/prompt_context_builder.py",
+      "target": "file:backend/modules/rag/application/agent_context_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/prompt_context_builder.py",
+      "target": "file:backend/modules/rag/application/rag_context_builder.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/prompt_context_builder.py",
+      "target": "class:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContext",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/application/prompt_context_builder.py",
+      "target": "class:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder",
+      "target": "function:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder",
+      "target": "function:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder.build",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder",
+      "target": "function:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder._load_memory_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder",
+      "target": "function:backend/modules/ai/application/prompt_context_builder.py:AgentPromptContextBuilder._load_document_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "target": "file:backend/modules/ai/application/agent_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "target": "file:backend/modules/ai/application/prompt_context_builder.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "target": "class:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentPromptContextBuilderTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentPromptContextBuilderTest",
+      "target": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentPromptContextBuilderTest.asyncSetUp",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentPromptContextBuilderTest",
+      "target": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentPromptContextBuilderTest.test_single_memory_recall_and_assembled_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentPromptContextBuilderTest",
+      "target": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentPromptContextBuilderTest.test_legacy_retrieval_when_rag_disabled",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_retrieval_consolidation.py",
+      "target": "class:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest",
+      "target": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest.asyncSetUp",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest",
+      "target": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest.test_uses_unified_prompt_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest",
+      "target": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest.test_agent_reuses_prompt_context_memories_without_second_recall",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest",
+      "target": "function:backend/modules/ai/tests/test_retrieval_consolidation.py:AgentRetrievalConsolidationTest.test_working_memory_populated_from_prompt_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_consolidator.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_consolidator.py",
+      "target": "class:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator",
+      "target": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator.consolidate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator",
+      "target": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator.mark_contradictions",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator",
+      "target": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator._similarity_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator",
+      "target": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator._recency_score",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator",
+      "target": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator._pick_preferred",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator",
+      "target": "function:backend/modules/memory/application/memory_consolidator.py:MemoryConsolidator._contradicts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_context_builder.py",
+      "target": "file:backend/modules/memory/application/memory_consolidator.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_context_builder.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_context_builder.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_context_builder.py",
+      "target": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_context_builder.py",
+      "target": "file:backend/modules/memory/infrastructure/metrics.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_context_builder.py",
+      "target": "class:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder",
+      "target": "function:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder",
+      "target": "function:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder.build_context_block",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder",
+      "target": "function:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder.format_context_block",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder",
+      "target": "function:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder.recall_ranked",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder",
+      "target": "function:backend/modules/memory/application/memory_context_builder.py:MemoryContextBuilder._rank_score",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_context_builder.py",
+      "target": "class:backend/modules/memory/application/memory_context_builder.py:MemoryServiceProtocol",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_context_builder.py:MemoryServiceProtocol",
+      "target": "function:backend/modules/memory/application/memory_context_builder.py:MemoryServiceProtocol.recall",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_extractor.py",
+      "target": "file:backend/modules/memory/application/memory_router.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_extractor.py",
+      "target": "file:backend/modules/memory/domain/policies.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_extractor.py",
+      "target": "class:backend/modules/memory/application/memory_extractor.py:ExtractionCandidate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_extractor.py",
+      "target": "class:backend/modules/memory/application/memory_extractor.py:MemoryExtractor",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_extractor.py:MemoryExtractor",
+      "target": "function:backend/modules/memory/application/memory_extractor.py:MemoryExtractor.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_extractor.py:MemoryExtractor",
+      "target": "function:backend/modules/memory/application/memory_extractor.py:MemoryExtractor.extract_from_turn",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_extractor.py:MemoryExtractor",
+      "target": "function:backend/modules/memory/application/memory_extractor.py:MemoryExtractor._iter_sentences",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_extractor.py:MemoryExtractor",
+      "target": "function:backend/modules/memory/application/memory_extractor.py:MemoryExtractor._looks_durable",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_extractor.py:MemoryExtractor",
+      "target": "function:backend/modules/memory/application/memory_extractor.py:MemoryExtractor._dedupe_candidates",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_policy_service.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_policy_service.py",
+      "target": "class:backend/modules/memory/application/memory_policy_service.py:MemoryPolicyService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_policy_service.py:MemoryPolicyService",
+      "target": "function:backend/modules/memory/application/memory_policy_service.py:MemoryPolicyService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_policy_service.py:MemoryPolicyService",
+      "target": "function:backend/modules/memory/application/memory_policy_service.py:MemoryPolicyService.evaluate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_router.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_router.py",
+      "target": "class:backend/modules/memory/application/memory_router.py:RoutedMemory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_router.py",
+      "target": "class:backend/modules/memory/application/memory_router.py:MemoryRouter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_router.py:MemoryRouter",
+      "target": "function:backend/modules/memory/application/memory_router.py:MemoryRouter.route",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/application/memory_consolidator.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/application/memory_context_builder.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/application/memory_extractor.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/application/memory_policy_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/application/memory_router.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/domain/policies.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/infrastructure/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/infrastructure/memory_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/memory/infrastructure/metrics.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "file:backend/modules/projects/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/application/memory_service.py",
+      "target": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService.remember",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService.recall",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService.forget",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService.list_user_memories",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService.get_memory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService.build_prompt_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService.recall_for_prompt",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService.process_turn_memories",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService._authorize_write",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService._authorize_read_item",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService._filter_authorized_read_items",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService._item_authorized_for_read",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService._ensure_project_access",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/application/memory_service.py:MemoryService",
+      "target": "function:backend/modules/memory/application/memory_service.py:MemoryService._extract_memory_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/__init__.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/domain/__init__.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/domain/enums.py",
+      "target": "class:backend/modules/memory/domain/enums.py:MemoryLevel",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/enums.py",
+      "target": "class:backend/modules/memory/domain/enums.py:MemoryType",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/enums.py",
+      "target": "class:backend/modules/memory/domain/enums.py:MemorySource",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/enums.py",
+      "target": "class:backend/modules/memory/domain/enums.py:MemoryPrivacy",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/enums.py",
+      "target": "class:backend/modules/memory/domain/enums.py:MemoryOperation",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/enums.py",
+      "target": "class:backend/modules/memory/domain/enums.py:AgentScope",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/models.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/domain/models.py",
+      "target": "class:backend/modules/memory/domain/models.py:MemoryMetadata",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/domain/models.py:MemoryMetadata",
+      "target": "function:backend/modules/memory/domain/models.py:MemoryMetadata.to_dict",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/domain/models.py:MemoryMetadata",
+      "target": "function:backend/modules/memory/domain/models.py:MemoryMetadata.from_dict",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/models.py",
+      "target": "class:backend/modules/memory/domain/models.py:MemoryItem",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/models.py",
+      "target": "class:backend/modules/memory/domain/models.py:MemoryWriteResult",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/models.py",
+      "target": "class:backend/modules/memory/domain/models.py:MemorySearchRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/models.py",
+      "target": "class:backend/modules/memory/domain/models.py:WorkingMemoryContext",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/policies.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/domain/policies.py",
+      "target": "function:backend/modules/memory/domain/policies.py:contains_secret",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/policies.py",
+      "target": "function:backend/modules/memory/domain/policies.py:is_ephemeral_statement",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/policies.py",
+      "target": "function:backend/modules/memory/domain/policies.py:evaluate_storage_policy",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/policies.py",
+      "target": "function:backend/modules/memory/domain/policies.py:session_expires_at",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/domain/policies.py",
+      "target": "class:backend/modules/memory/domain/policies.py:PolicyDecision",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "file:backend/modules/memory/infrastructure/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "file:backend/modules/memory/infrastructure/memory_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "file:backend/modules/memory/infrastructure/metrics.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:build_entity_filters",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_parse_memory_item",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_parse_dt",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.available",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.add",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.search",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.get",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.get_all",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Adapter.delete",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "class:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.available",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.add",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.search",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.get",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.get_all",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:NullMem0Adapter.delete",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.available",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client._build_adapter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.add",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.search",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.get",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.get_all",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:Mem0Client.delete",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "class:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.available",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.add",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.search",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.get",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.get_all",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_HostedMem0Adapter.delete",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "target": "class:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.available",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.add",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.search",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.get",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.get_all",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter",
+      "target": "function:backend/modules/memory/infrastructure/mem0_client.py:_OssMem0Adapter.delete",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "target": "file:backend/modules/memory/infrastructure/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "target": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryAuditRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryAuditRepository",
+      "target": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryAuditRepository.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryAuditRepository",
+      "target": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryAuditRepository.log_operation",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryAuditRepository",
+      "target": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryAuditRepository.list_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "target": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository",
+      "target": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository",
+      "target": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.register",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository",
+      "target": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.get_by_external_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository",
+      "target": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.mark_deleted",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository",
+      "target": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.list_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository",
+      "target": "function:backend/modules/memory/infrastructure/memory_audit_repository.py:MemoryRegistryRepository.user_owns_memory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/memory_config.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/memory_config.py",
+      "target": "class:backend/modules/memory/infrastructure/memory_config.py:MemoryConfig",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_config.py:MemoryConfig",
+      "target": "function:backend/modules/memory/infrastructure/memory_config.py:MemoryConfig.from_settings",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_config.py:MemoryConfig",
+      "target": "function:backend/modules/memory/infrastructure/memory_config.py:MemoryConfig.is_hosted",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/memory/infrastructure/memory_config.py:MemoryConfig",
+      "target": "function:backend/modules/memory/infrastructure/memory_config.py:MemoryConfig.mem0_configured",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "file:backend/modules/memory/application/memory_consolidator.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "file:backend/modules/memory/application/memory_context_builder.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "file:backend/modules/memory/application/memory_extractor.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "file:backend/modules/memory/application/memory_router.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "file:backend/modules/memory/application/memory_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "file:backend/modules/memory/domain/policies.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "file:backend/modules/memory/infrastructure/mem0_client.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "file:backend/modules/memory/infrastructure/memory_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "function:backend/tests/test_memory.py:_item",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "class:backend/tests/test_memory.py:MemoryPolicyTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryPolicyTest",
+      "target": "function:backend/tests/test_memory.py:MemoryPolicyTest.test_secrets_rejected",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "class:backend/tests/test_memory.py:MemoryRouterTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryRouterTest",
+      "target": "function:backend/tests/test_memory.py:MemoryRouterTest.test_preference_routes_to_user_memory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryRouterTest",
+      "target": "function:backend/tests/test_memory.py:MemoryRouterTest.test_task_state_routes_to_session_memory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryRouterTest",
+      "target": "function:backend/tests/test_memory.py:MemoryRouterTest.test_project_decision_routes_to_project_memory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "class:backend/tests/test_memory.py:MemoryConsolidatorTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryConsolidatorTest",
+      "target": "function:backend/tests/test_memory.py:MemoryConsolidatorTest.test_duplicate_memories_consolidated",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "class:backend/tests/test_memory.py:MemoryContextBuilderTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryContextBuilderTest",
+      "target": "function:backend/tests/test_memory.py:MemoryContextBuilderTest.test_memory_retrieval_included_in_prompt_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryContextBuilderTest",
+      "target": "function:backend/tests/test_memory.py:MemoryContextBuilderTest.test_recall_ranked_uses_single_recall_with_all_levels",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "class:backend/tests/test_memory.py:MemoryRecallForPromptTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryRecallForPromptTest",
+      "target": "function:backend/tests/test_memory.py:MemoryRecallForPromptTest.test_recall_for_prompt_returns_context_and_items_once",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "class:backend/tests/test_memory.py:Mem0FilterTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:Mem0FilterTest",
+      "target": "function:backend/tests/test_memory.py:Mem0FilterTest.test_session_memory_requires_run_id_filter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:Mem0FilterTest",
+      "target": "function:backend/tests/test_memory.py:Mem0FilterTest.test_project_memory_includes_project_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "class:backend/tests/test_memory.py:MemoryServiceIsolationTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryServiceIsolationTest",
+      "target": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.asyncSetUp",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryServiceIsolationTest",
+      "target": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest._service_with_items",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryServiceIsolationTest",
+      "target": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_user_a_cannot_read_user_b_memory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryServiceIsolationTest",
+      "target": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_session_memory_only_for_matching_run_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryServiceIsolationTest",
+      "target": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_project_memory_requires_project_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryServiceIsolationTest",
+      "target": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_recall_searches_multiple_levels_in_parallel",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryServiceIsolationTest",
+      "target": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_recall_bulk_authorizes_project_memories_with_one_query",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryServiceIsolationTest",
+      "target": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_deleted_memory_not_returned_from_registry_get",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryServiceIsolationTest",
+      "target": "function:backend/tests/test_memory.py:MemoryServiceIsolationTest.test_secrets_not_stored",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "class:backend/tests/test_memory.py:MemoryExtractorTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:MemoryExtractorTest",
+      "target": "function:backend/tests/test_memory.py:MemoryExtractorTest.test_extracts_durable_preference_not_every_message",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "class:backend/tests/test_memory.py:NullMem0AdapterTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:NullMem0AdapterTest",
+      "target": "function:backend/tests/test_memory.py:NullMem0AdapterTest.test_ai_works_when_mem0_unavailable",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory.py",
+      "target": "class:backend/tests/test_memory.py:AgentServiceDegradedTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory.py:AgentServiceDegradedTest",
+      "target": "function:backend/tests/test_memory.py:AgentServiceDegradedTest.test_agent_run_without_memory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory_ranking.py",
+      "target": "file:backend/modules/memory/application/memory_context_builder.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory_ranking.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory_ranking.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory_ranking.py",
+      "target": "file:backend/modules/rag/application/rag_context_builder.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory_ranking.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory_ranking.py",
+      "target": "class:backend/tests/test_memory_ranking.py:MemoryRecencyWeightTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_ranking.py:MemoryRecencyWeightTest",
+      "target": "function:backend/tests/test_memory_ranking.py:MemoryRecencyWeightTest.test_fresh_memory_scores_higher_than_old",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_ranking.py:MemoryRecencyWeightTest",
+      "target": "function:backend/tests/test_memory_ranking.py:MemoryRecencyWeightTest.test_missing_timestamp_returns_zero",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory_ranking.py",
+      "target": "class:backend/tests/test_memory_ranking.py:MemoryRankScoreTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_ranking.py:MemoryRankScoreTest",
+      "target": "function:backend/tests/test_memory_ranking.py:MemoryRankScoreTest.test_recent_memory_ranks_above_stale_with_same_level",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory_ranking.py",
+      "target": "class:backend/tests/test_memory_ranking.py:RagContextBudgetTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_ranking.py:RagContextBudgetTest",
+      "target": "function:backend/tests/test_memory_ranking.py:RagContextBudgetTest._chunk",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_ranking.py:RagContextBudgetTest",
+      "target": "function:backend/tests/test_memory_ranking.py:RagContextBudgetTest.test_trim_chunks_respects_token_budget",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_ranking.py:RagContextBudgetTest",
+      "target": "function:backend/tests/test_memory_ranking.py:RagContextBudgetTest.test_trim_chunks_prefers_higher_scores",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory_search_cache.py",
+      "target": "file:backend/core/storage.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory_search_cache.py",
+      "target": "file:backend/modules/memory/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory_search_cache.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_memory_search_cache.py",
+      "target": "class:backend/tests/test_memory_search_cache.py:StorageCacheControlTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_search_cache.py:StorageCacheControlTest",
+      "target": "function:backend/tests/test_memory_search_cache.py:StorageCacheControlTest.test_upload_bytes_applies_requested_cache_control",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_search_cache.py:StorageCacheControlTest",
+      "target": "function:backend/tests/test_memory_search_cache.py:StorageCacheControlTest.test_private_upload_cache_control_constant",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_memory_search_cache.py",
+      "target": "class:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest",
+      "target": "function:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest.test_cache_key_changes_with_query",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest",
+      "target": "function:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest.test_serialize_and_deserialize_memory_items",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest",
+      "target": "function:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest.test_get_and_set_cached_memory_search",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest",
+      "target": "function:backend/tests/test_memory_search_cache.py:MemorySearchCacheTest.test_invalidate_memory_search_cache_deletes_user_pattern",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

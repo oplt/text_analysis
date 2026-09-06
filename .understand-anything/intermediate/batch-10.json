@@ -1,0 +1,320 @@
+{
+  "nodes": [
+    {
+      "id": "file:backend/alembic/env.py",
+      "type": "file",
+      "name": "env.py",
+      "filePath": "backend/alembic/env.py",
+      "summary": "env.py (4 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "database"
+    },
+    {
+      "id": "function:backend/alembic/env.py:run_migrations_offline",
+      "type": "function",
+      "name": "run_migrations_offline",
+      "filePath": "backend/alembic/env.py",
+      "summary": "Function run_migrations_offline in backend/alembic/env.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/alembic/env.py:do_run_migrations",
+      "type": "function",
+      "name": "do_run_migrations",
+      "filePath": "backend/alembic/env.py",
+      "summary": "Function do_run_migrations in backend/alembic/env.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/alembic/env.py:run_async_migrations",
+      "type": "function",
+      "name": "run_async_migrations",
+      "filePath": "backend/alembic/env.py",
+      "summary": "Function run_async_migrations in backend/alembic/env.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/alembic/env.py:run_migrations_online",
+      "type": "function",
+      "name": "run_migrations_online",
+      "filePath": "backend/alembic/env.py",
+      "summary": "Function run_migrations_online in backend/alembic/env.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/ai/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/ai/__init__.py",
+      "summary": "ai module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/audit/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/audit/__init__.py",
+      "summary": "audit module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/calendar/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/calendar/__init__.py",
+      "summary": "calendar module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/identity_access/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/identity_access/__init__.py",
+      "summary": "identity_access module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/notifications/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/notifications/__init__.py",
+      "summary": "notifications module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/platform/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/platform/__init__.py",
+      "summary": "platform module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/profile/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/profile/__init__.py",
+      "summary": "profile module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/projects/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/projects/__init__.py",
+      "summary": "projects module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/settings/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/settings/__init__.py",
+      "summary": "settings module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/users/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/users/__init__.py",
+      "summary": "users module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/db/base.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/modules/ai/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/modules/audit/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/modules/calendar/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/modules/identity_access/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/modules/memory/infrastructure/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/modules/notifications/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/modules/platform/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/modules/profile/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/modules/projects/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/modules/settings/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "file:backend/modules/users/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "function:backend/alembic/env.py:run_migrations_offline",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "function:backend/alembic/env.py:do_run_migrations",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "function:backend/alembic/env.py:run_async_migrations",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/alembic/env.py",
+      "target": "function:backend/alembic/env.py:run_migrations_online",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

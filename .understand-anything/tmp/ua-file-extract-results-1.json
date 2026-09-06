@@ -1,0 +1,5581 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 31,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "backend/modules/ai/tests/test_document_consolidation.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 134,
+      "nonEmptyLines": 122,
+      "classes": [
+        {
+          "name": "RagDocumentMappingTest",
+          "startLine": 16,
+          "endLine": 30,
+          "methods": [
+            "test_maps_indexed_status_to_completed"
+          ],
+          "properties": []
+        },
+        {
+          "name": "AiServiceDocumentDelegationTest",
+          "startLine": 33,
+          "endLine": 99,
+          "methods": [
+            "asyncSetUp",
+            "test_list_documents_delegates_when_rag_enabled",
+            "test_retrieve_chunks_delegates_when_rag_enabled"
+          ],
+          "properties": []
+        },
+        {
+          "name": "LegacyAiDocumentServiceRetrieveTest",
+          "startLine": 102,
+          "endLine": 134,
+          "methods": [
+            "test_retrieve_maps_rag_chunks"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RagDocumentMappingTest",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "AiServiceDocumentDelegationTest",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "LegacyAiDocumentServiceRetrieveTest",
+          "line": 102,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_maps_indexed_status_to_completed",
+          "callee": "SimpleNamespace",
+          "lineNumber": 18
+        },
+        {
+          "caller": "test_maps_indexed_status_to_completed",
+          "callee": "datetime.now",
+          "lineNumber": 24
+        },
+        {
+          "caller": "test_maps_indexed_status_to_completed",
+          "callee": "datetime.now",
+          "lineNumber": 25
+        },
+        {
+          "caller": "test_maps_indexed_status_to_completed",
+          "callee": "rag_document_to_ai_view",
+          "lineNumber": 27
+        },
+        {
+          "caller": "test_maps_indexed_status_to_completed",
+          "callee": "self.assertEqual",
+          "lineNumber": 28
+        },
+        {
+          "caller": "test_maps_indexed_status_to_completed",
+          "callee": "self.assertEqual",
+          "lineNumber": 29
+        },
+        {
+          "caller": "test_maps_indexed_status_to_completed",
+          "callee": "self.assertEqual",
+          "lineNumber": 30
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "AsyncMock",
+          "lineNumber": 35
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "SimpleNamespace",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_list_documents_delegates_when_rag_enabled",
+          "callee": "AsyncMock",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_list_documents_delegates_when_rag_enabled",
+          "callee": "AiDocumentView",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_list_documents_delegates_when_rag_enabled",
+          "callee": "datetime.now",
+          "lineNumber": 57
+        },
+        {
+          "caller": "test_list_documents_delegates_when_rag_enabled",
+          "callee": "datetime.now",
+          "lineNumber": 58
+        },
+        {
+          "caller": "test_list_documents_delegates_when_rag_enabled",
+          "callee": "AiService",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_list_documents_delegates_when_rag_enabled",
+          "callee": "service.list_documents",
+          "lineNumber": 66
+        },
+        {
+          "caller": "test_list_documents_delegates_when_rag_enabled",
+          "callee": "self.assertEqual",
+          "lineNumber": 67
+        },
+        {
+          "caller": "test_list_documents_delegates_when_rag_enabled",
+          "callee": "legacy_service_cls.return_value.list_documents.assert_awaited_once_with",
+          "lineNumber": 68
+        },
+        {
+          "caller": "test_retrieve_chunks_delegates_when_rag_enabled",
+          "callee": "AsyncMock",
+          "lineNumber": 78
+        },
+        {
+          "caller": "test_retrieve_chunks_delegates_when_rag_enabled",
+          "callee": "AiService",
+          "lineNumber": 90
+        },
+        {
+          "caller": "test_retrieve_chunks_delegates_when_rag_enabled",
+          "callee": "service.retrieve_chunks",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_retrieve_chunks_delegates_when_rag_enabled",
+          "callee": "self.assertEqual",
+          "lineNumber": 98
+        },
+        {
+          "caller": "test_retrieve_chunks_delegates_when_rag_enabled",
+          "callee": "legacy_service_cls.return_value.retrieve_chunks.assert_awaited_once",
+          "lineNumber": 99
+        },
+        {
+          "caller": "test_retrieve_maps_rag_chunks",
+          "callee": "AsyncMock",
+          "lineNumber": 104
+        },
+        {
+          "caller": "test_retrieve_maps_rag_chunks",
+          "callee": "LegacyAiDocumentService",
+          "lineNumber": 105
+        },
+        {
+          "caller": "test_retrieve_maps_rag_chunks",
+          "callee": "AsyncMock",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_retrieve_maps_rag_chunks",
+          "callee": "AsyncMock",
+          "lineNumber": 107
+        },
+        {
+          "caller": "test_retrieve_maps_rag_chunks",
+          "callee": "SimpleNamespace",
+          "lineNumber": 108
+        },
+        {
+          "caller": "test_retrieve_maps_rag_chunks",
+          "callee": "AsyncMock",
+          "lineNumber": 114
+        },
+        {
+          "caller": "test_retrieve_maps_rag_chunks",
+          "callee": "RetrievedChunk",
+          "lineNumber": 116
+        },
+        {
+          "caller": "test_retrieve_maps_rag_chunks",
+          "callee": "service.retrieve_chunks",
+          "lineNumber": 127
+        },
+        {
+          "caller": "test_retrieve_maps_rag_chunks",
+          "callee": "self.assertEqual",
+          "lineNumber": 133
+        },
+        {
+          "caller": "test_retrieve_maps_rag_chunks",
+          "callee": "self.assertEqual",
+          "lineNumber": 134
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 3,
+        "functionCount": 0,
+        "classCount": 3
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/agent_context_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 40,
+      "nonEmptyLines": 33,
+      "functions": [
+        {
+          "name": "rag_handles_prompt_retrieval",
+          "startLine": 12,
+          "endLine": 13,
+          "params": []
+        },
+        {
+          "name": "build_agent_document_context",
+          "startLine": 16,
+          "endLine": 40,
+          "params": [
+            "db",
+            "query",
+            "user_id",
+            "project_id",
+            "top_k",
+            "document_ids"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "rag_handles_prompt_retrieval",
+          "line": 12,
+          "isDefault": false
+        },
+        {
+          "name": "build_agent_document_context",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "rag_handles_prompt_retrieval",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 13
+        },
+        {
+          "caller": "build_agent_document_context",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 25
+        },
+        {
+          "caller": "build_agent_document_context",
+          "callee": "rag_search_tool",
+          "lineNumber": 29
+        },
+        {
+          "caller": "build_agent_document_context",
+          "callee": "logger.exception",
+          "lineNumber": 39
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/chunking_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 71,
+      "nonEmptyLines": 64,
+      "functions": [
+        {
+          "name": "_split_documents_with_token_counts",
+          "startLine": 11,
+          "endLine": 24,
+          "params": [
+            "documents",
+            "chunk_size",
+            "chunk_overlap"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "ChunkingService",
+          "startLine": 27,
+          "endLine": 71,
+          "methods": [
+            "__init__",
+            "chunk"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_split_documents_with_token_counts",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "ChunkingService",
+          "line": 27,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_split_documents_with_token_counts",
+          "callee": "estimate_tokens",
+          "lineNumber": 18
+        },
+        {
+          "caller": "_split_documents_with_token_counts",
+          "callee": "split_documents",
+          "lineNumber": 19
+        },
+        {
+          "caller": "__init__",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 29
+        },
+        {
+          "caller": "chunk",
+          "callee": "asyncio.to_thread",
+          "lineNumber": 41
+        },
+        {
+          "caller": "chunk",
+          "callee": "enumerate",
+          "lineNumber": 48
+        },
+        {
+          "caller": "chunk",
+          "callee": "chunks.append",
+          "lineNumber": 49
+        },
+        {
+          "caller": "chunk",
+          "callee": "DocumentChunk",
+          "lineNumber": 50
+        },
+        {
+          "caller": "chunk",
+          "callee": "meta.get",
+          "lineNumber": 65
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/citation_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 17,
+      "nonEmptyLines": 15,
+      "classes": [
+        {
+          "name": "CitationService",
+          "startLine": 4,
+          "endLine": 17,
+          "methods": [
+            "build_citations"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "CitationService",
+          "line": 4,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "build_citations",
+          "callee": "Citation",
+          "lineNumber": 7
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/document_ingestion_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 289,
+      "nonEmptyLines": 263,
+      "classes": [
+        {
+          "name": "DocumentIngestionService",
+          "startLine": 26,
+          "endLine": 289,
+          "methods": [
+            "__init__",
+            "upload_document",
+            "enqueue_document_indexing",
+            "index_document",
+            "delete_document",
+            "_get_document_for_indexing",
+            "_ensure_project_access"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "DocumentIngestionService",
+          "line": 26,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 29
+        },
+        {
+          "caller": "__init__",
+          "callee": "RagRepository",
+          "lineNumber": 30
+        },
+        {
+          "caller": "__init__",
+          "callee": "ProjectsRepository",
+          "lineNumber": 31
+        },
+        {
+          "caller": "__init__",
+          "callee": "DocumentParserService",
+          "lineNumber": 32
+        },
+        {
+          "caller": "__init__",
+          "callee": "ChunkingService",
+          "lineNumber": 33
+        },
+        {
+          "caller": "__init__",
+          "callee": "EmbeddingService",
+          "lineNumber": 34
+        },
+        {
+          "caller": "__init__",
+          "callee": "RagPolicyService",
+          "lineNumber": 35
+        },
+        {
+          "caller": "__init__",
+          "callee": "FileStorageAdapter",
+          "lineNumber": 36
+        },
+        {
+          "caller": "__init__",
+          "callee": "build_vector_store",
+          "lineNumber": 37
+        },
+        {
+          "caller": "upload_document",
+          "callee": "HTTPException",
+          "lineNumber": 51
+        },
+        {
+          "caller": "upload_document",
+          "callee": "len",
+          "lineNumber": 53
+        },
+        {
+          "caller": "upload_document",
+          "callee": "HTTPException",
+          "lineNumber": 54
+        },
+        {
+          "caller": "upload_document",
+          "callee": "self.policy.is_allowed_file_type",
+          "lineNumber": 56
+        },
+        {
+          "caller": "upload_document",
+          "callee": "HTTPException",
+          "lineNumber": 57
+        },
+        {
+          "caller": "upload_document",
+          "callee": "self._ensure_project_access",
+          "lineNumber": 60
+        },
+        {
+          "caller": "upload_document",
+          "callee": "self.storage.store_document",
+          "lineNumber": 62
+        },
+        {
+          "caller": "upload_document",
+          "callee": "self.repo.create_document",
+          "lineNumber": 69
+        },
+        {
+          "caller": "upload_document",
+          "callee": "len",
+          "lineNumber": 78
+        },
+        {
+          "caller": "upload_document",
+          "callee": "self.repo.create_ingestion_job",
+          "lineNumber": 80
+        },
+        {
+          "caller": "upload_document",
+          "callee": "self.db.commit",
+          "lineNumber": 85
+        },
+        {
+          "caller": "upload_document",
+          "callee": "self.db.refresh",
+          "lineNumber": 86
+        },
+        {
+          "caller": "upload_document",
+          "callee": "self.db.refresh",
+          "lineNumber": 87
+        },
+        {
+          "caller": "upload_document",
+          "callee": "metrics.rag_document_upload_total.inc",
+          "lineNumber": 88
+        },
+        {
+          "caller": "enqueue_document_indexing",
+          "callee": "self._get_document_for_indexing",
+          "lineNumber": 100
+        },
+        {
+          "caller": "enqueue_document_indexing",
+          "callee": "self.repo.create_ingestion_job",
+          "lineNumber": 105
+        },
+        {
+          "caller": "enqueue_document_indexing",
+          "callee": "self.db.commit",
+          "lineNumber": 110
+        },
+        {
+          "caller": "enqueue_document_indexing",
+          "callee": "self.db.refresh",
+          "lineNumber": 111
+        },
+        {
+          "caller": "enqueue_document_indexing",
+          "callee": "queue_document_indexing",
+          "lineNumber": 112
+        },
+        {
+          "caller": "index_document",
+          "callee": "self._get_document_for_indexing",
+          "lineNumber": 129
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.repo.get_ingestion_job",
+          "lineNumber": 135
+        },
+        {
+          "caller": "index_document",
+          "callee": "HTTPException",
+          "lineNumber": 137
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.repo.create_ingestion_job",
+          "lineNumber": 139
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.repo.update_ingestion_job",
+          "lineNumber": 144
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.repo.update_document_status",
+          "lineNumber": 147
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.db.commit",
+          "lineNumber": 148
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.storage.download_document",
+          "lineNumber": 153
+        },
+        {
+          "caller": "index_document",
+          "callee": "HTTPException",
+          "lineNumber": 155
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.parser.parse_bytes",
+          "lineNumber": 160
+        },
+        {
+          "caller": "index_document",
+          "callee": "ValueError",
+          "lineNumber": 167
+        },
+        {
+          "caller": "index_document",
+          "callee": "metrics.rag_parse_success_total.inc",
+          "lineNumber": 168
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.repo.update_document_status",
+          "lineNumber": 170
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.db.commit",
+          "lineNumber": 171
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.chunker.chunk",
+          "lineNumber": 173
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.policy.contains_prompt_injection",
+          "lineNumber": 183
+        },
+        {
+          "caller": "index_document",
+          "callee": "logger.warning",
+          "lineNumber": 190
+        },
+        {
+          "caller": "index_document",
+          "callee": "metrics.rag_chunk_count.observe",
+          "lineNumber": 196
+        },
+        {
+          "caller": "index_document",
+          "callee": "len",
+          "lineNumber": 196
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.repo.update_document_status",
+          "lineNumber": 198
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.db.commit",
+          "lineNumber": 199
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.embeddings.embed_texts",
+          "lineNumber": 202
+        },
+        {
+          "caller": "index_document",
+          "callee": "zip",
+          "lineNumber": 203
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.repo.replace_chunks",
+          "lineNumber": 206
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.repo.update_document_status",
+          "lineNumber": 221
+        },
+        {
+          "caller": "index_document",
+          "callee": "json.loads",
+          "lineNumber": 222
+        },
+        {
+          "caller": "index_document",
+          "callee": "len",
+          "lineNumber": 223
+        },
+        {
+          "caller": "index_document",
+          "callee": "json.dumps",
+          "lineNumber": 224
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.repo.update_ingestion_job",
+          "lineNumber": 225
+        },
+        {
+          "caller": "index_document",
+          "callee": "datetime.now",
+          "lineNumber": 228
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.db.commit",
+          "lineNumber": 229
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.db.refresh",
+          "lineNumber": 230
+        },
+        {
+          "caller": "index_document",
+          "callee": "invalidate_retrieval_cache_for_document",
+          "lineNumber": 231
+        },
+        {
+          "caller": "index_document",
+          "callee": "logger.exception",
+          "lineNumber": 239
+        },
+        {
+          "caller": "index_document",
+          "callee": "metrics.rag_parse_failure_total.inc",
+          "lineNumber": 240
+        },
+        {
+          "caller": "index_document",
+          "callee": "metrics.rag_vector_upsert_failure_total.inc",
+          "lineNumber": 241
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.repo.update_document_status",
+          "lineNumber": 242
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.repo.update_ingestion_job",
+          "lineNumber": 243
+        },
+        {
+          "caller": "index_document",
+          "callee": "str",
+          "lineNumber": 246
+        },
+        {
+          "caller": "index_document",
+          "callee": "self.db.commit",
+          "lineNumber": 249
+        },
+        {
+          "caller": "index_document",
+          "callee": "HTTPException",
+          "lineNumber": 250
+        },
+        {
+          "caller": "delete_document",
+          "callee": "self.repo.get_document",
+          "lineNumber": 253
+        },
+        {
+          "caller": "delete_document",
+          "callee": "HTTPException",
+          "lineNumber": 255
+        },
+        {
+          "caller": "delete_document",
+          "callee": "metrics.rag_permission_denied_total.inc",
+          "lineNumber": 257
+        },
+        {
+          "caller": "delete_document",
+          "callee": "HTTPException",
+          "lineNumber": 258
+        },
+        {
+          "caller": "delete_document",
+          "callee": "self.vector_store.delete_document",
+          "lineNumber": 260
+        },
+        {
+          "caller": "delete_document",
+          "callee": "self.storage.delete_document",
+          "lineNumber": 261
+        },
+        {
+          "caller": "delete_document",
+          "callee": "self.repo.soft_delete_document",
+          "lineNumber": 262
+        },
+        {
+          "caller": "delete_document",
+          "callee": "self.db.commit",
+          "lineNumber": 263
+        },
+        {
+          "caller": "delete_document",
+          "callee": "invalidate_retrieval_cache_for_document",
+          "lineNumber": 264
+        },
+        {
+          "caller": "_get_document_for_indexing",
+          "callee": "self.repo.get_document",
+          "lineNumber": 276
+        },
+        {
+          "caller": "_get_document_for_indexing",
+          "callee": "HTTPException",
+          "lineNumber": 278
+        },
+        {
+          "caller": "_get_document_for_indexing",
+          "callee": "HTTPException",
+          "lineNumber": 280
+        },
+        {
+          "caller": "_get_document_for_indexing",
+          "callee": "self._ensure_project_access",
+          "lineNumber": 282
+        },
+        {
+          "caller": "_ensure_project_access",
+          "callee": "self.projects_repo.get_by_id_for_user",
+          "lineNumber": 286
+        },
+        {
+          "caller": "_ensure_project_access",
+          "callee": "metrics.rag_permission_denied_total.inc",
+          "lineNumber": 288
+        },
+        {
+          "caller": "_ensure_project_access",
+          "callee": "HTTPException",
+          "lineNumber": 289
+        }
+      ],
+      "metrics": {
+        "importCount": 11,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/document_parser_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 28,
+      "nonEmptyLines": 23,
+      "classes": [
+        {
+          "name": "DocumentParserService",
+          "startLine": 11,
+          "endLine": 28,
+          "methods": [
+            "parse_bytes"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "DocumentParserService",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "parse_bytes",
+          "callee": "load_documents_from_bytes",
+          "lineNumber": 20
+        },
+        {
+          "caller": "parse_bytes",
+          "callee": "doc.metadata.update",
+          "lineNumber": 27
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/embedding_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 28,
+      "nonEmptyLines": 22,
+      "classes": [
+        {
+          "name": "EmbeddingService",
+          "startLine": 11,
+          "endLine": 28,
+          "methods": [
+            "__init__",
+            "embed_texts"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "EmbeddingService",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 13
+        },
+        {
+          "caller": "__init__",
+          "callee": "LangChainEmbeddingAdapter",
+          "lineNumber": 14
+        },
+        {
+          "caller": "embed_texts",
+          "callee": "perf_counter",
+          "lineNumber": 20
+        },
+        {
+          "caller": "embed_texts",
+          "callee": "embed_texts_with_cache",
+          "lineNumber": 21
+        },
+        {
+          "caller": "embed_texts",
+          "callee": "metrics.rag_embedding_latency_ms.observe",
+          "lineNumber": 27
+        },
+        {
+          "caller": "embed_texts",
+          "callee": "perf_counter",
+          "lineNumber": 27
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 214,
+      "nonEmptyLines": 191,
+      "functions": [
+        {
+          "name": "_map_ingestion_status",
+          "startLine": 40,
+          "endLine": 51,
+          "params": [
+            "rag_status"
+          ]
+        },
+        {
+          "name": "_safe_stem",
+          "startLine": 54,
+          "endLine": 56,
+          "params": [
+            "title"
+          ]
+        },
+        {
+          "name": "_filename_for_text",
+          "startLine": 59,
+          "endLine": 65,
+          "params": [
+            "title",
+            "content_type"
+          ]
+        },
+        {
+          "name": "rag_document_to_ai_view",
+          "startLine": 68,
+          "endLine": 83,
+          "params": [
+            "document"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "AiDocumentView",
+          "startLine": 24,
+          "endLine": 37,
+          "methods": [],
+          "properties": [
+            "id",
+            "title",
+            "description",
+            "filename",
+            "content_type",
+            "size_bytes",
+            "ingestion_status",
+            "metadata_json",
+            "chunk_count",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "LegacyAiDocumentService",
+          "startLine": 86,
+          "endLine": 214,
+          "methods": [
+            "__init__",
+            "list_documents",
+            "create_from_text",
+            "create_from_upload",
+            "retrieve_chunks"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AiDocumentView",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "_map_ingestion_status",
+          "line": 40,
+          "isDefault": false
+        },
+        {
+          "name": "_safe_stem",
+          "line": 54,
+          "isDefault": false
+        },
+        {
+          "name": "_filename_for_text",
+          "line": 59,
+          "isDefault": false
+        },
+        {
+          "name": "rag_document_to_ai_view",
+          "line": 68,
+          "isDefault": false
+        },
+        {
+          "name": "LegacyAiDocumentService",
+          "line": 86,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_safe_stem",
+          "callee": "_SAFE_FILENAME.sub",
+          "lineNumber": 55
+        },
+        {
+          "caller": "_safe_stem",
+          "callee": "title.strip",
+          "lineNumber": 55
+        },
+        {
+          "caller": "_filename_for_text",
+          "callee": "_safe_stem",
+          "lineNumber": 60
+        },
+        {
+          "caller": "_filename_for_text",
+          "callee": "stem.endswith",
+          "lineNumber": 61
+        },
+        {
+          "caller": "rag_document_to_ai_view",
+          "callee": "json.loads",
+          "lineNumber": 69
+        },
+        {
+          "caller": "rag_document_to_ai_view",
+          "callee": "metadata.get",
+          "lineNumber": 70
+        },
+        {
+          "caller": "rag_document_to_ai_view",
+          "callee": "AiDocumentView",
+          "lineNumber": 71
+        },
+        {
+          "caller": "rag_document_to_ai_view",
+          "callee": "metadata.get",
+          "lineNumber": 74
+        },
+        {
+          "caller": "rag_document_to_ai_view",
+          "callee": "int",
+          "lineNumber": 77
+        },
+        {
+          "caller": "rag_document_to_ai_view",
+          "callee": "metadata.get",
+          "lineNumber": 77
+        },
+        {
+          "caller": "rag_document_to_ai_view",
+          "callee": "_map_ingestion_status",
+          "lineNumber": 78
+        },
+        {
+          "caller": "rag_document_to_ai_view",
+          "callee": "int",
+          "lineNumber": 80
+        },
+        {
+          "caller": "rag_document_to_ai_view",
+          "callee": "metadata.get",
+          "lineNumber": 80
+        },
+        {
+          "caller": "__init__",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 91
+        },
+        {
+          "caller": "__init__",
+          "callee": "RagRepository",
+          "lineNumber": 92
+        },
+        {
+          "caller": "__init__",
+          "callee": "DocumentIngestionService",
+          "lineNumber": 93
+        },
+        {
+          "caller": "__init__",
+          "callee": "RetrievalService",
+          "lineNumber": 94
+        },
+        {
+          "caller": "list_documents",
+          "callee": "self.repo.list_documents_for_user",
+          "lineNumber": 103
+        },
+        {
+          "caller": "list_documents",
+          "callee": "rag_document_to_ai_view",
+          "lineNumber": 106
+        },
+        {
+          "caller": "create_from_text",
+          "callee": "content.encode",
+          "lineNumber": 119
+        },
+        {
+          "caller": "create_from_text",
+          "callee": "_filename_for_text",
+          "lineNumber": 120
+        },
+        {
+          "caller": "create_from_text",
+          "callee": "self.ingestion.upload_document",
+          "lineNumber": 121
+        },
+        {
+          "caller": "create_from_text",
+          "callee": "len",
+          "lineNumber": 130
+        },
+        {
+          "caller": "create_from_text",
+          "callee": "queue_document_indexing",
+          "lineNumber": 133
+        },
+        {
+          "caller": "create_from_text",
+          "callee": "rag_document_to_ai_view",
+          "lineNumber": 139
+        },
+        {
+          "caller": "create_from_upload",
+          "callee": "file.read",
+          "lineNumber": 148
+        },
+        {
+          "caller": "create_from_upload",
+          "callee": "HTTPException",
+          "lineNumber": 150
+        },
+        {
+          "caller": "create_from_upload",
+          "callee": "self.ingestion.upload_document",
+          "lineNumber": 152
+        },
+        {
+          "caller": "create_from_upload",
+          "callee": "len",
+          "lineNumber": 160
+        },
+        {
+          "caller": "create_from_upload",
+          "callee": "queue_document_indexing",
+          "lineNumber": 163
+        },
+        {
+          "caller": "create_from_upload",
+          "callee": "rag_document_to_ai_view",
+          "lineNumber": 169
+        },
+        {
+          "caller": "retrieve_chunks",
+          "callee": "self.repo.filter_document_ids_for_user",
+          "lineNumber": 181
+        },
+        {
+          "caller": "retrieve_chunks",
+          "callee": "len",
+          "lineNumber": 182
+        },
+        {
+          "caller": "retrieve_chunks",
+          "callee": "len",
+          "lineNumber": 182
+        },
+        {
+          "caller": "retrieve_chunks",
+          "callee": "HTTPException",
+          "lineNumber": 183
+        },
+        {
+          "caller": "retrieve_chunks",
+          "callee": "set",
+          "lineNumber": 188
+        },
+        {
+          "caller": "retrieve_chunks",
+          "callee": "self.repo.get_document",
+          "lineNumber": 191
+        },
+        {
+          "caller": "retrieve_chunks",
+          "callee": "self.retrieval.retrieve",
+          "lineNumber": 196
+        }
+      ],
+      "metrics": {
+        "importCount": 8,
+        "exportCount": 6,
+        "functionCount": 4,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/rag_answer_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 184,
+      "nonEmptyLines": 166,
+      "classes": [
+        {
+          "name": "RagAnswerService",
+          "startLine": 30,
+          "endLine": 184,
+          "methods": [
+            "__init__",
+            "answer",
+            "_log_query"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RagAnswerService",
+          "line": 30,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 33
+        },
+        {
+          "caller": "__init__",
+          "callee": "RetrievalService",
+          "lineNumber": 34
+        },
+        {
+          "caller": "__init__",
+          "callee": "RagContextBuilder",
+          "lineNumber": 35
+        },
+        {
+          "caller": "__init__",
+          "callee": "CitationService",
+          "lineNumber": 35
+        },
+        {
+          "caller": "__init__",
+          "callee": "RagRepository",
+          "lineNumber": 36
+        },
+        {
+          "caller": "__init__",
+          "callee": "ProjectsRepository",
+          "lineNumber": 37
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryService",
+          "lineNumber": 38
+        },
+        {
+          "caller": "__init__",
+          "callee": "MemoryConfig.from_settings",
+          "lineNumber": 39
+        },
+        {
+          "caller": "__init__",
+          "callee": "AiService",
+          "lineNumber": 40
+        },
+        {
+          "caller": "answer",
+          "callee": "HTTPException",
+          "lineNumber": 54
+        },
+        {
+          "caller": "answer",
+          "callee": "self.projects_repo.get_by_id_for_user",
+          "lineNumber": 58
+        },
+        {
+          "caller": "answer",
+          "callee": "metrics.rag_permission_denied_total.inc",
+          "lineNumber": 60
+        },
+        {
+          "caller": "answer",
+          "callee": "HTTPException",
+          "lineNumber": 61
+        },
+        {
+          "caller": "answer",
+          "callee": "perf_counter",
+          "lineNumber": 63
+        },
+        {
+          "caller": "_load_memory_context",
+          "callee": "self.memory.build_prompt_context",
+          "lineNumber": 70
+        },
+        {
+          "caller": "_load_memory_context",
+          "callee": "MemorySearchRequest",
+          "lineNumber": 71
+        },
+        {
+          "caller": "_load_memory_context",
+          "callee": "logger.exception",
+          "lineNumber": 80
+        },
+        {
+          "caller": "answer",
+          "callee": "asyncio.gather",
+          "lineNumber": 83
+        },
+        {
+          "caller": "answer",
+          "callee": "self.retrieval.retrieve",
+          "lineNumber": 84
+        },
+        {
+          "caller": "answer",
+          "callee": "_load_memory_context",
+          "lineNumber": 90
+        },
+        {
+          "caller": "answer",
+          "callee": "self.context_builder.trim_chunks_to_token_budget",
+          "lineNumber": 92
+        },
+        {
+          "caller": "answer",
+          "callee": "self.context_builder.citations.build_citations",
+          "lineNumber": 96
+        },
+        {
+          "caller": "answer",
+          "callee": "self.context_builder.build_document_context_block",
+          "lineNumber": 97
+        },
+        {
+          "caller": "answer",
+          "callee": "int",
+          "lineNumber": 100
+        },
+        {
+          "caller": "answer",
+          "callee": "perf_counter",
+          "lineNumber": 100
+        },
+        {
+          "caller": "answer",
+          "callee": "metrics.rag_answer_latency_ms.observe",
+          "lineNumber": 101
+        },
+        {
+          "caller": "answer",
+          "callee": "self._log_query",
+          "lineNumber": 102
+        },
+        {
+          "caller": "answer",
+          "callee": "RagAnswer",
+          "lineNumber": 112
+        },
+        {
+          "caller": "answer",
+          "callee": "self.context_builder.build_combined_context",
+          "lineNumber": 123
+        },
+        {
+          "caller": "answer",
+          "callee": "self.ai.run_rag_answer",
+          "lineNumber": 130
+        },
+        {
+          "caller": "answer",
+          "callee": "int",
+          "lineNumber": 137
+        },
+        {
+          "caller": "answer",
+          "callee": "perf_counter",
+          "lineNumber": 137
+        },
+        {
+          "caller": "answer",
+          "callee": "metrics.rag_answer_latency_ms.observe",
+          "lineNumber": 138
+        },
+        {
+          "caller": "answer",
+          "callee": "self._log_query",
+          "lineNumber": 140
+        },
+        {
+          "caller": "answer",
+          "callee": "RagAnswer",
+          "lineNumber": 151
+        },
+        {
+          "caller": "_log_query",
+          "callee": "self.repo.create_query_record",
+          "lineNumber": 174
+        },
+        {
+          "caller": "_log_query",
+          "callee": "self.db.commit",
+          "lineNumber": 184
+        }
+      ],
+      "metrics": {
+        "importCount": 12,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/rag_context_builder.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 94,
+      "nonEmptyLines": 83,
+      "classes": [
+        {
+          "name": "RagContextBuilder",
+          "startLine": 19,
+          "endLine": 94,
+          "methods": [
+            "__init__",
+            "trim_chunks_to_token_budget",
+            "build_document_context_block",
+            "build_combined_context",
+            "assemble_agent_system_context"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RagContextBuilder",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "CitationService",
+          "lineNumber": 21
+        },
+        {
+          "caller": "trim_chunks_to_token_budget",
+          "callee": "max",
+          "lineNumber": 33
+        },
+        {
+          "caller": "trim_chunks_to_token_budget",
+          "callee": "sorted",
+          "lineNumber": 39
+        },
+        {
+          "caller": "trim_chunks_to_token_budget",
+          "callee": "estimate_tokens",
+          "lineNumber": 40
+        },
+        {
+          "caller": "trim_chunks_to_token_budget",
+          "callee": "selected.append",
+          "lineNumber": 44
+        },
+        {
+          "caller": "trim_chunks_to_token_budget",
+          "callee": "selected.append",
+          "lineNumber": 46
+        },
+        {
+          "caller": "trim_chunks_to_token_budget",
+          "callee": "selected.sort",
+          "lineNumber": 48
+        },
+        {
+          "caller": "build_document_context_block",
+          "callee": "enumerate",
+          "lineNumber": 56
+        },
+        {
+          "caller": "build_document_context_block",
+          "callee": "lines.extend",
+          "lineNumber": 58
+        },
+        {
+          "caller": "build_document_context_block",
+          "callee": "\"\\n\".join(lines).rstrip",
+          "lineNumber": 69
+        },
+        {
+          "caller": "build_document_context_block",
+          "callee": "\"\\n\".join",
+          "lineNumber": 69
+        },
+        {
+          "caller": "build_combined_context",
+          "callee": "parts.append",
+          "lineNumber": 80
+        },
+        {
+          "caller": "build_combined_context",
+          "callee": "parts.append",
+          "lineNumber": 82
+        },
+        {
+          "caller": "build_combined_context",
+          "callee": "parts.append",
+          "lineNumber": 83
+        },
+        {
+          "caller": "build_combined_context",
+          "callee": "\"\\n\\n\".join",
+          "lineNumber": 84
+        },
+        {
+          "caller": "build_combined_context",
+          "callee": "part.strip",
+          "lineNumber": 84
+        },
+        {
+          "caller": "assemble_agent_system_context",
+          "callee": "part.strip",
+          "lineNumber": 93
+        },
+        {
+          "caller": "assemble_agent_system_context",
+          "callee": "\"\\n\\n\".join",
+          "lineNumber": 94
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/rag_policy_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 20,
+      "nonEmptyLines": 15,
+      "classes": [
+        {
+          "name": "RagPolicyService",
+          "startLine": 14,
+          "endLine": 20,
+          "methods": [
+            "contains_prompt_injection",
+            "is_allowed_file_type"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RagPolicyService",
+          "line": 14,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "contains_prompt_injection",
+          "callee": "any",
+          "lineNumber": 16
+        },
+        {
+          "caller": "contains_prompt_injection",
+          "callee": "pattern.search",
+          "lineNumber": 16
+        },
+        {
+          "caller": "is_allowed_file_type",
+          "callee": "filename.rsplit(\".\", 1)[-1].lower",
+          "lineNumber": 19
+        },
+        {
+          "caller": "is_allowed_file_type",
+          "callee": "filename.rsplit",
+          "lineNumber": 19
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/rag_tool.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 52,
+      "nonEmptyLines": 44,
+      "functions": [
+        {
+          "name": "rag_search_tool",
+          "startLine": 14,
+          "endLine": 52,
+          "params": [
+            "db",
+            "query",
+            "user_id",
+            "project_id",
+            "top_k",
+            "document_ids"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "rag_search_tool",
+          "line": 14,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "rag_search_tool",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 28
+        },
+        {
+          "caller": "rag_search_tool",
+          "callee": "RetrievalService",
+          "lineNumber": 32
+        },
+        {
+          "caller": "rag_search_tool",
+          "callee": "retrieval.retrieve",
+          "lineNumber": 35
+        },
+        {
+          "caller": "rag_search_tool",
+          "callee": "logger.exception",
+          "lineNumber": 43
+        },
+        {
+          "caller": "rag_search_tool",
+          "callee": "RagContextBuilder",
+          "lineNumber": 46
+        },
+        {
+          "caller": "rag_search_tool",
+          "callee": "builder.trim_chunks_to_token_budget",
+          "lineNumber": 47
+        },
+        {
+          "caller": "rag_search_tool",
+          "callee": "builder.build_document_context_block",
+          "lineNumber": 51
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/rag/application/retrieval_service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 87,
+      "nonEmptyLines": 79,
+      "classes": [
+        {
+          "name": "RetrievalService",
+          "startLine": 18,
+          "endLine": 87,
+          "methods": [
+            "__init__",
+            "retrieve"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RetrievalService",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 21
+        },
+        {
+          "caller": "__init__",
+          "callee": "build_vector_store",
+          "lineNumber": 22
+        },
+        {
+          "caller": "__init__",
+          "callee": "EmbeddingService",
+          "lineNumber": 23
+        },
+        {
+          "caller": "retrieve",
+          "callee": "perf_counter",
+          "lineNumber": 38
+        },
+        {
+          "caller": "retrieve",
+          "callee": "get_cached_retrieval",
+          "lineNumber": 40
+        },
+        {
+          "caller": "retrieve",
+          "callee": "metrics.rag_retrieved_chunks.observe",
+          "lineNumber": 48
+        },
+        {
+          "caller": "retrieve",
+          "callee": "len",
+          "lineNumber": 48
+        },
+        {
+          "caller": "retrieve",
+          "callee": "self.embeddings.embed_texts",
+          "lineNumber": 51
+        },
+        {
+          "caller": "retrieve",
+          "callee": "can_index_embedding",
+          "lineNumber": 52
+        },
+        {
+          "caller": "retrieve",
+          "callee": "logger.warning",
+          "lineNumber": 56
+        },
+        {
+          "caller": "retrieve",
+          "callee": "len",
+          "lineNumber": 59
+        },
+        {
+          "caller": "retrieve",
+          "callee": "metrics.rag_vector_unavailable_total.inc",
+          "lineNumber": 62
+        },
+        {
+          "caller": "retrieve",
+          "callee": "self.vector_store.similarity_search",
+          "lineNumber": 64
+        },
+        {
+          "caller": "retrieve",
+          "callee": "set_cached_retrieval",
+          "lineNumber": 72
+        },
+        {
+          "caller": "retrieve",
+          "callee": "metrics.rag_retrieved_chunks.observe",
+          "lineNumber": 80
+        },
+        {
+          "caller": "retrieve",
+          "callee": "len",
+          "lineNumber": 80
+        },
+        {
+          "caller": "retrieve",
+          "callee": "logger.exception",
+          "lineNumber": 83
+        },
+        {
+          "caller": "retrieve",
+          "callee": "metrics.rag_vector_unavailable_total.inc",
+          "lineNumber": 84
+        },
+        {
+          "caller": "retrieve",
+          "callee": "metrics.rag_retrieval_latency_ms.observe",
+          "lineNumber": 87
+        },
+        {
+          "caller": "retrieve",
+          "callee": "perf_counter",
+          "lineNumber": 87
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/domain/enums.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 24,
+      "nonEmptyLines": 18,
+      "classes": [
+        {
+          "name": "DocumentStatus",
+          "startLine": 4,
+          "endLine": 11,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "IngestionJobStatus",
+          "startLine": 14,
+          "endLine": 18,
+          "methods": [],
+          "properties": []
+        },
+        {
+          "name": "SourceType",
+          "startLine": 21,
+          "endLine": 24,
+          "methods": [],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "DocumentStatus",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "IngestionJobStatus",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "SourceType",
+          "line": 21,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 0,
+        "classCount": 3
+      }
+    },
+    {
+      "path": "backend/modules/rag/domain/models.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 107,
+      "nonEmptyLines": 89,
+      "classes": [
+        {
+          "name": "ParsedDocument",
+          "startLine": 11,
+          "endLine": 14,
+          "methods": [],
+          "properties": [
+            "content",
+            "metadata",
+            "page_number"
+          ]
+        },
+        {
+          "name": "DocumentChunk",
+          "startLine": 18,
+          "endLine": 29,
+          "methods": [],
+          "properties": [
+            "document_id",
+            "user_id",
+            "chunk_index",
+            "content",
+            "token_count",
+            "metadata",
+            "organization_id",
+            "project_id",
+            "embedding",
+            "id",
+            "vector_external_id"
+          ]
+        },
+        {
+          "name": "RetrievedChunk",
+          "startLine": 33,
+          "endLine": 41,
+          "methods": [],
+          "properties": [
+            "chunk_id",
+            "document_id",
+            "content",
+            "score",
+            "filename",
+            "chunk_index",
+            "page_number",
+            "metadata"
+          ]
+        },
+        {
+          "name": "Citation",
+          "startLine": 45,
+          "endLine": 52,
+          "methods": [],
+          "properties": [
+            "document_id",
+            "chunk_id",
+            "filename",
+            "score",
+            "snippet",
+            "page_number",
+            "chunk_index"
+          ]
+        },
+        {
+          "name": "RagAnswer",
+          "startLine": 56,
+          "endLine": 64,
+          "methods": [],
+          "properties": [
+            "query",
+            "answer",
+            "citations",
+            "retrieved_chunk_ids",
+            "model_name",
+            "latency_ms",
+            "no_context_found",
+            "ai_run_id"
+          ]
+        },
+        {
+          "name": "RagQuery",
+          "startLine": 68,
+          "endLine": 77,
+          "methods": [],
+          "properties": [
+            "id",
+            "user_id",
+            "query",
+            "answer",
+            "project_id",
+            "retrieved_chunk_ids",
+            "model_name",
+            "latency_ms",
+            "created_at"
+          ]
+        },
+        {
+          "name": "Document",
+          "startLine": 81,
+          "endLine": 94,
+          "methods": [],
+          "properties": [
+            "id",
+            "user_id",
+            "filename",
+            "original_filename",
+            "content_type",
+            "storage_path",
+            "status",
+            "source_type",
+            "project_id",
+            "organization_id",
+            "metadata",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "IngestionJob",
+          "startLine": 98,
+          "endLine": 107,
+          "methods": [],
+          "properties": [
+            "id",
+            "document_id",
+            "user_id",
+            "project_id",
+            "status",
+            "error_message",
+            "started_at",
+            "finished_at",
+            "created_at"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ParsedDocument",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "DocumentChunk",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "RetrievedChunk",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "Citation",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "RagAnswer",
+          "line": 55,
+          "isDefault": false
+        },
+        {
+          "name": "RagQuery",
+          "line": 67,
+          "isDefault": false
+        },
+        {
+          "name": "Document",
+          "line": 80,
+          "isDefault": false
+        },
+        {
+          "name": "IngestionJob",
+          "line": 97,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 8,
+        "functionCount": 0,
+        "classCount": 8
+      }
+    },
+    {
+      "path": "backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 59,
+      "nonEmptyLines": 46,
+      "functions": [
+        {
+          "name": "build_document_object_key",
+          "startLine": 11,
+          "endLine": 13,
+          "params": [
+            "user_id",
+            "filename"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "FileStorageAdapter",
+          "startLine": 16,
+          "endLine": 59,
+          "methods": [
+            "store_document",
+            "delete_document",
+            "download_document"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "build_document_object_key",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "FileStorageAdapter",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "build_document_object_key",
+          "callee": "filename.replace(\"/\", \"_\").replace",
+          "lineNumber": 12
+        },
+        {
+          "caller": "build_document_object_key",
+          "callee": "filename.replace",
+          "lineNumber": 12
+        },
+        {
+          "caller": "build_document_object_key",
+          "callee": "uuid4",
+          "lineNumber": 13
+        },
+        {
+          "caller": "store_document",
+          "callee": "logger.info",
+          "lineNumber": 26
+        },
+        {
+          "caller": "store_document",
+          "callee": "build_document_object_key",
+          "lineNumber": 28
+        },
+        {
+          "caller": "store_document",
+          "callee": "object_storage.upload_bytes",
+          "lineNumber": 30
+        },
+        {
+          "caller": "delete_document",
+          "callee": "object_storage.delete_object",
+          "lineNumber": 42
+        },
+        {
+          "caller": "download_document",
+          "callee": "StorageNotConfiguredError",
+          "lineNumber": 46
+        },
+        {
+          "caller": "_get",
+          "callee": "object_storage._client.get_object",
+          "lineNumber": 51
+        },
+        {
+          "caller": "_get",
+          "callee": "response[\"Body\"].read",
+          "lineNumber": 55
+        },
+        {
+          "caller": "download_document",
+          "callee": "asyncio.to_thread",
+          "lineNumber": 59
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 144,
+      "nonEmptyLines": 119,
+      "functions": [
+        {
+          "name": "_parse_txt_or_md",
+          "startLine": 13,
+          "endLine": 17,
+          "params": [
+            "content"
+          ]
+        },
+        {
+          "name": "_parse_csv",
+          "startLine": 20,
+          "endLine": 30,
+          "params": [
+            "content"
+          ]
+        },
+        {
+          "name": "_parse_pdf",
+          "startLine": 33,
+          "endLine": 53,
+          "params": [
+            "content"
+          ]
+        },
+        {
+          "name": "_parse_docx",
+          "startLine": 56,
+          "endLine": 71,
+          "params": [
+            "content"
+          ]
+        },
+        {
+          "name": "_parse_with_langchain_loader",
+          "startLine": 74,
+          "endLine": 99,
+          "params": [
+            "file_path",
+            "loader_name"
+          ]
+        },
+        {
+          "name": "_parse_bytes_sync",
+          "startLine": 102,
+          "endLine": 129,
+          "params": [
+            "content",
+            "filename",
+            "content_type"
+          ]
+        },
+        {
+          "name": "load_documents_from_bytes",
+          "startLine": 132,
+          "endLine": 144,
+          "params": [
+            "content",
+            "filename",
+            "content_type"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "_parse_txt_or_md",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "_parse_csv",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "_parse_pdf",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "_parse_docx",
+          "line": 56,
+          "isDefault": false
+        },
+        {
+          "name": "_parse_with_langchain_loader",
+          "line": 74,
+          "isDefault": false
+        },
+        {
+          "name": "_parse_bytes_sync",
+          "line": 102,
+          "isDefault": false
+        },
+        {
+          "name": "load_documents_from_bytes",
+          "line": 132,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_parse_txt_or_md",
+          "callee": "content.decode(\"utf-8\", errors=\"replace\").strip",
+          "lineNumber": 14
+        },
+        {
+          "caller": "_parse_txt_or_md",
+          "callee": "content.decode",
+          "lineNumber": 14
+        },
+        {
+          "caller": "_parse_txt_or_md",
+          "callee": "ParsedDocument",
+          "lineNumber": 17
+        },
+        {
+          "caller": "_parse_csv",
+          "callee": "content.decode",
+          "lineNumber": 24
+        },
+        {
+          "caller": "_parse_csv",
+          "callee": "csv.reader",
+          "lineNumber": 25
+        },
+        {
+          "caller": "_parse_csv",
+          "callee": "io.StringIO",
+          "lineNumber": 25
+        },
+        {
+          "caller": "_parse_csv",
+          "callee": "\" | \".join",
+          "lineNumber": 26
+        },
+        {
+          "caller": "_parse_csv",
+          "callee": "cell.strip",
+          "lineNumber": 26
+        },
+        {
+          "caller": "_parse_csv",
+          "callee": "cell.strip",
+          "lineNumber": 26
+        },
+        {
+          "caller": "_parse_csv",
+          "callee": "\"\\n\".join",
+          "lineNumber": 27
+        },
+        {
+          "caller": "_parse_csv",
+          "callee": "ParsedDocument",
+          "lineNumber": 30
+        },
+        {
+          "caller": "_parse_pdf",
+          "callee": "RuntimeError",
+          "lineNumber": 37
+        },
+        {
+          "caller": "_parse_pdf",
+          "callee": "PdfReader",
+          "lineNumber": 41
+        },
+        {
+          "caller": "_parse_pdf",
+          "callee": "io.BytesIO",
+          "lineNumber": 41
+        },
+        {
+          "caller": "_parse_pdf",
+          "callee": "enumerate",
+          "lineNumber": 43
+        },
+        {
+          "caller": "_parse_pdf",
+          "callee": "(page.extract_text() or \"\").strip",
+          "lineNumber": 44
+        },
+        {
+          "caller": "_parse_pdf",
+          "callee": "page.extract_text",
+          "lineNumber": 44
+        },
+        {
+          "caller": "_parse_pdf",
+          "callee": "docs.append",
+          "lineNumber": 46
+        },
+        {
+          "caller": "_parse_pdf",
+          "callee": "ParsedDocument",
+          "lineNumber": 47
+        },
+        {
+          "caller": "_parse_docx",
+          "callee": "RuntimeError",
+          "lineNumber": 60
+        },
+        {
+          "caller": "_parse_docx",
+          "callee": "docx.Document",
+          "lineNumber": 66
+        },
+        {
+          "caller": "_parse_docx",
+          "callee": "io.BytesIO",
+          "lineNumber": 66
+        },
+        {
+          "caller": "_parse_docx",
+          "callee": "p.text.strip",
+          "lineNumber": 67
+        },
+        {
+          "caller": "_parse_docx",
+          "callee": "p.text.strip",
+          "lineNumber": 67
+        },
+        {
+          "caller": "_parse_docx",
+          "callee": "\"\\n\".join",
+          "lineNumber": 68
+        },
+        {
+          "caller": "_parse_docx",
+          "callee": "ParsedDocument",
+          "lineNumber": 71
+        },
+        {
+          "caller": "_parse_with_langchain_loader",
+          "callee": "TextLoader",
+          "lineNumber": 80
+        },
+        {
+          "caller": "_parse_with_langchain_loader",
+          "callee": "CSVLoader",
+          "lineNumber": 84
+        },
+        {
+          "caller": "_parse_with_langchain_loader",
+          "callee": "loader.load",
+          "lineNumber": 87
+        },
+        {
+          "caller": "_parse_with_langchain_loader",
+          "callee": "ParsedDocument",
+          "lineNumber": 89
+        },
+        {
+          "caller": "_parse_with_langchain_loader",
+          "callee": "dict",
+          "lineNumber": 91
+        },
+        {
+          "caller": "_parse_with_langchain_loader",
+          "callee": "doc.metadata.get",
+          "lineNumber": 92
+        },
+        {
+          "caller": "_parse_with_langchain_loader",
+          "callee": "doc.page_content.strip",
+          "lineNumber": 95
+        },
+        {
+          "caller": "_parse_with_langchain_loader",
+          "callee": "logger.debug",
+          "lineNumber": 98
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "Path(filename).suffix.lower().lstrip",
+          "lineNumber": 109
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "Path(filename).suffix.lower",
+          "lineNumber": 109
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "Path",
+          "lineNumber": 109
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "content_type.startswith",
+          "lineNumber": 110
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "_parse_txt_or_md",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "_parse_csv",
+          "lineNumber": 113
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "_parse_pdf",
+          "lineNumber": 117
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "_parse_docx",
+          "lineNumber": 121
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "tempfile.NamedTemporaryFile",
+          "lineNumber": 123
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "tmp.write",
+          "lineNumber": 124
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "_parse_with_langchain_loader",
+          "lineNumber": 127
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "Path(tmp_path).unlink",
+          "lineNumber": 129
+        },
+        {
+          "caller": "_parse_bytes_sync",
+          "callee": "Path",
+          "lineNumber": 129
+        },
+        {
+          "caller": "load_documents_from_bytes",
+          "callee": "asyncio.to_thread",
+          "lineNumber": 139
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 7,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 22,
+      "nonEmptyLines": 15,
+      "classes": [
+        {
+          "name": "LangChainEmbeddingAdapter",
+          "startLine": 11,
+          "endLine": 22,
+          "methods": [
+            "__init__",
+            "embed_texts"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "LangChainEmbeddingAdapter",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 15
+        },
+        {
+          "caller": "__init__",
+          "callee": "AiProviderRegistry",
+          "lineNumber": 16
+        },
+        {
+          "caller": "embed_texts",
+          "callee": "self._providers.get",
+          "lineNumber": 21
+        },
+        {
+          "caller": "embed_texts",
+          "callee": "provider.embed_texts",
+          "lineNumber": 22
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/infrastructure/langchain_text_splitters.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 31,
+      "nonEmptyLines": 26,
+      "functions": [
+        {
+          "name": "split_documents",
+          "startLine": 6,
+          "endLine": 31,
+          "params": [
+            "documents",
+            "chunk_size",
+            "chunk_overlap"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "split_documents",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "split_documents",
+          "callee": "RecursiveCharacterTextSplitter",
+          "lineNumber": 18
+        },
+        {
+          "caller": "split_documents",
+          "callee": "splitter.split_text",
+          "lineNumber": 25
+        },
+        {
+          "caller": "split_documents",
+          "callee": "metadata.setdefault",
+          "lineNumber": 29
+        },
+        {
+          "caller": "split_documents",
+          "callee": "results.append",
+          "lineNumber": 30
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/rag/infrastructure/models.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 92,
+      "nonEmptyLines": 79,
+      "classes": [
+        {
+          "name": "RagDocument",
+          "startLine": 9,
+          "endLine": 31,
+          "methods": [],
+          "properties": [
+            "id",
+            "user_id",
+            "organization_id",
+            "project_id",
+            "filename",
+            "original_filename",
+            "content_type",
+            "storage_path",
+            "status",
+            "source_type",
+            "metadata_json",
+            "created_at",
+            "updated_at",
+            "deleted_at"
+          ]
+        },
+        {
+          "name": "RagChunk",
+          "startLine": 34,
+          "endLine": 57,
+          "methods": [],
+          "properties": [
+            "id",
+            "document_id",
+            "user_id",
+            "organization_id",
+            "project_id",
+            "chunk_index",
+            "content",
+            "token_count",
+            "metadata_json",
+            "embedding_json",
+            "vector_external_id",
+            "created_at",
+            "updated_at"
+          ]
+        },
+        {
+          "name": "RagQueryRecord",
+          "startLine": 60,
+          "endLine": 74,
+          "methods": [],
+          "properties": [
+            "id",
+            "user_id",
+            "organization_id",
+            "project_id",
+            "query",
+            "answer",
+            "retrieved_chunk_ids_json",
+            "model_name",
+            "latency_ms",
+            "created_at"
+          ]
+        },
+        {
+          "name": "RagIngestionJob",
+          "startLine": 77,
+          "endLine": 92,
+          "methods": [],
+          "properties": [
+            "id",
+            "document_id",
+            "user_id",
+            "project_id",
+            "status",
+            "error_message",
+            "started_at",
+            "finished_at",
+            "created_at"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "RagDocument",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "RagChunk",
+          "line": 34,
+          "isDefault": false
+        },
+        {
+          "name": "RagQueryRecord",
+          "line": 60,
+          "isDefault": false
+        },
+        {
+          "name": "RagIngestionJob",
+          "line": 77,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 0,
+        "classCount": 4
+      }
+    },
+    {
+      "path": "backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 86,
+      "nonEmptyLines": 70,
+      "functions": [
+        {
+          "name": "build_vector_store",
+          "startLine": 85,
+          "endLine": 86,
+          "params": [
+            "db",
+            "config"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "VectorStoreAdapter",
+          "startLine": 13,
+          "endLine": 25,
+          "methods": [
+            "similarity_search",
+            "delete_document"
+          ],
+          "properties": []
+        },
+        {
+          "name": "PgVectorAdapter",
+          "startLine": 28,
+          "endLine": 82,
+          "methods": [
+            "__init__",
+            "similarity_search",
+            "delete_document"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "VectorStoreAdapter",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "PgVectorAdapter",
+          "line": 28,
+          "isDefault": false
+        },
+        {
+          "name": "build_vector_store",
+          "line": 85,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "RagRepository",
+          "lineNumber": 39
+        },
+        {
+          "caller": "__init__",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 40
+        },
+        {
+          "caller": "similarity_search",
+          "callee": "(filters or {}).get",
+          "lineNumber": 55
+        },
+        {
+          "caller": "similarity_search",
+          "callee": "self.repo.similarity_search_indexed",
+          "lineNumber": 56
+        },
+        {
+          "caller": "similarity_search",
+          "callee": "logger.debug",
+          "lineNumber": 67
+        },
+        {
+          "caller": "similarity_search",
+          "callee": "self.repo.similarity_search_json_fallback",
+          "lineNumber": 70
+        },
+        {
+          "caller": "delete_document",
+          "callee": "self.repo.get_document",
+          "lineNumber": 80
+        },
+        {
+          "caller": "delete_document",
+          "callee": "self.repo.soft_delete_document",
+          "lineNumber": 82
+        },
+        {
+          "caller": "build_vector_store",
+          "callee": "PgVectorAdapter",
+          "lineNumber": 86
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 3,
+        "functionCount": 1,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/modules/rag/infrastructure/rag_config.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 59,
+      "nonEmptyLines": 51,
+      "functions": [
+        {
+          "name": "validate_rag_config",
+          "startLine": 48,
+          "endLine": 59,
+          "params": [
+            "config"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "RagConfig",
+          "startLine": 11,
+          "endLine": 45,
+          "methods": [
+            "from_settings"
+          ],
+          "properties": [
+            "enabled",
+            "vector_backend",
+            "embedding_provider",
+            "embedding_model",
+            "embedding_dimensions",
+            "chunk_size",
+            "chunk_overlap",
+            "top_k",
+            "score_threshold",
+            "max_context_tokens",
+            "allowed_file_types",
+            "max_file_bytes"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "RagConfig",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "validate_rag_config",
+          "line": 48,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "from_settings",
+          "callee": "settings.RAG_ALLOWED_FILE_TYPES.strip",
+          "lineNumber": 27
+        },
+        {
+          "caller": "from_settings",
+          "callee": "tuple",
+          "lineNumber": 28
+        },
+        {
+          "caller": "from_settings",
+          "callee": "t.strip().lower",
+          "lineNumber": 28
+        },
+        {
+          "caller": "from_settings",
+          "callee": "t.strip",
+          "lineNumber": 28
+        },
+        {
+          "caller": "from_settings",
+          "callee": "raw_types.split",
+          "lineNumber": 28
+        },
+        {
+          "caller": "from_settings",
+          "callee": "t.strip",
+          "lineNumber": 28
+        },
+        {
+          "caller": "from_settings",
+          "callee": "(\n            settings.RAG_EMBEDDING_PROVIDER.strip() or settings.AI_EMBEDDING_PROVIDER\n        ).lower",
+          "lineNumber": 29
+        },
+        {
+          "caller": "from_settings",
+          "callee": "settings.RAG_EMBEDDING_PROVIDER.strip",
+          "lineNumber": 30
+        },
+        {
+          "caller": "from_settings",
+          "callee": "cls",
+          "lineNumber": 32
+        },
+        {
+          "caller": "from_settings",
+          "callee": "settings.RAG_VECTOR_BACKEND.lower",
+          "lineNumber": 34
+        },
+        {
+          "caller": "validate_rag_config",
+          "callee": "RagConfig.from_settings",
+          "lineNumber": 50
+        },
+        {
+          "caller": "validate_rag_config",
+          "callee": "\", \".join",
+          "lineNumber": 55
+        },
+        {
+          "caller": "validate_rag_config",
+          "callee": "sorted",
+          "lineNumber": 55
+        },
+        {
+          "caller": "validate_rag_config",
+          "callee": "RuntimeError",
+          "lineNumber": 56
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/infrastructure/repositories.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 452,
+      "nonEmptyLines": 422,
+      "classes": [
+        {
+          "name": "RagRepository",
+          "startLine": 32,
+          "endLine": 452,
+          "methods": [
+            "__init__",
+            "create_document",
+            "get_document",
+            "list_documents_for_user",
+            "list_document_ids_for_user",
+            "filter_document_ids_for_user",
+            "list_indexed_documents",
+            "update_document_status",
+            "soft_delete_document",
+            "replace_chunks",
+            "list_chunks_for_documents",
+            "list_chunks_for_document",
+            "pgvector_is_available",
+            "similarity_search_indexed",
+            "similarity_search_json_fallback",
+            "create_ingestion_job",
+            "get_ingestion_job",
+            "update_ingestion_job",
+            "create_query_record",
+            "list_queries_for_user"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RagRepository",
+          "line": 32,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "create_document",
+          "callee": "RagDocument",
+          "lineNumber": 49
+        },
+        {
+          "caller": "create_document",
+          "callee": "json.dumps",
+          "lineNumber": 59
+        },
+        {
+          "caller": "create_document",
+          "callee": "self.db.add",
+          "lineNumber": 61
+        },
+        {
+          "caller": "create_document",
+          "callee": "self.db.flush",
+          "lineNumber": 62
+        },
+        {
+          "caller": "get_document",
+          "callee": "self.db.execute",
+          "lineNumber": 66
+        },
+        {
+          "caller": "get_document",
+          "callee": "select(RagDocument).where",
+          "lineNumber": 67
+        },
+        {
+          "caller": "get_document",
+          "callee": "select",
+          "lineNumber": 67
+        },
+        {
+          "caller": "get_document",
+          "callee": "RagDocument.deleted_at.is_",
+          "lineNumber": 69
+        },
+        {
+          "caller": "get_document",
+          "callee": "result.scalar_one_or_none",
+          "lineNumber": 72
+        },
+        {
+          "caller": "list_documents_for_user",
+          "callee": "select(RagDocument).where",
+          "lineNumber": 82
+        },
+        {
+          "caller": "list_documents_for_user",
+          "callee": "select",
+          "lineNumber": 82
+        },
+        {
+          "caller": "list_documents_for_user",
+          "callee": "RagDocument.deleted_at.is_",
+          "lineNumber": 84
+        },
+        {
+          "caller": "list_documents_for_user",
+          "callee": "stmt.where",
+          "lineNumber": 87
+        },
+        {
+          "caller": "list_documents_for_user",
+          "callee": "stmt.order_by",
+          "lineNumber": 88
+        },
+        {
+          "caller": "list_documents_for_user",
+          "callee": "RagDocument.created_at.desc",
+          "lineNumber": 88
+        },
+        {
+          "caller": "list_documents_for_user",
+          "callee": "paginate_scalars",
+          "lineNumber": 89
+        },
+        {
+          "caller": "list_document_ids_for_user",
+          "callee": "select(RagDocument.id).where",
+          "lineNumber": 97
+        },
+        {
+          "caller": "list_document_ids_for_user",
+          "callee": "select",
+          "lineNumber": 97
+        },
+        {
+          "caller": "list_document_ids_for_user",
+          "callee": "RagDocument.deleted_at.is_",
+          "lineNumber": 99
+        },
+        {
+          "caller": "list_document_ids_for_user",
+          "callee": "stmt.where",
+          "lineNumber": 102
+        },
+        {
+          "caller": "list_document_ids_for_user",
+          "callee": "self.db.execute",
+          "lineNumber": 103
+        },
+        {
+          "caller": "list_document_ids_for_user",
+          "callee": "list",
+          "lineNumber": 104
+        },
+        {
+          "caller": "list_document_ids_for_user",
+          "callee": "result.scalars().all",
+          "lineNumber": 104
+        },
+        {
+          "caller": "list_document_ids_for_user",
+          "callee": "result.scalars",
+          "lineNumber": 104
+        },
+        {
+          "caller": "filter_document_ids_for_user",
+          "callee": "select(RagDocument.id).where",
+          "lineNumber": 115
+        },
+        {
+          "caller": "filter_document_ids_for_user",
+          "callee": "select",
+          "lineNumber": 115
+        },
+        {
+          "caller": "filter_document_ids_for_user",
+          "callee": "RagDocument.deleted_at.is_",
+          "lineNumber": 117
+        },
+        {
+          "caller": "filter_document_ids_for_user",
+          "callee": "RagDocument.id.in_",
+          "lineNumber": 118
+        },
+        {
+          "caller": "filter_document_ids_for_user",
+          "callee": "stmt.where",
+          "lineNumber": 121
+        },
+        {
+          "caller": "filter_document_ids_for_user",
+          "callee": "self.db.execute",
+          "lineNumber": 122
+        },
+        {
+          "caller": "filter_document_ids_for_user",
+          "callee": "list",
+          "lineNumber": 123
+        },
+        {
+          "caller": "filter_document_ids_for_user",
+          "callee": "result.scalars().all",
+          "lineNumber": 123
+        },
+        {
+          "caller": "filter_document_ids_for_user",
+          "callee": "result.scalars",
+          "lineNumber": 123
+        },
+        {
+          "caller": "list_indexed_documents",
+          "callee": "select(RagDocument).where",
+          "lineNumber": 132
+        },
+        {
+          "caller": "list_indexed_documents",
+          "callee": "select",
+          "lineNumber": 132
+        },
+        {
+          "caller": "list_indexed_documents",
+          "callee": "RagDocument.deleted_at.is_",
+          "lineNumber": 135
+        },
+        {
+          "caller": "list_indexed_documents",
+          "callee": "stmt.where",
+          "lineNumber": 138
+        },
+        {
+          "caller": "list_indexed_documents",
+          "callee": "stmt.where",
+          "lineNumber": 140
+        },
+        {
+          "caller": "list_indexed_documents",
+          "callee": "RagDocument.id.in_",
+          "lineNumber": 140
+        },
+        {
+          "caller": "list_indexed_documents",
+          "callee": "self.db.execute",
+          "lineNumber": 141
+        },
+        {
+          "caller": "list_indexed_documents",
+          "callee": "list",
+          "lineNumber": 142
+        },
+        {
+          "caller": "list_indexed_documents",
+          "callee": "result.scalars().all",
+          "lineNumber": 142
+        },
+        {
+          "caller": "list_indexed_documents",
+          "callee": "result.scalars",
+          "lineNumber": 142
+        },
+        {
+          "caller": "update_document_status",
+          "callee": "datetime.now",
+          "lineNumber": 148
+        },
+        {
+          "caller": "update_document_status",
+          "callee": "self.db.flush",
+          "lineNumber": 149
+        },
+        {
+          "caller": "soft_delete_document",
+          "callee": "datetime.now",
+          "lineNumber": 154
+        },
+        {
+          "caller": "soft_delete_document",
+          "callee": "datetime.now",
+          "lineNumber": 155
+        },
+        {
+          "caller": "soft_delete_document",
+          "callee": "self.db.flush",
+          "lineNumber": 156
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "self.db.execute",
+          "lineNumber": 164
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "delete(RagChunk).where",
+          "lineNumber": 164
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "delete",
+          "lineNumber": 164
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "RagChunk",
+          "lineNumber": 167
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "json.dumps",
+          "lineNumber": 175
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "item.get",
+          "lineNumber": 175
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "json.dumps",
+          "lineNumber": 176
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "item.get",
+          "lineNumber": 176
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "item.get",
+          "lineNumber": 177
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "self.db.add",
+          "lineNumber": 179
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "rows.append",
+          "lineNumber": 180
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "self.db.flush",
+          "lineNumber": 181
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "zip",
+          "lineNumber": 182
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "store_chunk_embedding",
+          "lineNumber": 183
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "item.get",
+          "lineNumber": 187
+        },
+        {
+          "caller": "replace_chunks",
+          "callee": "self.db.flush",
+          "lineNumber": 189
+        },
+        {
+          "caller": "list_chunks_for_documents",
+          "callee": "self.db.execute",
+          "lineNumber": 195
+        },
+        {
+          "caller": "list_chunks_for_documents",
+          "callee": "select(RagChunk)\n            .where(RagChunk.document_id.in_(document_ids))\n            .order_by",
+          "lineNumber": 196
+        },
+        {
+          "caller": "list_chunks_for_documents",
+          "callee": "select(RagChunk)\n            .where",
+          "lineNumber": 196
+        },
+        {
+          "caller": "list_chunks_for_documents",
+          "callee": "select",
+          "lineNumber": 196
+        },
+        {
+          "caller": "list_chunks_for_documents",
+          "callee": "RagChunk.document_id.in_",
+          "lineNumber": 197
+        },
+        {
+          "caller": "list_chunks_for_documents",
+          "callee": "list",
+          "lineNumber": 200
+        },
+        {
+          "caller": "list_chunks_for_documents",
+          "callee": "result.scalars().all",
+          "lineNumber": 200
+        },
+        {
+          "caller": "list_chunks_for_documents",
+          "callee": "result.scalars",
+          "lineNumber": 200
+        },
+        {
+          "caller": "list_chunks_for_document",
+          "callee": "select(RagChunk)\n            .where(RagChunk.document_id == document_id)\n            .order_by",
+          "lineNumber": 210
+        },
+        {
+          "caller": "list_chunks_for_document",
+          "callee": "select(RagChunk)\n            .where",
+          "lineNumber": 210
+        },
+        {
+          "caller": "list_chunks_for_document",
+          "callee": "select",
+          "lineNumber": 210
+        },
+        {
+          "caller": "list_chunks_for_document",
+          "callee": "paginate_scalars",
+          "lineNumber": 214
+        },
+        {
+          "caller": "pgvector_is_available",
+          "callee": "check_pgvector_is_available",
+          "lineNumber": 217
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "check_pgvector_is_available",
+          "lineNumber": 229
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "embedding_is_indexable",
+          "lineNumber": 231
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "vector_literal",
+          "lineNumber": 243
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "filters.append",
+          "lineNumber": 248
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "filters.append",
+          "lineNumber": 251
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "\" AND \".join",
+          "lineNumber": 265
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "self.db.execute",
+          "lineNumber": 270
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "text",
+          "lineNumber": 270
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "logger.exception",
+          "lineNumber": 272
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "result.mappings().all",
+          "lineNumber": 275
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "result.mappings",
+          "lineNumber": 275
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "json.loads",
+          "lineNumber": 278
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "retrieved.append",
+          "lineNumber": 279
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "RetrievedChunk",
+          "lineNumber": 280
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "round",
+          "lineNumber": 284
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "float",
+          "lineNumber": 284
+        },
+        {
+          "caller": "similarity_search_indexed",
+          "callee": "meta.get",
+          "lineNumber": 287
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "json_fallback_max_candidates",
+          "lineNumber": 311
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "filters.append",
+          "lineNumber": 314
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "filters.append",
+          "lineNumber": 317
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "\" AND \".join",
+          "lineNumber": 331
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "self.db.execute",
+          "lineNumber": 335
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "text",
+          "lineNumber": 335
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "parse_embedding_json",
+          "lineNumber": 344
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "result.mappings().all",
+          "lineNumber": 346
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "result.mappings",
+          "lineNumber": 346
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "len",
+          "lineNumber": 348
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "logger.warning",
+          "lineNumber": 349
+        },
+        {
+          "caller": "build_match",
+          "callee": "json.loads",
+          "lineNumber": 356
+        },
+        {
+          "caller": "build_match",
+          "callee": "RetrievedChunk",
+          "lineNumber": 357
+        },
+        {
+          "caller": "build_match",
+          "callee": "meta.get",
+          "lineNumber": 364
+        },
+        {
+          "caller": "similarity_search_json_fallback",
+          "callee": "rank_embedding_matches",
+          "lineNumber": 368
+        },
+        {
+          "caller": "create_ingestion_job",
+          "callee": "RagIngestionJob",
+          "lineNumber": 379
+        },
+        {
+          "caller": "create_ingestion_job",
+          "callee": "self.db.add",
+          "lineNumber": 385
+        },
+        {
+          "caller": "create_ingestion_job",
+          "callee": "self.db.flush",
+          "lineNumber": 386
+        },
+        {
+          "caller": "get_ingestion_job",
+          "callee": "self.db.execute",
+          "lineNumber": 390
+        },
+        {
+          "caller": "get_ingestion_job",
+          "callee": "select(RagIngestionJob).where",
+          "lineNumber": 391
+        },
+        {
+          "caller": "get_ingestion_job",
+          "callee": "select",
+          "lineNumber": 391
+        },
+        {
+          "caller": "get_ingestion_job",
+          "callee": "result.scalar_one_or_none",
+          "lineNumber": 393
+        },
+        {
+          "caller": "update_ingestion_job",
+          "callee": "datetime.now",
+          "lineNumber": 408
+        },
+        {
+          "caller": "update_ingestion_job",
+          "callee": "datetime.now",
+          "lineNumber": 410
+        },
+        {
+          "caller": "update_ingestion_job",
+          "callee": "self.db.flush",
+          "lineNumber": 411
+        },
+        {
+          "caller": "create_query_record",
+          "callee": "RagQueryRecord",
+          "lineNumber": 426
+        },
+        {
+          "caller": "create_query_record",
+          "callee": "json.dumps",
+          "lineNumber": 432
+        },
+        {
+          "caller": "create_query_record",
+          "callee": "self.db.add",
+          "lineNumber": 436
+        },
+        {
+          "caller": "create_query_record",
+          "callee": "self.db.flush",
+          "lineNumber": 437
+        },
+        {
+          "caller": "list_queries_for_user",
+          "callee": "select(RagQueryRecord)\n            .where(RagQueryRecord.user_id == user_id)\n            .order_by",
+          "lineNumber": 448
+        },
+        {
+          "caller": "list_queries_for_user",
+          "callee": "select(RagQueryRecord)\n            .where",
+          "lineNumber": 448
+        },
+        {
+          "caller": "list_queries_for_user",
+          "callee": "select",
+          "lineNumber": 448
+        },
+        {
+          "caller": "list_queries_for_user",
+          "callee": "RagQueryRecord.created_at.desc",
+          "lineNumber": 450
+        },
+        {
+          "caller": "list_queries_for_user",
+          "callee": "paginate_scalars",
+          "lineNumber": 452
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/infrastructure/vector_store_adapter.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 7,
+      "nonEmptyLines": 6,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/rag/tests/test_ingestion.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 171,
+      "nonEmptyLines": 151,
+      "classes": [
+        {
+          "name": "IngestionParserTest",
+          "startLine": 11,
+          "endLine": 87,
+          "methods": [
+            "test_parse_offloads_to_thread",
+            "test_parse_txt_offloads_to_thread",
+            "test_parse_txt_creates_content",
+            "test_chunking_creates_indexed_chunks"
+          ],
+          "properties": []
+        },
+        {
+          "name": "UploadCreatesDocumentTest",
+          "startLine": 90,
+          "endLine": 124,
+          "methods": [
+            "test_upload_creates_document_row"
+          ],
+          "properties": []
+        },
+        {
+          "name": "EmbeddingAdapterTest",
+          "startLine": 127,
+          "endLine": 139,
+          "methods": [
+            "test_embeddings_created_through_adapter"
+          ],
+          "properties": []
+        },
+        {
+          "name": "EnqueueDocumentIndexingTest",
+          "startLine": 142,
+          "endLine": 171,
+          "methods": [
+            "test_enqueue_creates_job_and_queues_worker"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "IngestionParserTest",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "UploadCreatesDocumentTest",
+          "line": 90,
+          "isDefault": false
+        },
+        {
+          "name": "EmbeddingAdapterTest",
+          "line": 127,
+          "isDefault": false
+        },
+        {
+          "name": "EnqueueDocumentIndexingTest",
+          "line": 142,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_parse_offloads_to_thread",
+          "callee": "DocumentParserService",
+          "lineNumber": 15
+        },
+        {
+          "caller": "test_parse_offloads_to_thread",
+          "callee": "self.subTest",
+          "lineNumber": 27
+        },
+        {
+          "caller": "test_parse_offloads_to_thread",
+          "callee": "to_thread.reset_mock",
+          "lineNumber": 28
+        },
+        {
+          "caller": "test_parse_offloads_to_thread",
+          "callee": "parser.parse_bytes",
+          "lineNumber": 29
+        },
+        {
+          "caller": "test_parse_offloads_to_thread",
+          "callee": "to_thread.assert_awaited_once",
+          "lineNumber": 34
+        },
+        {
+          "caller": "test_parse_offloads_to_thread",
+          "callee": "self.assertEqual",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_parse_txt_offloads_to_thread",
+          "callee": "fn",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_parse_txt_offloads_to_thread",
+          "callee": "DocumentParserService",
+          "lineNumber": 41
+        },
+        {
+          "caller": "test_parse_txt_offloads_to_thread",
+          "callee": "parser.parse_bytes",
+          "lineNumber": 42
+        },
+        {
+          "caller": "test_parse_txt_offloads_to_thread",
+          "callee": "to_thread.assert_awaited_once",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_parse_txt_offloads_to_thread",
+          "callee": "self.assertEqual",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_parse_txt_offloads_to_thread",
+          "callee": "len",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_parse_txt_offloads_to_thread",
+          "callee": "self.assertIn",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_parse_txt_creates_content",
+          "callee": "DocumentParserService",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_parse_txt_creates_content",
+          "callee": "parser.parse_bytes",
+          "lineNumber": 53
+        },
+        {
+          "caller": "test_parse_txt_creates_content",
+          "callee": "self.assertEqual",
+          "lineNumber": 58
+        },
+        {
+          "caller": "test_parse_txt_creates_content",
+          "callee": "len",
+          "lineNumber": 58
+        },
+        {
+          "caller": "test_parse_txt_creates_content",
+          "callee": "self.assertIn",
+          "lineNumber": 59
+        },
+        {
+          "caller": "test_chunking_creates_indexed_chunks",
+          "callee": "SimpleNamespace",
+          "lineNumber": 62
+        },
+        {
+          "caller": "test_chunking_creates_indexed_chunks",
+          "callee": "ChunkingService",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_chunking_creates_indexed_chunks",
+          "callee": "ParsedDocument",
+          "lineNumber": 64
+        },
+        {
+          "caller": "run",
+          "callee": "patch",
+          "lineNumber": 67
+        },
+        {
+          "caller": "run",
+          "callee": "fn",
+          "lineNumber": 69
+        },
+        {
+          "caller": "run",
+          "callee": "chunker.chunk",
+          "lineNumber": 71
+        },
+        {
+          "caller": "run",
+          "callee": "to_thread.assert_called_once",
+          "lineNumber": 77
+        },
+        {
+          "caller": "run",
+          "callee": "self.assertEqual",
+          "lineNumber": 79
+        },
+        {
+          "caller": "test_chunking_creates_indexed_chunks",
+          "callee": "asyncio.run",
+          "lineNumber": 84
+        },
+        {
+          "caller": "test_chunking_creates_indexed_chunks",
+          "callee": "run",
+          "lineNumber": 84
+        },
+        {
+          "caller": "test_chunking_creates_indexed_chunks",
+          "callee": "self.assertGreater",
+          "lineNumber": 85
+        },
+        {
+          "caller": "test_chunking_creates_indexed_chunks",
+          "callee": "len",
+          "lineNumber": 85
+        },
+        {
+          "caller": "test_chunking_creates_indexed_chunks",
+          "callee": "self.assertEqual",
+          "lineNumber": 86
+        },
+        {
+          "caller": "test_chunking_creates_indexed_chunks",
+          "callee": "self.assertEqual",
+          "lineNumber": 87
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "AsyncMock",
+          "lineNumber": 95
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "AsyncMock",
+          "lineNumber": 97
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "__import__(\n            \"backend.modules.rag.application.document_ingestion_service\",\n            fromlist=[\"DocumentIngestionService\"],\n        ).DocumentIngestionService",
+          "lineNumber": 98
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "__import__",
+          "lineNumber": 98
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "SimpleNamespace",
+          "lineNumber": 102
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "MagicMock",
+          "lineNumber": 107
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "SimpleNamespace",
+          "lineNumber": 108
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "SimpleNamespace",
+          "lineNumber": 109
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "AsyncMock",
+          "lineNumber": 110
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "AsyncMock",
+          "lineNumber": 111
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "MagicMock",
+          "lineNumber": 112
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "AsyncMock",
+          "lineNumber": 113
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "AsyncMock",
+          "lineNumber": 114
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "service.upload_document",
+          "lineNumber": 116
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "self.assertEqual",
+          "lineNumber": 122
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "self.assertEqual",
+          "lineNumber": 123
+        },
+        {
+          "caller": "test_upload_creates_document_row",
+          "callee": "service.repo.create_document.assert_awaited_once",
+          "lineNumber": 124
+        },
+        {
+          "caller": "test_embeddings_created_through_adapter",
+          "callee": "AsyncMock",
+          "lineNumber": 130
+        },
+        {
+          "caller": "test_embeddings_created_through_adapter",
+          "callee": "EmbeddingService",
+          "lineNumber": 135
+        },
+        {
+          "caller": "test_embeddings_created_through_adapter",
+          "callee": "SimpleNamespace",
+          "lineNumber": 136
+        },
+        {
+          "caller": "test_embeddings_created_through_adapter",
+          "callee": "service.embed_texts",
+          "lineNumber": 138
+        },
+        {
+          "caller": "test_embeddings_created_through_adapter",
+          "callee": "self.assertEqual",
+          "lineNumber": 139
+        },
+        {
+          "caller": "test_embeddings_created_through_adapter",
+          "callee": "len",
+          "lineNumber": 139
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "AsyncMock",
+          "lineNumber": 145
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "__import__(\n            \"backend.modules.rag.application.document_ingestion_service\",\n            fromlist=[\"DocumentIngestionService\"],\n        ).DocumentIngestionService",
+          "lineNumber": 146
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "__import__",
+          "lineNumber": 146
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "SimpleNamespace",
+          "lineNumber": 150
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "MagicMock",
+          "lineNumber": 151
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "SimpleNamespace",
+          "lineNumber": 152
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "SimpleNamespace",
+          "lineNumber": 153
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "AsyncMock",
+          "lineNumber": 154
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "AsyncMock",
+          "lineNumber": 155
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "AsyncMock",
+          "lineNumber": 156
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "AsyncMock",
+          "lineNumber": 157
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "service.enqueue_document_indexing",
+          "lineNumber": 159
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "self.assertEqual",
+          "lineNumber": 164
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "queue_fn.assert_called_once_with",
+          "lineNumber": 165
+        },
+        {
+          "caller": "test_enqueue_creates_job_and_queues_worker",
+          "callee": "service.repo.create_ingestion_job.assert_awaited_once",
+          "lineNumber": 171
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 4,
+        "functionCount": 0,
+        "classCount": 4
+      }
+    },
+    {
+      "path": "backend/modules/rag/tests/test_ingestion_policy.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 54,
+      "nonEmptyLines": 49,
+      "classes": [
+        {
+          "name": "IngestionPolicyTest",
+          "startLine": 8,
+          "endLine": 54,
+          "methods": [
+            "test_suspected_injection_flagged_in_chunk_metadata"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "IngestionPolicyTest",
+          "line": 8,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 10
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "DocumentIngestionService",
+          "lineNumber": 11
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "MagicMock",
+          "lineNumber": 12
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "MagicMock",
+          "lineNumber": 13
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "MagicMock",
+          "lineNumber": 14
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 24
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 25
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "MagicMock",
+          "lineNumber": 25
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 26
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 27
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 28
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 29
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 30
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 31
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "MagicMock",
+          "lineNumber": 31
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "DocumentChunk",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 41
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "MagicMock",
+          "lineNumber": 42
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "patch",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "AsyncMock",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "service.index_document",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "self.assertTrue",
+          "lineNumber": 54
+        },
+        {
+          "caller": "test_suspected_injection_flagged_in_chunk_metadata",
+          "callee": "flagged_chunk.metadata.get",
+          "lineNumber": 54
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/tests/test_permissions.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 56,
+      "nonEmptyLines": 49,
+      "classes": [
+        {
+          "name": "PermissionTest",
+          "startLine": 10,
+          "endLine": 56,
+          "methods": [
+            "test_unauthorized_project_member_cannot_upload",
+            "test_user_cannot_delete_other_users_document"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "PermissionTest",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_unauthorized_project_member_cannot_upload",
+          "callee": "AsyncMock",
+          "lineNumber": 12
+        },
+        {
+          "caller": "test_unauthorized_project_member_cannot_upload",
+          "callee": "DocumentIngestionService",
+          "lineNumber": 13
+        },
+        {
+          "caller": "test_unauthorized_project_member_cannot_upload",
+          "callee": "SimpleNamespace",
+          "lineNumber": 14
+        },
+        {
+          "caller": "test_unauthorized_project_member_cannot_upload",
+          "callee": "MagicMock",
+          "lineNumber": 19
+        },
+        {
+          "caller": "test_unauthorized_project_member_cannot_upload",
+          "callee": "MagicMock",
+          "lineNumber": 21
+        },
+        {
+          "caller": "test_unauthorized_project_member_cannot_upload",
+          "callee": "AsyncMock",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_unauthorized_project_member_cannot_upload",
+          "callee": "MagicMock",
+          "lineNumber": 23
+        },
+        {
+          "caller": "test_unauthorized_project_member_cannot_upload",
+          "callee": "self.assertRaises",
+          "lineNumber": 25
+        },
+        {
+          "caller": "test_unauthorized_project_member_cannot_upload",
+          "callee": "service.upload_document",
+          "lineNumber": 26
+        },
+        {
+          "caller": "test_unauthorized_project_member_cannot_upload",
+          "callee": "self.assertEqual",
+          "lineNumber": 33
+        },
+        {
+          "caller": "test_user_cannot_delete_other_users_document",
+          "callee": "AsyncMock",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_user_cannot_delete_other_users_document",
+          "callee": "DocumentIngestionService",
+          "lineNumber": 37
+        },
+        {
+          "caller": "test_user_cannot_delete_other_users_document",
+          "callee": "SimpleNamespace",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_user_cannot_delete_other_users_document",
+          "callee": "MagicMock",
+          "lineNumber": 39
+        },
+        {
+          "caller": "test_user_cannot_delete_other_users_document",
+          "callee": "AsyncMock",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_user_cannot_delete_other_users_document",
+          "callee": "SimpleNamespace",
+          "lineNumber": 41
+        },
+        {
+          "caller": "test_user_cannot_delete_other_users_document",
+          "callee": "MagicMock",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_user_cannot_delete_other_users_document",
+          "callee": "MagicMock",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_user_cannot_delete_other_users_document",
+          "callee": "self.assertRaises",
+          "lineNumber": 50
+        },
+        {
+          "caller": "test_user_cannot_delete_other_users_document",
+          "callee": "service.delete_document",
+          "lineNumber": 51
+        },
+        {
+          "caller": "test_user_cannot_delete_other_users_document",
+          "callee": "self.assertEqual",
+          "lineNumber": 56
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/tests/test_rag_answer.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 140,
+      "nonEmptyLines": 125,
+      "classes": [
+        {
+          "name": "RagAnswerTest",
+          "startLine": 17,
+          "endLine": 125,
+          "methods": [
+            "_user",
+            "_chunk",
+            "test_rag_answer_includes_citations",
+            "test_answer_loads_retrieval_and_memory_in_parallel",
+            "test_no_chunks_no_invented_citations",
+            "test_prompt_injection_rule_in_context",
+            "test_policy_detects_injection_patterns"
+          ],
+          "properties": []
+        },
+        {
+          "name": "CitationServiceTest",
+          "startLine": 128,
+          "endLine": 140,
+          "methods": [
+            "test_citation_snippet_truncated"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RagAnswerTest",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "CitationServiceTest",
+          "line": 128,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_user",
+          "callee": "User",
+          "lineNumber": 19
+        },
+        {
+          "caller": "_chunk",
+          "callee": "RetrievedChunk",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "AsyncMock",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "RagAnswerService",
+          "lineNumber": 33
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "SimpleNamespace",
+          "lineNumber": 34
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "MagicMock",
+          "lineNumber": 35
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "AsyncMock",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "self._chunk",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "SimpleNamespace",
+          "lineNumber": 37
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "MagicMock",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "AsyncMock",
+          "lineNumber": 39
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "SimpleNamespace",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "MagicMock",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "AsyncMock",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "AsyncMock",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "service.answer",
+          "lineNumber": 50
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "self._user",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "self.assertEqual",
+          "lineNumber": 55
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "len",
+          "lineNumber": 55
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "self.assertEqual",
+          "lineNumber": 56
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "self.assertFalse",
+          "lineNumber": 57
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "self.assertEqual",
+          "lineNumber": 58
+        },
+        {
+          "caller": "test_rag_answer_includes_citations",
+          "callee": "service.ai.run_rag_answer.assert_awaited_once",
+          "lineNumber": 59
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "AsyncMock",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "RagAnswerService",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "SimpleNamespace",
+          "lineNumber": 65
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "MagicMock",
+          "lineNumber": 66
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "AsyncMock",
+          "lineNumber": 67
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "self._chunk",
+          "lineNumber": 67
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "MagicMock",
+          "lineNumber": 68
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "AsyncMock",
+          "lineNumber": 69
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "SimpleNamespace",
+          "lineNumber": 70
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "MagicMock",
+          "lineNumber": 71
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "AsyncMock",
+          "lineNumber": 72
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "SimpleNamespace",
+          "lineNumber": 73
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "MagicMock",
+          "lineNumber": 79
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "AsyncMock",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "AsyncMock",
+          "lineNumber": 81
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "service.answer",
+          "lineNumber": 83
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "self._user",
+          "lineNumber": 85
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "gather_fn.assert_called",
+          "lineNumber": 89
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "service.retrieval.retrieve.assert_awaited_once",
+          "lineNumber": 90
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "service.memory.build_prompt_context.assert_awaited_once",
+          "lineNumber": 91
+        },
+        {
+          "caller": "test_answer_loads_retrieval_and_memory_in_parallel",
+          "callee": "service.ai.run_rag_answer.assert_awaited_once",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "AsyncMock",
+          "lineNumber": 95
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "RagAnswerService",
+          "lineNumber": 96
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "SimpleNamespace",
+          "lineNumber": 97
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "MagicMock",
+          "lineNumber": 98
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "AsyncMock",
+          "lineNumber": 99
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "SimpleNamespace",
+          "lineNumber": 100
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "MagicMock",
+          "lineNumber": 101
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "AsyncMock",
+          "lineNumber": 102
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "AsyncMock",
+          "lineNumber": 103
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "MagicMock",
+          "lineNumber": 104
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "service.answer",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "self._user",
+          "lineNumber": 106
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "self.assertEqual",
+          "lineNumber": 107
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "self.assertTrue",
+          "lineNumber": 108
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "self.assertEqual",
+          "lineNumber": 109
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "self.assertIsNone",
+          "lineNumber": 110
+        },
+        {
+          "caller": "test_no_chunks_no_invented_citations",
+          "callee": "service.ai.run_rag_answer.assert_not_called",
+          "lineNumber": 111
+        },
+        {
+          "caller": "test_prompt_injection_rule_in_context",
+          "callee": "RagContextBuilder",
+          "lineNumber": 114
+        },
+        {
+          "caller": "test_prompt_injection_rule_in_context",
+          "callee": "builder.build_document_context_block",
+          "lineNumber": 115
+        },
+        {
+          "caller": "test_prompt_injection_rule_in_context",
+          "callee": "self._chunk",
+          "lineNumber": 116
+        },
+        {
+          "caller": "test_prompt_injection_rule_in_context",
+          "callee": "self.assertIn",
+          "lineNumber": 118
+        },
+        {
+          "caller": "test_prompt_injection_rule_in_context",
+          "callee": "self.assertIn",
+          "lineNumber": 119
+        },
+        {
+          "caller": "test_policy_detects_injection_patterns",
+          "callee": "RagPolicyService",
+          "lineNumber": 122
+        },
+        {
+          "caller": "test_policy_detects_injection_patterns",
+          "callee": "self.assertTrue",
+          "lineNumber": 123
+        },
+        {
+          "caller": "test_policy_detects_injection_patterns",
+          "callee": "policy.contains_prompt_injection",
+          "lineNumber": 124
+        },
+        {
+          "caller": "test_citation_snippet_truncated",
+          "callee": "RetrievedChunk",
+          "lineNumber": 130
+        },
+        {
+          "caller": "test_citation_snippet_truncated",
+          "callee": "CitationService().build_citations",
+          "lineNumber": 139
+        },
+        {
+          "caller": "test_citation_snippet_truncated",
+          "callee": "CitationService",
+          "lineNumber": 139
+        },
+        {
+          "caller": "test_citation_snippet_truncated",
+          "callee": "self.assertEqual",
+          "lineNumber": 140
+        },
+        {
+          "caller": "test_citation_snippet_truncated",
+          "callee": "len",
+          "lineNumber": 140
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/modules/rag/tests/test_rag_config_validation.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 63,
+      "nonEmptyLines": 55,
+      "functions": [
+        {
+          "name": "test_validate_rag_config_accepts_pgvector",
+          "startLine": 8,
+          "endLine": 24,
+          "params": []
+        },
+        {
+          "name": "test_validate_rag_config_skips_when_rag_disabled",
+          "startLine": 27,
+          "endLine": 43,
+          "params": []
+        },
+        {
+          "name": "test_validate_rag_config_rejects_unimplemented_backend",
+          "startLine": 46,
+          "endLine": 63,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "test_validate_rag_config_accepts_pgvector",
+          "line": 8,
+          "isDefault": false
+        },
+        {
+          "name": "test_validate_rag_config_skips_when_rag_disabled",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "test_validate_rag_config_rejects_unimplemented_backend",
+          "line": 46,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_validate_rag_config_accepts_pgvector",
+          "callee": "validate_rag_config",
+          "lineNumber": 9
+        },
+        {
+          "caller": "test_validate_rag_config_accepts_pgvector",
+          "callee": "RagConfig",
+          "lineNumber": 10
+        },
+        {
+          "caller": "test_validate_rag_config_skips_when_rag_disabled",
+          "callee": "validate_rag_config",
+          "lineNumber": 28
+        },
+        {
+          "caller": "test_validate_rag_config_skips_when_rag_disabled",
+          "callee": "RagConfig",
+          "lineNumber": 29
+        },
+        {
+          "caller": "test_validate_rag_config_rejects_unimplemented_backend",
+          "callee": "pytest.raises",
+          "lineNumber": 47
+        },
+        {
+          "caller": "test_validate_rag_config_rejects_unimplemented_backend",
+          "callee": "validate_rag_config",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_validate_rag_config_rejects_unimplemented_backend",
+          "callee": "RagConfig",
+          "lineNumber": 49
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/rag/tests/test_retrieval.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 106,
+      "nonEmptyLines": 96,
+      "classes": [
+        {
+          "name": "RetrievalFilterTest",
+          "startLine": 10,
+          "endLine": 100,
+          "methods": [
+            "asyncSetUp",
+            "test_retrieval_filters_by_user_id",
+            "test_retrieval_filters_by_project_id",
+            "test_uses_indexed_search_when_available",
+            "test_deleted_document_not_in_indexed_list"
+          ],
+          "properties": []
+        },
+        {
+          "name": "CosineSimilarityTest",
+          "startLine": 103,
+          "endLine": 106,
+          "methods": [
+            "test_identical_vectors_score_high"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RetrievalFilterTest",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "CosineSimilarityTest",
+          "line": 103,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "asyncSetUp",
+          "callee": "AsyncMock",
+          "lineNumber": 12
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "SimpleNamespace",
+          "lineNumber": 13
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "PgVectorAdapter",
+          "lineNumber": 14
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "MagicMock",
+          "lineNumber": 15
+        },
+        {
+          "caller": "asyncSetUp",
+          "callee": "AsyncMock",
+          "lineNumber": 16
+        },
+        {
+          "caller": "test_retrieval_filters_by_user_id",
+          "callee": "AsyncMock",
+          "lineNumber": 19
+        },
+        {
+          "caller": "test_retrieval_filters_by_user_id",
+          "callee": "RetrievedChunk",
+          "lineNumber": 21
+        },
+        {
+          "caller": "test_retrieval_filters_by_user_id",
+          "callee": "self.adapter.similarity_search",
+          "lineNumber": 31
+        },
+        {
+          "caller": "test_retrieval_filters_by_user_id",
+          "callee": "self.assertEqual",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_retrieval_filters_by_user_id",
+          "callee": "len",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_retrieval_filters_by_user_id",
+          "callee": "self.assertEqual",
+          "lineNumber": 39
+        },
+        {
+          "caller": "test_retrieval_filters_by_user_id",
+          "callee": "self.adapter.repo.similarity_search_indexed.assert_awaited_once",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_retrieval_filters_by_project_id",
+          "callee": "AsyncMock",
+          "lineNumber": 43
+        },
+        {
+          "caller": "test_retrieval_filters_by_project_id",
+          "callee": "RetrievedChunk",
+          "lineNumber": 45
+        },
+        {
+          "caller": "test_retrieval_filters_by_project_id",
+          "callee": "self.adapter.similarity_search",
+          "lineNumber": 56
+        },
+        {
+          "caller": "test_retrieval_filters_by_project_id",
+          "callee": "self.assertEqual",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_retrieval_filters_by_project_id",
+          "callee": "len",
+          "lineNumber": 63
+        },
+        {
+          "caller": "test_retrieval_filters_by_project_id",
+          "callee": "self.assertEqual",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_retrieval_filters_by_project_id",
+          "callee": "self.assertEqual",
+          "lineNumber": 66
+        },
+        {
+          "caller": "test_uses_indexed_search_when_available",
+          "callee": "RetrievedChunk",
+          "lineNumber": 69
+        },
+        {
+          "caller": "test_uses_indexed_search_when_available",
+          "callee": "AsyncMock",
+          "lineNumber": 77
+        },
+        {
+          "caller": "test_uses_indexed_search_when_available",
+          "callee": "AsyncMock",
+          "lineNumber": 78
+        },
+        {
+          "caller": "test_uses_indexed_search_when_available",
+          "callee": "self.adapter.similarity_search",
+          "lineNumber": 80
+        },
+        {
+          "caller": "test_uses_indexed_search_when_available",
+          "callee": "self.assertEqual",
+          "lineNumber": 87
+        },
+        {
+          "caller": "test_uses_indexed_search_when_available",
+          "callee": "self.adapter.repo.similarity_search_json_fallback.assert_not_called",
+          "lineNumber": 88
+        },
+        {
+          "caller": "test_deleted_document_not_in_indexed_list",
+          "callee": "AsyncMock",
+          "lineNumber": 91
+        },
+        {
+          "caller": "test_deleted_document_not_in_indexed_list",
+          "callee": "AsyncMock",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_deleted_document_not_in_indexed_list",
+          "callee": "self.adapter.similarity_search",
+          "lineNumber": 93
+        },
+        {
+          "caller": "test_deleted_document_not_in_indexed_list",
+          "callee": "self.assertEqual",
+          "lineNumber": 100
+        },
+        {
+          "caller": "test_identical_vectors_score_high",
+          "callee": "cosine_similarity",
+          "lineNumber": 105
+        },
+        {
+          "caller": "test_identical_vectors_score_high",
+          "callee": "self.assertAlmostEqual",
+          "lineNumber": 106
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "backend/tests/test_retrieval_cache.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 166,
+      "nonEmptyLines": 135,
+      "functions": [
+        {
+          "name": "_sample_chunk",
+          "startLine": 20,
+          "endLine": 28,
+          "params": []
+        },
+        {
+          "name": "test_retrieval_cache_key_changes_with_query_and_filters",
+          "startLine": 31,
+          "endLine": 56,
+          "params": []
+        },
+        {
+          "name": "test_retrieval_cache_round_trip",
+          "startLine": 59,
+          "endLine": 67,
+          "params": []
+        },
+        {
+          "name": "test_get_and_set_cached_retrieval",
+          "startLine": 70,
+          "endLine": 103,
+          "params": []
+        },
+        {
+          "name": "test_invalidate_retrieval_cache_deletes_scope_pattern",
+          "startLine": 106,
+          "endLine": 115,
+          "params": []
+        },
+        {
+          "name": "test_invalidate_retrieval_cache_for_document_clears_project_and_global_scopes",
+          "startLine": 118,
+          "endLine": 134,
+          "params": []
+        },
+        {
+          "name": "test_retrieval_service_uses_cached_results",
+          "startLine": 137,
+          "endLine": 166,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "_sample_chunk",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "test_retrieval_cache_key_changes_with_query_and_filters",
+          "line": 31,
+          "isDefault": false
+        },
+        {
+          "name": "test_retrieval_cache_round_trip",
+          "line": 59,
+          "isDefault": false
+        },
+        {
+          "name": "test_get_and_set_cached_retrieval",
+          "line": 70,
+          "isDefault": false
+        },
+        {
+          "name": "test_invalidate_retrieval_cache_deletes_scope_pattern",
+          "line": 106,
+          "isDefault": false
+        },
+        {
+          "name": "test_invalidate_retrieval_cache_for_document_clears_project_and_global_scopes",
+          "line": 118,
+          "isDefault": false
+        },
+        {
+          "name": "test_retrieval_service_uses_cached_results",
+          "line": 137,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "_sample_chunk",
+          "callee": "RetrievedChunk",
+          "lineNumber": 21
+        },
+        {
+          "caller": "test_retrieval_cache_key_changes_with_query_and_filters",
+          "callee": "retrieval_cache_key",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_retrieval_cache_key_changes_with_query_and_filters",
+          "callee": "retrieval_cache_key",
+          "lineNumber": 39
+        },
+        {
+          "caller": "test_retrieval_cache_key_changes_with_query_and_filters",
+          "callee": "retrieval_cache_key",
+          "lineNumber": 46
+        },
+        {
+          "caller": "test_retrieval_cache_key_changes_with_query_and_filters",
+          "callee": "base.startswith",
+          "lineNumber": 54
+        },
+        {
+          "caller": "test_retrieval_cache_round_trip",
+          "callee": "_sample_chunk",
+          "lineNumber": 60
+        },
+        {
+          "caller": "test_retrieval_cache_round_trip",
+          "callee": "serialize_retrieved_chunks",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_retrieval_cache_round_trip",
+          "callee": "deserialize_retrieved_chunks",
+          "lineNumber": 62
+        },
+        {
+          "caller": "test_retrieval_cache_round_trip",
+          "callee": "len",
+          "lineNumber": 65
+        },
+        {
+          "caller": "test_get_and_set_cached_retrieval",
+          "callee": "_sample_chunk",
+          "lineNumber": 71
+        },
+        {
+          "caller": "_run",
+          "callee": "patch",
+          "lineNumber": 75
+        },
+        {
+          "caller": "_run",
+          "callee": "AsyncMock",
+          "lineNumber": 75
+        },
+        {
+          "caller": "_run",
+          "callee": "patch",
+          "lineNumber": 76
+        },
+        {
+          "caller": "_run",
+          "callee": "AsyncMock",
+          "lineNumber": 76
+        },
+        {
+          "caller": "_run",
+          "callee": "patch",
+          "lineNumber": 77
+        },
+        {
+          "caller": "_run",
+          "callee": "set_cached_retrieval",
+          "lineNumber": 81
+        },
+        {
+          "caller": "_run",
+          "callee": "cache_set.assert_awaited_once",
+          "lineNumber": 89
+        },
+        {
+          "caller": "_run",
+          "callee": "serialize_retrieved_chunks",
+          "lineNumber": 91
+        },
+        {
+          "caller": "_run",
+          "callee": "get_cached_retrieval",
+          "lineNumber": 92
+        },
+        {
+          "caller": "test_get_and_set_cached_retrieval",
+          "callee": "asyncio.run",
+          "lineNumber": 103
+        },
+        {
+          "caller": "test_get_and_set_cached_retrieval",
+          "callee": "_run",
+          "lineNumber": 103
+        },
+        {
+          "caller": "_run",
+          "callee": "patch",
+          "lineNumber": 108
+        },
+        {
+          "caller": "_run",
+          "callee": "AsyncMock",
+          "lineNumber": 108
+        },
+        {
+          "caller": "_run",
+          "callee": "invalidate_retrieval_cache",
+          "lineNumber": 109
+        },
+        {
+          "caller": "_run",
+          "callee": "delete_pattern.assert_awaited_once_with",
+          "lineNumber": 111
+        },
+        {
+          "caller": "_run",
+          "callee": "retrieval_cache_pattern",
+          "lineNumber": 112
+        },
+        {
+          "caller": "test_invalidate_retrieval_cache_deletes_scope_pattern",
+          "callee": "asyncio.run",
+          "lineNumber": 115
+        },
+        {
+          "caller": "test_invalidate_retrieval_cache_deletes_scope_pattern",
+          "callee": "_run",
+          "lineNumber": 115
+        },
+        {
+          "caller": "_run",
+          "callee": "patch",
+          "lineNumber": 120
+        },
+        {
+          "caller": "_run",
+          "callee": "AsyncMock",
+          "lineNumber": 120
+        },
+        {
+          "caller": "_run",
+          "callee": "invalidate_retrieval_cache_for_document",
+          "lineNumber": 121
+        },
+        {
+          "caller": "_run",
+          "callee": "delete_pattern.assert_any_await",
+          "lineNumber": 127
+        },
+        {
+          "caller": "_run",
+          "callee": "retrieval_cache_pattern",
+          "lineNumber": 128
+        },
+        {
+          "caller": "_run",
+          "callee": "delete_pattern.assert_any_await",
+          "lineNumber": 130
+        },
+        {
+          "caller": "_run",
+          "callee": "retrieval_cache_pattern",
+          "lineNumber": 131
+        },
+        {
+          "caller": "test_invalidate_retrieval_cache_for_document_clears_project_and_global_scopes",
+          "callee": "asyncio.run",
+          "lineNumber": 134
+        },
+        {
+          "caller": "test_invalidate_retrieval_cache_for_document_clears_project_and_global_scopes",
+          "callee": "_run",
+          "lineNumber": 134
+        },
+        {
+          "caller": "test_retrieval_service_uses_cached_results",
+          "callee": "_sample_chunk",
+          "lineNumber": 140
+        },
+        {
+          "caller": "test_retrieval_service_uses_cached_results",
+          "callee": "MagicMock",
+          "lineNumber": 141
+        },
+        {
+          "caller": "test_retrieval_service_uses_cached_results",
+          "callee": "RetrievalService",
+          "lineNumber": 142
+        },
+        {
+          "caller": "test_retrieval_service_uses_cached_results",
+          "callee": "SimpleNamespace",
+          "lineNumber": 143
+        },
+        {
+          "caller": "test_retrieval_service_uses_cached_results",
+          "callee": "MagicMock",
+          "lineNumber": 144
+        },
+        {
+          "caller": "test_retrieval_service_uses_cached_results",
+          "callee": "AsyncMock",
+          "lineNumber": 145
+        },
+        {
+          "caller": "test_retrieval_service_uses_cached_results",
+          "callee": "MagicMock",
+          "lineNumber": 146
+        },
+        {
+          "caller": "test_retrieval_service_uses_cached_results",
+          "callee": "AsyncMock",
+          "lineNumber": 147
+        },
+        {
+          "caller": "_run",
+          "callee": "patch",
+          "lineNumber": 150
+        },
+        {
+          "caller": "_run",
+          "callee": "AsyncMock",
+          "lineNumber": 152
+        },
+        {
+          "caller": "_run",
+          "callee": "service.retrieve",
+          "lineNumber": 154
+        },
+        {
+          "caller": "_run",
+          "callee": "cache_get.assert_awaited_once",
+          "lineNumber": 162
+        },
+        {
+          "caller": "_run",
+          "callee": "service.embeddings.embed_texts.assert_not_called",
+          "lineNumber": 163
+        },
+        {
+          "caller": "_run",
+          "callee": "service.vector_store.similarity_search.assert_not_called",
+          "lineNumber": 164
+        },
+        {
+          "caller": "test_retrieval_service_uses_cached_results",
+          "callee": "asyncio.run",
+          "lineNumber": 166
+        },
+        {
+          "caller": "test_retrieval_service_uses_cached_results",
+          "callee": "_run",
+          "lineNumber": 166
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 7,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    }
+  ]
+}

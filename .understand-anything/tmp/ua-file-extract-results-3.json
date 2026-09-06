@@ -1,0 +1,2150 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 27,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "frontend/src/api/auth.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 106,
+      "nonEmptyLines": 91,
+      "functions": [
+        {
+          "name": "signUp",
+          "startLine": 21,
+          "endLine": 31,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "signIn",
+          "startLine": 33,
+          "endLine": 42,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "refresh",
+          "startLine": 44,
+          "endLine": 48,
+          "params": []
+        },
+        {
+          "name": "me",
+          "startLine": 50,
+          "endLine": 52,
+          "params": []
+        },
+        {
+          "name": "logout",
+          "startLine": 54,
+          "endLine": 58,
+          "params": []
+        },
+        {
+          "name": "forgotPassword",
+          "startLine": 60,
+          "endLine": 65,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "resetPassword",
+          "startLine": 67,
+          "endLine": 72,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "verifyEmail",
+          "startLine": 74,
+          "endLine": 79,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "resendVerification",
+          "startLine": 81,
+          "endLine": 86,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "enableMfa",
+          "startLine": 88,
+          "endLine": 92,
+          "params": []
+        },
+        {
+          "name": "verifyMfa",
+          "startLine": 94,
+          "endLine": 99,
+          "params": [
+            "code"
+          ]
+        },
+        {
+          "name": "disableMfa",
+          "startLine": 101,
+          "endLine": 106,
+          "params": [
+            "code"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "signUp",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "signIn",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "refresh",
+          "line": 44,
+          "isDefault": false
+        },
+        {
+          "name": "me",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "logout",
+          "line": 54,
+          "isDefault": false
+        },
+        {
+          "name": "forgotPassword",
+          "line": 60,
+          "isDefault": false
+        },
+        {
+          "name": "resetPassword",
+          "line": 67,
+          "isDefault": false
+        },
+        {
+          "name": "verifyEmail",
+          "line": 74,
+          "isDefault": false
+        },
+        {
+          "name": "resendVerification",
+          "line": 81,
+          "isDefault": false
+        },
+        {
+          "name": "enableMfa",
+          "line": 88,
+          "isDefault": false
+        },
+        {
+          "name": "verifyMfa",
+          "line": 94,
+          "isDefault": false
+        },
+        {
+          "name": "disableMfa",
+          "line": 101,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "signUp",
+          "callee": "apiFetch",
+          "lineNumber": 27
+        },
+        {
+          "caller": "signUp",
+          "callee": "JSON.stringify",
+          "lineNumber": 29
+        },
+        {
+          "caller": "signIn",
+          "callee": "apiFetch",
+          "lineNumber": 38
+        },
+        {
+          "caller": "signIn",
+          "callee": "JSON.stringify",
+          "lineNumber": 40
+        },
+        {
+          "caller": "refresh",
+          "callee": "apiFetch",
+          "lineNumber": 45
+        },
+        {
+          "caller": "me",
+          "callee": "apiFetch",
+          "lineNumber": 51
+        },
+        {
+          "caller": "logout",
+          "callee": "apiFetch",
+          "lineNumber": 55
+        },
+        {
+          "caller": "forgotPassword",
+          "callee": "apiFetch",
+          "lineNumber": 61
+        },
+        {
+          "caller": "forgotPassword",
+          "callee": "JSON.stringify",
+          "lineNumber": 63
+        },
+        {
+          "caller": "resetPassword",
+          "callee": "apiFetch",
+          "lineNumber": 68
+        },
+        {
+          "caller": "resetPassword",
+          "callee": "JSON.stringify",
+          "lineNumber": 70
+        },
+        {
+          "caller": "verifyEmail",
+          "callee": "apiFetch",
+          "lineNumber": 75
+        },
+        {
+          "caller": "verifyEmail",
+          "callee": "JSON.stringify",
+          "lineNumber": 77
+        },
+        {
+          "caller": "resendVerification",
+          "callee": "apiFetch",
+          "lineNumber": 82
+        },
+        {
+          "caller": "resendVerification",
+          "callee": "JSON.stringify",
+          "lineNumber": 84
+        },
+        {
+          "caller": "enableMfa",
+          "callee": "apiFetch",
+          "lineNumber": 89
+        },
+        {
+          "caller": "verifyMfa",
+          "callee": "apiFetch",
+          "lineNumber": 95
+        },
+        {
+          "caller": "verifyMfa",
+          "callee": "JSON.stringify",
+          "lineNumber": 97
+        },
+        {
+          "caller": "disableMfa",
+          "callee": "apiFetch",
+          "lineNumber": 102
+        },
+        {
+          "caller": "disableMfa",
+          "callee": "JSON.stringify",
+          "lineNumber": 104
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 12,
+        "functionCount": 12,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/app/SnackbarProvider.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 34,
+      "nonEmptyLines": 31,
+      "functions": [
+        {
+          "name": "SnackbarProvider",
+          "startLine": 5,
+          "endLine": 34,
+          "params": [
+            "{ children }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SnackbarProvider",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "SnackbarProvider",
+          "callee": "useState",
+          "lineNumber": 6
+        },
+        {
+          "caller": "SnackbarProvider",
+          "callee": "useState",
+          "lineNumber": 7
+        },
+        {
+          "caller": "SnackbarProvider",
+          "callee": "useCallback",
+          "lineNumber": 9
+        },
+        {
+          "caller": "SnackbarProvider",
+          "callee": "setOpts",
+          "lineNumber": 10
+        },
+        {
+          "caller": "SnackbarProvider",
+          "callee": "setOpen",
+          "lineNumber": 11
+        },
+        {
+          "caller": "SnackbarProvider",
+          "callee": "setOpen",
+          "lineNumber": 20
+        },
+        {
+          "caller": "SnackbarProvider",
+          "callee": "setOpen",
+          "lineNumber": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/app/colorModeContext.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 16,
+      "nonEmptyLines": 13,
+      "functions": [
+        {
+          "name": "useColorMode",
+          "startLine": 14,
+          "endLine": 16,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ColorModeContext",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "useColorMode",
+          "line": 14,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useColorMode",
+          "callee": "useContext",
+          "lineNumber": 15
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/app/providers.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 37,
+      "nonEmptyLines": 34,
+      "functions": [
+        {
+          "name": "AppProviders",
+          "startLine": 12,
+          "endLine": 37,
+          "params": [
+            "{ children }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AppProviders",
+          "line": 12,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AppProviders",
+          "callee": "useState",
+          "lineNumber": 13
+        },
+        {
+          "caller": "AppProviders",
+          "callee": "useMediaQuery",
+          "lineNumber": 14
+        },
+        {
+          "caller": "AppProviders",
+          "callee": "useMemo",
+          "lineNumber": 16
+        }
+      ],
+      "metrics": {
+        "importCount": 5,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/app/router.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 120,
+      "nonEmptyLines": 113,
+      "functions": [
+        {
+          "name": "PageLoader",
+          "startLine": 26,
+          "endLine": 40,
+          "params": []
+        },
+        {
+          "name": "SuspensePage",
+          "startLine": 42,
+          "endLine": 44,
+          "params": [
+            "{ children }"
+          ]
+        },
+        {
+          "name": "AppRouter",
+          "startLine": 46,
+          "endLine": 120,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AppRouter",
+          "line": 46,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AppRouter",
+          "callee": "useAuth",
+          "lineNumber": 47
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/app/theme.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 459,
+      "nonEmptyLines": 452,
+      "functions": [
+        {
+          "name": "buildTheme",
+          "startLine": 6,
+          "endLine": 454,
+          "params": [
+            "mode"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "lightTheme",
+          "line": 456,
+          "isDefault": false
+        },
+        {
+          "name": "darkTheme",
+          "line": 457,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "buildTheme",
+          "callee": "createTheme",
+          "lineNumber": 9
+        },
+        {
+          "caller": "buildTheme",
+          "callee": "alpha",
+          "lineNumber": 42
+        },
+        {
+          "caller": "buildTheme",
+          "callee": "alpha",
+          "lineNumber": 45
+        },
+        {
+          "caller": "buildTheme",
+          "callee": "createTheme",
+          "lineNumber": 160
+        },
+        {
+          "caller": "buildTheme",
+          "callee": "alpha",
+          "lineNumber": 193
+        },
+        {
+          "caller": "buildTheme",
+          "callee": "alpha",
+          "lineNumber": 254
+        },
+        {
+          "caller": "buildTheme",
+          "callee": "alpha",
+          "lineNumber": 276
+        },
+        {
+          "caller": "buildTheme",
+          "callee": "alpha",
+          "lineNumber": 285
+        },
+        {
+          "caller": "buildTheme",
+          "callee": "alpha",
+          "lineNumber": 305
+        },
+        {
+          "caller": "buildTheme",
+          "callee": "alpha",
+          "lineNumber": 389
+        },
+        {
+          "caller": "buildTheme",
+          "callee": "alpha",
+          "lineNumber": 396
+        },
+        {
+          "caller": "buildTheme",
+          "callee": "alpha",
+          "lineNumber": 406
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 85,
+      "nonEmptyLines": 80,
+      "functions": [
+        {
+          "name": "AuthMarketingPanel",
+          "startLine": 17,
+          "endLine": 85,
+          "params": [
+            "{\n    appName,\n    eyebrow,\n    title,\n    description,\n    highlights = [],\n    points = [],\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AuthMarketingPanel",
+          "line": 17,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AuthMarketingPanel",
+          "callee": "highlights.map",
+          "lineNumber": 61
+        },
+        {
+          "caller": "AuthMarketingPanel",
+          "callee": "points.map",
+          "lineNumber": 77
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/auth/AuthShell.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 60,
+      "nonEmptyLines": 58,
+      "functions": [
+        {
+          "name": "AuthShell",
+          "startLine": 9,
+          "endLine": 60,
+          "params": [
+            "{ sideContent, children }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AuthShell",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/guards/ProtectedRoute.test.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 118,
+      "nonEmptyLines": 102,
+      "functions": [
+        {
+          "name": "renderGuard",
+          "startLine": 24,
+          "endLine": 45,
+          "params": [
+            "path",
+            "props"
+          ]
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "renderGuard",
+          "callee": "render",
+          "lineNumber": 28
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/guards/ProtectedRoute.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 36,
+      "nonEmptyLines": 34,
+      "functions": [
+        {
+          "name": "ProtectedRoute",
+          "startLine": 15,
+          "endLine": 36,
+          "params": [
+            "{\n    isReady,\n    isAuthenticated,\n    isAdmin = false,\n    isMfaEnabled = false,\n    requireAdmin = false,\n    requireMfa = false,\n    redirectTo = \"/\",\n    children,\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ProtectedRoute",
+          "line": 15,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/config/queryClient.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 14,
+      "nonEmptyLines": 12,
+      "exports": [
+        {
+          "name": "queryClient",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/features/auth/context/AuthContext.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 50,
+      "nonEmptyLines": 45,
+      "functions": [
+        {
+          "name": "AuthProvider",
+          "startLine": 10,
+          "endLine": 50,
+          "params": [
+            "{ children }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "AuthProvider",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AuthProvider",
+          "callee": "useQueryClient",
+          "lineNumber": 11
+        },
+        {
+          "caller": "AuthProvider",
+          "callee": "useQuery",
+          "lineNumber": 16
+        },
+        {
+          "caller": "logout",
+          "callee": "logoutRequest().catch",
+          "lineNumber": 27
+        },
+        {
+          "caller": "logout",
+          "callee": "logoutRequest",
+          "lineNumber": 27
+        },
+        {
+          "caller": "logout",
+          "callee": "queryClient.setQueryData",
+          "lineNumber": 28
+        },
+        {
+          "caller": "setAuthenticated",
+          "callee": "queryClient.setQueryData",
+          "lineNumber": 32
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/features/auth/context/authContext.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 26,
+      "nonEmptyLines": 23,
+      "functions": [
+        {
+          "name": "useAuth",
+          "startLine": 24,
+          "endLine": 26,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AuthContext",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "useAuth",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useAuth",
+          "callee": "useContext",
+          "lineNumber": 25
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/features/auth/schemas.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 27,
+      "nonEmptyLines": 23,
+      "exports": [
+        {
+          "name": "signInSchema",
+          "line": 3,
+          "isDefault": false
+        },
+        {
+          "name": "forgotPasswordSchema",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "signUpSchema",
+          "line": 18,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/features/observability/api.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 10,
+      "nonEmptyLines": 8,
+      "functions": [
+        {
+          "name": "getObservabilityLinks",
+          "startLine": 4,
+          "endLine": 6,
+          "params": []
+        },
+        {
+          "name": "getObservabilityStatus",
+          "startLine": 8,
+          "endLine": 10,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "getObservabilityLinks",
+          "line": 4,
+          "isDefault": false
+        },
+        {
+          "name": "getObservabilityStatus",
+          "line": 8,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getObservabilityLinks",
+          "callee": "apiFetch",
+          "lineNumber": 5
+        },
+        {
+          "caller": "getObservabilityStatus",
+          "callee": "apiFetch",
+          "lineNumber": 9
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 111,
+      "nonEmptyLines": 105,
+      "functions": [
+        {
+          "name": "formatCheckedAt",
+          "startLine": 31,
+          "endLine": 40,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "HealthStatusCard",
+          "startLine": 42,
+          "endLine": 111,
+          "params": [
+            "{\n    title,\n    status,\n    detail,\n    metric,\n    lastCheckedAt,\n    icon,\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "HealthStatusCard",
+          "line": 42,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "formatCheckedAt",
+          "callee": "new Intl.DateTimeFormat(undefined, {\n        hour: \"2-digit\",\n        minute: \"2-digit\",\n        second: \"2-digit\",\n    }).format",
+          "lineNumber": 35
+        },
+        {
+          "caller": "HealthStatusCard",
+          "callee": "useTheme",
+          "lineNumber": 50
+        },
+        {
+          "caller": "HealthStatusCard",
+          "callee": "formatCheckedAt",
+          "lineNumber": 54
+        },
+        {
+          "caller": "HealthStatusCard",
+          "callee": "alpha",
+          "lineNumber": 88
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/features/observability/components/ObservabilityShortcutCard.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 71,
+      "nonEmptyLines": 68,
+      "functions": [
+        {
+          "name": "ObservabilityShortcutCard",
+          "startLine": 16,
+          "endLine": 71,
+          "params": [
+            "{\n    title,\n    description,\n    buttonText,\n    url,\n    allowed,\n    configured,\n    onOpen,\n    icon,\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ObservabilityShortcutCard",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ObservabilityShortcutCard",
+          "callee": "Boolean",
+          "lineNumber": 58
+        },
+        {
+          "caller": "ObservabilityShortcutCard",
+          "callee": "onOpen",
+          "lineNumber": 61
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/features/observability/types.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 60,
+      "nonEmptyLines": 54,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/features/observability/urlBuilders.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 53,
+      "nonEmptyLines": 42,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/features/observability/urlBuilders.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 46,
+      "nonEmptyLines": 38,
+      "functions": [
+        {
+          "name": "addParam",
+          "startLine": 7,
+          "endLine": 12,
+          "params": [
+            "params",
+            "name",
+            "value"
+          ]
+        },
+        {
+          "name": "buildGrafanaUrl",
+          "startLine": 14,
+          "endLine": 30,
+          "params": [
+            "baseUrl",
+            "context"
+          ]
+        },
+        {
+          "name": "buildTempoExploreUrl",
+          "startLine": 32,
+          "endLine": 42,
+          "params": [
+            "baseUrl",
+            "context"
+          ]
+        },
+        {
+          "name": "openExternalUrl",
+          "startLine": 44,
+          "endLine": 46,
+          "params": [
+            "url"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "buildGrafanaUrl",
+          "line": 14,
+          "isDefault": false
+        },
+        {
+          "name": "buildTempoExploreUrl",
+          "line": 32,
+          "isDefault": false
+        },
+        {
+          "name": "openExternalUrl",
+          "line": 44,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "addParam",
+          "callee": "value?.trim",
+          "lineNumber": 8
+        },
+        {
+          "caller": "addParam",
+          "callee": "params.set",
+          "lineNumber": 10
+        },
+        {
+          "caller": "buildGrafanaUrl",
+          "callee": "addParam",
+          "lineNumber": 21
+        },
+        {
+          "caller": "buildGrafanaUrl",
+          "callee": "addParam",
+          "lineNumber": 22
+        },
+        {
+          "caller": "buildGrafanaUrl",
+          "callee": "addParam",
+          "lineNumber": 23
+        },
+        {
+          "caller": "buildGrafanaUrl",
+          "callee": "addParam",
+          "lineNumber": 24
+        },
+        {
+          "caller": "buildGrafanaUrl",
+          "callee": "addParam",
+          "lineNumber": 25
+        },
+        {
+          "caller": "buildGrafanaUrl",
+          "callee": "addParam",
+          "lineNumber": 26
+        },
+        {
+          "caller": "buildGrafanaUrl",
+          "callee": "addParam",
+          "lineNumber": 27
+        },
+        {
+          "caller": "buildGrafanaUrl",
+          "callee": "url.toString",
+          "lineNumber": 29
+        },
+        {
+          "caller": "buildTempoExploreUrl",
+          "callee": "buildGrafanaUrl",
+          "lineNumber": 33
+        },
+        {
+          "caller": "buildTempoExploreUrl",
+          "callee": "addParam",
+          "lineNumber": 39
+        },
+        {
+          "caller": "buildTempoExploreUrl",
+          "callee": "addParam",
+          "lineNumber": 40
+        },
+        {
+          "caller": "buildTempoExploreUrl",
+          "callee": "withParams.toString",
+          "lineNumber": 41
+        },
+        {
+          "caller": "openExternalUrl",
+          "callee": "window.open",
+          "lineNumber": 45
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 3,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/hooks/useAuth.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "exports": [
+        {
+          "name": "useAuth",
+          "line": 1,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/main.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 15,
+      "nonEmptyLines": 14,
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/AuthHomePage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 352,
+      "nonEmptyLines": 333,
+      "functions": [
+        {
+          "name": "PasswordField",
+          "startLine": 34,
+          "endLine": 57,
+          "params": [
+            "props"
+          ]
+        },
+        {
+          "name": "SignInForm",
+          "startLine": 59,
+          "endLine": 189,
+          "params": [
+            "{ onSuccess, mfaEnabled }"
+          ]
+        },
+        {
+          "name": "SignUpForm",
+          "startLine": 191,
+          "endLine": 258,
+          "params": [
+            "{ onSuccess }"
+          ]
+        },
+        {
+          "name": "AuthHomePage",
+          "startLine": 260,
+          "endLine": 352,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AuthHomePage",
+          "line": 260,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "PasswordField",
+          "callee": "useState",
+          "lineNumber": 35
+        },
+        {
+          "caller": "PasswordField",
+          "callee": "setShowPassword",
+          "lineNumber": 47
+        },
+        {
+          "caller": "PasswordField",
+          "callee": "event.preventDefault",
+          "lineNumber": 48
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "useNavigate",
+          "lineNumber": 60
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "useAuth",
+          "lineNumber": 61
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "useForm",
+          "lineNumber": 67
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "zodResolver",
+          "lineNumber": 67
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "useForm",
+          "lineNumber": 76
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "zodResolver",
+          "lineNumber": 76
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "useState",
+          "lineNumber": 78
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "useState",
+          "lineNumber": 79
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "useState",
+          "lineNumber": 80
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "useState",
+          "lineNumber": 81
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "setServerError",
+          "lineNumber": 84
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "values.mfa_code?.trim",
+          "lineNumber": 86
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "signIn",
+          "lineNumber": 87
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "setAuthenticated",
+          "lineNumber": 91
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "onSuccess",
+          "lineNumber": 92
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "navigate",
+          "lineNumber": 93
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "setServerError",
+          "lineNumber": 95
+        },
+        {
+          "caller": "onForgotPasswordSubmit",
+          "callee": "setForgotError",
+          "lineNumber": 100
+        },
+        {
+          "caller": "onForgotPasswordSubmit",
+          "callee": "forgotPassword",
+          "lineNumber": 102
+        },
+        {
+          "caller": "onForgotPasswordSubmit",
+          "callee": "setForgotDone",
+          "lineNumber": 103
+        },
+        {
+          "caller": "onForgotPasswordSubmit",
+          "callee": "setForgotError",
+          "lineNumber": 105
+        },
+        {
+          "caller": "toggleForgotPassword",
+          "callee": "setForgotOpen",
+          "lineNumber": 111
+        },
+        {
+          "caller": "toggleForgotPassword",
+          "callee": "setForgotError",
+          "lineNumber": 112
+        },
+        {
+          "caller": "toggleForgotPassword",
+          "callee": "setForgotDone",
+          "lineNumber": 113
+        },
+        {
+          "caller": "toggleForgotPassword",
+          "callee": "resetForgot",
+          "lineNumber": 115
+        },
+        {
+          "caller": "toggleForgotPassword",
+          "callee": "getValues",
+          "lineNumber": 115
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "handleSubmit",
+          "lineNumber": 122
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "register",
+          "lineNumber": 128
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "register",
+          "lineNumber": 136
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "register",
+          "lineNumber": 145
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "handleForgotSubmit",
+          "lineNumber": 170
+        },
+        {
+          "caller": "SignInForm",
+          "callee": "registerForgot",
+          "lineNumber": 175
+        },
+        {
+          "caller": "SignUpForm",
+          "callee": "useForm",
+          "lineNumber": 196
+        },
+        {
+          "caller": "SignUpForm",
+          "callee": "zodResolver",
+          "lineNumber": 196
+        },
+        {
+          "caller": "SignUpForm",
+          "callee": "useState",
+          "lineNumber": 197
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "setServerError",
+          "lineNumber": 200
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "values.admin_invite_code?.trim",
+          "lineNumber": 202
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "signUp",
+          "lineNumber": 203
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "onSuccess",
+          "lineNumber": 207
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "setServerError",
+          "lineNumber": 209
+        },
+        {
+          "caller": "SignUpForm",
+          "callee": "handleSubmit",
+          "lineNumber": 216
+        },
+        {
+          "caller": "SignUpForm",
+          "callee": "register",
+          "lineNumber": 221
+        },
+        {
+          "caller": "SignUpForm",
+          "callee": "register",
+          "lineNumber": 230
+        },
+        {
+          "caller": "SignUpForm",
+          "callee": "register",
+          "lineNumber": 238
+        },
+        {
+          "caller": "SignUpForm",
+          "callee": "register",
+          "lineNumber": 246
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "usePlatformMetadata",
+          "lineNumber": 261
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "useState",
+          "lineNumber": 262
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "useState",
+          "lineNumber": 263
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 274
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 298
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 299
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "setMode",
+          "lineNumber": 316
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "setSuccessMsg",
+          "lineNumber": 317
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "setMode",
+          "lineNumber": 325
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "setSuccessMsg",
+          "lineNumber": 326
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "setSuccessMsg",
+          "lineNumber": 340
+        },
+        {
+          "caller": "AuthHomePage",
+          "callee": "setMode",
+          "lineNumber": 341
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 1,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/ObservabilityPage.test.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 121,
+      "nonEmptyLines": 100,
+      "functions": [
+        {
+          "name": "renderPage",
+          "startLine": 52,
+          "endLine": 62,
+          "params": []
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "renderPage",
+          "callee": "render",
+          "lineNumber": 57
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/ObservabilityPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 435,
+      "nonEmptyLines": 417,
+      "functions": [
+        {
+          "name": "buildHealthItems",
+          "startLine": 73,
+          "endLine": 87,
+          "params": [
+            "status"
+          ]
+        },
+        {
+          "name": "metricFor",
+          "startLine": 89,
+          "endLine": 92,
+          "params": [
+            "item"
+          ]
+        },
+        {
+          "name": "fallbackItem",
+          "startLine": 94,
+          "endLine": 96,
+          "params": [
+            "detail"
+          ]
+        },
+        {
+          "name": "buildContext",
+          "startLine": 98,
+          "endLine": 119,
+          "params": [
+            "values"
+          ]
+        },
+        {
+          "name": "dashboardUrl",
+          "startLine": 121,
+          "endLine": 123,
+          "params": [
+            "link",
+            "dashboard",
+            "context"
+          ]
+        },
+        {
+          "name": "ObservabilityPage",
+          "startLine": 125,
+          "endLine": 435,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ObservabilityPage",
+          "line": 125,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "dashboardUrl",
+          "callee": "buildGrafanaUrl",
+          "lineNumber": 122
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "useAuth",
+          "lineNumber": 126
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "useState",
+          "lineNumber": 127
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "useState",
+          "lineNumber": 128
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "useState",
+          "lineNumber": 129
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "useState",
+          "lineNumber": 130
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "useState",
+          "lineNumber": 131
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "useState",
+          "lineNumber": 132
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "useState",
+          "lineNumber": 133
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "useQuery",
+          "lineNumber": 135
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "useQuery",
+          "lineNumber": 140
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "useMemo",
+          "lineNumber": 146
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "buildContext",
+          "lineNumber": 147
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "buildHealthItems",
+          "lineNumber": 150
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "[\n        {\n            title: \"Application Overview\",\n            description: \"High-level service health, request volume, latency, errors, and saturation.\",\n            buttonText: \"Open dashboard\",\n            link: links?.dashboards.application_overview,\n            url: dashboardUrl(links, \"application_overview\", context),\n            icon: <OverviewIcon color=\"primary\" />,\n        },\n        {\n            title: \"Backend API\",\n            description: \"HTTP latency, request rate, error rate, status codes, and slow endpoints.\",\n            buttonText: \"Open API view\",\n            link: links?.dashboards.api,\n            url: dashboardUrl(links, \"api\", context),\n            icon: <ApiIcon color=\"primary\" />,\n        },\n        {\n            title: \"Frontend Performance\",\n            description: \"Frontend availability, client-side errors, page load timing, and user experience signals.\",\n            buttonText: \"Open frontend view\",\n            link: links?.dashboards.frontend,\n            url: dashboardUrl(links, \"frontend\", context),\n            icon: <FrontendIcon color=\"primary\" />,\n        },\n        {\n            title: \"Database\",\n            description: \"Connection pool usage, query latency, slow queries, locks, and availability.\",\n            buttonText: \"Open database view\",\n            link: links?.dashboards.database,\n            url: dashboardUrl(links, \"database\", context),\n            icon: <DatabaseIcon color=\"primary\" />,\n        },\n        {\n            title: \"Cache / Redis\",\n            description: \"Cache hit rate, memory usage, command latency, evictions, and availability.\",\n            buttonText: \"Open cache view\",\n            link: links?.dashboards.cache,\n            url: dashboardUrl(links, \"cache\", context),\n            icon: <CacheIcon color=\"primary\" />,\n        },\n        {\n            title: \"Workers / Background Jobs\",\n            description: \"Queue depth, task duration, retries, failures, and worker availability.\",\n            buttonText: \"Open workers\",\n            link: links?.dashboards.workers,\n            url: dashboardUrl(links, \"workers\", context),\n            icon: <WorkerIcon color=\"primary\" />,\n        },\n        {\n            title: \"Scheduled Tasks\",\n            description: \"Cron jobs, periodic jobs, execution duration, failed runs, and missed schedules.\",\n            buttonText: \"Open schedules\",\n            link: links?.dashboards.scheduled_tasks,\n            url: dashboardUrl(links, \"scheduled_tasks\", context),\n            icon: <ScheduleIcon color=\"primary\" />,\n        },\n        {\n            title: \"Error Investigation\",\n            description: \"Recent errors, failing routes, affected services, and related traces.\",\n            buttonText: \"Open errors\",\n            link: links?.dashboards.errors,\n            url: dashboardUrl(links, \"errors\", context),\n            icon: <ErrorIcon color=\"primary\" />,\n        },\n        {\n            title: \"Tempo Traces\",\n            description: \"Investigate slow requests, failed workflows, and cross-service latency through Grafana Explore.\",\n            buttonText: \"Explore traces\",\n            link: links?.tempo_explore_url,\n            url: buildTempoExploreUrl(links?.tempo_explore_url.url, context),\n            icon: <TracesIcon color=\"primary\" />,\n        },\n        {\n            title: \"Prometheus Debug\",\n            description: \"Raw PromQL query UI for developer and admin investigation.\",\n            buttonText: \"Open Prometheus\",\n            link: links?.prometheus_url,\n            url: buildGrafanaUrl(links?.prometheus_url.url, context),\n            icon: <PrometheusIcon color=\"primary\" />,\n            adminOnly: true,\n        },\n    ].filter",
+          "lineNumber": 168
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "dashboardUrl",
+          "lineNumber": 174
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "dashboardUrl",
+          "lineNumber": 182
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "dashboardUrl",
+          "lineNumber": 190
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "dashboardUrl",
+          "lineNumber": 198
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "dashboardUrl",
+          "lineNumber": 206
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "dashboardUrl",
+          "lineNumber": 214
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "dashboardUrl",
+          "lineNumber": 222
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "dashboardUrl",
+          "lineNumber": 230
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "buildTempoExploreUrl",
+          "lineNumber": 238
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "buildGrafanaUrl",
+          "lineNumber": 246
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "dashboardUrl",
+          "lineNumber": 264
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "openExternalUrl",
+          "lineNumber": 266
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "setService",
+          "lineNumber": 296
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "SERVICES.map",
+          "lineNumber": 297
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "setEnvironment",
+          "lineNumber": 303
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "ENVIRONMENTS.map",
+          "lineNumber": 305
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "setTimeRangeIndex",
+          "lineNumber": 311
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "Number",
+          "lineNumber": 311
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "TIME_RANGES.map",
+          "lineNumber": 313
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "setRoute",
+          "lineNumber": 318
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "setJobName",
+          "lineNumber": 324
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "setRequestId",
+          "lineNumber": 330
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "setTraceId",
+          "lineNumber": 336
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "Array.from({ length: 8 }).map",
+          "lineNumber": 351
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "Array.from",
+          "lineNumber": 351
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "healthCards.map",
+          "lineNumber": 369
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "fallbackItem",
+          "lineNumber": 370
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "metricFor",
+          "lineNumber": 377
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "Array.from({ length: 6 }).map",
+          "lineNumber": 399
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "Array.from",
+          "lineNumber": 399
+        },
+        {
+          "caller": "ObservabilityPage",
+          "callee": "shortcuts.map",
+          "lineNumber": 417
+        }
+      ],
+      "metrics": {
+        "importCount": 10,
+        "exportCount": 1,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/ResetPasswordPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 126,
+      "nonEmptyLines": 119,
+      "functions": [
+        {
+          "name": "ResetPasswordPage",
+          "startLine": 24,
+          "endLine": 126,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ResetPasswordPage",
+          "line": 24,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ResetPasswordPage",
+          "callee": "useSearchParams",
+          "lineNumber": 25
+        },
+        {
+          "caller": "ResetPasswordPage",
+          "callee": "searchParams.get",
+          "lineNumber": 26
+        },
+        {
+          "caller": "ResetPasswordPage",
+          "callee": "useState",
+          "lineNumber": 27
+        },
+        {
+          "caller": "ResetPasswordPage",
+          "callee": "useState",
+          "lineNumber": 28
+        },
+        {
+          "caller": "ResetPasswordPage",
+          "callee": "usePlatformMetadata",
+          "lineNumber": 29
+        },
+        {
+          "caller": "ResetPasswordPage",
+          "callee": "useForm",
+          "lineNumber": 36
+        },
+        {
+          "caller": "ResetPasswordPage",
+          "callee": "zodResolver",
+          "lineNumber": 36
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "setServerError",
+          "lineNumber": 40
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "setServerError",
+          "lineNumber": 43
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "resetPassword",
+          "lineNumber": 45
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "setDone",
+          "lineNumber": 46
+        },
+        {
+          "caller": "onSubmit",
+          "callee": "setServerError",
+          "lineNumber": 48
+        },
+        {
+          "caller": "ResetPasswordPage",
+          "callee": "handleSubmit",
+          "lineNumber": 93
+        },
+        {
+          "caller": "ResetPasswordPage",
+          "callee": "register",
+          "lineNumber": 104
+        },
+        {
+          "caller": "ResetPasswordPage",
+          "callee": "register",
+          "lineNumber": 112
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/VerifyEmailPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 131,
+      "nonEmptyLines": 123,
+      "functions": [
+        {
+          "name": "VerifyEmailPage",
+          "startLine": 9,
+          "endLine": 131,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "VerifyEmailPage",
+          "line": 9,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "useSearchParams",
+          "lineNumber": 10
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "searchParams.get",
+          "lineNumber": 11
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "useState",
+          "lineNumber": 12
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "searchParams.get",
+          "lineNumber": 12
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "useState",
+          "lineNumber": 13
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "useState",
+          "lineNumber": 16
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "useState",
+          "lineNumber": 17
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "useState",
+          "lineNumber": 18
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "usePlatformMetadata",
+          "lineNumber": 19
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "useEffect",
+          "lineNumber": 22
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "verifyEmail({ token })\n            .then(() => setStatus(\"success\"))\n            .catch",
+          "lineNumber": 26
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "verifyEmail({ token })\n            .then",
+          "lineNumber": 26
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "verifyEmail",
+          "lineNumber": 26
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "setStatus",
+          "lineNumber": 27
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "setStatus",
+          "lineNumber": 28
+        },
+        {
+          "caller": "handleResend",
+          "callee": "setResendError",
+          "lineNumber": 33
+        },
+        {
+          "caller": "handleResend",
+          "callee": "setResending",
+          "lineNumber": 37
+        },
+        {
+          "caller": "handleResend",
+          "callee": "setResendError",
+          "lineNumber": 38
+        },
+        {
+          "caller": "handleResend",
+          "callee": "resendVerification",
+          "lineNumber": 40
+        },
+        {
+          "caller": "handleResend",
+          "callee": "setResendDone",
+          "lineNumber": 41
+        },
+        {
+          "caller": "handleResend",
+          "callee": "setResendError",
+          "lineNumber": 43
+        },
+        {
+          "caller": "handleResend",
+          "callee": "setResending",
+          "lineNumber": 45
+        },
+        {
+          "caller": "VerifyEmailPage",
+          "callee": "setEmail",
+          "lineNumber": 113
+        }
+      ],
+      "metrics": {
+        "importCount": 4,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}

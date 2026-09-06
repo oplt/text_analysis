@@ -1,0 +1,47 @@
+{
+  "nodes": [
+    {
+      "id": "document:docs/adr/0001-modular-monolith.md",
+      "type": "document",
+      "name": "0001-modular-monolith.md",
+      "filePath": "docs/adr/0001-modular-monolith.md",
+      "summary": "Documentation: 0001-modular-monolith.md",
+      "tags": [
+        "docs",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown",
+      "layerHint": "docs"
+    },
+    {
+      "id": "document:docs/adr/0002-celery-redis-async-jobs.md",
+      "type": "document",
+      "name": "0002-celery-redis-async-jobs.md",
+      "filePath": "docs/adr/0002-celery-redis-async-jobs.md",
+      "summary": "Documentation: 0002-celery-redis-async-jobs.md",
+      "tags": [
+        "docs",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown",
+      "layerHint": "docs"
+    },
+    {
+      "id": "document:docs/adr/0003-module-dependency-graph.md",
+      "type": "document",
+      "name": "0003-module-dependency-graph.md",
+      "filePath": "docs/adr/0003-module-dependency-graph.md",
+      "summary": "Documentation: 0003-module-dependency-graph.md",
+      "tags": [
+        "docs",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown",
+      "layerHint": "docs"
+    }
+  ],
+  "edges": []
+}

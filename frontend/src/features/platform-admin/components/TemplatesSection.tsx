@@ -1,0 +1,19 @@
+import { Box, Button, FormControlLabel, Stack, Switch, TextField, Typography } from "@mui/material";
+import type { EmailTemplate } from "../../../api/platform";
+import { SectionCard } from "../../../components/ui/SectionCard";
+import type { PlatformAdminModel } from "../hooks/usePlatformAdminContent";
+
+export function TemplatesSection({ templates, model }: { templates: EmailTemplate[]; model: PlatformAdminModel }) {
+    const n = model.newTemplate;
+    return <SectionCard title="Email templates" description="Create and update reusable transactional email templates."><Stack spacing={2.5}>
+        <Box sx={(t) => ({ p: 2.5, borderRadius: 4, border: `1px solid ${t.palette.divider}` })}><Stack spacing={1.5}><Typography variant="subtitle2">Create template</Typography>
+            <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" } }}><TextField label="Key" value={n.key} onChange={(e) => model.setNewTemplate((v) => ({ ...v, key: e.target.value }))} /><TextField label="Name" value={n.name} onChange={(e) => model.setNewTemplate((v) => ({ ...v, name: e.target.value }))} /></Box>
+            <TextField label="Subject" value={n.subject_template} onChange={(e) => model.setNewTemplate((v) => ({ ...v, subject_template: e.target.value }))} /><TextField label="HTML body" value={n.html_template} onChange={(e) => model.setNewTemplate((v) => ({ ...v, html_template: e.target.value }))} multiline minRows={4} /><TextField label="Text body" value={n.text_template} onChange={(e) => model.setNewTemplate((v) => ({ ...v, text_template: e.target.value }))} multiline minRows={3} />
+            <FormControlLabel control={<Switch checked={n.is_active} onChange={(e) => model.setNewTemplate((v) => ({ ...v, is_active: e.target.checked }))} />} label="Active" /><Button variant="contained" disabled={model.createTemplateMutation.isPending || n.key.trim().length < 2} onClick={() => model.createTemplateMutation.mutate({ key: n.key.trim(), name: n.name.trim(), subject_template: n.subject_template, html_template: n.html_template, text_template: n.text_template || null, is_active: n.is_active })}>{model.createTemplateMutation.isPending ? "Creating..." : "Create template"}</Button>
+        </Stack></Box>
+        <Stack spacing={1.5}>{templates.map((item) => { const d = model.templateDrafts[item.id]; const saving = model.updateTemplateMutation.isPending && model.updateTemplateMutation.variables?.id === item.id; return <Box key={item.id} sx={(t) => ({ p: 2.5, borderRadius: 4, border: `1px solid ${t.palette.divider}` })}><Stack spacing={1.5}><Typography variant="subtitle2">{item.key}</Typography>
+            <TextField label="Name" value={d.name} onChange={(e) => model.setTemplateDrafts((v) => ({ ...v, [item.id]: { ...d, name: e.target.value } }))} /><TextField label="Subject" value={d.subject_template} onChange={(e) => model.setTemplateDrafts((v) => ({ ...v, [item.id]: { ...d, subject_template: e.target.value } }))} /><TextField label="HTML body" value={d.html_template} onChange={(e) => model.setTemplateDrafts((v) => ({ ...v, [item.id]: { ...d, html_template: e.target.value } }))} multiline minRows={4} /><TextField label="Text body" value={d.text_template} onChange={(e) => model.setTemplateDrafts((v) => ({ ...v, [item.id]: { ...d, text_template: e.target.value } }))} multiline minRows={3} />
+            <FormControlLabel control={<Switch checked={d.is_active} onChange={(e) => model.setTemplateDrafts((v) => ({ ...v, [item.id]: { ...d, is_active: e.target.checked } }))} />} label="Active" /><Button variant="outlined" disabled={saving} onClick={() => model.updateTemplateMutation.mutate({ id: item.id, draft: d })}>{saving ? "Saving..." : "Save template"}</Button>
+        </Stack></Box>; })}</Stack>
+    </Stack></SectionCard>;
+}

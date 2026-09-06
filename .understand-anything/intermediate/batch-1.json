@@ -1,0 +1,4054 @@
+{
+  "nodes": [
+    {
+      "id": "file:backend/modules/ai/tests/test_document_consolidation.py",
+      "type": "file",
+      "name": "test_document_consolidation.py",
+      "filePath": "backend/modules/ai/tests/test_document_consolidation.py",
+      "summary": "ai module file: test_document_consolidation.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/ai/tests/test_document_consolidation.py:RagDocumentMappingTest",
+      "type": "class",
+      "name": "RagDocumentMappingTest",
+      "filePath": "backend/modules/ai/tests/test_document_consolidation.py",
+      "summary": "Class RagDocumentMappingTest in backend/modules/ai/tests/test_document_consolidation.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_document_consolidation.py:RagDocumentMappingTest.test_maps_indexed_status_to_completed",
+      "type": "function",
+      "name": "RagDocumentMappingTest.test_maps_indexed_status_to_completed",
+      "filePath": "backend/modules/ai/tests/test_document_consolidation.py",
+      "summary": "Method test_maps_indexed_status_to_completed on RagDocumentMappingTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/tests/test_document_consolidation.py:AiServiceDocumentDelegationTest",
+      "type": "class",
+      "name": "AiServiceDocumentDelegationTest",
+      "filePath": "backend/modules/ai/tests/test_document_consolidation.py",
+      "summary": "Class AiServiceDocumentDelegationTest in backend/modules/ai/tests/test_document_consolidation.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_document_consolidation.py:AiServiceDocumentDelegationTest.asyncSetUp",
+      "type": "function",
+      "name": "AiServiceDocumentDelegationTest.asyncSetUp",
+      "filePath": "backend/modules/ai/tests/test_document_consolidation.py",
+      "summary": "Method asyncSetUp on AiServiceDocumentDelegationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_document_consolidation.py:AiServiceDocumentDelegationTest.test_list_documents_delegates_when_rag_enabled",
+      "type": "function",
+      "name": "AiServiceDocumentDelegationTest.test_list_documents_delegates_when_rag_enabled",
+      "filePath": "backend/modules/ai/tests/test_document_consolidation.py",
+      "summary": "Method test_list_documents_delegates_when_rag_enabled on AiServiceDocumentDelegationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_document_consolidation.py:AiServiceDocumentDelegationTest.test_retrieve_chunks_delegates_when_rag_enabled",
+      "type": "function",
+      "name": "AiServiceDocumentDelegationTest.test_retrieve_chunks_delegates_when_rag_enabled",
+      "filePath": "backend/modules/ai/tests/test_document_consolidation.py",
+      "summary": "Method test_retrieve_chunks_delegates_when_rag_enabled on AiServiceDocumentDelegationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/tests/test_document_consolidation.py:LegacyAiDocumentServiceRetrieveTest",
+      "type": "class",
+      "name": "LegacyAiDocumentServiceRetrieveTest",
+      "filePath": "backend/modules/ai/tests/test_document_consolidation.py",
+      "summary": "Class LegacyAiDocumentServiceRetrieveTest in backend/modules/ai/tests/test_document_consolidation.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_document_consolidation.py:LegacyAiDocumentServiceRetrieveTest.test_retrieve_maps_rag_chunks",
+      "type": "function",
+      "name": "LegacyAiDocumentServiceRetrieveTest.test_retrieve_maps_rag_chunks",
+      "filePath": "backend/modules/ai/tests/test_document_consolidation.py",
+      "summary": "Method test_retrieve_maps_rag_chunks on LegacyAiDocumentServiceRetrieveTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/agent_context_service.py",
+      "type": "file",
+      "name": "agent_context_service.py",
+      "filePath": "backend/modules/rag/application/agent_context_service.py",
+      "summary": "rag module file: agent_context_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "function:backend/modules/rag/application/agent_context_service.py:rag_handles_prompt_retrieval",
+      "type": "function",
+      "name": "rag_handles_prompt_retrieval",
+      "filePath": "backend/modules/rag/application/agent_context_service.py",
+      "summary": "Function rag_handles_prompt_retrieval in backend/modules/rag/application/agent_context_service.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/agent_context_service.py:build_agent_document_context",
+      "type": "function",
+      "name": "build_agent_document_context",
+      "filePath": "backend/modules/rag/application/agent_context_service.py",
+      "summary": "Function build_agent_document_context in backend/modules/rag/application/agent_context_service.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/chunking_service.py",
+      "type": "file",
+      "name": "chunking_service.py",
+      "filePath": "backend/modules/rag/application/chunking_service.py",
+      "summary": "rag module file: chunking_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "function:backend/modules/rag/application/chunking_service.py:_split_documents_with_token_counts",
+      "type": "function",
+      "name": "_split_documents_with_token_counts",
+      "filePath": "backend/modules/rag/application/chunking_service.py",
+      "summary": "Function _split_documents_with_token_counts in backend/modules/rag/application/chunking_service.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/application/chunking_service.py:ChunkingService",
+      "type": "class",
+      "name": "ChunkingService",
+      "filePath": "backend/modules/rag/application/chunking_service.py",
+      "summary": "Class ChunkingService in backend/modules/rag/application/chunking_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/chunking_service.py:ChunkingService.__init__",
+      "type": "function",
+      "name": "ChunkingService.__init__",
+      "filePath": "backend/modules/rag/application/chunking_service.py",
+      "summary": "Method __init__ on ChunkingService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/chunking_service.py:ChunkingService.chunk",
+      "type": "function",
+      "name": "ChunkingService.chunk",
+      "filePath": "backend/modules/rag/application/chunking_service.py",
+      "summary": "Method chunk on ChunkingService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/citation_service.py",
+      "type": "file",
+      "name": "citation_service.py",
+      "filePath": "backend/modules/rag/application/citation_service.py",
+      "summary": "rag module file: citation_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/rag/application/citation_service.py:CitationService",
+      "type": "class",
+      "name": "CitationService",
+      "filePath": "backend/modules/rag/application/citation_service.py",
+      "summary": "Class CitationService in backend/modules/rag/application/citation_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/citation_service.py:CitationService.build_citations",
+      "type": "function",
+      "name": "CitationService.build_citations",
+      "filePath": "backend/modules/rag/application/citation_service.py",
+      "summary": "Method build_citations on CitationService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "type": "file",
+      "name": "document_ingestion_service.py",
+      "filePath": "backend/modules/rag/application/document_ingestion_service.py",
+      "summary": "rag module file: document_ingestion_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService",
+      "type": "class",
+      "name": "DocumentIngestionService",
+      "filePath": "backend/modules/rag/application/document_ingestion_service.py",
+      "summary": "Class DocumentIngestionService in backend/modules/rag/application/document_ingestion_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService.__init__",
+      "type": "function",
+      "name": "DocumentIngestionService.__init__",
+      "filePath": "backend/modules/rag/application/document_ingestion_service.py",
+      "summary": "Method __init__ on DocumentIngestionService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService.upload_document",
+      "type": "function",
+      "name": "DocumentIngestionService.upload_document",
+      "filePath": "backend/modules/rag/application/document_ingestion_service.py",
+      "summary": "Method upload_document on DocumentIngestionService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService.enqueue_document_indexing",
+      "type": "function",
+      "name": "DocumentIngestionService.enqueue_document_indexing",
+      "filePath": "backend/modules/rag/application/document_ingestion_service.py",
+      "summary": "Method enqueue_document_indexing on DocumentIngestionService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService.index_document",
+      "type": "function",
+      "name": "DocumentIngestionService.index_document",
+      "filePath": "backend/modules/rag/application/document_ingestion_service.py",
+      "summary": "Method index_document on DocumentIngestionService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService.delete_document",
+      "type": "function",
+      "name": "DocumentIngestionService.delete_document",
+      "filePath": "backend/modules/rag/application/document_ingestion_service.py",
+      "summary": "Method delete_document on DocumentIngestionService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService._get_document_for_indexing",
+      "type": "function",
+      "name": "DocumentIngestionService._get_document_for_indexing",
+      "filePath": "backend/modules/rag/application/document_ingestion_service.py",
+      "summary": "Method _get_document_for_indexing on DocumentIngestionService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService._ensure_project_access",
+      "type": "function",
+      "name": "DocumentIngestionService._ensure_project_access",
+      "filePath": "backend/modules/rag/application/document_ingestion_service.py",
+      "summary": "Method _ensure_project_access on DocumentIngestionService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/document_parser_service.py",
+      "type": "file",
+      "name": "document_parser_service.py",
+      "filePath": "backend/modules/rag/application/document_parser_service.py",
+      "summary": "rag module file: document_parser_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/rag/application/document_parser_service.py:DocumentParserService",
+      "type": "class",
+      "name": "DocumentParserService",
+      "filePath": "backend/modules/rag/application/document_parser_service.py",
+      "summary": "Class DocumentParserService in backend/modules/rag/application/document_parser_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/document_parser_service.py:DocumentParserService.parse_bytes",
+      "type": "function",
+      "name": "DocumentParserService.parse_bytes",
+      "filePath": "backend/modules/rag/application/document_parser_service.py",
+      "summary": "Method parse_bytes on DocumentParserService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/embedding_service.py",
+      "type": "file",
+      "name": "embedding_service.py",
+      "filePath": "backend/modules/rag/application/embedding_service.py",
+      "summary": "rag module file: embedding_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/rag/application/embedding_service.py:EmbeddingService",
+      "type": "class",
+      "name": "EmbeddingService",
+      "filePath": "backend/modules/rag/application/embedding_service.py",
+      "summary": "Class EmbeddingService in backend/modules/rag/application/embedding_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/embedding_service.py:EmbeddingService.__init__",
+      "type": "function",
+      "name": "EmbeddingService.__init__",
+      "filePath": "backend/modules/rag/application/embedding_service.py",
+      "summary": "Method __init__ on EmbeddingService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/embedding_service.py:EmbeddingService.embed_texts",
+      "type": "function",
+      "name": "EmbeddingService.embed_texts",
+      "filePath": "backend/modules/rag/application/embedding_service.py",
+      "summary": "Method embed_texts on EmbeddingService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "type": "file",
+      "name": "legacy_ai_document_service.py",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "rag module file: legacy_ai_document_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "function:backend/modules/rag/application/legacy_ai_document_service.py:_map_ingestion_status",
+      "type": "function",
+      "name": "_map_ingestion_status",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "Function _map_ingestion_status in backend/modules/rag/application/legacy_ai_document_service.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/legacy_ai_document_service.py:_safe_stem",
+      "type": "function",
+      "name": "_safe_stem",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "Function _safe_stem in backend/modules/rag/application/legacy_ai_document_service.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/legacy_ai_document_service.py:_filename_for_text",
+      "type": "function",
+      "name": "_filename_for_text",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "Function _filename_for_text in backend/modules/rag/application/legacy_ai_document_service.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/legacy_ai_document_service.py:rag_document_to_ai_view",
+      "type": "function",
+      "name": "rag_document_to_ai_view",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "Function rag_document_to_ai_view in backend/modules/rag/application/legacy_ai_document_service.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/application/legacy_ai_document_service.py:AiDocumentView",
+      "type": "class",
+      "name": "AiDocumentView",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "Class AiDocumentView in backend/modules/rag/application/legacy_ai_document_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService",
+      "type": "class",
+      "name": "LegacyAiDocumentService",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "Class LegacyAiDocumentService in backend/modules/rag/application/legacy_ai_document_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService.__init__",
+      "type": "function",
+      "name": "LegacyAiDocumentService.__init__",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "Method __init__ on LegacyAiDocumentService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService.list_documents",
+      "type": "function",
+      "name": "LegacyAiDocumentService.list_documents",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "Method list_documents on LegacyAiDocumentService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService.create_from_text",
+      "type": "function",
+      "name": "LegacyAiDocumentService.create_from_text",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "Method create_from_text on LegacyAiDocumentService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService.create_from_upload",
+      "type": "function",
+      "name": "LegacyAiDocumentService.create_from_upload",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "Method create_from_upload on LegacyAiDocumentService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService.retrieve_chunks",
+      "type": "function",
+      "name": "LegacyAiDocumentService.retrieve_chunks",
+      "filePath": "backend/modules/rag/application/legacy_ai_document_service.py",
+      "summary": "Method retrieve_chunks on LegacyAiDocumentService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/rag_answer_service.py",
+      "type": "file",
+      "name": "rag_answer_service.py",
+      "filePath": "backend/modules/rag/application/rag_answer_service.py",
+      "summary": "rag module file: rag_answer_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/rag/application/rag_answer_service.py:RagAnswerService",
+      "type": "class",
+      "name": "RagAnswerService",
+      "filePath": "backend/modules/rag/application/rag_answer_service.py",
+      "summary": "Class RagAnswerService in backend/modules/rag/application/rag_answer_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/rag/application/rag_answer_service.py:RagAnswerService.__init__",
+      "type": "function",
+      "name": "RagAnswerService.__init__",
+      "filePath": "backend/modules/rag/application/rag_answer_service.py",
+      "summary": "Method __init__ on RagAnswerService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/rag_answer_service.py:RagAnswerService.answer",
+      "type": "function",
+      "name": "RagAnswerService.answer",
+      "filePath": "backend/modules/rag/application/rag_answer_service.py",
+      "summary": "Method answer on RagAnswerService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/rag_answer_service.py:RagAnswerService._log_query",
+      "type": "function",
+      "name": "RagAnswerService._log_query",
+      "filePath": "backend/modules/rag/application/rag_answer_service.py",
+      "summary": "Method _log_query on RagAnswerService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/rag_context_builder.py",
+      "type": "file",
+      "name": "rag_context_builder.py",
+      "filePath": "backend/modules/rag/application/rag_context_builder.py",
+      "summary": "rag module file: rag_context_builder.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder",
+      "type": "class",
+      "name": "RagContextBuilder",
+      "filePath": "backend/modules/rag/application/rag_context_builder.py",
+      "summary": "Class RagContextBuilder in backend/modules/rag/application/rag_context_builder.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder.__init__",
+      "type": "function",
+      "name": "RagContextBuilder.__init__",
+      "filePath": "backend/modules/rag/application/rag_context_builder.py",
+      "summary": "Method __init__ on RagContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder.trim_chunks_to_token_budget",
+      "type": "function",
+      "name": "RagContextBuilder.trim_chunks_to_token_budget",
+      "filePath": "backend/modules/rag/application/rag_context_builder.py",
+      "summary": "Method trim_chunks_to_token_budget on RagContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder.build_document_context_block",
+      "type": "function",
+      "name": "RagContextBuilder.build_document_context_block",
+      "filePath": "backend/modules/rag/application/rag_context_builder.py",
+      "summary": "Method build_document_context_block on RagContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder.build_combined_context",
+      "type": "function",
+      "name": "RagContextBuilder.build_combined_context",
+      "filePath": "backend/modules/rag/application/rag_context_builder.py",
+      "summary": "Method build_combined_context on RagContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder.assemble_agent_system_context",
+      "type": "function",
+      "name": "RagContextBuilder.assemble_agent_system_context",
+      "filePath": "backend/modules/rag/application/rag_context_builder.py",
+      "summary": "Method assemble_agent_system_context on RagContextBuilder",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/rag_policy_service.py",
+      "type": "file",
+      "name": "rag_policy_service.py",
+      "filePath": "backend/modules/rag/application/rag_policy_service.py",
+      "summary": "rag module file: rag_policy_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/rag/application/rag_policy_service.py:RagPolicyService",
+      "type": "class",
+      "name": "RagPolicyService",
+      "filePath": "backend/modules/rag/application/rag_policy_service.py",
+      "summary": "Class RagPolicyService in backend/modules/rag/application/rag_policy_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/rag_policy_service.py:RagPolicyService.contains_prompt_injection",
+      "type": "function",
+      "name": "RagPolicyService.contains_prompt_injection",
+      "filePath": "backend/modules/rag/application/rag_policy_service.py",
+      "summary": "Method contains_prompt_injection on RagPolicyService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/rag_policy_service.py:RagPolicyService.is_allowed_file_type",
+      "type": "function",
+      "name": "RagPolicyService.is_allowed_file_type",
+      "filePath": "backend/modules/rag/application/rag_policy_service.py",
+      "summary": "Method is_allowed_file_type on RagPolicyService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/rag_tool.py",
+      "type": "file",
+      "name": "rag_tool.py",
+      "filePath": "backend/modules/rag/application/rag_tool.py",
+      "summary": "rag module file: rag_tool.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "function:backend/modules/rag/application/rag_tool.py:rag_search_tool",
+      "type": "function",
+      "name": "rag_search_tool",
+      "filePath": "backend/modules/rag/application/rag_tool.py",
+      "summary": "Function rag_search_tool in backend/modules/rag/application/rag_tool.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/application/retrieval_service.py",
+      "type": "file",
+      "name": "retrieval_service.py",
+      "filePath": "backend/modules/rag/application/retrieval_service.py",
+      "summary": "rag module file: retrieval_service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/rag/application/retrieval_service.py:RetrievalService",
+      "type": "class",
+      "name": "RetrievalService",
+      "filePath": "backend/modules/rag/application/retrieval_service.py",
+      "summary": "Class RetrievalService in backend/modules/rag/application/retrieval_service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/retrieval_service.py:RetrievalService.__init__",
+      "type": "function",
+      "name": "RetrievalService.__init__",
+      "filePath": "backend/modules/rag/application/retrieval_service.py",
+      "summary": "Method __init__ on RetrievalService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/application/retrieval_service.py:RetrievalService.retrieve",
+      "type": "function",
+      "name": "RetrievalService.retrieve",
+      "filePath": "backend/modules/rag/application/retrieval_service.py",
+      "summary": "Method retrieve on RetrievalService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/domain/enums.py",
+      "type": "file",
+      "name": "enums.py",
+      "filePath": "backend/modules/rag/domain/enums.py",
+      "summary": "rag module file: enums.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/enums.py:DocumentStatus",
+      "type": "class",
+      "name": "DocumentStatus",
+      "filePath": "backend/modules/rag/domain/enums.py",
+      "summary": "Class DocumentStatus in backend/modules/rag/domain/enums.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/enums.py:IngestionJobStatus",
+      "type": "class",
+      "name": "IngestionJobStatus",
+      "filePath": "backend/modules/rag/domain/enums.py",
+      "summary": "Class IngestionJobStatus in backend/modules/rag/domain/enums.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/enums.py:SourceType",
+      "type": "class",
+      "name": "SourceType",
+      "filePath": "backend/modules/rag/domain/enums.py",
+      "summary": "Class SourceType in backend/modules/rag/domain/enums.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/domain/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "backend/modules/rag/domain/models.py",
+      "summary": "rag module file: models.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/models.py:ParsedDocument",
+      "type": "class",
+      "name": "ParsedDocument",
+      "filePath": "backend/modules/rag/domain/models.py",
+      "summary": "Class ParsedDocument in backend/modules/rag/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/models.py:DocumentChunk",
+      "type": "class",
+      "name": "DocumentChunk",
+      "filePath": "backend/modules/rag/domain/models.py",
+      "summary": "Class DocumentChunk in backend/modules/rag/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/models.py:RetrievedChunk",
+      "type": "class",
+      "name": "RetrievedChunk",
+      "filePath": "backend/modules/rag/domain/models.py",
+      "summary": "Class RetrievedChunk in backend/modules/rag/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/models.py:Citation",
+      "type": "class",
+      "name": "Citation",
+      "filePath": "backend/modules/rag/domain/models.py",
+      "summary": "Class Citation in backend/modules/rag/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/models.py:RagAnswer",
+      "type": "class",
+      "name": "RagAnswer",
+      "filePath": "backend/modules/rag/domain/models.py",
+      "summary": "Class RagAnswer in backend/modules/rag/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/models.py:RagQuery",
+      "type": "class",
+      "name": "RagQuery",
+      "filePath": "backend/modules/rag/domain/models.py",
+      "summary": "Class RagQuery in backend/modules/rag/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/models.py:Document",
+      "type": "class",
+      "name": "Document",
+      "filePath": "backend/modules/rag/domain/models.py",
+      "summary": "Class Document in backend/modules/rag/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/models.py:IngestionJob",
+      "type": "class",
+      "name": "IngestionJob",
+      "filePath": "backend/modules/rag/domain/models.py",
+      "summary": "Class IngestionJob in backend/modules/rag/domain/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "type": "file",
+      "name": "file_storage_adapter.py",
+      "filePath": "backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "summary": "rag module file: file_storage_adapter.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/file_storage_adapter.py:build_document_object_key",
+      "type": "function",
+      "name": "build_document_object_key",
+      "filePath": "backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "summary": "Function build_document_object_key in backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/infrastructure/file_storage_adapter.py:FileStorageAdapter",
+      "type": "class",
+      "name": "FileStorageAdapter",
+      "filePath": "backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "summary": "Class FileStorageAdapter in backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/file_storage_adapter.py:FileStorageAdapter.store_document",
+      "type": "function",
+      "name": "FileStorageAdapter.store_document",
+      "filePath": "backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "summary": "Method store_document on FileStorageAdapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/file_storage_adapter.py:FileStorageAdapter.delete_document",
+      "type": "function",
+      "name": "FileStorageAdapter.delete_document",
+      "filePath": "backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "summary": "Method delete_document on FileStorageAdapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/file_storage_adapter.py:FileStorageAdapter.download_document",
+      "type": "function",
+      "name": "FileStorageAdapter.download_document",
+      "filePath": "backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "summary": "Method download_document on FileStorageAdapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "type": "file",
+      "name": "langchain_document_loaders.py",
+      "filePath": "backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "summary": "rag module file: langchain_document_loaders.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_txt_or_md",
+      "type": "function",
+      "name": "_parse_txt_or_md",
+      "filePath": "backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "summary": "Function _parse_txt_or_md in backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_csv",
+      "type": "function",
+      "name": "_parse_csv",
+      "filePath": "backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "summary": "Function _parse_csv in backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_pdf",
+      "type": "function",
+      "name": "_parse_pdf",
+      "filePath": "backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "summary": "Function _parse_pdf in backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_docx",
+      "type": "function",
+      "name": "_parse_docx",
+      "filePath": "backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "summary": "Function _parse_docx in backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_with_langchain_loader",
+      "type": "function",
+      "name": "_parse_with_langchain_loader",
+      "filePath": "backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "summary": "Function _parse_with_langchain_loader in backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_bytes_sync",
+      "type": "function",
+      "name": "_parse_bytes_sync",
+      "filePath": "backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "summary": "Function _parse_bytes_sync in backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:load_documents_from_bytes",
+      "type": "function",
+      "name": "load_documents_from_bytes",
+      "filePath": "backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "summary": "Function load_documents_from_bytes in backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "type": "file",
+      "name": "langchain_embeddings.py",
+      "filePath": "backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "summary": "rag module file: langchain_embeddings.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "class:backend/modules/rag/infrastructure/langchain_embeddings.py:LangChainEmbeddingAdapter",
+      "type": "class",
+      "name": "LangChainEmbeddingAdapter",
+      "filePath": "backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "summary": "Class LangChainEmbeddingAdapter in backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/langchain_embeddings.py:LangChainEmbeddingAdapter.__init__",
+      "type": "function",
+      "name": "LangChainEmbeddingAdapter.__init__",
+      "filePath": "backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "summary": "Method __init__ on LangChainEmbeddingAdapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/langchain_embeddings.py:LangChainEmbeddingAdapter.embed_texts",
+      "type": "function",
+      "name": "LangChainEmbeddingAdapter.embed_texts",
+      "filePath": "backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "summary": "Method embed_texts on LangChainEmbeddingAdapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/infrastructure/langchain_text_splitters.py",
+      "type": "file",
+      "name": "langchain_text_splitters.py",
+      "filePath": "backend/modules/rag/infrastructure/langchain_text_splitters.py",
+      "summary": "rag module file: langchain_text_splitters.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/langchain_text_splitters.py:split_documents",
+      "type": "function",
+      "name": "split_documents",
+      "filePath": "backend/modules/rag/infrastructure/langchain_text_splitters.py",
+      "summary": "Function split_documents in backend/modules/rag/infrastructure/langchain_text_splitters.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/infrastructure/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "backend/modules/rag/infrastructure/models.py",
+      "summary": "rag module file: models.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/rag/infrastructure/models.py:RagDocument",
+      "type": "class",
+      "name": "RagDocument",
+      "filePath": "backend/modules/rag/infrastructure/models.py",
+      "summary": "Class RagDocument in backend/modules/rag/infrastructure/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/infrastructure/models.py:RagChunk",
+      "type": "class",
+      "name": "RagChunk",
+      "filePath": "backend/modules/rag/infrastructure/models.py",
+      "summary": "Class RagChunk in backend/modules/rag/infrastructure/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/infrastructure/models.py:RagQueryRecord",
+      "type": "class",
+      "name": "RagQueryRecord",
+      "filePath": "backend/modules/rag/infrastructure/models.py",
+      "summary": "Class RagQueryRecord in backend/modules/rag/infrastructure/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/infrastructure/models.py:RagIngestionJob",
+      "type": "class",
+      "name": "RagIngestionJob",
+      "filePath": "backend/modules/rag/infrastructure/models.py",
+      "summary": "Class RagIngestionJob in backend/modules/rag/infrastructure/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "type": "file",
+      "name": "pgvector_adapter.py",
+      "filePath": "backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "summary": "rag module file: pgvector_adapter.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:build_vector_store",
+      "type": "function",
+      "name": "build_vector_store",
+      "filePath": "backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "summary": "Function build_vector_store in backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/infrastructure/pgvector_adapter.py:VectorStoreAdapter",
+      "type": "class",
+      "name": "VectorStoreAdapter",
+      "filePath": "backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "summary": "Class VectorStoreAdapter in backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:VectorStoreAdapter.similarity_search",
+      "type": "function",
+      "name": "VectorStoreAdapter.similarity_search",
+      "filePath": "backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "summary": "Method similarity_search on VectorStoreAdapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:VectorStoreAdapter.delete_document",
+      "type": "function",
+      "name": "VectorStoreAdapter.delete_document",
+      "filePath": "backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "summary": "Method delete_document on VectorStoreAdapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/infrastructure/pgvector_adapter.py:PgVectorAdapter",
+      "type": "class",
+      "name": "PgVectorAdapter",
+      "filePath": "backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "summary": "Class PgVectorAdapter in backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:PgVectorAdapter.__init__",
+      "type": "function",
+      "name": "PgVectorAdapter.__init__",
+      "filePath": "backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "summary": "Method __init__ on PgVectorAdapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:PgVectorAdapter.similarity_search",
+      "type": "function",
+      "name": "PgVectorAdapter.similarity_search",
+      "filePath": "backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "summary": "Method similarity_search on PgVectorAdapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:PgVectorAdapter.delete_document",
+      "type": "function",
+      "name": "PgVectorAdapter.delete_document",
+      "filePath": "backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "summary": "Method delete_document on PgVectorAdapter",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "file",
+      "name": "rag_config.py",
+      "filePath": "backend/modules/rag/infrastructure/rag_config.py",
+      "summary": "rag module file: rag_config.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/rag_config.py:validate_rag_config",
+      "type": "function",
+      "name": "validate_rag_config",
+      "filePath": "backend/modules/rag/infrastructure/rag_config.py",
+      "summary": "Function validate_rag_config in backend/modules/rag/infrastructure/rag_config.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/infrastructure/rag_config.py:RagConfig",
+      "type": "class",
+      "name": "RagConfig",
+      "filePath": "backend/modules/rag/infrastructure/rag_config.py",
+      "summary": "Class RagConfig in backend/modules/rag/infrastructure/rag_config.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/rag_config.py:RagConfig.from_settings",
+      "type": "function",
+      "name": "RagConfig.from_settings",
+      "filePath": "backend/modules/rag/infrastructure/rag_config.py",
+      "summary": "Method from_settings on RagConfig",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/infrastructure/repositories.py",
+      "type": "file",
+      "name": "repositories.py",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "rag module file: repositories.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "complex",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "type": "class",
+      "name": "RagRepository",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Class RagRepository in backend/modules/rag/infrastructure/repositories.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.__init__",
+      "type": "function",
+      "name": "RagRepository.__init__",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method __init__ on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.create_document",
+      "type": "function",
+      "name": "RagRepository.create_document",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method create_document on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.get_document",
+      "type": "function",
+      "name": "RagRepository.get_document",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method get_document on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_documents_for_user",
+      "type": "function",
+      "name": "RagRepository.list_documents_for_user",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method list_documents_for_user on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_document_ids_for_user",
+      "type": "function",
+      "name": "RagRepository.list_document_ids_for_user",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method list_document_ids_for_user on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.filter_document_ids_for_user",
+      "type": "function",
+      "name": "RagRepository.filter_document_ids_for_user",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method filter_document_ids_for_user on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_indexed_documents",
+      "type": "function",
+      "name": "RagRepository.list_indexed_documents",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method list_indexed_documents on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.update_document_status",
+      "type": "function",
+      "name": "RagRepository.update_document_status",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method update_document_status on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.soft_delete_document",
+      "type": "function",
+      "name": "RagRepository.soft_delete_document",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method soft_delete_document on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.replace_chunks",
+      "type": "function",
+      "name": "RagRepository.replace_chunks",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method replace_chunks on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_chunks_for_documents",
+      "type": "function",
+      "name": "RagRepository.list_chunks_for_documents",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method list_chunks_for_documents on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_chunks_for_document",
+      "type": "function",
+      "name": "RagRepository.list_chunks_for_document",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method list_chunks_for_document on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.pgvector_is_available",
+      "type": "function",
+      "name": "RagRepository.pgvector_is_available",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method pgvector_is_available on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.similarity_search_indexed",
+      "type": "function",
+      "name": "RagRepository.similarity_search_indexed",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method similarity_search_indexed on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.similarity_search_json_fallback",
+      "type": "function",
+      "name": "RagRepository.similarity_search_json_fallback",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method similarity_search_json_fallback on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.create_ingestion_job",
+      "type": "function",
+      "name": "RagRepository.create_ingestion_job",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method create_ingestion_job on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.get_ingestion_job",
+      "type": "function",
+      "name": "RagRepository.get_ingestion_job",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method get_ingestion_job on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.update_ingestion_job",
+      "type": "function",
+      "name": "RagRepository.update_ingestion_job",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method update_ingestion_job on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.create_query_record",
+      "type": "function",
+      "name": "RagRepository.create_query_record",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method create_query_record on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_queries_for_user",
+      "type": "function",
+      "name": "RagRepository.list_queries_for_user",
+      "filePath": "backend/modules/rag/infrastructure/repositories.py",
+      "summary": "Method list_queries_for_user on RagRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/infrastructure/vector_store_adapter.py",
+      "type": "file",
+      "name": "vector_store_adapter.py",
+      "filePath": "backend/modules/rag/infrastructure/vector_store_adapter.py",
+      "summary": "rag module file: vector_store_adapter.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "file:backend/modules/rag/tests/test_ingestion.py",
+      "type": "file",
+      "name": "test_ingestion.py",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "rag module file: test_ingestion.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest",
+      "type": "class",
+      "name": "IngestionParserTest",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "Class IngestionParserTest in backend/modules/rag/tests/test_ingestion.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest.test_parse_offloads_to_thread",
+      "type": "function",
+      "name": "IngestionParserTest.test_parse_offloads_to_thread",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "Method test_parse_offloads_to_thread on IngestionParserTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest.test_parse_txt_offloads_to_thread",
+      "type": "function",
+      "name": "IngestionParserTest.test_parse_txt_offloads_to_thread",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "Method test_parse_txt_offloads_to_thread on IngestionParserTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest.test_parse_txt_creates_content",
+      "type": "function",
+      "name": "IngestionParserTest.test_parse_txt_creates_content",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "Method test_parse_txt_creates_content on IngestionParserTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest.test_chunking_creates_indexed_chunks",
+      "type": "function",
+      "name": "IngestionParserTest.test_chunking_creates_indexed_chunks",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "Method test_chunking_creates_indexed_chunks on IngestionParserTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_ingestion.py:UploadCreatesDocumentTest",
+      "type": "class",
+      "name": "UploadCreatesDocumentTest",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "Class UploadCreatesDocumentTest in backend/modules/rag/tests/test_ingestion.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_ingestion.py:UploadCreatesDocumentTest.test_upload_creates_document_row",
+      "type": "function",
+      "name": "UploadCreatesDocumentTest.test_upload_creates_document_row",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "Method test_upload_creates_document_row on UploadCreatesDocumentTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_ingestion.py:EmbeddingAdapterTest",
+      "type": "class",
+      "name": "EmbeddingAdapterTest",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "Class EmbeddingAdapterTest in backend/modules/rag/tests/test_ingestion.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_ingestion.py:EmbeddingAdapterTest.test_embeddings_created_through_adapter",
+      "type": "function",
+      "name": "EmbeddingAdapterTest.test_embeddings_created_through_adapter",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "Method test_embeddings_created_through_adapter on EmbeddingAdapterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_ingestion.py:EnqueueDocumentIndexingTest",
+      "type": "class",
+      "name": "EnqueueDocumentIndexingTest",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "Class EnqueueDocumentIndexingTest in backend/modules/rag/tests/test_ingestion.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_ingestion.py:EnqueueDocumentIndexingTest.test_enqueue_creates_job_and_queues_worker",
+      "type": "function",
+      "name": "EnqueueDocumentIndexingTest.test_enqueue_creates_job_and_queues_worker",
+      "filePath": "backend/modules/rag/tests/test_ingestion.py",
+      "summary": "Method test_enqueue_creates_job_and_queues_worker on EnqueueDocumentIndexingTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/tests/test_ingestion_policy.py",
+      "type": "file",
+      "name": "test_ingestion_policy.py",
+      "filePath": "backend/modules/rag/tests/test_ingestion_policy.py",
+      "summary": "rag module file: test_ingestion_policy.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_ingestion_policy.py:IngestionPolicyTest",
+      "type": "class",
+      "name": "IngestionPolicyTest",
+      "filePath": "backend/modules/rag/tests/test_ingestion_policy.py",
+      "summary": "Class IngestionPolicyTest in backend/modules/rag/tests/test_ingestion_policy.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_ingestion_policy.py:IngestionPolicyTest.test_suspected_injection_flagged_in_chunk_metadata",
+      "type": "function",
+      "name": "IngestionPolicyTest.test_suspected_injection_flagged_in_chunk_metadata",
+      "filePath": "backend/modules/rag/tests/test_ingestion_policy.py",
+      "summary": "Method test_suspected_injection_flagged_in_chunk_metadata on IngestionPolicyTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/tests/test_permissions.py",
+      "type": "file",
+      "name": "test_permissions.py",
+      "filePath": "backend/modules/rag/tests/test_permissions.py",
+      "summary": "rag module file: test_permissions.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_permissions.py:PermissionTest",
+      "type": "class",
+      "name": "PermissionTest",
+      "filePath": "backend/modules/rag/tests/test_permissions.py",
+      "summary": "Class PermissionTest in backend/modules/rag/tests/test_permissions.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_permissions.py:PermissionTest.test_unauthorized_project_member_cannot_upload",
+      "type": "function",
+      "name": "PermissionTest.test_unauthorized_project_member_cannot_upload",
+      "filePath": "backend/modules/rag/tests/test_permissions.py",
+      "summary": "Method test_unauthorized_project_member_cannot_upload on PermissionTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_permissions.py:PermissionTest.test_user_cannot_delete_other_users_document",
+      "type": "function",
+      "name": "PermissionTest.test_user_cannot_delete_other_users_document",
+      "filePath": "backend/modules/rag/tests/test_permissions.py",
+      "summary": "Method test_user_cannot_delete_other_users_document on PermissionTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/tests/test_rag_answer.py",
+      "type": "file",
+      "name": "test_rag_answer.py",
+      "filePath": "backend/modules/rag/tests/test_rag_answer.py",
+      "summary": "rag module file: test_rag_answer.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest",
+      "type": "class",
+      "name": "RagAnswerTest",
+      "filePath": "backend/modules/rag/tests/test_rag_answer.py",
+      "summary": "Class RagAnswerTest in backend/modules/rag/tests/test_rag_answer.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest._user",
+      "type": "function",
+      "name": "RagAnswerTest._user",
+      "filePath": "backend/modules/rag/tests/test_rag_answer.py",
+      "summary": "Method _user on RagAnswerTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest._chunk",
+      "type": "function",
+      "name": "RagAnswerTest._chunk",
+      "filePath": "backend/modules/rag/tests/test_rag_answer.py",
+      "summary": "Method _chunk on RagAnswerTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest.test_rag_answer_includes_citations",
+      "type": "function",
+      "name": "RagAnswerTest.test_rag_answer_includes_citations",
+      "filePath": "backend/modules/rag/tests/test_rag_answer.py",
+      "summary": "Method test_rag_answer_includes_citations on RagAnswerTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest.test_answer_loads_retrieval_and_memory_in_parallel",
+      "type": "function",
+      "name": "RagAnswerTest.test_answer_loads_retrieval_and_memory_in_parallel",
+      "filePath": "backend/modules/rag/tests/test_rag_answer.py",
+      "summary": "Method test_answer_loads_retrieval_and_memory_in_parallel on RagAnswerTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest.test_no_chunks_no_invented_citations",
+      "type": "function",
+      "name": "RagAnswerTest.test_no_chunks_no_invented_citations",
+      "filePath": "backend/modules/rag/tests/test_rag_answer.py",
+      "summary": "Method test_no_chunks_no_invented_citations on RagAnswerTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest.test_prompt_injection_rule_in_context",
+      "type": "function",
+      "name": "RagAnswerTest.test_prompt_injection_rule_in_context",
+      "filePath": "backend/modules/rag/tests/test_rag_answer.py",
+      "summary": "Method test_prompt_injection_rule_in_context on RagAnswerTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest.test_policy_detects_injection_patterns",
+      "type": "function",
+      "name": "RagAnswerTest.test_policy_detects_injection_patterns",
+      "filePath": "backend/modules/rag/tests/test_rag_answer.py",
+      "summary": "Method test_policy_detects_injection_patterns on RagAnswerTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_rag_answer.py:CitationServiceTest",
+      "type": "class",
+      "name": "CitationServiceTest",
+      "filePath": "backend/modules/rag/tests/test_rag_answer.py",
+      "summary": "Class CitationServiceTest in backend/modules/rag/tests/test_rag_answer.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_rag_answer.py:CitationServiceTest.test_citation_snippet_truncated",
+      "type": "function",
+      "name": "CitationServiceTest.test_citation_snippet_truncated",
+      "filePath": "backend/modules/rag/tests/test_rag_answer.py",
+      "summary": "Method test_citation_snippet_truncated on CitationServiceTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/tests/test_rag_config_validation.py",
+      "type": "file",
+      "name": "test_rag_config_validation.py",
+      "filePath": "backend/modules/rag/tests/test_rag_config_validation.py",
+      "summary": "rag module file: test_rag_config_validation.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_rag_config_validation.py:test_validate_rag_config_accepts_pgvector",
+      "type": "function",
+      "name": "test_validate_rag_config_accepts_pgvector",
+      "filePath": "backend/modules/rag/tests/test_rag_config_validation.py",
+      "summary": "Function test_validate_rag_config_accepts_pgvector in backend/modules/rag/tests/test_rag_config_validation.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_rag_config_validation.py:test_validate_rag_config_skips_when_rag_disabled",
+      "type": "function",
+      "name": "test_validate_rag_config_skips_when_rag_disabled",
+      "filePath": "backend/modules/rag/tests/test_rag_config_validation.py",
+      "summary": "Function test_validate_rag_config_skips_when_rag_disabled in backend/modules/rag/tests/test_rag_config_validation.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_rag_config_validation.py:test_validate_rag_config_rejects_unimplemented_backend",
+      "type": "function",
+      "name": "test_validate_rag_config_rejects_unimplemented_backend",
+      "filePath": "backend/modules/rag/tests/test_rag_config_validation.py",
+      "summary": "Function test_validate_rag_config_rejects_unimplemented_backend in backend/modules/rag/tests/test_rag_config_validation.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/tests/test_retrieval.py",
+      "type": "file",
+      "name": "test_retrieval.py",
+      "filePath": "backend/modules/rag/tests/test_retrieval.py",
+      "summary": "rag module file: test_retrieval.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest",
+      "type": "class",
+      "name": "RetrievalFilterTest",
+      "filePath": "backend/modules/rag/tests/test_retrieval.py",
+      "summary": "Class RetrievalFilterTest in backend/modules/rag/tests/test_retrieval.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest.asyncSetUp",
+      "type": "function",
+      "name": "RetrievalFilterTest.asyncSetUp",
+      "filePath": "backend/modules/rag/tests/test_retrieval.py",
+      "summary": "Method asyncSetUp on RetrievalFilterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest.test_retrieval_filters_by_user_id",
+      "type": "function",
+      "name": "RetrievalFilterTest.test_retrieval_filters_by_user_id",
+      "filePath": "backend/modules/rag/tests/test_retrieval.py",
+      "summary": "Method test_retrieval_filters_by_user_id on RetrievalFilterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest.test_retrieval_filters_by_project_id",
+      "type": "function",
+      "name": "RetrievalFilterTest.test_retrieval_filters_by_project_id",
+      "filePath": "backend/modules/rag/tests/test_retrieval.py",
+      "summary": "Method test_retrieval_filters_by_project_id on RetrievalFilterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest.test_uses_indexed_search_when_available",
+      "type": "function",
+      "name": "RetrievalFilterTest.test_uses_indexed_search_when_available",
+      "filePath": "backend/modules/rag/tests/test_retrieval.py",
+      "summary": "Method test_uses_indexed_search_when_available on RetrievalFilterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest.test_deleted_document_not_in_indexed_list",
+      "type": "function",
+      "name": "RetrievalFilterTest.test_deleted_document_not_in_indexed_list",
+      "filePath": "backend/modules/rag/tests/test_retrieval.py",
+      "summary": "Method test_deleted_document_not_in_indexed_list on RetrievalFilterTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_retrieval.py:CosineSimilarityTest",
+      "type": "class",
+      "name": "CosineSimilarityTest",
+      "filePath": "backend/modules/rag/tests/test_retrieval.py",
+      "summary": "Class CosineSimilarityTest in backend/modules/rag/tests/test_retrieval.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_retrieval.py:CosineSimilarityTest.test_identical_vectors_score_high",
+      "type": "function",
+      "name": "CosineSimilarityTest.test_identical_vectors_score_high",
+      "filePath": "backend/modules/rag/tests/test_retrieval.py",
+      "summary": "Method test_identical_vectors_score_high on CosineSimilarityTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_retrieval_cache.py",
+      "type": "file",
+      "name": "test_retrieval_cache.py",
+      "filePath": "backend/tests/test_retrieval_cache.py",
+      "summary": "test_retrieval_cache.py (7 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/tests/test_retrieval_cache.py:_sample_chunk",
+      "type": "function",
+      "name": "_sample_chunk",
+      "filePath": "backend/tests/test_retrieval_cache.py",
+      "summary": "Function _sample_chunk in backend/tests/test_retrieval_cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_retrieval_cache.py:test_retrieval_cache_key_changes_with_query_and_filters",
+      "type": "function",
+      "name": "test_retrieval_cache_key_changes_with_query_and_filters",
+      "filePath": "backend/tests/test_retrieval_cache.py",
+      "summary": "Function test_retrieval_cache_key_changes_with_query_and_filters in backend/tests/test_retrieval_cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_retrieval_cache.py:test_retrieval_cache_round_trip",
+      "type": "function",
+      "name": "test_retrieval_cache_round_trip",
+      "filePath": "backend/tests/test_retrieval_cache.py",
+      "summary": "Function test_retrieval_cache_round_trip in backend/tests/test_retrieval_cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_retrieval_cache.py:test_get_and_set_cached_retrieval",
+      "type": "function",
+      "name": "test_get_and_set_cached_retrieval",
+      "filePath": "backend/tests/test_retrieval_cache.py",
+      "summary": "Function test_get_and_set_cached_retrieval in backend/tests/test_retrieval_cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_retrieval_cache.py:test_invalidate_retrieval_cache_deletes_scope_pattern",
+      "type": "function",
+      "name": "test_invalidate_retrieval_cache_deletes_scope_pattern",
+      "filePath": "backend/tests/test_retrieval_cache.py",
+      "summary": "Function test_invalidate_retrieval_cache_deletes_scope_pattern in backend/tests/test_retrieval_cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_retrieval_cache.py:test_invalidate_retrieval_cache_for_document_clears_project_and_global_scopes",
+      "type": "function",
+      "name": "test_invalidate_retrieval_cache_for_document_clears_project_and_global_scopes",
+      "filePath": "backend/tests/test_retrieval_cache.py",
+      "summary": "Function test_invalidate_retrieval_cache_for_document_clears_project_and_global_scopes in backend/tests/test_retrieval_cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_retrieval_cache.py:test_retrieval_service_uses_cached_results",
+      "type": "function",
+      "name": "test_retrieval_service_uses_cached_results",
+      "filePath": "backend/tests/test_retrieval_cache.py",
+      "summary": "Function test_retrieval_service_uses_cached_results in backend/tests/test_retrieval_cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:backend/modules/ai/tests/test_document_consolidation.py",
+      "target": "file:backend/modules/ai/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_document_consolidation.py",
+      "target": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_document_consolidation.py",
+      "target": "file:backend/modules/rag/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_document_consolidation.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_document_consolidation.py",
+      "target": "class:backend/modules/ai/tests/test_document_consolidation.py:RagDocumentMappingTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_document_consolidation.py:RagDocumentMappingTest",
+      "target": "function:backend/modules/ai/tests/test_document_consolidation.py:RagDocumentMappingTest.test_maps_indexed_status_to_completed",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_document_consolidation.py",
+      "target": "class:backend/modules/ai/tests/test_document_consolidation.py:AiServiceDocumentDelegationTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_document_consolidation.py:AiServiceDocumentDelegationTest",
+      "target": "function:backend/modules/ai/tests/test_document_consolidation.py:AiServiceDocumentDelegationTest.asyncSetUp",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_document_consolidation.py:AiServiceDocumentDelegationTest",
+      "target": "function:backend/modules/ai/tests/test_document_consolidation.py:AiServiceDocumentDelegationTest.test_list_documents_delegates_when_rag_enabled",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_document_consolidation.py:AiServiceDocumentDelegationTest",
+      "target": "function:backend/modules/ai/tests/test_document_consolidation.py:AiServiceDocumentDelegationTest.test_retrieve_chunks_delegates_when_rag_enabled",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_document_consolidation.py",
+      "target": "class:backend/modules/ai/tests/test_document_consolidation.py:LegacyAiDocumentServiceRetrieveTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_document_consolidation.py:LegacyAiDocumentServiceRetrieveTest",
+      "target": "function:backend/modules/ai/tests/test_document_consolidation.py:LegacyAiDocumentServiceRetrieveTest.test_retrieve_maps_rag_chunks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/agent_context_service.py",
+      "target": "file:backend/modules/rag/application/rag_tool.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/agent_context_service.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/agent_context_service.py",
+      "target": "function:backend/modules/rag/application/agent_context_service.py:rag_handles_prompt_retrieval",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/agent_context_service.py",
+      "target": "function:backend/modules/rag/application/agent_context_service.py:build_agent_document_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/chunking_service.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/chunking_service.py",
+      "target": "file:backend/modules/rag/infrastructure/langchain_text_splitters.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/chunking_service.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/chunking_service.py",
+      "target": "function:backend/modules/rag/application/chunking_service.py:_split_documents_with_token_counts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/chunking_service.py",
+      "target": "class:backend/modules/rag/application/chunking_service.py:ChunkingService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/chunking_service.py:ChunkingService",
+      "target": "function:backend/modules/rag/application/chunking_service.py:ChunkingService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/chunking_service.py:ChunkingService",
+      "target": "function:backend/modules/rag/application/chunking_service.py:ChunkingService.chunk",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/citation_service.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/citation_service.py",
+      "target": "class:backend/modules/rag/application/citation_service.py:CitationService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/citation_service.py:CitationService",
+      "target": "function:backend/modules/rag/application/citation_service.py:CitationService.build_citations",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "file:backend/modules/projects/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "file:backend/modules/rag/application/chunking_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "file:backend/modules/rag/application/document_parser_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "file:backend/modules/rag/application/embedding_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "file:backend/modules/rag/application/rag_policy_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "file:backend/modules/rag/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "file:backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "file:backend/modules/rag/infrastructure/repositories.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "file:backend/modules/rag/infrastructure/vector_store_adapter.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "file:backend/modules/rag/workers.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "target": "class:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService",
+      "target": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService",
+      "target": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService.upload_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService",
+      "target": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService.enqueue_document_indexing",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService",
+      "target": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService.index_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService",
+      "target": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService.delete_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService",
+      "target": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService._get_document_for_indexing",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService",
+      "target": "function:backend/modules/rag/application/document_ingestion_service.py:DocumentIngestionService._ensure_project_access",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_parser_service.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_parser_service.py",
+      "target": "file:backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/document_parser_service.py",
+      "target": "class:backend/modules/rag/application/document_parser_service.py:DocumentParserService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/document_parser_service.py:DocumentParserService",
+      "target": "function:backend/modules/rag/application/document_parser_service.py:DocumentParserService.parse_bytes",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/embedding_service.py",
+      "target": "file:backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/embedding_service.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/embedding_service.py",
+      "target": "class:backend/modules/rag/application/embedding_service.py:EmbeddingService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/embedding_service.py:EmbeddingService",
+      "target": "function:backend/modules/rag/application/embedding_service.py:EmbeddingService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/embedding_service.py:EmbeddingService",
+      "target": "function:backend/modules/rag/application/embedding_service.py:EmbeddingService.embed_texts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "file:backend/modules/rag/application/retrieval_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "file:backend/modules/rag/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "file:backend/modules/rag/infrastructure/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "file:backend/modules/rag/infrastructure/repositories.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "file:backend/modules/rag/workers.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "function:backend/modules/rag/application/legacy_ai_document_service.py:_map_ingestion_status",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "function:backend/modules/rag/application/legacy_ai_document_service.py:_safe_stem",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "function:backend/modules/rag/application/legacy_ai_document_service.py:_filename_for_text",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "function:backend/modules/rag/application/legacy_ai_document_service.py:rag_document_to_ai_view",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "class:backend/modules/rag/application/legacy_ai_document_service.py:AiDocumentView",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "target": "class:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService",
+      "target": "function:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService",
+      "target": "function:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService.list_documents",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService",
+      "target": "function:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService.create_from_text",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService",
+      "target": "function:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService.create_from_upload",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService",
+      "target": "function:backend/modules/rag/application/legacy_ai_document_service.py:LegacyAiDocumentService.retrieve_chunks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/ai/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/memory/application/memory_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/memory/infrastructure/memory_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/projects/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/rag/application/citation_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/rag/application/rag_context_builder.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/rag/application/retrieval_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "file:backend/modules/rag/infrastructure/repositories.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_answer_service.py",
+      "target": "class:backend/modules/rag/application/rag_answer_service.py:RagAnswerService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/rag_answer_service.py:RagAnswerService",
+      "target": "function:backend/modules/rag/application/rag_answer_service.py:RagAnswerService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/rag_answer_service.py:RagAnswerService",
+      "target": "function:backend/modules/rag/application/rag_answer_service.py:RagAnswerService.answer",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/rag_answer_service.py:RagAnswerService",
+      "target": "function:backend/modules/rag/application/rag_answer_service.py:RagAnswerService._log_query",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_context_builder.py",
+      "target": "file:backend/modules/rag/application/citation_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_context_builder.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_context_builder.py",
+      "target": "class:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder",
+      "target": "function:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder",
+      "target": "function:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder.trim_chunks_to_token_budget",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder",
+      "target": "function:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder.build_document_context_block",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder",
+      "target": "function:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder.build_combined_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder",
+      "target": "function:backend/modules/rag/application/rag_context_builder.py:RagContextBuilder.assemble_agent_system_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_policy_service.py",
+      "target": "class:backend/modules/rag/application/rag_policy_service.py:RagPolicyService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/rag_policy_service.py:RagPolicyService",
+      "target": "function:backend/modules/rag/application/rag_policy_service.py:RagPolicyService.contains_prompt_injection",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/rag_policy_service.py:RagPolicyService",
+      "target": "function:backend/modules/rag/application/rag_policy_service.py:RagPolicyService.is_allowed_file_type",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_tool.py",
+      "target": "file:backend/modules/rag/application/rag_context_builder.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_tool.py",
+      "target": "file:backend/modules/rag/application/retrieval_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_tool.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_tool.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/rag_tool.py",
+      "target": "function:backend/modules/rag/application/rag_tool.py:rag_search_tool",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/application/retrieval_service.py",
+      "target": "file:backend/modules/rag/application/embedding_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/retrieval_service.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/retrieval_service.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/retrieval_service.py",
+      "target": "file:backend/modules/rag/infrastructure/vector_store_adapter.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/application/retrieval_service.py",
+      "target": "class:backend/modules/rag/application/retrieval_service.py:RetrievalService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/retrieval_service.py:RetrievalService",
+      "target": "function:backend/modules/rag/application/retrieval_service.py:RetrievalService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/application/retrieval_service.py:RetrievalService",
+      "target": "function:backend/modules/rag/application/retrieval_service.py:RetrievalService.retrieve",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/domain/enums.py",
+      "target": "class:backend/modules/rag/domain/enums.py:DocumentStatus",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/domain/enums.py",
+      "target": "class:backend/modules/rag/domain/enums.py:IngestionJobStatus",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/domain/enums.py",
+      "target": "class:backend/modules/rag/domain/enums.py:SourceType",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/domain/models.py",
+      "target": "file:backend/modules/rag/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/domain/models.py",
+      "target": "class:backend/modules/rag/domain/models.py:ParsedDocument",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/domain/models.py",
+      "target": "class:backend/modules/rag/domain/models.py:DocumentChunk",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/domain/models.py",
+      "target": "class:backend/modules/rag/domain/models.py:RetrievedChunk",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/domain/models.py",
+      "target": "class:backend/modules/rag/domain/models.py:Citation",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/domain/models.py",
+      "target": "class:backend/modules/rag/domain/models.py:RagAnswer",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/domain/models.py",
+      "target": "class:backend/modules/rag/domain/models.py:RagQuery",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/domain/models.py",
+      "target": "class:backend/modules/rag/domain/models.py:Document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/domain/models.py",
+      "target": "class:backend/modules/rag/domain/models.py:IngestionJob",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "target": "file:backend/core/storage.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "target": "function:backend/modules/rag/infrastructure/file_storage_adapter.py:build_document_object_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "target": "class:backend/modules/rag/infrastructure/file_storage_adapter.py:FileStorageAdapter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/file_storage_adapter.py:FileStorageAdapter",
+      "target": "function:backend/modules/rag/infrastructure/file_storage_adapter.py:FileStorageAdapter.store_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/file_storage_adapter.py:FileStorageAdapter",
+      "target": "function:backend/modules/rag/infrastructure/file_storage_adapter.py:FileStorageAdapter.delete_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/file_storage_adapter.py:FileStorageAdapter",
+      "target": "function:backend/modules/rag/infrastructure/file_storage_adapter.py:FileStorageAdapter.download_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "target": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_txt_or_md",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "target": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_csv",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "target": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_pdf",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "target": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_docx",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "target": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_with_langchain_loader",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "target": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:_parse_bytes_sync",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_document_loaders.py",
+      "target": "function:backend/modules/rag/infrastructure/langchain_document_loaders.py:load_documents_from_bytes",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "target": "file:backend/modules/ai/providers.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "target": "class:backend/modules/rag/infrastructure/langchain_embeddings.py:LangChainEmbeddingAdapter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/langchain_embeddings.py:LangChainEmbeddingAdapter",
+      "target": "function:backend/modules/rag/infrastructure/langchain_embeddings.py:LangChainEmbeddingAdapter.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/langchain_embeddings.py:LangChainEmbeddingAdapter",
+      "target": "function:backend/modules/rag/infrastructure/langchain_embeddings.py:LangChainEmbeddingAdapter.embed_texts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_text_splitters.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/langchain_text_splitters.py",
+      "target": "function:backend/modules/rag/infrastructure/langchain_text_splitters.py:split_documents",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/models.py",
+      "target": "file:backend/db/base.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/models.py",
+      "target": "class:backend/modules/rag/infrastructure/models.py:RagDocument",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/models.py",
+      "target": "class:backend/modules/rag/infrastructure/models.py:RagChunk",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/models.py",
+      "target": "class:backend/modules/rag/infrastructure/models.py:RagQueryRecord",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/models.py",
+      "target": "class:backend/modules/rag/infrastructure/models.py:RagIngestionJob",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "target": "file:backend/modules/rag/infrastructure/repositories.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "target": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:build_vector_store",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "target": "class:backend/modules/rag/infrastructure/pgvector_adapter.py:VectorStoreAdapter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/pgvector_adapter.py:VectorStoreAdapter",
+      "target": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:VectorStoreAdapter.similarity_search",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/pgvector_adapter.py:VectorStoreAdapter",
+      "target": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:VectorStoreAdapter.delete_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "target": "class:backend/modules/rag/infrastructure/pgvector_adapter.py:PgVectorAdapter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/pgvector_adapter.py:PgVectorAdapter",
+      "target": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:PgVectorAdapter.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/pgvector_adapter.py:PgVectorAdapter",
+      "target": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:PgVectorAdapter.similarity_search",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/pgvector_adapter.py:PgVectorAdapter",
+      "target": "function:backend/modules/rag/infrastructure/pgvector_adapter.py:PgVectorAdapter.delete_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "target": "function:backend/modules/rag/infrastructure/rag_config.py:validate_rag_config",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "target": "class:backend/modules/rag/infrastructure/rag_config.py:RagConfig",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/rag_config.py:RagConfig",
+      "target": "function:backend/modules/rag/infrastructure/rag_config.py:RagConfig.from_settings",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/repositories.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/repositories.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/repositories.py",
+      "target": "file:backend/modules/rag/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/repositories.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/repositories.py",
+      "target": "file:backend/modules/rag/infrastructure/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/repositories.py",
+      "target": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.create_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.get_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_documents_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_document_ids_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.filter_document_ids_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_indexed_documents",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.update_document_status",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.soft_delete_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.replace_chunks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_chunks_for_documents",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_chunks_for_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.pgvector_is_available",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.similarity_search_indexed",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.similarity_search_json_fallback",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.create_ingestion_job",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.get_ingestion_job",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.update_ingestion_job",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.create_query_record",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/infrastructure/repositories.py:RagRepository",
+      "target": "function:backend/modules/rag/infrastructure/repositories.py:RagRepository.list_queries_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/infrastructure/vector_store_adapter.py",
+      "target": "file:backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_ingestion.py",
+      "target": "file:backend/modules/rag/application/chunking_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_ingestion.py",
+      "target": "file:backend/modules/rag/application/document_parser_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_ingestion.py",
+      "target": "file:backend/modules/rag/domain/enums.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_ingestion.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_ingestion.py",
+      "target": "class:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest",
+      "target": "function:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest.test_parse_offloads_to_thread",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest",
+      "target": "function:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest.test_parse_txt_offloads_to_thread",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest",
+      "target": "function:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest.test_parse_txt_creates_content",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest",
+      "target": "function:backend/modules/rag/tests/test_ingestion.py:IngestionParserTest.test_chunking_creates_indexed_chunks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_ingestion.py",
+      "target": "class:backend/modules/rag/tests/test_ingestion.py:UploadCreatesDocumentTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_ingestion.py:UploadCreatesDocumentTest",
+      "target": "function:backend/modules/rag/tests/test_ingestion.py:UploadCreatesDocumentTest.test_upload_creates_document_row",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_ingestion.py",
+      "target": "class:backend/modules/rag/tests/test_ingestion.py:EmbeddingAdapterTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_ingestion.py:EmbeddingAdapterTest",
+      "target": "function:backend/modules/rag/tests/test_ingestion.py:EmbeddingAdapterTest.test_embeddings_created_through_adapter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_ingestion.py",
+      "target": "class:backend/modules/rag/tests/test_ingestion.py:EnqueueDocumentIndexingTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_ingestion.py:EnqueueDocumentIndexingTest",
+      "target": "function:backend/modules/rag/tests/test_ingestion.py:EnqueueDocumentIndexingTest.test_enqueue_creates_job_and_queues_worker",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_ingestion_policy.py",
+      "target": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_ingestion_policy.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_ingestion_policy.py",
+      "target": "class:backend/modules/rag/tests/test_ingestion_policy.py:IngestionPolicyTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_ingestion_policy.py:IngestionPolicyTest",
+      "target": "function:backend/modules/rag/tests/test_ingestion_policy.py:IngestionPolicyTest.test_suspected_injection_flagged_in_chunk_metadata",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_permissions.py",
+      "target": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_permissions.py",
+      "target": "class:backend/modules/rag/tests/test_permissions.py:PermissionTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_permissions.py:PermissionTest",
+      "target": "function:backend/modules/rag/tests/test_permissions.py:PermissionTest.test_unauthorized_project_member_cannot_upload",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_permissions.py:PermissionTest",
+      "target": "function:backend/modules/rag/tests/test_permissions.py:PermissionTest.test_user_cannot_delete_other_users_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_answer.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_answer.py",
+      "target": "file:backend/modules/rag/application/citation_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_answer.py",
+      "target": "file:backend/modules/rag/application/rag_answer_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_answer.py",
+      "target": "file:backend/modules/rag/application/rag_context_builder.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_answer.py",
+      "target": "file:backend/modules/rag/application/rag_policy_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_answer.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_answer.py",
+      "target": "class:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest",
+      "target": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest._user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest",
+      "target": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest._chunk",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest",
+      "target": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest.test_rag_answer_includes_citations",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest",
+      "target": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest.test_answer_loads_retrieval_and_memory_in_parallel",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest",
+      "target": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest.test_no_chunks_no_invented_citations",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest",
+      "target": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest.test_prompt_injection_rule_in_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest",
+      "target": "function:backend/modules/rag/tests/test_rag_answer.py:RagAnswerTest.test_policy_detects_injection_patterns",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_answer.py",
+      "target": "class:backend/modules/rag/tests/test_rag_answer.py:CitationServiceTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_rag_answer.py:CitationServiceTest",
+      "target": "function:backend/modules/rag/tests/test_rag_answer.py:CitationServiceTest.test_citation_snippet_truncated",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_config_validation.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_config_validation.py",
+      "target": "function:backend/modules/rag/tests/test_rag_config_validation.py:test_validate_rag_config_accepts_pgvector",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_config_validation.py",
+      "target": "function:backend/modules/rag/tests/test_rag_config_validation.py:test_validate_rag_config_skips_when_rag_disabled",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_rag_config_validation.py",
+      "target": "function:backend/modules/rag/tests/test_rag_config_validation.py:test_validate_rag_config_rejects_unimplemented_backend",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_retrieval.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_retrieval.py",
+      "target": "file:backend/modules/rag/infrastructure/pgvector_adapter.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_retrieval.py",
+      "target": "class:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest",
+      "target": "function:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest.asyncSetUp",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest",
+      "target": "function:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest.test_retrieval_filters_by_user_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest",
+      "target": "function:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest.test_retrieval_filters_by_project_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest",
+      "target": "function:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest.test_uses_indexed_search_when_available",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest",
+      "target": "function:backend/modules/rag/tests/test_retrieval.py:RetrievalFilterTest.test_deleted_document_not_in_indexed_list",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_retrieval.py",
+      "target": "class:backend/modules/rag/tests/test_retrieval.py:CosineSimilarityTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_retrieval.py:CosineSimilarityTest",
+      "target": "function:backend/modules/rag/tests/test_retrieval.py:CosineSimilarityTest.test_identical_vectors_score_high",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_retrieval_cache.py",
+      "target": "file:backend/modules/rag/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_retrieval_cache.py",
+      "target": "function:backend/tests/test_retrieval_cache.py:_sample_chunk",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_retrieval_cache.py",
+      "target": "function:backend/tests/test_retrieval_cache.py:test_retrieval_cache_key_changes_with_query_and_filters",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_retrieval_cache.py",
+      "target": "function:backend/tests/test_retrieval_cache.py:test_retrieval_cache_round_trip",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_retrieval_cache.py",
+      "target": "function:backend/tests/test_retrieval_cache.py:test_get_and_set_cached_retrieval",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_retrieval_cache.py",
+      "target": "function:backend/tests/test_retrieval_cache.py:test_invalidate_retrieval_cache_deletes_scope_pattern",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_retrieval_cache.py",
+      "target": "function:backend/tests/test_retrieval_cache.py:test_invalidate_retrieval_cache_for_document_clears_project_and_global_scopes",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_retrieval_cache.py",
+      "target": "function:backend/tests/test_retrieval_cache.py:test_retrieval_service_uses_cached_results",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

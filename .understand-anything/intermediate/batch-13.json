@@ -1,0 +1,75 @@
+{
+  "nodes": [
+    {
+      "id": "document:AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "AGENTS.md",
+      "summary": "docs file: AGENTS.md",
+      "tags": [
+        "docs",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown",
+      "layerHint": "other"
+    },
+    {
+      "id": "document:DESIGN.md",
+      "type": "document",
+      "name": "DESIGN.md",
+      "filePath": "DESIGN.md",
+      "summary": "docs file: DESIGN.md",
+      "tags": [
+        "docs",
+        "markdown"
+      ],
+      "complexity": "moderate",
+      "language": "markdown",
+      "layerHint": "other"
+    },
+    {
+      "id": "service:Makefile",
+      "type": "service",
+      "name": "Makefile",
+      "filePath": "Makefile",
+      "summary": "infra file: Makefile",
+      "tags": [
+        "infra",
+        "makefile"
+      ],
+      "complexity": "simple",
+      "language": "makefile",
+      "layerHint": "other"
+    },
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "docs file: README.md",
+      "tags": [
+        "docs",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown",
+      "layerHint": "other"
+    },
+    {
+      "id": "document:adaptation.txt",
+      "type": "document",
+      "name": "adaptation.txt",
+      "filePath": "adaptation.txt",
+      "summary": "docs file: adaptation.txt",
+      "tags": [
+        "docs",
+        "txt"
+      ],
+      "complexity": "complex",
+      "language": "txt",
+      "layerHint": "other"
+    }
+  ],
+  "edges": []
+}

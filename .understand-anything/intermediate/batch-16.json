@@ -1,0 +1,109 @@
+{
+  "nodes": [
+    {
+      "id": "config:frontend/.env.example",
+      "type": "config",
+      "name": ".env.example",
+      "filePath": "frontend/.env.example",
+      "summary": "config file: .env.example",
+      "tags": [
+        "config",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "config",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "document:frontend/README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "frontend/README.md",
+      "summary": "docs file: README.md",
+      "tags": [
+        "docs",
+        "markdown",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "markdown",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "document:frontend/index.html",
+      "type": "document",
+      "name": "index.html",
+      "filePath": "frontend/index.html",
+      "summary": "markup file: index.html",
+      "tags": [
+        "markup",
+        "html",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "html",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "config:frontend/package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "frontend/package.json",
+      "summary": "config file: package.json",
+      "tags": [
+        "config",
+        "json",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "json",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "config:frontend/tsconfig.app.json",
+      "type": "config",
+      "name": "tsconfig.app.json",
+      "filePath": "frontend/tsconfig.app.json",
+      "summary": "config file: tsconfig.app.json",
+      "tags": [
+        "config",
+        "json",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "json",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "config:frontend/tsconfig.json",
+      "type": "config",
+      "name": "tsconfig.json",
+      "filePath": "frontend/tsconfig.json",
+      "summary": "config file: tsconfig.json",
+      "tags": [
+        "config",
+        "json",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "json",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "config:frontend/tsconfig.node.json",
+      "type": "config",
+      "name": "tsconfig.node.json",
+      "filePath": "frontend/tsconfig.node.json",
+      "summary": "config file: tsconfig.node.json",
+      "tags": [
+        "config",
+        "json",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "json",
+      "layerHint": "frontend"
+    }
+  ],
+  "edges": []
+}

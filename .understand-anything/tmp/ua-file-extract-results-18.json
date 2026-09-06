@@ -1,0 +1,1053 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 25,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "backend/modules/memory/README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 106,
+      "nonEmptyLines": 82,
+      "sections": [
+        {
+          "heading": "Agent Memory (Mem0)",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "Memory layers",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "Module layout",
+          "level": 2,
+          "line": 21
+        },
+        {
+          "heading": "Configuration",
+          "level": 2,
+          "line": 35
+        },
+        {
+          "heading": "API",
+          "level": 2,
+          "line": 53
+        },
+        {
+          "heading": "Agent flow",
+          "level": 2,
+          "line": 66
+        },
+        {
+          "heading": "Prompt injection safety",
+          "level": 2,
+          "line": 75
+        },
+        {
+          "heading": "Database",
+          "level": 2,
+          "line": 79
+        },
+        {
+          "heading": "Example agent run",
+          "level": 2,
+          "line": 87
+        },
+        {
+          "heading": "Tests",
+          "level": 2,
+          "line": 102
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 10
+      }
+    },
+    {
+      "path": "backend/modules/rag/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/rag/domain/value_objects.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 32,
+      "nonEmptyLines": 28,
+      "classes": [
+        {
+          "name": "ChunkMetadata",
+          "startLine": 8,
+          "endLine": 32,
+          "methods": [
+            "to_dict"
+          ],
+          "properties": [
+            "document_id",
+            "user_id",
+            "filename",
+            "chunk_index",
+            "organization_id",
+            "project_id",
+            "page_number",
+            "source_type"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "ChunkMetadata",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/infrastructure/metrics.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 37,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/rag/README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 167,
+      "nonEmptyLines": 119,
+      "sections": [
+        {
+          "heading": "RAG Module (LangChain)",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "Architecture",
+          "level": 2,
+          "line": 7
+        },
+        {
+          "heading": "Context order (agent + memory + RAG)",
+          "level": 2,
+          "line": 25
+        },
+        {
+          "heading": "Configuration",
+          "level": 2,
+          "line": 34
+        },
+        {
+          "heading": "Vector backend",
+          "level": 2,
+          "line": 52
+        },
+        {
+          "heading": "AI document route consolidation",
+          "level": 2,
+          "line": 62
+        },
+        {
+          "heading": "API",
+          "level": 2,
+          "line": 83
+        },
+        {
+          "heading": "Upload and index",
+          "level": 2,
+          "line": 98
+        },
+        {
+          "heading": "Ask",
+          "level": 2,
+          "line": 122
+        },
+        {
+          "heading": "Agent integration",
+          "level": 2,
+          "line": 136
+        },
+        {
+          "heading": "Access control",
+          "level": 2,
+          "line": 140
+        },
+        {
+          "heading": "Prompt injection safety",
+          "level": 2,
+          "line": 147
+        },
+        {
+          "heading": "Setup",
+          "level": 2,
+          "line": 151
+        },
+        {
+          "heading": "Tests",
+          "level": 2,
+          "line": 159
+        },
+        {
+          "heading": "Vector backend",
+          "level": 2,
+          "line": 165
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 15
+      }
+    },
+    {
+      "path": "backend/modules/rag/tests/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/rag/tests/test_chunk_listing.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 82,
+      "nonEmptyLines": 71,
+      "classes": [
+        {
+          "name": "RagChunkListingTest",
+          "startLine": 7,
+          "endLine": 78,
+          "methods": [
+            "test_list_document_chunks_defaults_to_snippet_content",
+            "test_list_document_chunks_full_mode_returns_raw_content"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RagChunkListingTest",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "MagicMock",
+          "lineNumber": 11
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "AsyncMock",
+          "lineNumber": 12
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "SimpleNamespace",
+          "lineNumber": 13
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "AsyncMock",
+          "lineNumber": 16
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "SimpleNamespace",
+          "lineNumber": 19
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "json.dumps",
+          "lineNumber": 25
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "patch",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "list_document_chunks",
+          "lineNumber": 33
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "SimpleNamespace",
+          "lineNumber": 35
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "AsyncMock",
+          "lineNumber": 37
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "SimpleNamespace",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "self.assertEqual",
+          "lineNumber": 41
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "self.assertLess",
+          "lineNumber": 42
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "len",
+          "lineNumber": 42
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "len",
+          "lineNumber": 42
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "self.assertTrue",
+          "lineNumber": 43
+        },
+        {
+          "caller": "test_list_document_chunks_defaults_to_snippet_content",
+          "callee": "response.items[0].content.endswith",
+          "lineNumber": 43
+        },
+        {
+          "caller": "test_list_document_chunks_full_mode_returns_raw_content",
+          "callee": "MagicMock",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_list_document_chunks_full_mode_returns_raw_content",
+          "callee": "AsyncMock",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_list_document_chunks_full_mode_returns_raw_content",
+          "callee": "SimpleNamespace",
+          "lineNumber": 50
+        },
+        {
+          "caller": "test_list_document_chunks_full_mode_returns_raw_content",
+          "callee": "AsyncMock",
+          "lineNumber": 53
+        },
+        {
+          "caller": "test_list_document_chunks_full_mode_returns_raw_content",
+          "callee": "SimpleNamespace",
+          "lineNumber": 56
+        },
+        {
+          "caller": "test_list_document_chunks_full_mode_returns_raw_content",
+          "callee": "patch",
+          "lineNumber": 69
+        },
+        {
+          "caller": "test_list_document_chunks_full_mode_returns_raw_content",
+          "callee": "list_document_chunks",
+          "lineNumber": 70
+        },
+        {
+          "caller": "test_list_document_chunks_full_mode_returns_raw_content",
+          "callee": "SimpleNamespace",
+          "lineNumber": 72
+        },
+        {
+          "caller": "test_list_document_chunks_full_mode_returns_raw_content",
+          "callee": "AsyncMock",
+          "lineNumber": 74
+        },
+        {
+          "caller": "test_list_document_chunks_full_mode_returns_raw_content",
+          "callee": "SimpleNamespace",
+          "lineNumber": 75
+        },
+        {
+          "caller": "test_list_document_chunks_full_mode_returns_raw_content",
+          "callee": "self.assertEqual",
+          "lineNumber": 78
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/rag/tests/test_vector_search.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 15,
+      "nonEmptyLines": 10,
+      "classes": [
+        {
+          "name": "VectorUtilsTest",
+          "startLine": 6,
+          "endLine": 15,
+          "methods": [
+            "test_vector_literal_format",
+            "test_can_index_requires_matching_dimensions",
+            "test_cosine_similarity_orthogonal"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "VectorUtilsTest",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_vector_literal_format",
+          "callee": "self.assertEqual",
+          "lineNumber": 8
+        },
+        {
+          "caller": "test_vector_literal_format",
+          "callee": "vector_literal",
+          "lineNumber": 8
+        },
+        {
+          "caller": "test_can_index_requires_matching_dimensions",
+          "callee": "self.assertTrue",
+          "lineNumber": 11
+        },
+        {
+          "caller": "test_can_index_requires_matching_dimensions",
+          "callee": "can_index_embedding",
+          "lineNumber": 11
+        },
+        {
+          "caller": "test_can_index_requires_matching_dimensions",
+          "callee": "self.assertFalse",
+          "lineNumber": 12
+        },
+        {
+          "caller": "test_can_index_requires_matching_dimensions",
+          "callee": "can_index_embedding",
+          "lineNumber": 12
+        },
+        {
+          "caller": "test_cosine_similarity_orthogonal",
+          "callee": "self.assertAlmostEqual",
+          "lineNumber": 15
+        },
+        {
+          "caller": "test_cosine_similarity_orthogonal",
+          "callee": "cosine_similarity",
+          "lineNumber": 15
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/users/models.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 2,
+      "nonEmptyLines": 2,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/observability/prometheus_metrics.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 21,
+      "nonEmptyLines": 17,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/tests/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/tests/test_runtime_observability.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 108,
+      "nonEmptyLines": 80,
+      "classes": [
+        {
+          "name": "RuntimeObservabilityTest",
+          "startLine": 9,
+          "endLine": 104,
+          "methods": [
+            "test_setup_observability_disabled_does_not_crash",
+            "test_setup_observability_idempotent_fastapi",
+            "test_metrics_endpoint_exposes_prometheus_text",
+            "test_signal_endpoint_accepts_base_or_full_endpoint",
+            "test_observed_span_records_exception_and_reraises"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "RuntimeObservabilityTest",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_setup_observability_disabled_does_not_crash",
+          "callee": "patch",
+          "lineNumber": 13
+        },
+        {
+          "caller": "test_setup_observability_disabled_does_not_crash",
+          "callee": "otel.setup_observability",
+          "lineNumber": 15
+        },
+        {
+          "caller": "test_setup_observability_idempotent_fastapi",
+          "callee": "FastAPI",
+          "lineNumber": 20
+        },
+        {
+          "caller": "instrument_app",
+          "callee": "calls.append",
+          "lineNumber": 26
+        },
+        {
+          "caller": "test_setup_observability_idempotent_fastapi",
+          "callee": "patch",
+          "lineNumber": 30
+        },
+        {
+          "caller": "test_setup_observability_idempotent_fastapi",
+          "callee": "patch",
+          "lineNumber": 31
+        },
+        {
+          "caller": "test_setup_observability_idempotent_fastapi",
+          "callee": "patch",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_setup_observability_idempotent_fastapi",
+          "callee": "otel.setup_traces",
+          "lineNumber": 37
+        },
+        {
+          "caller": "test_setup_observability_idempotent_fastapi",
+          "callee": "otel.setup_traces",
+          "lineNumber": 38
+        },
+        {
+          "caller": "test_setup_observability_idempotent_fastapi",
+          "callee": "self.assertEqual",
+          "lineNumber": 40
+        },
+        {
+          "caller": "test_setup_observability_idempotent_fastapi",
+          "callee": "self.assertTrue",
+          "lineNumber": 41
+        },
+        {
+          "caller": "test_metrics_endpoint_exposes_prometheus_text",
+          "callee": "find_spec",
+          "lineNumber": 44
+        },
+        {
+          "caller": "test_metrics_endpoint_exposes_prometheus_text",
+          "callee": "self.skipTest",
+          "lineNumber": 45
+        },
+        {
+          "caller": "test_metrics_endpoint_exposes_prometheus_text",
+          "callee": "FastAPI",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_metrics_endpoint_exposes_prometheus_text",
+          "callee": "setup_metrics",
+          "lineNumber": 49
+        },
+        {
+          "caller": "test_metrics_endpoint_exposes_prometheus_text",
+          "callee": "next",
+          "lineNumber": 51
+        },
+        {
+          "caller": "test_metrics_endpoint_exposes_prometheus_text",
+          "callee": "getattr",
+          "lineNumber": 51
+        },
+        {
+          "caller": "test_metrics_endpoint_exposes_prometheus_text",
+          "callee": "route.endpoint",
+          "lineNumber": 52
+        },
+        {
+          "caller": "test_metrics_endpoint_exposes_prometheus_text",
+          "callee": "self.assertIn",
+          "lineNumber": 54
+        },
+        {
+          "caller": "test_metrics_endpoint_exposes_prometheus_text",
+          "callee": "self.assertIn",
+          "lineNumber": 55
+        },
+        {
+          "caller": "test_signal_endpoint_accepts_base_or_full_endpoint",
+          "callee": "self.assertEqual",
+          "lineNumber": 60
+        },
+        {
+          "caller": "test_signal_endpoint_accepts_base_or_full_endpoint",
+          "callee": "_signal_endpoint",
+          "lineNumber": 61
+        },
+        {
+          "caller": "test_signal_endpoint_accepts_base_or_full_endpoint",
+          "callee": "self.assertEqual",
+          "lineNumber": 64
+        },
+        {
+          "caller": "test_signal_endpoint_accepts_base_or_full_endpoint",
+          "callee": "_signal_endpoint",
+          "lineNumber": 65
+        },
+        {
+          "caller": "test_observed_span_records_exception_and_reraises",
+          "callee": "SimpleNamespace",
+          "lineNumber": 74
+        },
+        {
+          "caller": "start_as_current_span",
+          "callee": "FakeSpan",
+          "lineNumber": 94
+        },
+        {
+          "caller": "test_observed_span_records_exception_and_reraises",
+          "callee": "patch.object",
+          "lineNumber": 97
+        },
+        {
+          "caller": "test_observed_span_records_exception_and_reraises",
+          "callee": "FakeTracer",
+          "lineNumber": 97
+        },
+        {
+          "caller": "test_observed_span_records_exception_and_reraises",
+          "callee": "self.assertRaises",
+          "lineNumber": 98
+        },
+        {
+          "caller": "test_observed_span_records_exception_and_reraises",
+          "callee": "instruments.observed_span",
+          "lineNumber": 99
+        },
+        {
+          "caller": "test_observed_span_records_exception_and_reraises",
+          "callee": "ValueError",
+          "lineNumber": 101
+        },
+        {
+          "caller": "test_observed_span_records_exception_and_reraises",
+          "callee": "self.assertIs",
+          "lineNumber": 103
+        },
+        {
+          "caller": "test_observed_span_records_exception_and_reraises",
+          "callee": "self.assertIsNotNone",
+          "lineNumber": 104
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/tests/test_vector_search.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 53,
+      "nonEmptyLines": 42,
+      "classes": [
+        {
+          "name": "VectorSearchHelpersTest",
+          "startLine": 10,
+          "endLine": 43,
+          "methods": [
+            "test_json_fallback_max_candidates_scales_with_top_k",
+            "test_rank_embedding_matches_returns_top_scoring_rows",
+            "test_rank_embedding_matches_respects_threshold"
+          ],
+          "properties": []
+        },
+        {
+          "name": "CosineSimilarityTest",
+          "startLine": 46,
+          "endLine": 49,
+          "methods": [
+            "test_identical_vectors_score_high"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "VectorSearchHelpersTest",
+          "line": 10,
+          "isDefault": false
+        },
+        {
+          "name": "CosineSimilarityTest",
+          "line": 46,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "test_json_fallback_max_candidates_scales_with_top_k",
+          "callee": "self.assertEqual",
+          "lineNumber": 12
+        },
+        {
+          "caller": "test_json_fallback_max_candidates_scales_with_top_k",
+          "callee": "json_fallback_max_candidates",
+          "lineNumber": 12
+        },
+        {
+          "caller": "test_json_fallback_max_candidates_scales_with_top_k",
+          "callee": "self.assertEqual",
+          "lineNumber": 13
+        },
+        {
+          "caller": "test_json_fallback_max_candidates_scales_with_top_k",
+          "callee": "json_fallback_max_candidates",
+          "lineNumber": 13
+        },
+        {
+          "caller": "test_rank_embedding_matches_returns_top_scoring_rows",
+          "callee": "rank_embedding_matches",
+          "lineNumber": 22
+        },
+        {
+          "caller": "test_rank_embedding_matches_returns_top_scoring_rows",
+          "callee": "self.assertEqual",
+          "lineNumber": 30
+        },
+        {
+          "caller": "test_rank_embedding_matches_returns_top_scoring_rows",
+          "callee": "self.assertAlmostEqual",
+          "lineNumber": 31
+        },
+        {
+          "caller": "test_rank_embedding_matches_returns_top_scoring_rows",
+          "callee": "self.assertGreater",
+          "lineNumber": 32
+        },
+        {
+          "caller": "test_rank_embedding_matches_respects_threshold",
+          "callee": "rank_embedding_matches",
+          "lineNumber": 36
+        },
+        {
+          "caller": "test_rank_embedding_matches_respects_threshold",
+          "callee": "self.assertEqual",
+          "lineNumber": 43
+        },
+        {
+          "caller": "test_identical_vectors_score_high",
+          "callee": "cosine_similarity",
+          "lineNumber": 48
+        },
+        {
+          "caller": "test_identical_vectors_score_high",
+          "callee": "self.assertAlmostEqual",
+          "lineNumber": 49
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 0,
+        "classCount": 2
+      }
+    },
+    {
+      "path": "docs/performance-audit.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 49,
+      "nonEmptyLines": 37,
+      "sections": [
+        {
+          "heading": "Performance And Architecture Audit",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Current alignment",
+          "level": 2,
+          "line": 5
+        },
+        {
+          "heading": "Completed in this pass",
+          "level": 2,
+          "line": 19
+        },
+        {
+          "heading": "Observed gaps that still remain",
+          "level": 2,
+          "line": 34
+        },
+        {
+          "heading": "Recommended next steps",
+          "level": 2,
+          "line": 43
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 5
+      }
+    },
+    {
+      "path": "frontend/e2e/auth-rag.spec.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 96,
+      "nonEmptyLines": 81,
+      "functions": [
+        {
+          "name": "createAuthenticatedContext",
+          "startLine": 7,
+          "endLine": 14,
+          "params": [
+            "browser"
+          ]
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "createAuthenticatedContext",
+          "callee": "import",
+          "lineNumber": 7
+        },
+        {
+          "caller": "createAuthenticatedContext",
+          "callee": "browser.newContext",
+          "lineNumber": 8
+        },
+        {
+          "caller": "createAuthenticatedContext",
+          "callee": "context.request.post",
+          "lineNumber": 9
+        },
+        {
+          "caller": "createAuthenticatedContext",
+          "callee": "expect(signIn.ok()).toBeTruthy",
+          "lineNumber": 12
+        },
+        {
+          "caller": "createAuthenticatedContext",
+          "callee": "expect",
+          "lineNumber": 12
+        },
+        {
+          "caller": "createAuthenticatedContext",
+          "callee": "signIn.ok",
+          "lineNumber": 12
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/eslint.config.js",
+      "language": "javascript",
+      "fileCategory": "code",
+      "totalLines": 23,
+      "nonEmptyLines": 22,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/playwright.config.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 27,
+      "nonEmptyLines": 25,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/App.css",
+      "language": "css",
+      "fileCategory": "markup",
+      "totalLines": 184,
+      "nonEmptyLines": 158,
+      "metrics": {}
+    },
+    {
+      "path": "frontend/src/index.css",
+      "language": "css",
+      "fileCategory": "markup",
+      "totalLines": 46,
+      "nonEmptyLines": 38,
+      "metrics": {}
+    },
+    {
+      "path": "frontend/src/test/setup.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/types/qrcode.d.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 14,
+      "nonEmptyLines": 13,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/tsconfig.tsbuildinfo",
+      "language": "tsbuildinfo",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {}
+    },
+    {
+      "path": "frontend/vite.config.d.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 2,
+      "nonEmptyLines": 2,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/vite.config.js",
+      "language": "javascript",
+      "fileCategory": "code",
+      "totalLines": 49,
+      "nonEmptyLines": 49,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/vite.config.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 50,
+      "nonEmptyLines": 49,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,1591 @@
+{
+  "nodes": [
+    {
+      "id": "file:frontend/src/api/auth.ts",
+      "type": "file",
+      "name": "auth.ts",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Frontend code: auth.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:signUp",
+      "type": "function",
+      "name": "signUp",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function signUp in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:signIn",
+      "type": "function",
+      "name": "signIn",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function signIn in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:refresh",
+      "type": "function",
+      "name": "refresh",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function refresh in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:me",
+      "type": "function",
+      "name": "me",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function me in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:logout",
+      "type": "function",
+      "name": "logout",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function logout in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:forgotPassword",
+      "type": "function",
+      "name": "forgotPassword",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function forgotPassword in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:resetPassword",
+      "type": "function",
+      "name": "resetPassword",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function resetPassword in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:verifyEmail",
+      "type": "function",
+      "name": "verifyEmail",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function verifyEmail in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:resendVerification",
+      "type": "function",
+      "name": "resendVerification",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function resendVerification in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:enableMfa",
+      "type": "function",
+      "name": "enableMfa",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function enableMfa in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:verifyMfa",
+      "type": "function",
+      "name": "verifyMfa",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function verifyMfa in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/api/auth.ts:disableMfa",
+      "type": "function",
+      "name": "disableMfa",
+      "filePath": "frontend/src/api/auth.ts",
+      "summary": "Function disableMfa in frontend/src/api/auth.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/app/SnackbarProvider.tsx",
+      "type": "file",
+      "name": "SnackbarProvider.tsx",
+      "filePath": "frontend/src/app/SnackbarProvider.tsx",
+      "summary": "Frontend code: SnackbarProvider.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/app/SnackbarProvider.tsx:SnackbarProvider",
+      "type": "function",
+      "name": "SnackbarProvider",
+      "filePath": "frontend/src/app/SnackbarProvider.tsx",
+      "summary": "Function SnackbarProvider in frontend/src/app/SnackbarProvider.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/app/colorModeContext.ts",
+      "type": "file",
+      "name": "colorModeContext.ts",
+      "filePath": "frontend/src/app/colorModeContext.ts",
+      "summary": "Frontend code: colorModeContext.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/app/colorModeContext.ts:useColorMode",
+      "type": "function",
+      "name": "useColorMode",
+      "filePath": "frontend/src/app/colorModeContext.ts",
+      "summary": "Function useColorMode in frontend/src/app/colorModeContext.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/app/providers.tsx",
+      "type": "file",
+      "name": "providers.tsx",
+      "filePath": "frontend/src/app/providers.tsx",
+      "summary": "Frontend code: providers.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/app/providers.tsx:AppProviders",
+      "type": "function",
+      "name": "AppProviders",
+      "filePath": "frontend/src/app/providers.tsx",
+      "summary": "Function AppProviders in frontend/src/app/providers.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/app/router.tsx",
+      "type": "file",
+      "name": "router.tsx",
+      "filePath": "frontend/src/app/router.tsx",
+      "summary": "Frontend code: router.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend",
+        "api-route"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/app/router.tsx:PageLoader",
+      "type": "function",
+      "name": "PageLoader",
+      "filePath": "frontend/src/app/router.tsx",
+      "summary": "Function PageLoader in frontend/src/app/router.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/app/router.tsx:SuspensePage",
+      "type": "function",
+      "name": "SuspensePage",
+      "filePath": "frontend/src/app/router.tsx",
+      "summary": "Function SuspensePage in frontend/src/app/router.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/app/router.tsx:AppRouter",
+      "type": "function",
+      "name": "AppRouter",
+      "filePath": "frontend/src/app/router.tsx",
+      "summary": "Function AppRouter in frontend/src/app/router.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/app/theme.ts",
+      "type": "file",
+      "name": "theme.ts",
+      "filePath": "frontend/src/app/theme.ts",
+      "summary": "Frontend code: theme.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/app/theme.ts:buildTheme",
+      "type": "function",
+      "name": "buildTheme",
+      "filePath": "frontend/src/app/theme.ts",
+      "summary": "Function buildTheme in frontend/src/app/theme.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "type": "file",
+      "name": "AuthMarketingPanel.tsx",
+      "filePath": "frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "summary": "Frontend code: AuthMarketingPanel.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/auth/AuthMarketingPanel.tsx:AuthMarketingPanel",
+      "type": "function",
+      "name": "AuthMarketingPanel",
+      "filePath": "frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "summary": "Function AuthMarketingPanel in frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/auth/AuthShell.tsx",
+      "type": "file",
+      "name": "AuthShell.tsx",
+      "filePath": "frontend/src/components/auth/AuthShell.tsx",
+      "summary": "Frontend code: AuthShell.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/auth/AuthShell.tsx:AuthShell",
+      "type": "function",
+      "name": "AuthShell",
+      "filePath": "frontend/src/components/auth/AuthShell.tsx",
+      "summary": "Function AuthShell in frontend/src/components/auth/AuthShell.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/guards/ProtectedRoute.test.tsx",
+      "type": "file",
+      "name": "ProtectedRoute.test.tsx",
+      "filePath": "frontend/src/components/guards/ProtectedRoute.test.tsx",
+      "summary": "Frontend code: ProtectedRoute.test.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "test",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/guards/ProtectedRoute.test.tsx:renderGuard",
+      "type": "function",
+      "name": "renderGuard",
+      "filePath": "frontend/src/components/guards/ProtectedRoute.test.tsx",
+      "summary": "Function renderGuard in frontend/src/components/guards/ProtectedRoute.test.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/components/guards/ProtectedRoute.tsx",
+      "type": "file",
+      "name": "ProtectedRoute.tsx",
+      "filePath": "frontend/src/components/guards/ProtectedRoute.tsx",
+      "summary": "Frontend code: ProtectedRoute.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/components/guards/ProtectedRoute.tsx:ProtectedRoute",
+      "type": "function",
+      "name": "ProtectedRoute",
+      "filePath": "frontend/src/components/guards/ProtectedRoute.tsx",
+      "summary": "Function ProtectedRoute in frontend/src/components/guards/ProtectedRoute.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/config/queryClient.ts",
+      "type": "file",
+      "name": "queryClient.ts",
+      "filePath": "frontend/src/config/queryClient.ts",
+      "summary": "Frontend code: queryClient.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/src/features/auth/context/AuthContext.tsx",
+      "type": "file",
+      "name": "AuthContext.tsx",
+      "filePath": "frontend/src/features/auth/context/AuthContext.tsx",
+      "summary": "Frontend code: AuthContext.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/features/auth/context/AuthContext.tsx:AuthProvider",
+      "type": "function",
+      "name": "AuthProvider",
+      "filePath": "frontend/src/features/auth/context/AuthContext.tsx",
+      "summary": "Function AuthProvider in frontend/src/features/auth/context/AuthContext.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/features/auth/context/authContext.ts",
+      "type": "file",
+      "name": "authContext.ts",
+      "filePath": "frontend/src/features/auth/context/authContext.ts",
+      "summary": "Frontend code: authContext.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/features/auth/context/authContext.ts:useAuth",
+      "type": "function",
+      "name": "useAuth",
+      "filePath": "frontend/src/features/auth/context/authContext.ts",
+      "summary": "Function useAuth in frontend/src/features/auth/context/authContext.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/features/auth/schemas.ts",
+      "type": "file",
+      "name": "schemas.ts",
+      "filePath": "frontend/src/features/auth/schemas.ts",
+      "summary": "Frontend code: schemas.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/src/features/observability/api.ts",
+      "type": "file",
+      "name": "api.ts",
+      "filePath": "frontend/src/features/observability/api.ts",
+      "summary": "Frontend code: api.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/features/observability/api.ts:getObservabilityLinks",
+      "type": "function",
+      "name": "getObservabilityLinks",
+      "filePath": "frontend/src/features/observability/api.ts",
+      "summary": "Function getObservabilityLinks in frontend/src/features/observability/api.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/features/observability/api.ts:getObservabilityStatus",
+      "type": "function",
+      "name": "getObservabilityStatus",
+      "filePath": "frontend/src/features/observability/api.ts",
+      "summary": "Function getObservabilityStatus in frontend/src/features/observability/api.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "type": "file",
+      "name": "HealthStatusCard.tsx",
+      "filePath": "frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "summary": "Frontend code: HealthStatusCard.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/features/observability/components/HealthStatusCard.tsx:formatCheckedAt",
+      "type": "function",
+      "name": "formatCheckedAt",
+      "filePath": "frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "summary": "Function formatCheckedAt in frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/features/observability/components/HealthStatusCard.tsx:HealthStatusCard",
+      "type": "function",
+      "name": "HealthStatusCard",
+      "filePath": "frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "summary": "Function HealthStatusCard in frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/features/observability/components/ObservabilityShortcutCard.tsx",
+      "type": "file",
+      "name": "ObservabilityShortcutCard.tsx",
+      "filePath": "frontend/src/features/observability/components/ObservabilityShortcutCard.tsx",
+      "summary": "Frontend code: ObservabilityShortcutCard.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/features/observability/components/ObservabilityShortcutCard.tsx:ObservabilityShortcutCard",
+      "type": "function",
+      "name": "ObservabilityShortcutCard",
+      "filePath": "frontend/src/features/observability/components/ObservabilityShortcutCard.tsx",
+      "summary": "Function ObservabilityShortcutCard in frontend/src/features/observability/components/ObservabilityShortcutCard.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/features/observability/types.ts",
+      "type": "file",
+      "name": "types.ts",
+      "filePath": "frontend/src/features/observability/types.ts",
+      "summary": "Frontend code: types.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/src/features/observability/urlBuilders.test.ts",
+      "type": "file",
+      "name": "urlBuilders.test.ts",
+      "filePath": "frontend/src/features/observability/urlBuilders.test.ts",
+      "summary": "Frontend code: urlBuilders.test.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "test",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/src/features/observability/urlBuilders.ts",
+      "type": "file",
+      "name": "urlBuilders.ts",
+      "filePath": "frontend/src/features/observability/urlBuilders.ts",
+      "summary": "Frontend code: urlBuilders.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/features/observability/urlBuilders.ts:addParam",
+      "type": "function",
+      "name": "addParam",
+      "filePath": "frontend/src/features/observability/urlBuilders.ts",
+      "summary": "Function addParam in frontend/src/features/observability/urlBuilders.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/features/observability/urlBuilders.ts:buildGrafanaUrl",
+      "type": "function",
+      "name": "buildGrafanaUrl",
+      "filePath": "frontend/src/features/observability/urlBuilders.ts",
+      "summary": "Function buildGrafanaUrl in frontend/src/features/observability/urlBuilders.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/features/observability/urlBuilders.ts:buildTempoExploreUrl",
+      "type": "function",
+      "name": "buildTempoExploreUrl",
+      "filePath": "frontend/src/features/observability/urlBuilders.ts",
+      "summary": "Function buildTempoExploreUrl in frontend/src/features/observability/urlBuilders.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/features/observability/urlBuilders.ts:openExternalUrl",
+      "type": "function",
+      "name": "openExternalUrl",
+      "filePath": "frontend/src/features/observability/urlBuilders.ts",
+      "summary": "Function openExternalUrl in frontend/src/features/observability/urlBuilders.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/hooks/useAuth.ts",
+      "type": "file",
+      "name": "useAuth.ts",
+      "filePath": "frontend/src/hooks/useAuth.ts",
+      "summary": "Frontend code: useAuth.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/src/main.tsx",
+      "type": "file",
+      "name": "main.tsx",
+      "filePath": "frontend/src/main.tsx",
+      "summary": "Frontend code: main.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/src/pages/AuthHomePage.tsx",
+      "type": "file",
+      "name": "AuthHomePage.tsx",
+      "filePath": "frontend/src/pages/AuthHomePage.tsx",
+      "summary": "Frontend code: AuthHomePage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/AuthHomePage.tsx:PasswordField",
+      "type": "function",
+      "name": "PasswordField",
+      "filePath": "frontend/src/pages/AuthHomePage.tsx",
+      "summary": "Function PasswordField in frontend/src/pages/AuthHomePage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AuthHomePage.tsx:SignInForm",
+      "type": "function",
+      "name": "SignInForm",
+      "filePath": "frontend/src/pages/AuthHomePage.tsx",
+      "summary": "Function SignInForm in frontend/src/pages/AuthHomePage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:frontend/src/pages/AuthHomePage.tsx:SignUpForm",
+      "type": "function",
+      "name": "SignUpForm",
+      "filePath": "frontend/src/pages/AuthHomePage.tsx",
+      "summary": "Function SignUpForm in frontend/src/pages/AuthHomePage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AuthHomePage.tsx:AuthHomePage",
+      "type": "function",
+      "name": "AuthHomePage",
+      "filePath": "frontend/src/pages/AuthHomePage.tsx",
+      "summary": "Function AuthHomePage in frontend/src/pages/AuthHomePage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/ObservabilityPage.test.tsx",
+      "type": "file",
+      "name": "ObservabilityPage.test.tsx",
+      "filePath": "frontend/src/pages/ObservabilityPage.test.tsx",
+      "summary": "Frontend code: ObservabilityPage.test.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "test",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/ObservabilityPage.test.tsx:renderPage",
+      "type": "function",
+      "name": "renderPage",
+      "filePath": "frontend/src/pages/ObservabilityPage.test.tsx",
+      "summary": "Function renderPage in frontend/src/pages/ObservabilityPage.test.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "type": "file",
+      "name": "ObservabilityPage.tsx",
+      "filePath": "frontend/src/pages/ObservabilityPage.tsx",
+      "summary": "Frontend code: ObservabilityPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/ObservabilityPage.tsx:buildHealthItems",
+      "type": "function",
+      "name": "buildHealthItems",
+      "filePath": "frontend/src/pages/ObservabilityPage.tsx",
+      "summary": "Function buildHealthItems in frontend/src/pages/ObservabilityPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ObservabilityPage.tsx:metricFor",
+      "type": "function",
+      "name": "metricFor",
+      "filePath": "frontend/src/pages/ObservabilityPage.tsx",
+      "summary": "Function metricFor in frontend/src/pages/ObservabilityPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ObservabilityPage.tsx:fallbackItem",
+      "type": "function",
+      "name": "fallbackItem",
+      "filePath": "frontend/src/pages/ObservabilityPage.tsx",
+      "summary": "Function fallbackItem in frontend/src/pages/ObservabilityPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ObservabilityPage.tsx:buildContext",
+      "type": "function",
+      "name": "buildContext",
+      "filePath": "frontend/src/pages/ObservabilityPage.tsx",
+      "summary": "Function buildContext in frontend/src/pages/ObservabilityPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ObservabilityPage.tsx:dashboardUrl",
+      "type": "function",
+      "name": "dashboardUrl",
+      "filePath": "frontend/src/pages/ObservabilityPage.tsx",
+      "summary": "Function dashboardUrl in frontend/src/pages/ObservabilityPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ObservabilityPage.tsx:ObservabilityPage",
+      "type": "function",
+      "name": "ObservabilityPage",
+      "filePath": "frontend/src/pages/ObservabilityPage.tsx",
+      "summary": "Function ObservabilityPage in frontend/src/pages/ObservabilityPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/ResetPasswordPage.tsx",
+      "type": "file",
+      "name": "ResetPasswordPage.tsx",
+      "filePath": "frontend/src/pages/ResetPasswordPage.tsx",
+      "summary": "Frontend code: ResetPasswordPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/ResetPasswordPage.tsx:ResetPasswordPage",
+      "type": "function",
+      "name": "ResetPasswordPage",
+      "filePath": "frontend/src/pages/ResetPasswordPage.tsx",
+      "summary": "Function ResetPasswordPage in frontend/src/pages/ResetPasswordPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/VerifyEmailPage.tsx",
+      "type": "file",
+      "name": "VerifyEmailPage.tsx",
+      "filePath": "frontend/src/pages/VerifyEmailPage.tsx",
+      "summary": "Frontend code: VerifyEmailPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/VerifyEmailPage.tsx:VerifyEmailPage",
+      "type": "function",
+      "name": "VerifyEmailPage",
+      "filePath": "frontend/src/pages/VerifyEmailPage.tsx",
+      "summary": "Function VerifyEmailPage in frontend/src/pages/VerifyEmailPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "file:frontend/src/api/client.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:signUp",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:signIn",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:refresh",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:me",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:logout",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:forgotPassword",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:resetPassword",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:verifyEmail",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:resendVerification",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:enableMfa",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:verifyMfa",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/api/auth.ts",
+      "target": "function:frontend/src/api/auth.ts:disableMfa",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/app/SnackbarProvider.tsx",
+      "target": "file:frontend/src/app/snackbarContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/app/SnackbarProvider.tsx",
+      "target": "function:frontend/src/app/SnackbarProvider.tsx:SnackbarProvider",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/app/colorModeContext.ts",
+      "target": "file:frontend/src/app/theme.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/app/colorModeContext.ts",
+      "target": "function:frontend/src/app/colorModeContext.ts:useColorMode",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/app/providers.tsx",
+      "target": "file:frontend/src/app/colorModeContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/app/providers.tsx",
+      "target": "file:frontend/src/app/SnackbarProvider.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/app/providers.tsx",
+      "target": "file:frontend/src/app/theme.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/app/providers.tsx",
+      "target": "file:frontend/src/config/queryClient.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/app/providers.tsx",
+      "target": "file:frontend/src/features/auth/context/AuthContext.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/app/providers.tsx",
+      "target": "function:frontend/src/app/providers.tsx:AppProviders",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/app/router.tsx",
+      "target": "file:frontend/src/components/guards/ProtectedRoute.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/app/router.tsx",
+      "target": "file:frontend/src/hooks/useAuth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/app/router.tsx",
+      "target": "file:frontend/src/pages/AuthHomePage.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/app/router.tsx",
+      "target": "function:frontend/src/app/router.tsx:PageLoader",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/app/router.tsx",
+      "target": "function:frontend/src/app/router.tsx:SuspensePage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/app/router.tsx",
+      "target": "function:frontend/src/app/router.tsx:AppRouter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/app/theme.ts",
+      "target": "file:frontend/src/app/designTokens.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/app/theme.ts",
+      "target": "function:frontend/src/app/theme.ts:buildTheme",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "target": "function:frontend/src/components/auth/AuthMarketingPanel.tsx:AuthMarketingPanel",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/auth/AuthShell.tsx",
+      "target": "file:frontend/src/app/designTokens.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/auth/AuthShell.tsx",
+      "target": "function:frontend/src/components/auth/AuthShell.tsx:AuthShell",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/guards/ProtectedRoute.test.tsx",
+      "target": "file:frontend/src/components/guards/ProtectedRoute.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/components/guards/ProtectedRoute.test.tsx",
+      "target": "function:frontend/src/components/guards/ProtectedRoute.test.tsx:renderGuard",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/components/guards/ProtectedRoute.tsx",
+      "target": "function:frontend/src/components/guards/ProtectedRoute.tsx:ProtectedRoute",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/config/queryClient.ts",
+      "target": "file:frontend/src/config/queryTiming.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/features/auth/context/AuthContext.tsx",
+      "target": "file:frontend/src/api/auth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/features/auth/context/AuthContext.tsx",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/features/auth/context/AuthContext.tsx",
+      "target": "file:frontend/src/config/queryTiming.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/features/auth/context/AuthContext.tsx",
+      "target": "file:frontend/src/features/auth/context/authContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/features/auth/context/AuthContext.tsx",
+      "target": "function:frontend/src/features/auth/context/AuthContext.tsx:AuthProvider",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/features/auth/context/authContext.ts",
+      "target": "file:frontend/src/api/auth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/features/auth/context/authContext.ts",
+      "target": "function:frontend/src/features/auth/context/authContext.ts:useAuth",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/features/observability/api.ts",
+      "target": "file:frontend/src/api/client.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/features/observability/api.ts",
+      "target": "file:frontend/src/features/observability/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/features/observability/api.ts",
+      "target": "function:frontend/src/features/observability/api.ts:getObservabilityLinks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/features/observability/api.ts",
+      "target": "function:frontend/src/features/observability/api.ts:getObservabilityStatus",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "target": "file:frontend/src/features/observability/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "target": "function:frontend/src/features/observability/components/HealthStatusCard.tsx:formatCheckedAt",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "target": "function:frontend/src/features/observability/components/HealthStatusCard.tsx:HealthStatusCard",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/features/observability/components/ObservabilityShortcutCard.tsx",
+      "target": "function:frontend/src/features/observability/components/ObservabilityShortcutCard.tsx:ObservabilityShortcutCard",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/features/observability/urlBuilders.test.ts",
+      "target": "file:frontend/src/features/observability/urlBuilders.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/features/observability/urlBuilders.ts",
+      "target": "file:frontend/src/features/observability/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/features/observability/urlBuilders.ts",
+      "target": "function:frontend/src/features/observability/urlBuilders.ts:addParam",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/features/observability/urlBuilders.ts",
+      "target": "function:frontend/src/features/observability/urlBuilders.ts:buildGrafanaUrl",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/features/observability/urlBuilders.ts",
+      "target": "function:frontend/src/features/observability/urlBuilders.ts:buildTempoExploreUrl",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/features/observability/urlBuilders.ts",
+      "target": "function:frontend/src/features/observability/urlBuilders.ts:openExternalUrl",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/main.tsx",
+      "target": "file:frontend/src/app/providers.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/main.tsx",
+      "target": "file:frontend/src/app/router.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/main.tsx",
+      "target": "document:frontend/src/index.css",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AuthHomePage.tsx",
+      "target": "file:frontend/src/api/auth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AuthHomePage.tsx",
+      "target": "file:frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AuthHomePage.tsx",
+      "target": "file:frontend/src/components/auth/AuthShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AuthHomePage.tsx",
+      "target": "file:frontend/src/features/auth/schemas.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AuthHomePage.tsx",
+      "target": "file:frontend/src/hooks/useAuth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AuthHomePage.tsx",
+      "target": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AuthHomePage.tsx",
+      "target": "function:frontend/src/pages/AuthHomePage.tsx:PasswordField",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AuthHomePage.tsx",
+      "target": "function:frontend/src/pages/AuthHomePage.tsx:SignInForm",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AuthHomePage.tsx",
+      "target": "function:frontend/src/pages/AuthHomePage.tsx:SignUpForm",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AuthHomePage.tsx",
+      "target": "function:frontend/src/pages/AuthHomePage.tsx:AuthHomePage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.test.tsx",
+      "target": "file:frontend/src/features/observability/api.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.test.tsx",
+      "target": "file:frontend/src/hooks/useAuth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.test.tsx",
+      "target": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.test.tsx",
+      "target": "function:frontend/src/pages/ObservabilityPage.test.tsx:renderPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "file:frontend/src/features/observability/api.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "file:frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "file:frontend/src/features/observability/components/ObservabilityShortcutCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "file:frontend/src/features/observability/types.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "file:frontend/src/features/observability/urlBuilders.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "file:frontend/src/hooks/useAuth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "function:frontend/src/pages/ObservabilityPage.tsx:buildHealthItems",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "function:frontend/src/pages/ObservabilityPage.tsx:metricFor",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "function:frontend/src/pages/ObservabilityPage.tsx:fallbackItem",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "function:frontend/src/pages/ObservabilityPage.tsx:buildContext",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "function:frontend/src/pages/ObservabilityPage.tsx:dashboardUrl",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ObservabilityPage.tsx",
+      "target": "function:frontend/src/pages/ObservabilityPage.tsx:ObservabilityPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ResetPasswordPage.tsx",
+      "target": "file:frontend/src/api/auth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ResetPasswordPage.tsx",
+      "target": "file:frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ResetPasswordPage.tsx",
+      "target": "file:frontend/src/components/auth/AuthShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ResetPasswordPage.tsx",
+      "target": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ResetPasswordPage.tsx",
+      "target": "function:frontend/src/pages/ResetPasswordPage.tsx:ResetPasswordPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/VerifyEmailPage.tsx",
+      "target": "file:frontend/src/api/auth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/VerifyEmailPage.tsx",
+      "target": "file:frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/VerifyEmailPage.tsx",
+      "target": "file:frontend/src/components/auth/AuthShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/VerifyEmailPage.tsx",
+      "target": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/VerifyEmailPage.tsx",
+      "target": "function:frontend/src/pages/VerifyEmailPage.tsx:VerifyEmailPage",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

@@ -1,0 +1,374 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 5,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "AGENTS.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 31,
+      "nonEmptyLines": 22,
+      "sections": [
+        {
+          "heading": "AI Assistant Guidelines — generic_app",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Architecture",
+          "level": 2,
+          "line": 5
+        },
+        {
+          "heading": "Conventions",
+          "level": 2,
+          "line": 12
+        },
+        {
+          "heading": "Before submitting changes",
+          "level": 2,
+          "line": 20
+        },
+        {
+          "heading": "Do not",
+          "level": 2,
+          "line": 27
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 5
+      }
+    },
+    {
+      "path": "DESIGN.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 286,
+      "nonEmptyLines": 235,
+      "sections": [
+        {
+          "heading": "Design System Inspired by Tesla",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "1. Visual Theme & Atmosphere",
+          "level": 2,
+          "line": 3
+        },
+        {
+          "heading": "2. Color Palette & Roles",
+          "level": 2,
+          "line": 22
+        },
+        {
+          "heading": "Primary",
+          "level": 3,
+          "line": 24
+        },
+        {
+          "heading": "Secondary & Accent",
+          "level": 3,
+          "line": 28
+        },
+        {
+          "heading": "Surface & Background",
+          "level": 3,
+          "line": 32
+        },
+        {
+          "heading": "Neutrals & Text",
+          "level": 3,
+          "line": 38
+        },
+        {
+          "heading": "Semantic & Accent",
+          "level": 3,
+          "line": 46
+        },
+        {
+          "heading": "Gradient System",
+          "level": 3,
+          "line": 50
+        },
+        {
+          "heading": "3. Typography Rules",
+          "level": 2,
+          "line": 55
+        },
+        {
+          "heading": "Font Family",
+          "level": 3,
+          "line": 57
+        },
+        {
+          "heading": "Hierarchy",
+          "level": 3,
+          "line": 63
+        },
+        {
+          "heading": "Principles",
+          "level": 3,
+          "line": 76
+        },
+        {
+          "heading": "4. Component Stylings",
+          "level": 2,
+          "line": 83
+        },
+        {
+          "heading": "Buttons",
+          "level": 3,
+          "line": 85
+        },
+        {
+          "heading": "Cards & Containers",
+          "level": 3,
+          "line": 113
+        },
+        {
+          "heading": "Inputs & Forms",
+          "level": 3,
+          "line": 131
+        },
+        {
+          "heading": "Navigation",
+          "level": 3,
+          "line": 139
+        },
+        {
+          "heading": "Image Treatment",
+          "level": 3,
+          "line": 147
+        },
+        {
+          "heading": "Persistent Chat Bar",
+          "level": 3,
+          "line": 154
+        },
+        {
+          "heading": "5. Layout Principles",
+          "level": 2,
+          "line": 160
+        },
+        {
+          "heading": "Spacing System",
+          "level": 3,
+          "line": 162
+        },
+        {
+          "heading": "Grid & Container",
+          "level": 3,
+          "line": 169
+        },
+        {
+          "heading": "Whitespace Philosophy",
+          "level": 3,
+          "line": 175
+        },
+        {
+          "heading": "Border Radius Scale",
+          "level": 3,
+          "line": 178
+        },
+        {
+          "heading": "6. Depth & Elevation",
+          "level": 2,
+          "line": 186
+        },
+        {
+          "heading": "Shadow Philosophy",
+          "level": 3,
+          "line": 195
+        },
+        {
+          "heading": "Decorative Depth",
+          "level": 3,
+          "line": 201
+        },
+        {
+          "heading": "7. Do's and Don'ts",
+          "level": 2,
+          "line": 206
+        },
+        {
+          "heading": "Do",
+          "level": 3,
+          "line": 208
+        },
+        {
+          "heading": "Don't",
+          "level": 3,
+          "line": 220
+        },
+        {
+          "heading": "8. Responsive Behavior",
+          "level": 2,
+          "line": 232
+        },
+        {
+          "heading": "Breakpoints",
+          "level": 3,
+          "line": 234
+        },
+        {
+          "heading": "Touch Targets",
+          "level": 3,
+          "line": 242
+        },
+        {
+          "heading": "Collapsing Strategy",
+          "level": 3,
+          "line": 248
+        },
+        {
+          "heading": "Image Behavior",
+          "level": 3,
+          "line": 255
+        },
+        {
+          "heading": "9. Agent Prompt Guide",
+          "level": 2,
+          "line": 261
+        },
+        {
+          "heading": "Quick Color Reference",
+          "level": 3,
+          "line": 263
+        },
+        {
+          "heading": "Example Component Prompts",
+          "level": 3,
+          "line": 273
+        },
+        {
+          "heading": "Iteration Guide",
+          "level": 3,
+          "line": 280
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 40
+      }
+    },
+    {
+      "path": "Makefile",
+      "language": "makefile",
+      "fileCategory": "infra",
+      "totalLines": 38,
+      "nonEmptyLines": 27,
+      "steps": [
+        {
+          "name": "local-dev",
+          "startLine": 3,
+          "endLine": 5
+        },
+        {
+          "name": "docker-dev",
+          "startLine": 6,
+          "endLine": 8
+        },
+        {
+          "name": "prod-dev",
+          "startLine": 9,
+          "endLine": 11
+        },
+        {
+          "name": "observability-up",
+          "startLine": 12,
+          "endLine": 14
+        },
+        {
+          "name": "observability-down",
+          "startLine": 15,
+          "endLine": 17
+        },
+        {
+          "name": "observability-logs",
+          "startLine": 18,
+          "endLine": 20
+        },
+        {
+          "name": "observability-status",
+          "startLine": 21,
+          "endLine": 23
+        },
+        {
+          "name": "fix",
+          "startLine": 24,
+          "endLine": 28
+        },
+        {
+          "name": "check",
+          "startLine": 29,
+          "endLine": 34
+        },
+        {
+          "name": "install-hooks",
+          "startLine": 35,
+          "endLine": 37
+        },
+        {
+          "name": "commit-ready",
+          "startLine": 38,
+          "endLine": 39
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "stepCount": 11
+      }
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 102,
+      "nonEmptyLines": 80,
+      "sections": [
+        {
+          "heading": "Generic App",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Local Setup",
+          "level": 2,
+          "line": 14
+        },
+        {
+          "heading": "Notes",
+          "level": 2,
+          "line": 75
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 3
+      }
+    },
+    {
+      "path": "adaptation.txt",
+      "language": "txt",
+      "fileCategory": "docs",
+      "totalLines": 566,
+      "nonEmptyLines": 413,
+      "metrics": {}
+    }
+  ]
+}

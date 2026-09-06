@@ -1,0 +1,3818 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 24,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "frontend/src/api/admin.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 40,
+      "nonEmptyLines": 36,
+      "functions": [
+        {
+          "name": "listAdminUsers",
+          "startLine": 20,
+          "endLine": 30,
+          "params": [
+            "params"
+          ]
+        },
+        {
+          "name": "updateUserStatus",
+          "startLine": 32,
+          "endLine": 40,
+          "params": [
+            "userId",
+            "payload"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "listAdminUsers",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "updateUserStatus",
+          "line": 32,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "listAdminUsers",
+          "callee": "qs.set",
+          "lineNumber": 26
+        },
+        {
+          "caller": "listAdminUsers",
+          "callee": "String",
+          "lineNumber": 26
+        },
+        {
+          "caller": "listAdminUsers",
+          "callee": "qs.set",
+          "lineNumber": 27
+        },
+        {
+          "caller": "listAdminUsers",
+          "callee": "String",
+          "lineNumber": 27
+        },
+        {
+          "caller": "listAdminUsers",
+          "callee": "qs.set",
+          "lineNumber": 28
+        },
+        {
+          "caller": "listAdminUsers",
+          "callee": "apiFetch",
+          "lineNumber": 29
+        },
+        {
+          "caller": "listAdminUsers",
+          "callee": "qs.toString",
+          "lineNumber": 29
+        },
+        {
+          "caller": "updateUserStatus",
+          "callee": "apiFetch",
+          "lineNumber": 36
+        },
+        {
+          "caller": "updateUserStatus",
+          "callee": "JSON.stringify",
+          "lineNumber": 38
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/api/ai.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 380,
+      "nonEmptyLines": 345,
+      "functions": [
+        {
+          "name": "getAiOverview",
+          "startLine": 164,
+          "endLine": 166,
+          "params": []
+        },
+        {
+          "name": "listPromptVersions",
+          "startLine": 168,
+          "endLine": 171,
+          "params": [
+            "templateId"
+          ]
+        },
+        {
+          "name": "createPromptTemplate",
+          "startLine": 173,
+          "endLine": 182,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "updatePromptTemplate",
+          "startLine": 184,
+          "endLine": 197,
+          "params": [
+            "templateId",
+            "payload"
+          ]
+        },
+        {
+          "name": "createPromptVersion",
+          "startLine": 199,
+          "endLine": 219,
+          "params": [
+            "templateId",
+            "payload"
+          ]
+        },
+        {
+          "name": "updatePromptVersion",
+          "startLine": 221,
+          "endLine": 233,
+          "params": [
+            "templateId",
+            "versionId",
+            "payload"
+          ]
+        },
+        {
+          "name": "createAiDocument",
+          "startLine": 235,
+          "endLine": 246,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "uploadAiDocument",
+          "startLine": 248,
+          "endLine": 258,
+          "params": [
+            "file",
+            "description"
+          ]
+        },
+        {
+          "name": "retrieveAiChunks",
+          "startLine": 260,
+          "endLine": 269,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "createAiRun",
+          "startLine": 271,
+          "endLine": 284,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "listAiReviews",
+          "startLine": 286,
+          "endLine": 289,
+          "params": []
+        },
+        {
+          "name": "createAiReview",
+          "startLine": 291,
+          "endLine": 299,
+          "params": [
+            "runId",
+            "payload"
+          ]
+        },
+        {
+          "name": "decideAiReview",
+          "startLine": 301,
+          "endLine": 313,
+          "params": [
+            "reviewId",
+            "payload"
+          ]
+        },
+        {
+          "name": "listAiFeedback",
+          "startLine": 315,
+          "endLine": 318,
+          "params": [
+            "runId"
+          ]
+        },
+        {
+          "name": "createAiFeedback",
+          "startLine": 320,
+          "endLine": 328,
+          "params": [
+            "runId",
+            "payload"
+          ]
+        },
+        {
+          "name": "listAiDatasets",
+          "startLine": 330,
+          "endLine": 333,
+          "params": []
+        },
+        {
+          "name": "createAiDataset",
+          "startLine": 335,
+          "endLine": 343,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "listAiDatasetCases",
+          "startLine": 345,
+          "endLine": 350,
+          "params": [
+            "datasetId"
+          ]
+        },
+        {
+          "name": "createAiDatasetCase",
+          "startLine": 352,
+          "endLine": 365,
+          "params": [
+            "datasetId",
+            "payload"
+          ]
+        },
+        {
+          "name": "listAiEvaluationRuns",
+          "startLine": 367,
+          "endLine": 370,
+          "params": []
+        },
+        {
+          "name": "runAiEvaluation",
+          "startLine": 372,
+          "endLine": 380,
+          "params": [
+            "datasetId",
+            "promptVersionId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "getAiOverview",
+          "line": 164,
+          "isDefault": false
+        },
+        {
+          "name": "listPromptVersions",
+          "line": 168,
+          "isDefault": false
+        },
+        {
+          "name": "createPromptTemplate",
+          "line": 173,
+          "isDefault": false
+        },
+        {
+          "name": "updatePromptTemplate",
+          "line": 184,
+          "isDefault": false
+        },
+        {
+          "name": "createPromptVersion",
+          "line": 199,
+          "isDefault": false
+        },
+        {
+          "name": "updatePromptVersion",
+          "line": 221,
+          "isDefault": false
+        },
+        {
+          "name": "createAiDocument",
+          "line": 235,
+          "isDefault": false
+        },
+        {
+          "name": "uploadAiDocument",
+          "line": 248,
+          "isDefault": false
+        },
+        {
+          "name": "retrieveAiChunks",
+          "line": 260,
+          "isDefault": false
+        },
+        {
+          "name": "createAiRun",
+          "line": 271,
+          "isDefault": false
+        },
+        {
+          "name": "listAiReviews",
+          "line": 286,
+          "isDefault": false
+        },
+        {
+          "name": "createAiReview",
+          "line": 291,
+          "isDefault": false
+        },
+        {
+          "name": "decideAiReview",
+          "line": 301,
+          "isDefault": false
+        },
+        {
+          "name": "listAiFeedback",
+          "line": 315,
+          "isDefault": false
+        },
+        {
+          "name": "createAiFeedback",
+          "line": 320,
+          "isDefault": false
+        },
+        {
+          "name": "listAiDatasets",
+          "line": 330,
+          "isDefault": false
+        },
+        {
+          "name": "createAiDataset",
+          "line": 335,
+          "isDefault": false
+        },
+        {
+          "name": "listAiDatasetCases",
+          "line": 345,
+          "isDefault": false
+        },
+        {
+          "name": "createAiDatasetCase",
+          "line": 352,
+          "isDefault": false
+        },
+        {
+          "name": "listAiEvaluationRuns",
+          "line": 367,
+          "isDefault": false
+        },
+        {
+          "name": "runAiEvaluation",
+          "line": 372,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getAiOverview",
+          "callee": "apiFetch",
+          "lineNumber": 165
+        },
+        {
+          "caller": "listPromptVersions",
+          "callee": "await apiFetch",
+          "lineNumber": 169
+        },
+        {
+          "caller": "createPromptTemplate",
+          "callee": "apiFetch",
+          "lineNumber": 178
+        },
+        {
+          "caller": "createPromptTemplate",
+          "callee": "JSON.stringify",
+          "lineNumber": 180
+        },
+        {
+          "caller": "updatePromptTemplate",
+          "callee": "apiFetch",
+          "lineNumber": 193
+        },
+        {
+          "caller": "updatePromptTemplate",
+          "callee": "JSON.stringify",
+          "lineNumber": 195
+        },
+        {
+          "caller": "createPromptVersion",
+          "callee": "apiFetch",
+          "lineNumber": 215
+        },
+        {
+          "caller": "createPromptVersion",
+          "callee": "JSON.stringify",
+          "lineNumber": 217
+        },
+        {
+          "caller": "updatePromptVersion",
+          "callee": "apiFetch",
+          "lineNumber": 229
+        },
+        {
+          "caller": "updatePromptVersion",
+          "callee": "JSON.stringify",
+          "lineNumber": 231
+        },
+        {
+          "caller": "createAiDocument",
+          "callee": "apiFetch",
+          "lineNumber": 242
+        },
+        {
+          "caller": "createAiDocument",
+          "callee": "JSON.stringify",
+          "lineNumber": 244
+        },
+        {
+          "caller": "uploadAiDocument",
+          "callee": "formData.append",
+          "lineNumber": 250
+        },
+        {
+          "caller": "uploadAiDocument",
+          "callee": "formData.append",
+          "lineNumber": 252
+        },
+        {
+          "caller": "uploadAiDocument",
+          "callee": "apiFetch",
+          "lineNumber": 254
+        },
+        {
+          "caller": "retrieveAiChunks",
+          "callee": "apiFetch",
+          "lineNumber": 265
+        },
+        {
+          "caller": "retrieveAiChunks",
+          "callee": "JSON.stringify",
+          "lineNumber": 267
+        },
+        {
+          "caller": "createAiRun",
+          "callee": "apiFetch",
+          "lineNumber": 280
+        },
+        {
+          "caller": "createAiRun",
+          "callee": "JSON.stringify",
+          "lineNumber": 282
+        },
+        {
+          "caller": "listAiReviews",
+          "callee": "await apiFetch",
+          "lineNumber": 287
+        },
+        {
+          "caller": "createAiReview",
+          "callee": "apiFetch",
+          "lineNumber": 295
+        },
+        {
+          "caller": "createAiReview",
+          "callee": "JSON.stringify",
+          "lineNumber": 297
+        },
+        {
+          "caller": "decideAiReview",
+          "callee": "apiFetch",
+          "lineNumber": 309
+        },
+        {
+          "caller": "decideAiReview",
+          "callee": "JSON.stringify",
+          "lineNumber": 311
+        },
+        {
+          "caller": "listAiFeedback",
+          "callee": "await apiFetch",
+          "lineNumber": 316
+        },
+        {
+          "caller": "createAiFeedback",
+          "callee": "apiFetch",
+          "lineNumber": 324
+        },
+        {
+          "caller": "createAiFeedback",
+          "callee": "JSON.stringify",
+          "lineNumber": 326
+        },
+        {
+          "caller": "listAiDatasets",
+          "callee": "await apiFetch",
+          "lineNumber": 331
+        },
+        {
+          "caller": "createAiDataset",
+          "callee": "apiFetch",
+          "lineNumber": 339
+        },
+        {
+          "caller": "createAiDataset",
+          "callee": "JSON.stringify",
+          "lineNumber": 341
+        },
+        {
+          "caller": "listAiDatasetCases",
+          "callee": "await apiFetch",
+          "lineNumber": 346
+        },
+        {
+          "caller": "createAiDatasetCase",
+          "callee": "apiFetch",
+          "lineNumber": 361
+        },
+        {
+          "caller": "createAiDatasetCase",
+          "callee": "JSON.stringify",
+          "lineNumber": 363
+        },
+        {
+          "caller": "listAiEvaluationRuns",
+          "callee": "await apiFetch",
+          "lineNumber": 368
+        },
+        {
+          "caller": "runAiEvaluation",
+          "callee": "apiFetch",
+          "lineNumber": 376
+        },
+        {
+          "caller": "runAiEvaluation",
+          "callee": "JSON.stringify",
+          "lineNumber": 378
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 21,
+        "functionCount": 21,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/api/calendar.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 49,
+      "nonEmptyLines": 45,
+      "functions": [
+        {
+          "name": "listCalendarItems",
+          "startLine": 23,
+          "endLine": 32,
+          "params": [
+            "startDate",
+            "endDate"
+          ]
+        },
+        {
+          "name": "createCalendarItem",
+          "startLine": 34,
+          "endLine": 49,
+          "params": [
+            "payload"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "listCalendarItems",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "createCalendarItem",
+          "line": 34,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "listCalendarItems",
+          "callee": "apiFetch",
+          "lineNumber": 31
+        },
+        {
+          "caller": "listCalendarItems",
+          "callee": "params.toString",
+          "lineNumber": 31
+        },
+        {
+          "caller": "createCalendarItem",
+          "callee": "apiFetch",
+          "lineNumber": 45
+        },
+        {
+          "caller": "createCalendarItem",
+          "callee": "JSON.stringify",
+          "lineNumber": 47
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/api/client.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 84,
+      "nonEmptyLines": 72,
+      "functions": [
+        {
+          "name": "readCookie",
+          "startLine": 5,
+          "endLine": 10,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "refreshAccessToken",
+          "startLine": 12,
+          "endLine": 23,
+          "params": []
+        },
+        {
+          "name": "buildCsrfHeaders",
+          "startLine": 25,
+          "endLine": 28,
+          "params": []
+        },
+        {
+          "name": "apiFetch",
+          "startLine": 37,
+          "endLine": 84,
+          "params": [
+            "path",
+            "options",
+            "retry"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "apiFetch",
+          "line": 37,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "readCookie",
+          "callee": "document.cookie.match",
+          "lineNumber": 6
+        },
+        {
+          "caller": "readCookie",
+          "callee": "name.replace",
+          "lineNumber": 7
+        },
+        {
+          "caller": "readCookie",
+          "callee": "decodeURIComponent",
+          "lineNumber": 9
+        },
+        {
+          "caller": "refreshAccessToken",
+          "callee": "fetch",
+          "lineNumber": 14
+        },
+        {
+          "caller": "refreshAccessToken",
+          "callee": "buildCsrfHeaders",
+          "lineNumber": 17
+        },
+        {
+          "caller": "buildCsrfHeaders",
+          "callee": "readCookie",
+          "lineNumber": 26
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "headers.has",
+          "lineNumber": 45
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "headers.set",
+          "lineNumber": 46
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "headers.has",
+          "lineNumber": 48
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "readCookie",
+          "lineNumber": 49
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "headers.set",
+          "lineNumber": 51
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "fetch",
+          "lineNumber": 55
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "refreshAccessToken().finally",
+          "lineNumber": 64
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "refreshAccessToken",
+          "lineNumber": 64
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "apiFetch",
+          "lineNumber": 72
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "response.json().catch",
+          "lineNumber": 76
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "response.json",
+          "lineNumber": 76
+        },
+        {
+          "caller": "apiFetch",
+          "callee": "response.json",
+          "lineNumber": 83
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/api/notifications.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 42,
+      "nonEmptyLines": 35,
+      "functions": [
+        {
+          "name": "getNotifications",
+          "startLine": 18,
+          "endLine": 21,
+          "params": []
+        },
+        {
+          "name": "markRead",
+          "startLine": 23,
+          "endLine": 25,
+          "params": [
+            "id"
+          ]
+        },
+        {
+          "name": "markAllRead",
+          "startLine": 27,
+          "endLine": 29,
+          "params": []
+        },
+        {
+          "name": "getPreferences",
+          "startLine": 31,
+          "endLine": 33,
+          "params": []
+        },
+        {
+          "name": "updatePreferences",
+          "startLine": 35,
+          "endLine": 42,
+          "params": [
+            "payload"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "getNotifications",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "markRead",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "markAllRead",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "getPreferences",
+          "line": 31,
+          "isDefault": false
+        },
+        {
+          "name": "updatePreferences",
+          "line": 35,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getNotifications",
+          "callee": "await apiFetch",
+          "lineNumber": 19
+        },
+        {
+          "caller": "markRead",
+          "callee": "apiFetch",
+          "lineNumber": 24
+        },
+        {
+          "caller": "markAllRead",
+          "callee": "apiFetch",
+          "lineNumber": 28
+        },
+        {
+          "caller": "getPreferences",
+          "callee": "apiFetch",
+          "lineNumber": 32
+        },
+        {
+          "caller": "updatePreferences",
+          "callee": "apiFetch",
+          "lineNumber": 38
+        },
+        {
+          "caller": "updatePreferences",
+          "callee": "JSON.stringify",
+          "lineNumber": 40
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 5,
+        "functionCount": 5,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/api/platform.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 327,
+      "nonEmptyLines": 288,
+      "functions": [
+        {
+          "name": "getPlatformMetadata",
+          "startLine": 120,
+          "endLine": 122,
+          "params": []
+        },
+        {
+          "name": "getPlatformConfig",
+          "startLine": 124,
+          "endLine": 126,
+          "params": []
+        },
+        {
+          "name": "updatePlatformConfig",
+          "startLine": 128,
+          "endLine": 140,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "listSubscriptionPlans",
+          "startLine": 142,
+          "endLine": 144,
+          "params": []
+        },
+        {
+          "name": "getMySubscription",
+          "startLine": 146,
+          "endLine": 148,
+          "params": []
+        },
+        {
+          "name": "selectMyPlan",
+          "startLine": 150,
+          "endLine": 155,
+          "params": [
+            "plan_code"
+          ]
+        },
+        {
+          "name": "listAdminPlans",
+          "startLine": 157,
+          "endLine": 159,
+          "params": []
+        },
+        {
+          "name": "createAdminPlan",
+          "startLine": 161,
+          "endLine": 174,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "updateAdminPlan",
+          "startLine": 176,
+          "endLine": 192,
+          "params": [
+            "planId",
+            "payload"
+          ]
+        },
+        {
+          "name": "listApiKeys",
+          "startLine": 196,
+          "endLine": 199,
+          "params": []
+        },
+        {
+          "name": "createApiKey",
+          "startLine": 201,
+          "endLine": 206,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "revokeApiKey",
+          "startLine": 208,
+          "endLine": 212,
+          "params": [
+            "apiKeyId"
+          ]
+        },
+        {
+          "name": "listWebhooks",
+          "startLine": 214,
+          "endLine": 217,
+          "params": []
+        },
+        {
+          "name": "createWebhook",
+          "startLine": 219,
+          "endLine": 228,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "updateWebhook",
+          "startLine": 230,
+          "endLine": 243,
+          "params": [
+            "webhookId",
+            "payload"
+          ]
+        },
+        {
+          "name": "deleteWebhook",
+          "startLine": 245,
+          "endLine": 249,
+          "params": [
+            "webhookId"
+          ]
+        },
+        {
+          "name": "testWebhook",
+          "startLine": 251,
+          "endLine": 255,
+          "params": [
+            "webhookId"
+          ]
+        },
+        {
+          "name": "listMyFeatureFlags",
+          "startLine": 257,
+          "endLine": 259,
+          "params": []
+        },
+        {
+          "name": "listAdminFeatureFlags",
+          "startLine": 261,
+          "endLine": 263,
+          "params": []
+        },
+        {
+          "name": "createAdminFeatureFlag",
+          "startLine": 265,
+          "endLine": 277,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "updateAdminFeatureFlag",
+          "startLine": 279,
+          "endLine": 293,
+          "params": [
+            "featureFlagId",
+            "payload"
+          ]
+        },
+        {
+          "name": "listAdminEmailTemplates",
+          "startLine": 295,
+          "endLine": 297,
+          "params": []
+        },
+        {
+          "name": "createAdminEmailTemplate",
+          "startLine": 299,
+          "endLine": 311,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "updateAdminEmailTemplate",
+          "startLine": 313,
+          "endLine": 327,
+          "params": [
+            "templateId",
+            "payload"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "getPlatformMetadata",
+          "line": 120,
+          "isDefault": false
+        },
+        {
+          "name": "getPlatformConfig",
+          "line": 124,
+          "isDefault": false
+        },
+        {
+          "name": "updatePlatformConfig",
+          "line": 128,
+          "isDefault": false
+        },
+        {
+          "name": "listSubscriptionPlans",
+          "line": 142,
+          "isDefault": false
+        },
+        {
+          "name": "getMySubscription",
+          "line": 146,
+          "isDefault": false
+        },
+        {
+          "name": "selectMyPlan",
+          "line": 150,
+          "isDefault": false
+        },
+        {
+          "name": "listAdminPlans",
+          "line": 157,
+          "isDefault": false
+        },
+        {
+          "name": "createAdminPlan",
+          "line": 161,
+          "isDefault": false
+        },
+        {
+          "name": "updateAdminPlan",
+          "line": 176,
+          "isDefault": false
+        },
+        {
+          "name": "listApiKeys",
+          "line": 196,
+          "isDefault": false
+        },
+        {
+          "name": "createApiKey",
+          "line": 201,
+          "isDefault": false
+        },
+        {
+          "name": "revokeApiKey",
+          "line": 208,
+          "isDefault": false
+        },
+        {
+          "name": "listWebhooks",
+          "line": 214,
+          "isDefault": false
+        },
+        {
+          "name": "createWebhook",
+          "line": 219,
+          "isDefault": false
+        },
+        {
+          "name": "updateWebhook",
+          "line": 230,
+          "isDefault": false
+        },
+        {
+          "name": "deleteWebhook",
+          "line": 245,
+          "isDefault": false
+        },
+        {
+          "name": "testWebhook",
+          "line": 251,
+          "isDefault": false
+        },
+        {
+          "name": "listMyFeatureFlags",
+          "line": 257,
+          "isDefault": false
+        },
+        {
+          "name": "listAdminFeatureFlags",
+          "line": 261,
+          "isDefault": false
+        },
+        {
+          "name": "createAdminFeatureFlag",
+          "line": 265,
+          "isDefault": false
+        },
+        {
+          "name": "updateAdminFeatureFlag",
+          "line": 279,
+          "isDefault": false
+        },
+        {
+          "name": "listAdminEmailTemplates",
+          "line": 295,
+          "isDefault": false
+        },
+        {
+          "name": "createAdminEmailTemplate",
+          "line": 299,
+          "isDefault": false
+        },
+        {
+          "name": "updateAdminEmailTemplate",
+          "line": 313,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getPlatformMetadata",
+          "callee": "apiFetch",
+          "lineNumber": 121
+        },
+        {
+          "caller": "getPlatformConfig",
+          "callee": "apiFetch",
+          "lineNumber": 125
+        },
+        {
+          "caller": "updatePlatformConfig",
+          "callee": "apiFetch",
+          "lineNumber": 136
+        },
+        {
+          "caller": "updatePlatformConfig",
+          "callee": "JSON.stringify",
+          "lineNumber": 138
+        },
+        {
+          "caller": "listSubscriptionPlans",
+          "callee": "apiFetch",
+          "lineNumber": 143
+        },
+        {
+          "caller": "getMySubscription",
+          "callee": "apiFetch",
+          "lineNumber": 147
+        },
+        {
+          "caller": "selectMyPlan",
+          "callee": "apiFetch",
+          "lineNumber": 151
+        },
+        {
+          "caller": "selectMyPlan",
+          "callee": "JSON.stringify",
+          "lineNumber": 153
+        },
+        {
+          "caller": "listAdminPlans",
+          "callee": "apiFetch",
+          "lineNumber": 158
+        },
+        {
+          "caller": "createAdminPlan",
+          "callee": "apiFetch",
+          "lineNumber": 170
+        },
+        {
+          "caller": "createAdminPlan",
+          "callee": "JSON.stringify",
+          "lineNumber": 172
+        },
+        {
+          "caller": "updateAdminPlan",
+          "callee": "apiFetch",
+          "lineNumber": 188
+        },
+        {
+          "caller": "updateAdminPlan",
+          "callee": "JSON.stringify",
+          "lineNumber": 190
+        },
+        {
+          "caller": "listApiKeys",
+          "callee": "await apiFetch",
+          "lineNumber": 197
+        },
+        {
+          "caller": "createApiKey",
+          "callee": "apiFetch",
+          "lineNumber": 202
+        },
+        {
+          "caller": "createApiKey",
+          "callee": "JSON.stringify",
+          "lineNumber": 204
+        },
+        {
+          "caller": "revokeApiKey",
+          "callee": "apiFetch",
+          "lineNumber": 209
+        },
+        {
+          "caller": "listWebhooks",
+          "callee": "await apiFetch",
+          "lineNumber": 215
+        },
+        {
+          "caller": "createWebhook",
+          "callee": "apiFetch",
+          "lineNumber": 224
+        },
+        {
+          "caller": "createWebhook",
+          "callee": "JSON.stringify",
+          "lineNumber": 226
+        },
+        {
+          "caller": "updateWebhook",
+          "callee": "apiFetch",
+          "lineNumber": 239
+        },
+        {
+          "caller": "updateWebhook",
+          "callee": "JSON.stringify",
+          "lineNumber": 241
+        },
+        {
+          "caller": "deleteWebhook",
+          "callee": "apiFetch",
+          "lineNumber": 246
+        },
+        {
+          "caller": "testWebhook",
+          "callee": "apiFetch",
+          "lineNumber": 252
+        },
+        {
+          "caller": "listMyFeatureFlags",
+          "callee": "apiFetch",
+          "lineNumber": 258
+        },
+        {
+          "caller": "listAdminFeatureFlags",
+          "callee": "apiFetch",
+          "lineNumber": 262
+        },
+        {
+          "caller": "createAdminFeatureFlag",
+          "callee": "apiFetch",
+          "lineNumber": 273
+        },
+        {
+          "caller": "createAdminFeatureFlag",
+          "callee": "JSON.stringify",
+          "lineNumber": 275
+        },
+        {
+          "caller": "updateAdminFeatureFlag",
+          "callee": "apiFetch",
+          "lineNumber": 289
+        },
+        {
+          "caller": "updateAdminFeatureFlag",
+          "callee": "JSON.stringify",
+          "lineNumber": 291
+        },
+        {
+          "caller": "listAdminEmailTemplates",
+          "callee": "apiFetch",
+          "lineNumber": 296
+        },
+        {
+          "caller": "createAdminEmailTemplate",
+          "callee": "apiFetch",
+          "lineNumber": 307
+        },
+        {
+          "caller": "createAdminEmailTemplate",
+          "callee": "JSON.stringify",
+          "lineNumber": 309
+        },
+        {
+          "caller": "updateAdminEmailTemplate",
+          "callee": "apiFetch",
+          "lineNumber": 323
+        },
+        {
+          "caller": "updateAdminEmailTemplate",
+          "callee": "JSON.stringify",
+          "lineNumber": 325
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 24,
+        "functionCount": 24,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/api/profile.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 34,
+      "functions": [
+        {
+          "name": "getProfile",
+          "startLine": 11,
+          "endLine": 13,
+          "params": []
+        },
+        {
+          "name": "updateProfile",
+          "startLine": 15,
+          "endLine": 24,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "uploadAvatar",
+          "startLine": 26,
+          "endLine": 33,
+          "params": [
+            "file"
+          ]
+        },
+        {
+          "name": "deleteAvatar",
+          "startLine": 35,
+          "endLine": 39,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "getProfile",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "updateProfile",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "uploadAvatar",
+          "line": 26,
+          "isDefault": false
+        },
+        {
+          "name": "deleteAvatar",
+          "line": 35,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getProfile",
+          "callee": "apiFetch",
+          "lineNumber": 12
+        },
+        {
+          "caller": "updateProfile",
+          "callee": "apiFetch",
+          "lineNumber": 20
+        },
+        {
+          "caller": "updateProfile",
+          "callee": "JSON.stringify",
+          "lineNumber": 22
+        },
+        {
+          "caller": "uploadAvatar",
+          "callee": "formData.append",
+          "lineNumber": 28
+        },
+        {
+          "caller": "uploadAvatar",
+          "callee": "apiFetch",
+          "lineNumber": 29
+        },
+        {
+          "caller": "deleteAvatar",
+          "callee": "apiFetch",
+          "lineNumber": 36
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 4,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/api/projects.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 111,
+      "nonEmptyLines": 99,
+      "functions": [
+        {
+          "name": "listProjects",
+          "startLine": 33,
+          "endLine": 36,
+          "params": []
+        },
+        {
+          "name": "getProject",
+          "startLine": 38,
+          "endLine": 40,
+          "params": [
+            "projectId"
+          ]
+        },
+        {
+          "name": "createProject",
+          "startLine": 42,
+          "endLine": 50,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "listProjectTasks",
+          "startLine": 52,
+          "endLine": 55,
+          "params": [
+            "projectId"
+          ]
+        },
+        {
+          "name": "createProjectTask",
+          "startLine": 57,
+          "endLine": 72,
+          "params": [
+            "projectId",
+            "payload"
+          ]
+        },
+        {
+          "name": "updateProjectTask",
+          "startLine": 74,
+          "endLine": 90,
+          "params": [
+            "projectId",
+            "taskId",
+            "payload"
+          ]
+        },
+        {
+          "name": "deleteProjectTask",
+          "startLine": 92,
+          "endLine": 96,
+          "params": [
+            "projectId",
+            "taskId"
+          ]
+        },
+        {
+          "name": "reorderProjectTasks",
+          "startLine": 98,
+          "endLine": 111,
+          "params": [
+            "projectId",
+            "payload"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "listProjects",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "getProject",
+          "line": 38,
+          "isDefault": false
+        },
+        {
+          "name": "createProject",
+          "line": 42,
+          "isDefault": false
+        },
+        {
+          "name": "listProjectTasks",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "createProjectTask",
+          "line": 57,
+          "isDefault": false
+        },
+        {
+          "name": "updateProjectTask",
+          "line": 74,
+          "isDefault": false
+        },
+        {
+          "name": "deleteProjectTask",
+          "line": 92,
+          "isDefault": false
+        },
+        {
+          "name": "reorderProjectTasks",
+          "line": 98,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "listProjects",
+          "callee": "await apiFetch",
+          "lineNumber": 34
+        },
+        {
+          "caller": "getProject",
+          "callee": "apiFetch",
+          "lineNumber": 39
+        },
+        {
+          "caller": "createProject",
+          "callee": "apiFetch",
+          "lineNumber": 46
+        },
+        {
+          "caller": "createProject",
+          "callee": "JSON.stringify",
+          "lineNumber": 48
+        },
+        {
+          "caller": "listProjectTasks",
+          "callee": "await apiFetch",
+          "lineNumber": 53
+        },
+        {
+          "caller": "createProjectTask",
+          "callee": "apiFetch",
+          "lineNumber": 68
+        },
+        {
+          "caller": "createProjectTask",
+          "callee": "JSON.stringify",
+          "lineNumber": 70
+        },
+        {
+          "caller": "updateProjectTask",
+          "callee": "apiFetch",
+          "lineNumber": 86
+        },
+        {
+          "caller": "updateProjectTask",
+          "callee": "JSON.stringify",
+          "lineNumber": 88
+        },
+        {
+          "caller": "deleteProjectTask",
+          "callee": "apiFetch",
+          "lineNumber": 93
+        },
+        {
+          "caller": "reorderProjectTasks",
+          "callee": "apiFetch",
+          "lineNumber": 107
+        },
+        {
+          "caller": "reorderProjectTasks",
+          "callee": "JSON.stringify",
+          "lineNumber": 109
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 8,
+        "functionCount": 8,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/api/settings.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 78,
+      "nonEmptyLines": 68,
+      "functions": [
+        {
+          "name": "getConfigSettings",
+          "startLine": 33,
+          "endLine": 35,
+          "params": []
+        },
+        {
+          "name": "updateConfigSettings",
+          "startLine": 37,
+          "endLine": 44,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "listDatabaseSettings",
+          "startLine": 46,
+          "endLine": 48,
+          "params": []
+        },
+        {
+          "name": "createDatabaseSetting",
+          "startLine": 50,
+          "endLine": 59,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "updateDatabaseSetting",
+          "startLine": 61,
+          "endLine": 72,
+          "params": [
+            "settingId",
+            "payload"
+          ]
+        },
+        {
+          "name": "deleteDatabaseSetting",
+          "startLine": 74,
+          "endLine": 78,
+          "params": [
+            "settingId"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "getConfigSettings",
+          "line": 33,
+          "isDefault": false
+        },
+        {
+          "name": "updateConfigSettings",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "listDatabaseSettings",
+          "line": 46,
+          "isDefault": false
+        },
+        {
+          "name": "createDatabaseSetting",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "updateDatabaseSetting",
+          "line": 61,
+          "isDefault": false
+        },
+        {
+          "name": "deleteDatabaseSetting",
+          "line": 74,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getConfigSettings",
+          "callee": "apiFetch",
+          "lineNumber": 34
+        },
+        {
+          "caller": "updateConfigSettings",
+          "callee": "apiFetch",
+          "lineNumber": 40
+        },
+        {
+          "caller": "updateConfigSettings",
+          "callee": "JSON.stringify",
+          "lineNumber": 42
+        },
+        {
+          "caller": "listDatabaseSettings",
+          "callee": "apiFetch",
+          "lineNumber": 47
+        },
+        {
+          "caller": "createDatabaseSetting",
+          "callee": "apiFetch",
+          "lineNumber": 55
+        },
+        {
+          "caller": "createDatabaseSetting",
+          "callee": "JSON.stringify",
+          "lineNumber": 57
+        },
+        {
+          "caller": "updateDatabaseSetting",
+          "callee": "apiFetch",
+          "lineNumber": 68
+        },
+        {
+          "caller": "updateDatabaseSetting",
+          "callee": "JSON.stringify",
+          "lineNumber": 70
+        },
+        {
+          "caller": "deleteDatabaseSetting",
+          "callee": "apiFetch",
+          "lineNumber": 75
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/api/users.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 49,
+      "nonEmptyLines": 40,
+      "functions": [
+        {
+          "name": "getMe",
+          "startLine": 23,
+          "endLine": 25,
+          "params": []
+        },
+        {
+          "name": "updateMe",
+          "startLine": 27,
+          "endLine": 29,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "changePassword",
+          "startLine": 31,
+          "endLine": 36,
+          "params": [
+            "payload"
+          ]
+        },
+        {
+          "name": "getSessions",
+          "startLine": 38,
+          "endLine": 40,
+          "params": []
+        },
+        {
+          "name": "revokeSession",
+          "startLine": 42,
+          "endLine": 44,
+          "params": [
+            "sessionId"
+          ]
+        },
+        {
+          "name": "listUserDirectory",
+          "startLine": 46,
+          "endLine": 49,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "getMe",
+          "line": 23,
+          "isDefault": false
+        },
+        {
+          "name": "updateMe",
+          "line": 27,
+          "isDefault": false
+        },
+        {
+          "name": "changePassword",
+          "line": 31,
+          "isDefault": false
+        },
+        {
+          "name": "getSessions",
+          "line": 38,
+          "isDefault": false
+        },
+        {
+          "name": "revokeSession",
+          "line": 42,
+          "isDefault": false
+        },
+        {
+          "name": "listUserDirectory",
+          "line": 46,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getMe",
+          "callee": "apiFetch",
+          "lineNumber": 24
+        },
+        {
+          "caller": "updateMe",
+          "callee": "apiFetch",
+          "lineNumber": 28
+        },
+        {
+          "caller": "updateMe",
+          "callee": "JSON.stringify",
+          "lineNumber": 28
+        },
+        {
+          "caller": "changePassword",
+          "callee": "apiFetch",
+          "lineNumber": 35
+        },
+        {
+          "caller": "changePassword",
+          "callee": "JSON.stringify",
+          "lineNumber": 35
+        },
+        {
+          "caller": "getSessions",
+          "callee": "apiFetch",
+          "lineNumber": 39
+        },
+        {
+          "caller": "revokeSession",
+          "callee": "apiFetch",
+          "lineNumber": 43
+        },
+        {
+          "caller": "listUserDirectory",
+          "callee": "await apiFetch",
+          "lineNumber": 47
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 6,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/app/designTokens.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 30,
+      "nonEmptyLines": 27,
+      "exports": [
+        {
+          "name": "colors",
+          "line": 2,
+          "isDefault": false
+        },
+        {
+          "name": "fonts",
+          "line": 16,
+          "isDefault": false
+        },
+        {
+          "name": "motion",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "radii",
+          "line": 26,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 4,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/app/snackbarContext.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 19,
+      "nonEmptyLines": 15,
+      "functions": [
+        {
+          "name": "useSnackbar",
+          "startLine": 17,
+          "endLine": 19,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "SnackbarContext",
+          "line": 13,
+          "isDefault": false
+        },
+        {
+          "name": "useSnackbar",
+          "line": 17,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useSnackbar",
+          "callee": "useContext",
+          "lineNumber": 18
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 1318,
+      "nonEmptyLines": 1261,
+      "functions": [
+        {
+          "name": "buildEmptyDraft",
+          "startLine": 68,
+          "endLine": 78,
+          "params": [
+            "projects",
+            "type"
+          ]
+        },
+        {
+          "name": "formatTimeValue",
+          "startLine": 80,
+          "endLine": 85,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "formatItemTime",
+          "startLine": 87,
+          "endLine": 95,
+          "params": [
+            "item"
+          ]
+        },
+        {
+          "name": "getMinutesFromTimeString",
+          "startLine": 97,
+          "endLine": 100,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "getWeekItemColor",
+          "startLine": 102,
+          "endLine": 122,
+          "params": [
+            "item"
+          ]
+        },
+        {
+          "name": "getItemIcon",
+          "startLine": 124,
+          "endLine": 132,
+          "params": [
+            "type"
+          ]
+        },
+        {
+          "name": "getDateCalendarSx",
+          "startLine": 134,
+          "endLine": 164,
+          "params": [
+            "daySize"
+          ]
+        },
+        {
+          "name": "getMonthGridColumns",
+          "startLine": 166,
+          "endLine": 176,
+          "params": [
+            "viewMode"
+          ]
+        },
+        {
+          "name": "getQueryRange",
+          "startLine": 178,
+          "endLine": 204,
+          "params": [
+            "viewMode",
+            "anchorDate"
+          ]
+        },
+        {
+          "name": "shiftAnchorDate",
+          "startLine": 206,
+          "endLine": 217,
+          "params": [
+            "current",
+            "viewMode",
+            "direction"
+          ]
+        },
+        {
+          "name": "DayItems",
+          "startLine": 219,
+          "endLine": 285,
+          "params": [
+            "{\n    items,\n    emptyTitle,\n    emptyDescription,\n}"
+          ]
+        },
+        {
+          "name": "DashboardCalendar",
+          "startLine": 287,
+          "endLine": 1318,
+          "params": [
+            "{\n    projects,\n    projectsLoading,\n    onOpenProjects,\n    allowedViews = [\"month\"],\n    initialView = \"month\",\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "DashboardCalendar",
+          "line": 287,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "formatTimeValue",
+          "callee": "new Intl.DateTimeFormat(undefined, {\n        hour: \"numeric\",\n        minute: \"2-digit\",\n    }).format",
+          "lineNumber": 81
+        },
+        {
+          "caller": "formatItemTime",
+          "callee": "formatTimeValue",
+          "lineNumber": 92
+        },
+        {
+          "caller": "formatItemTime",
+          "callee": "formatTimeValue",
+          "lineNumber": 94
+        },
+        {
+          "caller": "formatItemTime",
+          "callee": "formatTimeValue",
+          "lineNumber": 94
+        },
+        {
+          "caller": "getMinutesFromTimeString",
+          "callee": "value.split",
+          "lineNumber": 98
+        },
+        {
+          "caller": "getMinutesFromTimeString",
+          "callee": "Number",
+          "lineNumber": 99
+        },
+        {
+          "caller": "getMinutesFromTimeString",
+          "callee": "Number",
+          "lineNumber": 99
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.startOf(\"day\").format",
+          "lineNumber": 180
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.startOf",
+          "lineNumber": 180
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.startOf(\"week\").format",
+          "lineNumber": 186
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.startOf",
+          "lineNumber": 186
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.endOf(\"week\").format",
+          "lineNumber": 187
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.endOf",
+          "lineNumber": 187
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.startOf",
+          "lineNumber": 192
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "startMonth.add",
+          "lineNumber": 193
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "startMonth.startOf(\"month\").startOf(\"week\").format",
+          "lineNumber": 195
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "startMonth.startOf(\"month\").startOf",
+          "lineNumber": 195
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "startMonth.startOf",
+          "lineNumber": 195
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "endMonth.endOf(\"month\").endOf(\"week\").format",
+          "lineNumber": 196
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "endMonth.endOf(\"month\").endOf",
+          "lineNumber": 196
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "endMonth.endOf",
+          "lineNumber": 196
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.startOf(\"month\").startOf(\"week\").format",
+          "lineNumber": 201
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.startOf(\"month\").startOf",
+          "lineNumber": 201
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.startOf",
+          "lineNumber": 201
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.endOf(\"month\").endOf(\"week\").format",
+          "lineNumber": 202
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.endOf(\"month\").endOf",
+          "lineNumber": 202
+        },
+        {
+          "caller": "getQueryRange",
+          "callee": "anchorDate.endOf",
+          "lineNumber": 202
+        },
+        {
+          "caller": "shiftAnchorDate",
+          "callee": "current.add",
+          "lineNumber": 208
+        },
+        {
+          "caller": "shiftAnchorDate",
+          "callee": "current.add",
+          "lineNumber": 211
+        },
+        {
+          "caller": "shiftAnchorDate",
+          "callee": "current.add",
+          "lineNumber": 214
+        },
+        {
+          "caller": "shiftAnchorDate",
+          "callee": "current.add",
+          "lineNumber": 216
+        },
+        {
+          "caller": "DayItems",
+          "callee": "items.map",
+          "lineNumber": 240
+        },
+        {
+          "caller": "DayItems",
+          "callee": "alpha",
+          "lineNumber": 249
+        },
+        {
+          "caller": "DayItems",
+          "callee": "getItemIcon",
+          "lineNumber": 255
+        },
+        {
+          "caller": "DayItems",
+          "callee": "humanizeKey",
+          "lineNumber": 259
+        },
+        {
+          "caller": "DayItems",
+          "callee": "formatItemTime",
+          "lineNumber": 260
+        },
+        {
+          "caller": "DayItems",
+          "callee": "humanizeKey",
+          "lineNumber": 265
+        },
+        {
+          "caller": "DayItems",
+          "callee": "humanizeKey",
+          "lineNumber": 269
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "useQueryClient",
+          "lineNumber": 294
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "useSnackbar",
+          "lineNumber": 295
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "useState",
+          "lineNumber": 296
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "useState",
+          "lineNumber": 297
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "dayjs().startOf",
+          "lineNumber": 297
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "dayjs",
+          "lineNumber": 297
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "useState",
+          "lineNumber": 298
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "useState",
+          "lineNumber": 299
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "useState",
+          "lineNumber": 300
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "buildEmptyDraft",
+          "lineNumber": 300
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "useState",
+          "lineNumber": 301
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "getQueryRange",
+          "lineNumber": 303
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "dayjs",
+          "lineNumber": 304
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "Array.from",
+          "lineNumber": 307
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "anchorDate.startOf(\"month\").add",
+          "lineNumber": 307
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "anchorDate.startOf",
+          "lineNumber": 307
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "anchorDate.startOf",
+          "lineNumber": 308
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "useQuery",
+          "lineNumber": 311
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "listCalendarItems",
+          "lineNumber": 313
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "(calendarItems ?? []).reduce",
+          "lineNumber": 316
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "useMutation",
+          "lineNumber": 321
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "createCalendarItem",
+          "lineNumber": 323
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "draft.title.trim",
+          "lineNumber": 325
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "draft.description.trim",
+          "lineNumber": 326
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "anchorDate.format",
+          "lineNumber": 327
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 334
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 336
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setDraft",
+          "lineNumber": 338
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "buildEmptyDraft",
+          "lineNumber": 338
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setFormError",
+          "lineNumber": 339
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "showToast",
+          "lineNumber": 340
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "humanizeKey",
+          "lineNumber": 344
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setFormError",
+          "lineNumber": 349
+        },
+        {
+          "caller": "openDay",
+          "callee": "dayjs",
+          "lineNumber": 356
+        },
+        {
+          "caller": "openDay",
+          "callee": "value.startOf",
+          "lineNumber": 356
+        },
+        {
+          "caller": "openDay",
+          "callee": "setSelectedDateKey",
+          "lineNumber": 357
+        },
+        {
+          "caller": "openDay",
+          "callee": "nextDate.format",
+          "lineNumber": 357
+        },
+        {
+          "caller": "openDay",
+          "callee": "setAnchorDate",
+          "lineNumber": 358
+        },
+        {
+          "caller": "openDay",
+          "callee": "setDrawerOpen",
+          "lineNumber": 359
+        },
+        {
+          "caller": "openDay",
+          "callee": "setFormError",
+          "lineNumber": 360
+        },
+        {
+          "caller": "openDay",
+          "callee": "setDraft",
+          "lineNumber": 361
+        },
+        {
+          "caller": "submitDraft",
+          "callee": "setFormError",
+          "lineNumber": 369
+        },
+        {
+          "caller": "submitDraft",
+          "callee": "draft.title.trim",
+          "lineNumber": 372
+        },
+        {
+          "caller": "submitDraft",
+          "callee": "setFormError",
+          "lineNumber": 373
+        },
+        {
+          "caller": "submitDraft",
+          "callee": "setFormError",
+          "lineNumber": 377
+        },
+        {
+          "caller": "submitDraft",
+          "callee": "setFormError",
+          "lineNumber": 381
+        },
+        {
+          "caller": "submitDraft",
+          "callee": "setFormError",
+          "lineNumber": 390
+        },
+        {
+          "caller": "submitDraft",
+          "callee": "createItemMutation.mutate",
+          "lineNumber": 393
+        },
+        {
+          "caller": "CalendarDay",
+          "callee": "day.format",
+          "lineNumber": 398
+        },
+        {
+          "caller": "CalendarDay",
+          "callee": "other.onClick",
+          "lineNumber": 409
+        },
+        {
+          "caller": "CalendarDay",
+          "callee": "openDay",
+          "lineNumber": 410
+        },
+        {
+          "caller": "CalendarDay",
+          "callee": "alpha",
+          "lineNumber": 431
+        },
+        {
+          "caller": "CalendarDay",
+          "callee": "alpha",
+          "lineNumber": 437
+        },
+        {
+          "caller": "CalendarDay",
+          "callee": "dayItems.slice(0, 3).map",
+          "lineNumber": 458
+        },
+        {
+          "caller": "CalendarDay",
+          "callee": "dayItems.slice",
+          "lineNumber": 458
+        },
+        {
+          "caller": "renderDateCalendar",
+          "callee": "selectedDate.isSame",
+          "lineNumber": 483
+        },
+        {
+          "caller": "renderDateCalendar",
+          "callee": "setAnchorDate",
+          "lineNumber": 486
+        },
+        {
+          "caller": "renderDateCalendar",
+          "callee": "newValue.startOf",
+          "lineNumber": 486
+        },
+        {
+          "caller": "renderDateCalendar",
+          "callee": "getDateCalendarSx",
+          "lineNumber": 495
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "anchorDate.format",
+          "lineNumber": 501
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "dayItems\n            .filter((item) => item.start_time)\n            .map",
+          "lineNumber": 503
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "dayItems\n            .filter",
+          "lineNumber": 503
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "getMinutesFromTimeString",
+          "lineNumber": 506
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "getMinutesFromTimeString",
+          "lineNumber": 508
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "Math.max",
+          "lineNumber": 510
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "dayItems.filter",
+          "lineNumber": 518
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "Array.from",
+          "lineNumber": 519
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "dayjs",
+          "lineNumber": 522
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "anchorDate.isSame",
+          "lineNumber": 523
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "now.hour",
+          "lineNumber": 524
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "now.minute",
+          "lineNumber": 524
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "formatDateOnly",
+          "lineNumber": 556
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "openDay",
+          "lineNumber": 561
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "allDayItems.map",
+          "lineNumber": 579
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "getWeekItemColor",
+          "lineNumber": 580
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "openDay",
+          "lineNumber": 584
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "hourSlots.map",
+          "lineNumber": 620
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "dayjs().hour(hour).minute(0).format",
+          "lineNumber": 631
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "dayjs().hour(hour).minute",
+          "lineNumber": 631
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "dayjs().hour",
+          "lineNumber": 631
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "dayjs",
+          "lineNumber": 631
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "hourSlots.map",
+          "lineNumber": 642
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "timedItems.map",
+          "lineNumber": 677
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "getWeekItemColor",
+          "lineNumber": 678
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "Math.max",
+          "lineNumber": 680
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "openDay",
+          "lineNumber": 688
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "formatItemTime",
+          "lineNumber": 710
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "alpha",
+          "lineNumber": 731
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "renderDateCalendar",
+          "lineNumber": 737
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "formatDateOnly",
+          "lineNumber": 750
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "formatItemTime",
+          "lineNumber": 753
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "humanizeKey",
+          "lineNumber": 762
+        },
+        {
+          "caller": "renderDayView",
+          "callee": "openDay",
+          "lineNumber": 766
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "Array.from",
+          "lineNumber": 784
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "anchorDate.startOf(\"week\").add",
+          "lineNumber": 785
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "anchorDate.startOf",
+          "lineNumber": 785
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "Array.from",
+          "lineNumber": 787
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "weekDays.map",
+          "lineNumber": 791
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "day.format",
+          "lineNumber": 792
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "(itemsByDate[dateKey] ?? [])\n                .filter((item) => item.start_time)\n                .map",
+          "lineNumber": 793
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "(itemsByDate[dateKey] ?? [])\n                .filter",
+          "lineNumber": 793
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "getMinutesFromTimeString",
+          "lineNumber": 796
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "getMinutesFromTimeString",
+          "lineNumber": 798
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "Math.max",
+          "lineNumber": 800
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "Math.max",
+          "lineNumber": 801
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "Math.max",
+          "lineNumber": 806
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "weekDays.map",
+          "lineNumber": 811
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "day.format",
+          "lineNumber": 812
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "(itemsByDate[dateKey] ?? []).filter",
+          "lineNumber": 813
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "weekDays.map",
+          "lineNumber": 839
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "day.isSame",
+          "lineNumber": 840
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "dayjs",
+          "lineNumber": 840
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "day.format",
+          "lineNumber": 843
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "day.format",
+          "lineNumber": 858
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "day.format",
+          "lineNumber": 874
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "weekDays.map",
+          "lineNumber": 896
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "day.format",
+          "lineNumber": 900
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "allDayItems.slice(0, 2).map",
+          "lineNumber": 910
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "allDayItems.slice",
+          "lineNumber": 910
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "getWeekItemColor",
+          "lineNumber": 911
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "openDay",
+          "lineNumber": 915
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "hourSlots.map",
+          "lineNumber": 949
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "dayjs().hour(hour).minute(0).format",
+          "lineNumber": 960
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "dayjs().hour(hour).minute",
+          "lineNumber": 960
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "dayjs().hour",
+          "lineNumber": 960
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "dayjs",
+          "lineNumber": 960
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "weekDays.map",
+          "lineNumber": 965
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "day.format",
+          "lineNumber": 967
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "hourSlots.map",
+          "lineNumber": 975
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "timedWeekItems[dayIndex].map",
+          "lineNumber": 984
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "getWeekItemColor",
+          "lineNumber": 985
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "openDay",
+          "lineNumber": 989
+        },
+        {
+          "caller": "renderWeekView",
+          "callee": "formatTimeValue",
+          "lineNumber": 1010
+        },
+        {
+          "caller": "renderMonthViews",
+          "callee": "getMonthGridColumns",
+          "lineNumber": 1028
+        },
+        {
+          "caller": "renderMonthViews",
+          "callee": "visibleMonths.map",
+          "lineNumber": 1031
+        },
+        {
+          "caller": "renderMonthViews",
+          "callee": "month.format",
+          "lineNumber": 1033
+        },
+        {
+          "caller": "renderMonthViews",
+          "callee": "alpha",
+          "lineNumber": 1038
+        },
+        {
+          "caller": "renderMonthViews",
+          "callee": "renderDateCalendar",
+          "lineNumber": 1044
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "VIEW_OPTIONS.filter((option) => allowedViews.includes(option.value)).map",
+          "lineNumber": 1066
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "VIEW_OPTIONS.filter",
+          "lineNumber": 1066
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "allowedViews.includes",
+          "lineNumber": 1066
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setViewMode",
+          "lineNumber": 1071
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setAnchorDate",
+          "lineNumber": 1084
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "shiftAnchorDate",
+          "lineNumber": 1084
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setAnchorDate",
+          "lineNumber": 1094
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "shiftAnchorDate",
+          "lineNumber": 1094
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "getMonthGridColumns",
+          "lineNumber": 1120
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "visibleMonths.map",
+          "lineNumber": 1123
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "month.format",
+          "lineNumber": 1125
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "renderDayView",
+          "lineNumber": 1134
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "renderWeekView",
+          "lineNumber": 1136
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "renderMonthViews",
+          "lineNumber": 1138
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setDrawerOpen",
+          "lineNumber": 1145
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "formatDateOnly",
+          "lineNumber": 1156
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setDraft",
+          "lineNumber": 1186
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setFormError",
+          "lineNumber": 1193
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "ITEM_TYPE_OPTIONS.map",
+          "lineNumber": 1197
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setDraft",
+          "lineNumber": 1207
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setFormError",
+          "lineNumber": 1208
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setDraft",
+          "lineNumber": 1216
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setDraft",
+          "lineNumber": 1230
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "projects.map",
+          "lineNumber": 1240
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setDraft",
+          "lineNumber": 1251
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "TASK_PRIORITY_OPTIONS.map",
+          "lineNumber": 1258
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "humanizeKey",
+          "lineNumber": 1260
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setDraft",
+          "lineNumber": 1277
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setDraft",
+          "lineNumber": 1287
+        },
+        {
+          "caller": "DashboardCalendar",
+          "callee": "setDrawerOpen",
+          "lineNumber": 1298
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 1,
+        "functionCount": 12,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 36,
+      "functions": [
+        {
+          "name": "AdminSettingsTabs",
+          "startLine": 11,
+          "endLine": 39,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AdminSettingsTabs",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AdminSettingsTabs",
+          "callee": "useLocation",
+          "lineNumber": 12
+        },
+        {
+          "caller": "AdminSettingsTabs",
+          "callee": "useNavigate",
+          "lineNumber": 13
+        },
+        {
+          "caller": "AdminSettingsTabs",
+          "callee": "ADMIN_TABS.find",
+          "lineNumber": 15
+        },
+        {
+          "caller": "AdminSettingsTabs",
+          "callee": "location.pathname.startsWith",
+          "lineNumber": 15
+        },
+        {
+          "caller": "AdminSettingsTabs",
+          "callee": "alpha",
+          "lineNumber": 23
+        },
+        {
+          "caller": "AdminSettingsTabs",
+          "callee": "navigate",
+          "lineNumber": 28
+        },
+        {
+          "caller": "AdminSettingsTabs",
+          "callee": "ADMIN_TABS.map",
+          "lineNumber": 33
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/layout/AppLayout.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 482,
+      "nonEmptyLines": 461,
+      "functions": [
+        {
+          "name": "ThemeToggle",
+          "startLine": 63,
+          "endLine": 85,
+          "params": []
+        },
+        {
+          "name": "NavBlock",
+          "startLine": 87,
+          "endLine": 169,
+          "params": [
+            "{\n    title,\n    items,\n    currentPath,\n    onNavigate,\n    collapsed,\n}"
+          ]
+        },
+        {
+          "name": "AppLayout",
+          "startLine": 171,
+          "endLine": 482,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AppLayout",
+          "line": 171,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ThemeToggle",
+          "callee": "useColorMode",
+          "lineNumber": 64
+        },
+        {
+          "caller": "cycle",
+          "callee": "setColorMode",
+          "lineNumber": 67
+        },
+        {
+          "caller": "NavBlock",
+          "callee": "items.map",
+          "lineNumber": 112
+        },
+        {
+          "caller": "NavBlock",
+          "callee": "currentPath.startsWith",
+          "lineNumber": 116
+        },
+        {
+          "caller": "NavBlock",
+          "callee": "onNavigate",
+          "lineNumber": 121
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useState",
+          "lineNumber": 172
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useState",
+          "lineNumber": 173
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useAuth",
+          "lineNumber": 174
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useNavigate",
+          "lineNumber": 175
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useLocation",
+          "lineNumber": 176
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useTheme",
+          "lineNumber": 177
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useMediaQuery",
+          "lineNumber": 178
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "theme.breakpoints.down",
+          "lineNumber": 178
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "usePlatformMetadata",
+          "lineNumber": 179
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useNotifications",
+          "lineNumber": 180
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useUserProfile",
+          "lineNumber": 181
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "notifications?.filter",
+          "lineNumber": 183
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "platformMetadata?.module_catalog.some",
+          "lineNumber": 187
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "platformMetadata?.module_catalog.some",
+          "lineNumber": 189
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "useMemo",
+          "lineNumber": 193
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "navItems.filter",
+          "lineNumber": 226
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "visibleNavItems.find",
+          "lineNumber": 227
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "location.pathname.startsWith",
+          "lineNumber": 228
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "location.pathname.startsWith",
+          "lineNumber": 231
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "location.pathname.startsWith",
+          "lineNumber": 232
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "getInitials",
+          "lineNumber": 234
+        },
+        {
+          "caller": "handleNavigate",
+          "callee": "navigate",
+          "lineNumber": 237
+        },
+        {
+          "caller": "handleNavigate",
+          "callee": "setDrawerOpen",
+          "lineNumber": 238
+        },
+        {
+          "caller": "handleSignOut",
+          "callee": "logout",
+          "lineNumber": 242
+        },
+        {
+          "caller": "handleSignOut",
+          "callee": "setDrawerOpen",
+          "lineNumber": 243
+        },
+        {
+          "caller": "handleSignOut",
+          "callee": "navigate",
+          "lineNumber": 244
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "appName.trim().charAt(0).toUpperCase",
+          "lineNumber": 274
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "appName.trim().charAt",
+          "lineNumber": 274
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "appName.trim",
+          "lineNumber": 274
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "visibleNavItems.filter",
+          "lineNumber": 304
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "visibleNavItems.filter",
+          "lineNumber": 313
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "handleNavigate",
+          "lineNumber": 352
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "handleSignOut",
+          "lineNumber": 357
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "handleNavigate",
+          "lineNumber": 364
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "handleSignOut",
+          "lineNumber": 372
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "theme.transitions.create",
+          "lineNumber": 398
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "setDrawerOpen",
+          "lineNumber": 407
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "setDesktopNavCollapsed",
+          "lineNumber": 417
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "setDrawerOpen",
+          "lineNumber": 440
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "theme.transitions.create",
+          "lineNumber": 457
+        },
+        {
+          "caller": "AppLayout",
+          "callee": "theme.transitions.create",
+          "lineNumber": 473
+        }
+      ],
+      "metrics": {
+        "importCount": 7,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/notifications/NotificationListItem.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 105,
+      "nonEmptyLines": 102,
+      "functions": [
+        {
+          "name": "NotificationListItem",
+          "startLine": 20,
+          "endLine": 105,
+          "params": [
+            "{\n    notification,\n    variant = \"detailed\",\n    onMarkRead,\n    isMarkingRead = false,\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "NotificationListItem",
+          "line": 20,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "NotificationListItem",
+          "callee": "alpha",
+          "lineNumber": 38
+        },
+        {
+          "caller": "NotificationListItem",
+          "callee": "alpha",
+          "lineNumber": 43
+        },
+        {
+          "caller": "NotificationListItem",
+          "callee": "humanizeKey",
+          "lineNumber": 67
+        },
+        {
+          "caller": "NotificationListItem",
+          "callee": "formatDateTime",
+          "lineNumber": 87
+        },
+        {
+          "caller": "NotificationListItem",
+          "callee": "onMarkRead",
+          "lineNumber": 96
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/ui/EmptyState.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 39,
+      "nonEmptyLines": 37,
+      "functions": [
+        {
+          "name": "EmptyState",
+          "startLine": 10,
+          "endLine": 39,
+          "params": [
+            "{ icon, title, description, action }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "EmptyState",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/ui/PageHeader.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 59,
+      "nonEmptyLines": 57,
+      "functions": [
+        {
+          "name": "PageHeader",
+          "startLine": 11,
+          "endLine": 59,
+          "params": [
+            "{ eyebrow, title, description, actions, meta }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "PageHeader",
+          "line": 11,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/ui/PageShell.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 26,
+      "nonEmptyLines": 24,
+      "functions": [
+        {
+          "name": "PageShell",
+          "startLine": 9,
+          "endLine": 26,
+          "params": [
+            "{ children, maxWidth = \"xl\", sx }"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "PageShell",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "PageShell",
+          "callee": "Array.isArray",
+          "lineNumber": 18
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/ui/QueryBoundary.test.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 54,
+      "nonEmptyLines": 45,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/ui/QueryBoundary.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 115,
+      "nonEmptyLines": 107,
+      "functions": [
+        {
+          "name": "QueryErrorAlert",
+          "startLine": 20,
+          "endLine": 56,
+          "params": [
+            "{\n    error,\n    fallback = \"Failed to load data.\",\n    title,\n    onRetry,\n}"
+          ]
+        },
+        {
+          "name": "QueryBoundary",
+          "startLine": 58,
+          "endLine": 115,
+          "params": [
+            "{\n    isLoading = false,\n    isError = false,\n    error,\n    isEmpty = false,\n    errorFallback = \"Failed to load data.\",\n    errorTitle,\n    severity = \"error\",\n    onRetry,\n    loadingFallback,\n    emptyFallback,\n    variant = \"inline\",\n    children,\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "QueryErrorAlert",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "QueryBoundary",
+          "line": 58,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "QueryErrorAlert",
+          "callee": "getQueryErrorMessage",
+          "lineNumber": 49
+        },
+        {
+          "caller": "QueryErrorAlert",
+          "callee": "getQueryErrorMessage",
+          "lineNumber": 52
+        },
+        {
+          "caller": "QueryBoundary",
+          "callee": "getQueryErrorMessage",
+          "lineNumber": 101
+        },
+        {
+          "caller": "QueryBoundary",
+          "callee": "getQueryErrorMessage",
+          "lineNumber": 104
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 2,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/ui/SectionCard.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 67,
+      "nonEmptyLines": 65,
+      "functions": [
+        {
+          "name": "SectionCard",
+          "startLine": 13,
+          "endLine": 67,
+          "params": [
+            "{\n    title,\n    description,\n    action,\n    children,\n    sx,\n    contentSx,\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "SectionCard",
+          "line": 13,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "SectionCard",
+          "callee": "Array.isArray",
+          "lineNumber": 32
+        },
+        {
+          "caller": "SectionCard",
+          "callee": "Array.isArray",
+          "lineNumber": 60
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/components/ui/StatCard.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 74,
+      "nonEmptyLines": 72,
+      "functions": [
+        {
+          "name": "StatCard",
+          "startLine": 13,
+          "endLine": 74,
+          "params": [
+            "{\n    label,\n    value,\n    description,\n    icon,\n    loading = false,\n}"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "StatCard",
+          "line": 13,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/config/queryKeys.test.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 27,
+      "nonEmptyLines": 22,
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

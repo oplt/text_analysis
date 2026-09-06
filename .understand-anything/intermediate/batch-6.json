@@ -1,0 +1,2590 @@
+{
+  "nodes": [
+    {
+      "id": "file:backend/observability/instruments.py",
+      "type": "file",
+      "name": "instruments.py",
+      "filePath": "backend/observability/instruments.py",
+      "summary": "instruments.py (3 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/observability/instruments.py:_attrs",
+      "type": "function",
+      "name": "_attrs",
+      "filePath": "backend/observability/instruments.py",
+      "summary": "Function _attrs in backend/observability/instruments.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/instruments.py:observed_span",
+      "type": "function",
+      "name": "observed_span",
+      "filePath": "backend/observability/instruments.py",
+      "summary": "Function observed_span in backend/observability/instruments.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/instruments.py:structured_error",
+      "type": "function",
+      "name": "structured_error",
+      "filePath": "backend/observability/instruments.py",
+      "summary": "Function structured_error in backend/observability/instruments.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/observability/metrics.py",
+      "type": "file",
+      "name": "metrics.py",
+      "filePath": "backend/observability/metrics.py",
+      "summary": "metrics.py (7 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/observability/metrics.py:_safe_attrs",
+      "type": "function",
+      "name": "_safe_attrs",
+      "filePath": "backend/observability/metrics.py",
+      "summary": "Function _safe_attrs in backend/observability/metrics.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/metrics.py:_meter",
+      "type": "function",
+      "name": "_meter",
+      "filePath": "backend/observability/metrics.py",
+      "summary": "Function _meter in backend/observability/metrics.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/metrics.py:_instruments",
+      "type": "function",
+      "name": "_instruments",
+      "filePath": "backend/observability/metrics.py",
+      "summary": "Function _instruments in backend/observability/metrics.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/metrics.py:add",
+      "type": "function",
+      "name": "add",
+      "filePath": "backend/observability/metrics.py",
+      "summary": "Function add in backend/observability/metrics.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/metrics.py:record",
+      "type": "function",
+      "name": "record",
+      "filePath": "backend/observability/metrics.py",
+      "summary": "Function record in backend/observability/metrics.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/metrics.py:setup_metrics",
+      "type": "function",
+      "name": "setup_metrics",
+      "filePath": "backend/observability/metrics.py",
+      "summary": "Function setup_metrics in backend/observability/metrics.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/metrics.py:_route_path",
+      "type": "function",
+      "name": "_route_path",
+      "filePath": "backend/observability/metrics.py",
+      "summary": "Function _route_path in backend/observability/metrics.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/observability/otel.py",
+      "type": "file",
+      "name": "otel.py",
+      "filePath": "backend/observability/otel.py",
+      "summary": "otel.py (7 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/observability/otel.py:_signal_endpoint",
+      "type": "function",
+      "name": "_signal_endpoint",
+      "filePath": "backend/observability/otel.py",
+      "summary": "Function _signal_endpoint in backend/observability/otel.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/otel.py:_resource",
+      "type": "function",
+      "name": "_resource",
+      "filePath": "backend/observability/otel.py",
+      "summary": "Function _resource in backend/observability/otel.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/otel.py:setup_observability",
+      "type": "function",
+      "name": "setup_observability",
+      "filePath": "backend/observability/otel.py",
+      "summary": "Function setup_observability in backend/observability/otel.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/otel.py:setup_traces",
+      "type": "function",
+      "name": "setup_traces",
+      "filePath": "backend/observability/otel.py",
+      "summary": "Function setup_traces in backend/observability/otel.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/otel.py:_setup_trace_exporter",
+      "type": "function",
+      "name": "_setup_trace_exporter",
+      "filePath": "backend/observability/otel.py",
+      "summary": "Function _setup_trace_exporter in backend/observability/otel.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/otel.py:_setup_library_instrumentation",
+      "type": "function",
+      "name": "_setup_library_instrumentation",
+      "filePath": "backend/observability/otel.py",
+      "summary": "Function _setup_library_instrumentation in backend/observability/otel.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/otel.py:_instrument_app",
+      "type": "function",
+      "name": "_instrument_app",
+      "filePath": "backend/observability/otel.py",
+      "summary": "Function _instrument_app in backend/observability/otel.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/observability/schemas.py",
+      "type": "file",
+      "name": "schemas.py",
+      "filePath": "backend/observability/schemas.py",
+      "summary": "schemas.py (0 functions, 5 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/observability/schemas.py:ObservabilityToolLink",
+      "type": "class",
+      "name": "ObservabilityToolLink",
+      "filePath": "backend/observability/schemas.py",
+      "summary": "Class ObservabilityToolLink in backend/observability/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/observability/schemas.py:ObservabilityDashboards",
+      "type": "class",
+      "name": "ObservabilityDashboards",
+      "filePath": "backend/observability/schemas.py",
+      "summary": "Class ObservabilityDashboards in backend/observability/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/observability/schemas.py:ObservabilityLinks",
+      "type": "class",
+      "name": "ObservabilityLinks",
+      "filePath": "backend/observability/schemas.py",
+      "summary": "Class ObservabilityLinks in backend/observability/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/observability/schemas.py:ObservabilityStatusItem",
+      "type": "class",
+      "name": "ObservabilityStatusItem",
+      "filePath": "backend/observability/schemas.py",
+      "summary": "Class ObservabilityStatusItem in backend/observability/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/observability/schemas.py:ObservabilityStatus",
+      "type": "class",
+      "name": "ObservabilityStatus",
+      "filePath": "backend/observability/schemas.py",
+      "summary": "Class ObservabilityStatus in backend/observability/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/observability/sentry.py",
+      "type": "file",
+      "name": "sentry.py",
+      "filePath": "backend/observability/sentry.py",
+      "summary": "sentry.py (1 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/observability/sentry.py:setup_sentry",
+      "type": "function",
+      "name": "setup_sentry",
+      "filePath": "backend/observability/sentry.py",
+      "summary": "Function setup_sentry in backend/observability/sentry.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/observability/service.py",
+      "type": "file",
+      "name": "service.py",
+      "filePath": "backend/observability/service.py",
+      "summary": "service.py (2 functions, 1 classes)",
+      "tags": [
+        "code",
+        "python",
+        "service"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/observability/service.py:build_public_url",
+      "type": "function",
+      "name": "build_public_url",
+      "filePath": "backend/observability/service.py",
+      "summary": "Function build_public_url in backend/observability/service.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/service.py:_tool_link",
+      "type": "function",
+      "name": "_tool_link",
+      "filePath": "backend/observability/service.py",
+      "summary": "Function _tool_link in backend/observability/service.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/observability/service.py:ObservabilityService",
+      "type": "class",
+      "name": "ObservabilityService",
+      "filePath": "backend/observability/service.py",
+      "summary": "Class ObservabilityService in backend/observability/service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/observability/service.py:ObservabilityService.__init__",
+      "type": "function",
+      "name": "ObservabilityService.__init__",
+      "filePath": "backend/observability/service.py",
+      "summary": "Method __init__ on ObservabilityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/service.py:ObservabilityService.get_links",
+      "type": "function",
+      "name": "ObservabilityService.get_links",
+      "filePath": "backend/observability/service.py",
+      "summary": "Method get_links on ObservabilityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/service.py:ObservabilityService.get_status",
+      "type": "function",
+      "name": "ObservabilityService.get_status",
+      "filePath": "backend/observability/service.py",
+      "summary": "Method get_status on ObservabilityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/service.py:ObservabilityService._build_status",
+      "type": "function",
+      "name": "ObservabilityService._build_status",
+      "filePath": "backend/observability/service.py",
+      "summary": "Method _build_status on ObservabilityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/service.py:ObservabilityService._database_status",
+      "type": "function",
+      "name": "ObservabilityService._database_status",
+      "filePath": "backend/observability/service.py",
+      "summary": "Method _database_status on ObservabilityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/service.py:ObservabilityService._cache_status",
+      "type": "function",
+      "name": "ObservabilityService._cache_status",
+      "filePath": "backend/observability/service.py",
+      "summary": "Method _cache_status on ObservabilityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/service.py:ObservabilityService._http_status",
+      "type": "function",
+      "name": "ObservabilityService._http_status",
+      "filePath": "backend/observability/service.py",
+      "summary": "Method _http_status on ObservabilityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/observability/setup.py",
+      "type": "file",
+      "name": "setup.py",
+      "filePath": "backend/observability/setup.py",
+      "summary": "setup.py (1 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/observability/setup.py:setup_observability",
+      "type": "function",
+      "name": "setup_observability",
+      "filePath": "backend/observability/setup.py",
+      "summary": "Function setup_observability in backend/observability/setup.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/observability/tracing.py",
+      "type": "file",
+      "name": "tracing.py",
+      "filePath": "backend/observability/tracing.py",
+      "summary": "tracing.py (1 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/observability/tracing.py:setup_tracing",
+      "type": "function",
+      "name": "setup_tracing",
+      "filePath": "backend/observability/tracing.py",
+      "summary": "Function setup_tracing in backend/observability/tracing.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/integration_support.py",
+      "type": "file",
+      "name": "integration_support.py",
+      "filePath": "backend/tests/integration_support.py",
+      "summary": "integration_support.py (10 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/tests/integration_support.py:integration_enabled",
+      "type": "function",
+      "name": "integration_enabled",
+      "filePath": "backend/tests/integration_support.py",
+      "summary": "Function integration_enabled in backend/tests/integration_support.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/integration_support.py:rag_integration_ready",
+      "type": "function",
+      "name": "rag_integration_ready",
+      "filePath": "backend/tests/integration_support.py",
+      "summary": "Function rag_integration_ready in backend/tests/integration_support.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/integration_support.py:unique_email",
+      "type": "function",
+      "name": "unique_email",
+      "filePath": "backend/tests/integration_support.py",
+      "summary": "Function unique_email in backend/tests/integration_support.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/integration_support.py:prepare_integration_runtime",
+      "type": "function",
+      "name": "prepare_integration_runtime",
+      "filePath": "backend/tests/integration_support.py",
+      "summary": "Function prepare_integration_runtime in backend/tests/integration_support.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/integration_support.py:api_client",
+      "type": "function",
+      "name": "api_client",
+      "filePath": "backend/tests/integration_support.py",
+      "summary": "Function api_client in backend/tests/integration_support.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/integration_support.py:csrf_headers",
+      "type": "function",
+      "name": "csrf_headers",
+      "filePath": "backend/tests/integration_support.py",
+      "summary": "Function csrf_headers in backend/tests/integration_support.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/integration_support.py:register_user",
+      "type": "function",
+      "name": "register_user",
+      "filePath": "backend/tests/integration_support.py",
+      "summary": "Function register_user in backend/tests/integration_support.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/integration_support.py:sign_in",
+      "type": "function",
+      "name": "sign_in",
+      "filePath": "backend/tests/integration_support.py",
+      "summary": "Function sign_in in backend/tests/integration_support.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/integration_support.py:register_and_sign_in",
+      "type": "function",
+      "name": "register_and_sign_in",
+      "filePath": "backend/tests/integration_support.py",
+      "summary": "Function register_and_sign_in in backend/tests/integration_support.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/integration_support.py:auth_request",
+      "type": "function",
+      "name": "auth_request",
+      "filePath": "backend/tests/integration_support.py",
+      "summary": "Function auth_request in backend/tests/integration_support.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_agent_run_smoke.py",
+      "type": "file",
+      "name": "test_agent_run_smoke.py",
+      "filePath": "backend/tests/test_agent_run_smoke.py",
+      "summary": "test_agent_run_smoke.py (0 functions, 1 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_agent_run_smoke.py:AgentRunSmokeTest",
+      "type": "class",
+      "name": "AgentRunSmokeTest",
+      "filePath": "backend/tests/test_agent_run_smoke.py",
+      "summary": "Class AgentRunSmokeTest in backend/tests/test_agent_run_smoke.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_agent_run_smoke.py:AgentRunSmokeTest.test_agent_run_returns_completed_response",
+      "type": "function",
+      "name": "AgentRunSmokeTest.test_agent_run_returns_completed_response",
+      "filePath": "backend/tests/test_agent_run_smoke.py",
+      "summary": "Method test_agent_run_returns_completed_response on AgentRunSmokeTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_ai_provider_http_clients.py",
+      "type": "file",
+      "name": "test_ai_provider_http_clients.py",
+      "filePath": "backend/tests/test_ai_provider_http_clients.py",
+      "summary": "test_ai_provider_http_clients.py (3 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/tests/test_ai_provider_http_clients.py:reset_http_clients",
+      "type": "function",
+      "name": "reset_http_clients",
+      "filePath": "backend/tests/test_ai_provider_http_clients.py",
+      "summary": "Function reset_http_clients in backend/tests/test_ai_provider_http_clients.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_ai_provider_http_clients.py:test_openai_provider_reuses_shared_http_client",
+      "type": "function",
+      "name": "test_openai_provider_reuses_shared_http_client",
+      "filePath": "backend/tests/test_ai_provider_http_clients.py",
+      "summary": "Function test_openai_provider_reuses_shared_http_client in backend/tests/test_ai_provider_http_clients.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_ai_provider_http_clients.py:test_close_ai_provider_http_clients_closes_open_clients",
+      "type": "function",
+      "name": "test_close_ai_provider_http_clients_closes_open_clients",
+      "filePath": "backend/tests/test_ai_provider_http_clients.py",
+      "summary": "Function test_close_ai_provider_http_clients_closes_open_clients in backend/tests/test_ai_provider_http_clients.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_api_auth.py",
+      "type": "file",
+      "name": "test_api_auth.py",
+      "filePath": "backend/tests/test_api_auth.py",
+      "summary": "test_api_auth.py (0 functions, 2 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_api_auth.py:AuthApiIntegrationTest",
+      "type": "class",
+      "name": "AuthApiIntegrationTest",
+      "filePath": "backend/tests/test_api_auth.py",
+      "summary": "Class AuthApiIntegrationTest in backend/tests/test_api_auth.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_api_auth.py:AuthApiIntegrationTest.test_sign_up_sign_in_me_and_logout",
+      "type": "function",
+      "name": "AuthApiIntegrationTest.test_sign_up_sign_in_me_and_logout",
+      "filePath": "backend/tests/test_api_auth.py",
+      "summary": "Method test_sign_up_sign_in_me_and_logout on AuthApiIntegrationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_api_auth.py:AuthApiIntegrationTest.test_me_requires_authentication",
+      "type": "function",
+      "name": "AuthApiIntegrationTest.test_me_requires_authentication",
+      "filePath": "backend/tests/test_api_auth.py",
+      "summary": "Method test_me_requires_authentication on AuthApiIntegrationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_api_auth.py:AuthApiIntegrationTest.test_csrf_blocks_mutating_request_without_header",
+      "type": "function",
+      "name": "AuthApiIntegrationTest.test_csrf_blocks_mutating_request_without_header",
+      "filePath": "backend/tests/test_api_auth.py",
+      "summary": "Method test_csrf_blocks_mutating_request_without_header on AuthApiIntegrationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_api_auth.py:AuthApiIntegrationTest.test_refresh_rotates_session",
+      "type": "function",
+      "name": "AuthApiIntegrationTest.test_refresh_rotates_session",
+      "filePath": "backend/tests/test_api_auth.py",
+      "summary": "Method test_refresh_rotates_session on AuthApiIntegrationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_api_auth.py:AuthApiIntegrationTest.test_invalid_credentials_return_unauthorized",
+      "type": "function",
+      "name": "AuthApiIntegrationTest.test_invalid_credentials_return_unauthorized",
+      "filePath": "backend/tests/test_api_auth.py",
+      "summary": "Method test_invalid_credentials_return_unauthorized on AuthApiIntegrationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_api_auth.py:AuthApiUnitTest",
+      "type": "class",
+      "name": "AuthApiUnitTest",
+      "filePath": "backend/tests/test_api_auth.py",
+      "summary": "Class AuthApiUnitTest in backend/tests/test_api_auth.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_api_auth.py:AuthApiUnitTest.test_unique_email_generates_distinct_values",
+      "type": "function",
+      "name": "AuthApiUnitTest.test_unique_email_generates_distinct_values",
+      "filePath": "backend/tests/test_api_auth.py",
+      "summary": "Method test_unique_email_generates_distinct_values on AuthApiUnitTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_async_dispatch.py",
+      "type": "file",
+      "name": "test_async_dispatch.py",
+      "filePath": "backend/tests/test_async_dispatch.py",
+      "summary": "test_async_dispatch.py (6 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/tests/test_async_dispatch.py:reset_eager_warning_flag",
+      "type": "function",
+      "name": "reset_eager_warning_flag",
+      "filePath": "backend/tests/test_async_dispatch.py",
+      "summary": "Function reset_eager_warning_flag in backend/tests/test_async_dispatch.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_async_dispatch.py:test_run_async_in_sync_context_executes_coroutine",
+      "type": "function",
+      "name": "test_run_async_in_sync_context_executes_coroutine",
+      "filePath": "backend/tests/test_async_dispatch.py",
+      "summary": "Function test_run_async_in_sync_context_executes_coroutine in backend/tests/test_async_dispatch.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_async_dispatch.py:test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+      "type": "function",
+      "name": "test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+      "filePath": "backend/tests/test_async_dispatch.py",
+      "summary": "Function test_dispatch_background_sync_job_uses_daemon_thread_when_eager in backend/tests/test_async_dispatch.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_async_dispatch.py:test_dispatch_background_sync_job_uses_celery_when_not_eager",
+      "type": "function",
+      "name": "test_dispatch_background_sync_job_uses_celery_when_not_eager",
+      "filePath": "backend/tests/test_async_dispatch.py",
+      "summary": "Function test_dispatch_background_sync_job_uses_celery_when_not_eager in backend/tests/test_async_dispatch.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_async_dispatch.py:test_log_eager_mode_startup_warning_in_production",
+      "type": "function",
+      "name": "test_log_eager_mode_startup_warning_in_production",
+      "filePath": "backend/tests/test_async_dispatch.py",
+      "summary": "Function test_log_eager_mode_startup_warning_in_production in backend/tests/test_async_dispatch.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_async_dispatch.py:test_log_eager_mode_startup_warning_in_dev",
+      "type": "function",
+      "name": "test_log_eager_mode_startup_warning_in_dev",
+      "filePath": "backend/tests/test_async_dispatch.py",
+      "summary": "Function test_log_eager_mode_startup_warning_in_dev in backend/tests/test_async_dispatch.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_cache.py",
+      "type": "file",
+      "name": "test_cache.py",
+      "filePath": "backend/tests/test_cache.py",
+      "summary": "test_cache.py (0 functions, 2 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_cache.py:CacheHelpersTest",
+      "type": "class",
+      "name": "CacheHelpersTest",
+      "filePath": "backend/tests/test_cache.py",
+      "summary": "Class CacheHelpersTest in backend/tests/test_cache.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_cache.py:CacheHelpersTest.test_cache_get_returns_none_when_disabled",
+      "type": "function",
+      "name": "CacheHelpersTest.test_cache_get_returns_none_when_disabled",
+      "filePath": "backend/tests/test_cache.py",
+      "summary": "Method test_cache_get_returns_none_when_disabled on CacheHelpersTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_cache.py:CacheHelpersTest.test_cache_set_skips_when_disabled",
+      "type": "function",
+      "name": "CacheHelpersTest.test_cache_set_skips_when_disabled",
+      "filePath": "backend/tests/test_cache.py",
+      "summary": "Method test_cache_set_skips_when_disabled on CacheHelpersTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_cache.py:CacheHelpersTest.test_cache_round_trip_json",
+      "type": "function",
+      "name": "CacheHelpersTest.test_cache_round_trip_json",
+      "filePath": "backend/tests/test_cache.py",
+      "summary": "Method test_cache_round_trip_json on CacheHelpersTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_cache.py:CacheHelpersTest.test_embedding_cache_key_is_stable_and_namespaced",
+      "type": "function",
+      "name": "CacheHelpersTest.test_embedding_cache_key_is_stable_and_namespaced",
+      "filePath": "backend/tests/test_cache.py",
+      "summary": "Method test_embedding_cache_key_is_stable_and_namespaced on CacheHelpersTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_cache.py:CacheHelpersTest.test_invalidate_platform_caches_deletes_known_keys",
+      "type": "function",
+      "name": "CacheHelpersTest.test_invalidate_platform_caches_deletes_known_keys",
+      "filePath": "backend/tests/test_cache.py",
+      "summary": "Method test_invalidate_platform_caches_deletes_known_keys on CacheHelpersTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_cache.py:EmbeddingCacheTest",
+      "type": "class",
+      "name": "EmbeddingCacheTest",
+      "filePath": "backend/tests/test_cache.py",
+      "summary": "Class EmbeddingCacheTest in backend/tests/test_cache.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_cache.py:EmbeddingCacheTest.test_embed_texts_uses_cache_for_repeat_query",
+      "type": "function",
+      "name": "EmbeddingCacheTest.test_embed_texts_uses_cache_for_repeat_query",
+      "filePath": "backend/tests/test_cache.py",
+      "summary": "Method test_embed_texts_uses_cache_for_repeat_query on EmbeddingCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_cache.py:EmbeddingCacheTest.test_embed_texts_skips_cache_for_overlong_text",
+      "type": "function",
+      "name": "EmbeddingCacheTest.test_embed_texts_skips_cache_for_overlong_text",
+      "filePath": "backend/tests/test_cache.py",
+      "summary": "Method test_embed_texts_skips_cache_for_overlong_text on EmbeddingCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_cache.py:EmbeddingCacheTest.test_ai_embed_retrieval_queries_uses_cache",
+      "type": "function",
+      "name": "EmbeddingCacheTest.test_ai_embed_retrieval_queries_uses_cache",
+      "filePath": "backend/tests/test_cache.py",
+      "summary": "Method test_ai_embed_retrieval_queries_uses_cache on EmbeddingCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_observability.py",
+      "type": "file",
+      "name": "test_observability.py",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "test_observability.py (3 functions, 2 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/tests/test_observability.py:make_settings",
+      "type": "function",
+      "name": "make_settings",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "Function make_settings in backend/tests/test_observability.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_observability.py:make_status_item",
+      "type": "function",
+      "name": "make_status_item",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "Function make_status_item in backend/tests/test_observability.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_observability.py:make_observability_status",
+      "type": "function",
+      "name": "make_observability_status",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "Function make_observability_status in backend/tests/test_observability.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_observability.py:ObservabilityServiceTest",
+      "type": "class",
+      "name": "ObservabilityServiceTest",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "Class ObservabilityServiceTest in backend/tests/test_observability.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_observability.py:ObservabilityServiceTest.test_url_joining_trims_duplicate_slashes",
+      "type": "function",
+      "name": "ObservabilityServiceTest.test_url_joining_trims_duplicate_slashes",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "Method test_url_joining_trims_duplicate_slashes on ObservabilityServiceTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_observability.py:ObservabilityServiceTest.test_links_return_configured_urls_for_admin",
+      "type": "function",
+      "name": "ObservabilityServiceTest.test_links_return_configured_urls_for_admin",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "Method test_links_return_configured_urls_for_admin on ObservabilityServiceTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_observability.py:ObservabilityServiceTest.test_missing_optional_urls_are_not_configured",
+      "type": "function",
+      "name": "ObservabilityServiceTest.test_missing_optional_urls_are_not_configured",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "Method test_missing_optional_urls_are_not_configured on ObservabilityServiceTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_observability.py:ObservabilityServiceTest.test_non_admin_does_not_receive_technical_urls",
+      "type": "function",
+      "name": "ObservabilityServiceTest.test_non_admin_does_not_receive_technical_urls",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "Method test_non_admin_does_not_receive_technical_urls on ObservabilityServiceTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_observability.py:ObservabilityStatusTest",
+      "type": "class",
+      "name": "ObservabilityStatusTest",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "Class ObservabilityStatusTest in backend/tests/test_observability.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_observability.py:ObservabilityStatusTest.test_status_does_not_crash_when_tools_are_unconfigured",
+      "type": "function",
+      "name": "ObservabilityStatusTest.test_status_does_not_crash_when_tools_are_unconfigured",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "Method test_status_does_not_crash_when_tools_are_unconfigured on ObservabilityStatusTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_observability.py:ObservabilityStatusTest.test_status_uses_cached_payload_on_repeat_calls",
+      "type": "function",
+      "name": "ObservabilityStatusTest.test_status_uses_cached_payload_on_repeat_calls",
+      "filePath": "backend/tests/test_observability.py",
+      "summary": "Method test_status_uses_cached_payload_on_repeat_calls on ObservabilityStatusTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_platform_cache.py",
+      "type": "file",
+      "name": "test_platform_cache.py",
+      "filePath": "backend/tests/test_platform_cache.py",
+      "summary": "test_platform_cache.py (0 functions, 1 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_platform_cache.py:PlatformConfigCacheTest",
+      "type": "class",
+      "name": "PlatformConfigCacheTest",
+      "filePath": "backend/tests/test_platform_cache.py",
+      "summary": "Class PlatformConfigCacheTest in backend/tests/test_platform_cache.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_platform_cache.py:PlatformConfigCacheTest.asyncSetUp",
+      "type": "function",
+      "name": "PlatformConfigCacheTest.asyncSetUp",
+      "filePath": "backend/tests/test_platform_cache.py",
+      "summary": "Method asyncSetUp on PlatformConfigCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_platform_cache.py:PlatformConfigCacheTest.test_get_platform_config_uses_cache_loader_once",
+      "type": "function",
+      "name": "PlatformConfigCacheTest.test_get_platform_config_uses_cache_loader_once",
+      "filePath": "backend/tests/test_platform_cache.py",
+      "summary": "Method test_get_platform_config_uses_cache_loader_once on PlatformConfigCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_platform_cache.py:PlatformConfigCacheTest.test_local_cache_serves_platform_config_without_second_redis_read",
+      "type": "function",
+      "name": "PlatformConfigCacheTest.test_local_cache_serves_platform_config_without_second_redis_read",
+      "filePath": "backend/tests/test_platform_cache.py",
+      "summary": "Method test_local_cache_serves_platform_config_without_second_redis_read on PlatformConfigCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_platform_cache.py:PlatformConfigCacheTest.test_list_feature_flags_uses_shared_cache_loader",
+      "type": "function",
+      "name": "PlatformConfigCacheTest.test_list_feature_flags_uses_shared_cache_loader",
+      "filePath": "backend/tests/test_platform_cache.py",
+      "summary": "Method test_list_feature_flags_uses_shared_cache_loader on PlatformConfigCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_platform_cache.py:PlatformConfigCacheTest.test_invalidate_platform_caches_clears_local_entries",
+      "type": "function",
+      "name": "PlatformConfigCacheTest.test_invalidate_platform_caches_clears_local_entries",
+      "filePath": "backend/tests/test_platform_cache.py",
+      "summary": "Method test_invalidate_platform_caches_clears_local_entries on PlatformConfigCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_rag_permissions_integration.py",
+      "type": "file",
+      "name": "test_rag_permissions_integration.py",
+      "filePath": "backend/tests/test_rag_permissions_integration.py",
+      "summary": "test_rag_permissions_integration.py (0 functions, 1 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_rag_permissions_integration.py:RagPermissionsIntegrationTest",
+      "type": "class",
+      "name": "RagPermissionsIntegrationTest",
+      "filePath": "backend/tests/test_rag_permissions_integration.py",
+      "summary": "Class RagPermissionsIntegrationTest in backend/tests/test_rag_permissions_integration.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_rag_permissions_integration.py:RagPermissionsIntegrationTest.test_cross_user_document_access_is_blocked",
+      "type": "function",
+      "name": "RagPermissionsIntegrationTest.test_cross_user_document_access_is_blocked",
+      "filePath": "backend/tests/test_rag_permissions_integration.py",
+      "summary": "Method test_cross_user_document_access_is_blocked on RagPermissionsIntegrationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_rag_permissions_integration.py:RagPermissionsIntegrationTest.test_upload_to_foreign_project_is_forbidden",
+      "type": "function",
+      "name": "RagPermissionsIntegrationTest.test_upload_to_foreign_project_is_forbidden",
+      "filePath": "backend/tests/test_rag_permissions_integration.py",
+      "summary": "Method test_upload_to_foreign_project_is_forbidden on RagPermissionsIntegrationTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_settings_observability_cache.py",
+      "type": "file",
+      "name": "test_settings_observability_cache.py",
+      "filePath": "backend/tests/test_settings_observability_cache.py",
+      "summary": "test_settings_observability_cache.py (0 functions, 1 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_settings_observability_cache.py:SettingsCacheTest",
+      "type": "class",
+      "name": "SettingsCacheTest",
+      "filePath": "backend/tests/test_settings_observability_cache.py",
+      "summary": "Class SettingsCacheTest in backend/tests/test_settings_observability_cache.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.asyncSetUp",
+      "type": "function",
+      "name": "SettingsCacheTest.asyncSetUp",
+      "filePath": "backend/tests/test_settings_observability_cache.py",
+      "summary": "Method asyncSetUp on SettingsCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.test_list_database_settings_uses_shared_cache_loader",
+      "type": "function",
+      "name": "SettingsCacheTest.test_list_database_settings_uses_shared_cache_loader",
+      "filePath": "backend/tests/test_settings_observability_cache.py",
+      "summary": "Method test_list_database_settings_uses_shared_cache_loader on SettingsCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.test_list_config_entries_uses_local_cache",
+      "type": "function",
+      "name": "SettingsCacheTest.test_list_config_entries_uses_local_cache",
+      "filePath": "backend/tests/test_settings_observability_cache.py",
+      "summary": "Method test_list_config_entries_uses_local_cache on SettingsCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.test_invalidate_settings_config_cache_clears_entries",
+      "type": "function",
+      "name": "SettingsCacheTest.test_invalidate_settings_config_cache_clears_entries",
+      "filePath": "backend/tests/test_settings_observability_cache.py",
+      "summary": "Method test_invalidate_settings_config_cache_clears_entries on SettingsCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.test_settings_local_cache_avoids_second_redis_read",
+      "type": "function",
+      "name": "SettingsCacheTest.test_settings_local_cache_avoids_second_redis_read",
+      "filePath": "backend/tests/test_settings_observability_cache.py",
+      "summary": "Method test_settings_local_cache_avoids_second_redis_read on SettingsCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.test_observability_status_uses_local_only_cache",
+      "type": "function",
+      "name": "SettingsCacheTest.test_observability_status_uses_local_only_cache",
+      "filePath": "backend/tests/test_settings_observability_cache.py",
+      "summary": "Method test_observability_status_uses_local_only_cache on SettingsCacheTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/workers/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/workers/__init__.py",
+      "summary": "code file: __init__.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "workers"
+    },
+    {
+      "id": "file:backend/workers/async_dispatch.py",
+      "type": "file",
+      "name": "async_dispatch.py",
+      "filePath": "backend/workers/async_dispatch.py",
+      "summary": "async_dispatch.py (3 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "workers"
+    },
+    {
+      "id": "function:backend/workers/async_dispatch.py:run_async_in_sync_context",
+      "type": "function",
+      "name": "run_async_in_sync_context",
+      "filePath": "backend/workers/async_dispatch.py",
+      "summary": "Function run_async_in_sync_context in backend/workers/async_dispatch.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/workers/async_dispatch.py:dispatch_background_sync_job",
+      "type": "function",
+      "name": "dispatch_background_sync_job",
+      "filePath": "backend/workers/async_dispatch.py",
+      "summary": "Function dispatch_background_sync_job in backend/workers/async_dispatch.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/workers/async_dispatch.py:log_eager_mode_startup_warning",
+      "type": "function",
+      "name": "log_eager_mode_startup_warning",
+      "filePath": "backend/workers/async_dispatch.py",
+      "summary": "Function log_eager_mode_startup_warning in backend/workers/async_dispatch.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/workers/celery_app.py",
+      "type": "file",
+      "name": "celery_app.py",
+      "filePath": "backend/workers/celery_app.py",
+      "summary": "code file: celery_app.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "workers"
+    },
+    {
+      "id": "file:backend/workers/email.py",
+      "type": "file",
+      "name": "email.py",
+      "filePath": "backend/workers/email.py",
+      "summary": "email.py (5 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "workers"
+    },
+    {
+      "id": "function:backend/workers/email.py:send_email",
+      "type": "function",
+      "name": "send_email",
+      "filePath": "backend/workers/email.py",
+      "summary": "Function send_email in backend/workers/email.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/workers/email.py:send_email_sync",
+      "type": "function",
+      "name": "send_email_sync",
+      "filePath": "backend/workers/email.py",
+      "summary": "Function send_email_sync in backend/workers/email.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/workers/email.py:queue_email",
+      "type": "function",
+      "name": "queue_email",
+      "filePath": "backend/workers/email.py",
+      "summary": "Function queue_email in backend/workers/email.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/workers/email.py:send_verification_email",
+      "type": "function",
+      "name": "send_verification_email",
+      "filePath": "backend/workers/email.py",
+      "summary": "Function send_verification_email in backend/workers/email.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/workers/email.py:send_password_reset_email",
+      "type": "function",
+      "name": "send_password_reset_email",
+      "filePath": "backend/workers/email.py",
+      "summary": "Function send_password_reset_email in backend/workers/email.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/workers/rag_indexing.py",
+      "type": "file",
+      "name": "rag_indexing.py",
+      "filePath": "backend/workers/rag_indexing.py",
+      "summary": "code file: rag_indexing.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "workers"
+    },
+    {
+      "id": "file:backend/workers/tasks.py",
+      "type": "file",
+      "name": "tasks.py",
+      "filePath": "backend/workers/tasks.py",
+      "summary": "tasks.py (2 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "workers"
+    },
+    {
+      "id": "function:backend/workers/tasks.py:send_email_task",
+      "type": "function",
+      "name": "send_email_task",
+      "filePath": "backend/workers/tasks.py",
+      "summary": "Function send_email_task in backend/workers/tasks.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/workers/tasks.py:index_rag_document_task",
+      "type": "function",
+      "name": "index_rag_document_task",
+      "filePath": "backend/workers/tasks.py",
+      "summary": "Function index_rag_document_task in backend/workers/tasks.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:backend/observability/instruments.py",
+      "target": "function:backend/observability/instruments.py:_attrs",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/instruments.py",
+      "target": "function:backend/observability/instruments.py:observed_span",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/instruments.py",
+      "target": "function:backend/observability/instruments.py:structured_error",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/metrics.py",
+      "target": "file:backend/observability/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/metrics.py",
+      "target": "function:backend/observability/metrics.py:_safe_attrs",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/metrics.py",
+      "target": "function:backend/observability/metrics.py:_meter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/metrics.py",
+      "target": "function:backend/observability/metrics.py:_instruments",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/metrics.py",
+      "target": "function:backend/observability/metrics.py:add",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/metrics.py",
+      "target": "function:backend/observability/metrics.py:record",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/metrics.py",
+      "target": "function:backend/observability/metrics.py:setup_metrics",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/metrics.py",
+      "target": "function:backend/observability/metrics.py:_route_path",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/otel.py",
+      "target": "file:backend/observability/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/otel.py",
+      "target": "function:backend/observability/otel.py:_signal_endpoint",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/otel.py",
+      "target": "function:backend/observability/otel.py:_resource",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/otel.py",
+      "target": "function:backend/observability/otel.py:setup_observability",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/otel.py",
+      "target": "function:backend/observability/otel.py:setup_traces",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/otel.py",
+      "target": "function:backend/observability/otel.py:_setup_trace_exporter",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/otel.py",
+      "target": "function:backend/observability/otel.py:_setup_library_instrumentation",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/otel.py",
+      "target": "function:backend/observability/otel.py:_instrument_app",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/schemas.py",
+      "target": "class:backend/observability/schemas.py:ObservabilityToolLink",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/schemas.py",
+      "target": "class:backend/observability/schemas.py:ObservabilityDashboards",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/schemas.py",
+      "target": "class:backend/observability/schemas.py:ObservabilityLinks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/schemas.py",
+      "target": "class:backend/observability/schemas.py:ObservabilityStatusItem",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/schemas.py",
+      "target": "class:backend/observability/schemas.py:ObservabilityStatus",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/sentry.py",
+      "target": "function:backend/observability/sentry.py:setup_sentry",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/service.py",
+      "target": "file:backend/core/cache.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/service.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/service.py",
+      "target": "file:backend/db/session.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/service.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/service.py",
+      "target": "file:backend/observability/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/service.py",
+      "target": "function:backend/observability/service.py:build_public_url",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/service.py",
+      "target": "function:backend/observability/service.py:_tool_link",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/service.py",
+      "target": "class:backend/observability/service.py:ObservabilityService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/observability/service.py:ObservabilityService",
+      "target": "function:backend/observability/service.py:ObservabilityService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/observability/service.py:ObservabilityService",
+      "target": "function:backend/observability/service.py:ObservabilityService.get_links",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/observability/service.py:ObservabilityService",
+      "target": "function:backend/observability/service.py:ObservabilityService.get_status",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/observability/service.py:ObservabilityService",
+      "target": "function:backend/observability/service.py:ObservabilityService._build_status",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/observability/service.py:ObservabilityService",
+      "target": "function:backend/observability/service.py:ObservabilityService._database_status",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/observability/service.py:ObservabilityService",
+      "target": "function:backend/observability/service.py:ObservabilityService._cache_status",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/observability/service.py:ObservabilityService",
+      "target": "function:backend/observability/service.py:ObservabilityService._http_status",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/setup.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/setup.py",
+      "target": "file:backend/observability/otel.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/setup.py",
+      "target": "file:backend/observability/sentry.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/setup.py",
+      "target": "function:backend/observability/setup.py:setup_observability",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/tracing.py",
+      "target": "function:backend/observability/tracing.py:setup_tracing",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/integration_support.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/integration_support.py",
+      "target": "function:backend/tests/integration_support.py:integration_enabled",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/integration_support.py",
+      "target": "function:backend/tests/integration_support.py:rag_integration_ready",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/integration_support.py",
+      "target": "function:backend/tests/integration_support.py:unique_email",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/integration_support.py",
+      "target": "function:backend/tests/integration_support.py:prepare_integration_runtime",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/integration_support.py",
+      "target": "function:backend/tests/integration_support.py:api_client",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/integration_support.py",
+      "target": "function:backend/tests/integration_support.py:csrf_headers",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/integration_support.py",
+      "target": "function:backend/tests/integration_support.py:register_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/integration_support.py",
+      "target": "function:backend/tests/integration_support.py:sign_in",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/integration_support.py",
+      "target": "function:backend/tests/integration_support.py:register_and_sign_in",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/integration_support.py",
+      "target": "function:backend/tests/integration_support.py:auth_request",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_agent_run_smoke.py",
+      "target": "file:backend/tests/integration_support.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_agent_run_smoke.py",
+      "target": "class:backend/tests/test_agent_run_smoke.py:AgentRunSmokeTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_agent_run_smoke.py:AgentRunSmokeTest",
+      "target": "function:backend/tests/test_agent_run_smoke.py:AgentRunSmokeTest.test_agent_run_returns_completed_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_ai_provider_http_clients.py",
+      "target": "file:backend/modules/ai/providers.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_ai_provider_http_clients.py",
+      "target": "function:backend/tests/test_ai_provider_http_clients.py:reset_http_clients",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_ai_provider_http_clients.py",
+      "target": "function:backend/tests/test_ai_provider_http_clients.py:test_openai_provider_reuses_shared_http_client",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_ai_provider_http_clients.py",
+      "target": "function:backend/tests/test_ai_provider_http_clients.py:test_close_ai_provider_http_clients_closes_open_clients",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_api_auth.py",
+      "target": "file:backend/tests/integration_support.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_api_auth.py",
+      "target": "class:backend/tests/test_api_auth.py:AuthApiIntegrationTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_api_auth.py:AuthApiIntegrationTest",
+      "target": "function:backend/tests/test_api_auth.py:AuthApiIntegrationTest.test_sign_up_sign_in_me_and_logout",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_api_auth.py:AuthApiIntegrationTest",
+      "target": "function:backend/tests/test_api_auth.py:AuthApiIntegrationTest.test_me_requires_authentication",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_api_auth.py:AuthApiIntegrationTest",
+      "target": "function:backend/tests/test_api_auth.py:AuthApiIntegrationTest.test_csrf_blocks_mutating_request_without_header",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_api_auth.py:AuthApiIntegrationTest",
+      "target": "function:backend/tests/test_api_auth.py:AuthApiIntegrationTest.test_refresh_rotates_session",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_api_auth.py:AuthApiIntegrationTest",
+      "target": "function:backend/tests/test_api_auth.py:AuthApiIntegrationTest.test_invalid_credentials_return_unauthorized",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_api_auth.py",
+      "target": "class:backend/tests/test_api_auth.py:AuthApiUnitTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_api_auth.py:AuthApiUnitTest",
+      "target": "function:backend/tests/test_api_auth.py:AuthApiUnitTest.test_unique_email_generates_distinct_values",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_async_dispatch.py",
+      "target": "file:backend/workers/async_dispatch.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_async_dispatch.py",
+      "target": "function:backend/tests/test_async_dispatch.py:reset_eager_warning_flag",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_async_dispatch.py",
+      "target": "function:backend/tests/test_async_dispatch.py:test_run_async_in_sync_context_executes_coroutine",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_async_dispatch.py",
+      "target": "function:backend/tests/test_async_dispatch.py:test_dispatch_background_sync_job_uses_daemon_thread_when_eager",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_async_dispatch.py",
+      "target": "function:backend/tests/test_async_dispatch.py:test_dispatch_background_sync_job_uses_celery_when_not_eager",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_async_dispatch.py",
+      "target": "function:backend/tests/test_async_dispatch.py:test_log_eager_mode_startup_warning_in_production",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_async_dispatch.py",
+      "target": "function:backend/tests/test_async_dispatch.py:test_log_eager_mode_startup_warning_in_dev",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_cache.py",
+      "target": "file:backend/core/cache.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_cache.py",
+      "target": "class:backend/tests/test_cache.py:CacheHelpersTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_cache.py:CacheHelpersTest",
+      "target": "function:backend/tests/test_cache.py:CacheHelpersTest.test_cache_get_returns_none_when_disabled",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_cache.py:CacheHelpersTest",
+      "target": "function:backend/tests/test_cache.py:CacheHelpersTest.test_cache_set_skips_when_disabled",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_cache.py:CacheHelpersTest",
+      "target": "function:backend/tests/test_cache.py:CacheHelpersTest.test_cache_round_trip_json",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_cache.py:CacheHelpersTest",
+      "target": "function:backend/tests/test_cache.py:CacheHelpersTest.test_embedding_cache_key_is_stable_and_namespaced",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_cache.py:CacheHelpersTest",
+      "target": "function:backend/tests/test_cache.py:CacheHelpersTest.test_invalidate_platform_caches_deletes_known_keys",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_cache.py",
+      "target": "class:backend/tests/test_cache.py:EmbeddingCacheTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_cache.py:EmbeddingCacheTest",
+      "target": "function:backend/tests/test_cache.py:EmbeddingCacheTest.test_embed_texts_uses_cache_for_repeat_query",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_cache.py:EmbeddingCacheTest",
+      "target": "function:backend/tests/test_cache.py:EmbeddingCacheTest.test_embed_texts_skips_cache_for_overlong_text",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_cache.py:EmbeddingCacheTest",
+      "target": "function:backend/tests/test_cache.py:EmbeddingCacheTest.test_ai_embed_retrieval_queries_uses_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_observability.py",
+      "target": "file:backend/observability/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_observability.py",
+      "target": "file:backend/observability/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_observability.py",
+      "target": "function:backend/tests/test_observability.py:make_settings",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_observability.py",
+      "target": "function:backend/tests/test_observability.py:make_status_item",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_observability.py",
+      "target": "function:backend/tests/test_observability.py:make_observability_status",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_observability.py",
+      "target": "class:backend/tests/test_observability.py:ObservabilityServiceTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_observability.py:ObservabilityServiceTest",
+      "target": "function:backend/tests/test_observability.py:ObservabilityServiceTest.test_url_joining_trims_duplicate_slashes",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_observability.py:ObservabilityServiceTest",
+      "target": "function:backend/tests/test_observability.py:ObservabilityServiceTest.test_links_return_configured_urls_for_admin",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_observability.py:ObservabilityServiceTest",
+      "target": "function:backend/tests/test_observability.py:ObservabilityServiceTest.test_missing_optional_urls_are_not_configured",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_observability.py:ObservabilityServiceTest",
+      "target": "function:backend/tests/test_observability.py:ObservabilityServiceTest.test_non_admin_does_not_receive_technical_urls",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_observability.py",
+      "target": "class:backend/tests/test_observability.py:ObservabilityStatusTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_observability.py:ObservabilityStatusTest",
+      "target": "function:backend/tests/test_observability.py:ObservabilityStatusTest.test_status_does_not_crash_when_tools_are_unconfigured",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_observability.py:ObservabilityStatusTest",
+      "target": "function:backend/tests/test_observability.py:ObservabilityStatusTest.test_status_uses_cached_payload_on_repeat_calls",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_platform_cache.py",
+      "target": "file:backend/core/cache.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_platform_cache.py",
+      "target": "file:backend/modules/platform/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_platform_cache.py",
+      "target": "file:backend/modules/platform/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_platform_cache.py",
+      "target": "class:backend/tests/test_platform_cache.py:PlatformConfigCacheTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_platform_cache.py:PlatformConfigCacheTest",
+      "target": "function:backend/tests/test_platform_cache.py:PlatformConfigCacheTest.asyncSetUp",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_platform_cache.py:PlatformConfigCacheTest",
+      "target": "function:backend/tests/test_platform_cache.py:PlatformConfigCacheTest.test_get_platform_config_uses_cache_loader_once",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_platform_cache.py:PlatformConfigCacheTest",
+      "target": "function:backend/tests/test_platform_cache.py:PlatformConfigCacheTest.test_local_cache_serves_platform_config_without_second_redis_read",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_platform_cache.py:PlatformConfigCacheTest",
+      "target": "function:backend/tests/test_platform_cache.py:PlatformConfigCacheTest.test_list_feature_flags_uses_shared_cache_loader",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_platform_cache.py:PlatformConfigCacheTest",
+      "target": "function:backend/tests/test_platform_cache.py:PlatformConfigCacheTest.test_invalidate_platform_caches_clears_local_entries",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_rag_permissions_integration.py",
+      "target": "file:backend/tests/integration_support.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_rag_permissions_integration.py",
+      "target": "class:backend/tests/test_rag_permissions_integration.py:RagPermissionsIntegrationTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_rag_permissions_integration.py:RagPermissionsIntegrationTest",
+      "target": "function:backend/tests/test_rag_permissions_integration.py:RagPermissionsIntegrationTest.test_cross_user_document_access_is_blocked",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_rag_permissions_integration.py:RagPermissionsIntegrationTest",
+      "target": "function:backend/tests/test_rag_permissions_integration.py:RagPermissionsIntegrationTest.test_upload_to_foreign_project_is_forbidden",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_settings_observability_cache.py",
+      "target": "file:backend/core/cache.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_settings_observability_cache.py",
+      "target": "file:backend/modules/settings/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_settings_observability_cache.py",
+      "target": "file:backend/modules/settings/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_settings_observability_cache.py",
+      "target": "class:backend/tests/test_settings_observability_cache.py:SettingsCacheTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_settings_observability_cache.py:SettingsCacheTest",
+      "target": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.asyncSetUp",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_settings_observability_cache.py:SettingsCacheTest",
+      "target": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.test_list_database_settings_uses_shared_cache_loader",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_settings_observability_cache.py:SettingsCacheTest",
+      "target": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.test_list_config_entries_uses_local_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_settings_observability_cache.py:SettingsCacheTest",
+      "target": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.test_invalidate_settings_config_cache_clears_entries",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_settings_observability_cache.py:SettingsCacheTest",
+      "target": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.test_settings_local_cache_avoids_second_redis_read",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_settings_observability_cache.py:SettingsCacheTest",
+      "target": "function:backend/tests/test_settings_observability_cache.py:SettingsCacheTest.test_observability_status_uses_local_only_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/workers/__init__.py",
+      "target": "file:backend/workers/celery_app.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/workers/async_dispatch.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/workers/async_dispatch.py",
+      "target": "function:backend/workers/async_dispatch.py:run_async_in_sync_context",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/workers/async_dispatch.py",
+      "target": "function:backend/workers/async_dispatch.py:dispatch_background_sync_job",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/workers/async_dispatch.py",
+      "target": "function:backend/workers/async_dispatch.py:log_eager_mode_startup_warning",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/workers/celery_app.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/workers/email.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/workers/email.py",
+      "target": "function:backend/workers/email.py:send_email",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/workers/email.py",
+      "target": "function:backend/workers/email.py:send_email_sync",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/workers/email.py",
+      "target": "function:backend/workers/email.py:queue_email",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/workers/email.py",
+      "target": "function:backend/workers/email.py:send_verification_email",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/workers/email.py",
+      "target": "function:backend/workers/email.py:send_password_reset_email",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/workers/rag_indexing.py",
+      "target": "file:backend/modules/rag/workers.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/workers/tasks.py",
+      "target": "file:backend/workers/celery_app.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/workers/tasks.py",
+      "target": "file:backend/workers/email.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/workers/tasks.py",
+      "target": "file:backend/workers/rag_indexing.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/workers/tasks.py",
+      "target": "function:backend/workers/tasks.py:send_email_task",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/workers/tasks.py",
+      "target": "function:backend/workers/tasks.py:index_rag_document_task",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

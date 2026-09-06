@@ -1,0 +1,288 @@
+.PHONY: \
+	local-dev \
+	local-dev-no-observability \
+	db-migrate \
+	kill-dev \
+	kill-app-processes \
+	kill-celery \
+	kill-ports \
+	force-kill-ports \
+	check-ports \
+	list-ports \
+	check-local-tools \
+	observability-dirs \
+	observability-up \
+	observability-down \
+	observability-logs \
+	observability-status \
+	start-observability-stack \
+	stop-observability-stack
+
+# -----------------------------------------------------------------------------
+# Local development configuration
+# -----------------------------------------------------------------------------
+
+PYTHON ?= $(if $(VIRTUAL_ENV),$(VIRTUAL_ENV)/bin/python,$(if $(wildcard $(CURDIR)/.venv/bin/python),$(CURDIR)/.venv/bin/python,$(if $(wildcard $(CURDIR)/backend/.venv/bin/python),$(CURDIR)/backend/.venv/bin/python,python3)))
+HONCHO ?= $(if $(VIRTUAL_ENV),$(VIRTUAL_ENV)/bin/honcho,$(if $(wildcard $(CURDIR)/.venv/bin/honcho),$(CURDIR)/.venv/bin/honcho,$(if $(wildcard $(CURDIR)/backend/.venv/bin/honcho),$(CURDIR)/backend/.venv/bin/honcho,honcho)))
+
+OBS_DATA_DIR ?= .observability-data
+OBS_LOG_DIR ?= .observability-logs
+LOCAL_MAKEFILE := $(lastword $(MAKEFILE_LIST))
+
+BACKEND_PORT ?= 8000
+FRONTEND_PORT ?= 5173
+REDIS_PORT ?= 6380
+PROMETHEUS_PORT ?= 9090
+GRAFANA_PORT ?= 3000
+TEMPO_PORT ?= 3200
+OTLP_GRPC_PORT ?= 4317
+OTLP_HTTP_PORT ?= 4318
+OPEN_BROWSER ?= 1
+
+# Local observability stack managed by systemd.
+OBSERVABILITY_STACK_ENABLED ?= 1
+OBSERVABILITY_REQUIRED ?= 0
+SYSTEMCTL ?= systemctl
+SUDO ?= sudo
+GRAFANA_SERVICE ?= grafana-server
+PROMETHEUS_SERVICE ?= prometheus
+TEMPO_SERVICE ?= tempo
+GRAFANA_HEALTH_URL ?= http://127.0.0.1:$(GRAFANA_PORT)/api/health
+PROMETHEUS_HEALTH_URL ?= http://127.0.0.1:$(PROMETHEUS_PORT)/-/ready
+TEMPO_HEALTH_URL ?= http://127.0.0.1:$(TEMPO_PORT)/ready
+OBSERVABILITY_START_TIMEOUT_S ?= 20
+OBSERVABILITY_ENABLED ?= true
+OTEL_SERVICE_NAME ?= fastapi-backend
+OTEL_EXPORTER_OTLP_ENDPOINT ?= http://127.0.0.1:$(OTLP_HTTP_PORT)
+OTEL_EXPORTER_OTLP_PROTOCOL ?= http/protobuf
+OTEL_TRACES_EXPORTER ?= otlp
+OTEL_METRICS_EXPORTER ?= none
+PROMETHEUS_METRICS_ENABLED ?= true
+PROMETHEUS_METRICS_PATH ?= /metrics
+GRAFANA_PUBLIC_URL ?= http://localhost:$(GRAFANA_PORT)
+PROMETHEUS_PUBLIC_URL ?= http://localhost:$(PROMETHEUS_PORT)
+TEMPO_PUBLIC_URL ?= http://localhost:$(TEMPO_PORT)
+REDIS_URL ?= redis://127.0.0.1:$(REDIS_PORT)/0
+CELERY_BROKER_URL ?= $(REDIS_URL)
+CELERY_RESULT_BACKEND ?= $(REDIS_URL)
+
+DEV_PORTS := \
+	$(BACKEND_PORT) \
+	$(FRONTEND_PORT) \
+	$(REDIS_PORT)
+
+DEV_PROCS := redis backend worker frontend
+ifeq ($(OPEN_BROWSER),1)
+DEV_PROCS += browser
+endif
+
+export OBS_DATA_DIR
+export OBS_LOG_DIR
+export PYTHON
+export BACKEND_PORT
+export FRONTEND_PORT
+export REDIS_PORT
+export PROMETHEUS_PORT
+export GRAFANA_PORT
+export TEMPO_PORT
+export OTLP_GRPC_PORT
+export OTLP_HTTP_PORT
+export OBSERVABILITY_STACK_ENABLED
+export OBSERVABILITY_REQUIRED
+export OBSERVABILITY_ENABLED
+export OTEL_SERVICE_NAME
+export OTEL_EXPORTER_OTLP_ENDPOINT
+export OTEL_EXPORTER_OTLP_PROTOCOL
+export OTEL_TRACES_EXPORTER
+export OTEL_METRICS_EXPORTER
+export PROMETHEUS_METRICS_ENABLED
+export PROMETHEUS_METRICS_PATH
+export GRAFANA_PUBLIC_URL
+export PROMETHEUS_PUBLIC_URL
+export TEMPO_PUBLIC_URL
+export REDIS_URL
+export CELERY_BROKER_URL
+export CELERY_RESULT_BACKEND
+
+check-local-tools:
+	@$(PYTHON) -c 'import honcho.command' >/dev/null 2>&1 || { echo "honcho is not installed for $(PYTHON). Install with: $(PYTHON) -m pip install honcho"; exit 1; }
+	@$(HONCHO) --help >/dev/null 2>&1 || { echo "honcho executable is not usable: $(HONCHO). Reinstall with: $(PYTHON) -m pip install --force-reinstall honcho"; exit 1; }
+	@$(PYTHON) -c 'import uvicorn, fastapi, celery' >/dev/null 2>&1 || { echo "Backend Python deps missing for $(PYTHON). Install backend requirements."; exit 1; }
+	@if [ "$(OBSERVABILITY_ENABLED)" = "true" ]; then \
+		$(PYTHON) -c 'import opentelemetry.exporter.otlp.proto.http.trace_exporter, opentelemetry.instrumentation.fastapi, prometheus_client' >/dev/null 2>&1 || echo "Observability deps missing for $(PYTHON). App will start, but traces/metrics may be disabled. Run: $(PYTHON) -m pip install -r backend/requirements.txt"; \
+	fi
+	@command -v npm >/dev/null 2>&1 || { echo "npm is not installed."; exit 1; }
+	@command -v redis-server >/dev/null 2>&1 || { echo "redis-server is required."; exit 1; }
+
+# -----------------------------------------------------------------------------
+# Diagnostics
+# -----------------------------------------------------------------------------
+
+list-ports:
+	@echo "Local dev ports: $(DEV_PORTS)"
+	@for port in $(DEV_PORTS); do \
+		echo ""; \
+		echo "--- port $$port ---"; \
+		ss -ltnp "sport = :$$port" 2>/dev/null || true; \
+	done
+
+check-ports:
+	@for port in $(DEV_PORTS); do \
+		if ss -ltn "sport = :$$port" | grep -q LISTEN; then \
+			echo ""; \
+			echo "ERROR: port $$port is still in use."; \
+			echo "Inspect it with:"; \
+			echo "  sudo ss -ltnp 'sport = :$$port'"; \
+			echo ""; \
+			echo "If it is a system service, stop it manually, for example:"; \
+			echo "  sudo systemctl stop redis-server"; \
+			echo ""; \
+			echo "If you intentionally want to kill any process on the dev ports, run:"; \
+			echo "  make -f Makefile.local force-kill-ports"; \
+			exit 1; \
+		fi; \
+	done
+
+# -----------------------------------------------------------------------------
+# Safe cleanup
+# -----------------------------------------------------------------------------
+
+kill-celery:
+	-pgrep -u "$$(id -u)" -f "[c]elery.*backend.workers.celery_app" | xargs -r kill
+	-sleep 1
+	-pgrep -u "$$(id -u)" -f "[c]elery.*backend.workers.celery_app" | xargs -r kill -9
+
+kill-app-processes:
+	-pgrep -u "$$(id -u)" -f "[h]oncho -f Procfile.dev start" | xargs -r kill
+	-pgrep -u "$$(id -u)" -f "[u]vicorn backend.api.main:app" | xargs -r kill
+	-pgrep -u "$$(id -u)" -f "[v]ite" | xargs -r kill
+	-pgrep -u "$$(id -u)" -f "[n]pm run dev" | xargs -r kill
+	-sleep 1
+	-pgrep -u "$$(id -u)" -f "[h]oncho -f Procfile.dev start" | xargs -r kill -9
+	-pgrep -u "$$(id -u)" -f "[u]vicorn backend.api.main:app" | xargs -r kill -9
+	-pgrep -u "$$(id -u)" -f "[v]ite" | xargs -r kill -9
+	-pgrep -u "$$(id -u)" -f "[n]pm run dev" | xargs -r kill -9
+
+# Kills only processes your current Linux user is allowed to kill.
+# This is safe for normal local-dev because it does not use sudo.
+kill-ports:
+	@for port in $(DEV_PORTS); do \
+		echo "Cleaning local dev port $$port..."; \
+		fuser -k $$port/tcp >/dev/null 2>&1 || true; \
+	done
+	@sleep 1
+	@$(MAKE) -f $(LOCAL_MAKEFILE) check-ports
+
+# Dangerous but useful when you intentionally want to kill anything on the app dev ports.
+# This may stop system services such as a globally installed Redis.
+force-kill-ports:
+	@echo "Force-killing all listeners on local dev ports with sudo..."
+	@for port in $(DEV_PORTS); do \
+		echo "Force killing port $$port..."; \
+		sudo fuser -k $$port/tcp >/dev/null 2>&1 || true; \
+	done
+	@sleep 1
+	@$(MAKE) -f $(LOCAL_MAKEFILE) check-ports
+
+# -----------------------------------------------------------------------------
+# Observability
+# -----------------------------------------------------------------------------
+
+observability-dirs:
+	mkdir -p \
+		$(OBS_DATA_DIR)/prometheus \
+		$(OBS_DATA_DIR)/tempo \
+		$(OBS_DATA_DIR)/grafana/plugins \
+		$(OBS_LOG_DIR)/grafana
+
+observability-up: start-observability-stack
+
+observability-down: stop-observability-stack
+
+observability-logs:
+	tail -f $(OBS_LOG_DIR)/grafana/*.log
+
+start-observability-stack:
+	@if [ "$(OBSERVABILITY_STACK_ENABLED)" != "1" ]; then \
+		echo "[observability] stack startup disabled. Set OBSERVABILITY_STACK_ENABLED=1 to enable."; \
+		exit 0; \
+	fi
+	@if ! command -v $(SYSTEMCTL) >/dev/null 2>&1; then \
+		echo "[observability] systemctl not found; cannot start Grafana/Prometheus/Tempo automatically."; \
+		if [ "$(OBSERVABILITY_REQUIRED)" = "1" ]; then exit 1; else exit 0; fi; \
+	fi
+	@echo "[observability] starting Grafana, Prometheus, and Tempo via systemd"
+	@failed=0; \
+	for svc in "$(GRAFANA_SERVICE)" "$(PROMETHEUS_SERVICE)" "$(TEMPO_SERVICE)"; do \
+		if $(SUDO) $(SYSTEMCTL) start "$$svc" >/dev/null 2>&1; then \
+			echo "[observability] started $$svc"; \
+		else \
+			echo "[observability] failed to start $$svc"; \
+			failed=1; \
+		fi; \
+	done; \
+	if [ "$$failed" = "1" ] && [ "$(OBSERVABILITY_REQUIRED)" = "1" ]; then \
+		echo "[observability] one or more services failed to start"; \
+		exit 1; \
+	fi
+	@deadline=$$(( $$(date +%s) + $(OBSERVABILITY_START_TIMEOUT_S) )); \
+	rc=0; \
+	for item in \
+		"Grafana $(GRAFANA_HEALTH_URL)" \
+		"Prometheus $(PROMETHEUS_HEALTH_URL)" \
+		"Tempo $(TEMPO_HEALTH_URL)"; do \
+		name="$${item%% *}"; \
+		url="$${item#* }"; \
+		while ! curl -fsS "$$url" >/dev/null 2>&1; do \
+			if [ "$$(date +%s)" -ge "$$deadline" ]; then \
+				echo "[observability] $$name not healthy at $$url"; \
+				rc=1; \
+				break; \
+			fi; \
+			sleep 1; \
+		done; \
+		if curl -fsS "$$url" >/dev/null 2>&1; then \
+			echo "[observability] $$name ready at $$url"; \
+		fi; \
+	done; \
+	if [ "$$rc" = "1" ] && [ "$(OBSERVABILITY_REQUIRED)" = "1" ]; then \
+		echo "[observability] required observability stack is not healthy"; \
+		exit 1; \
+	fi; \
+	if [ "$$rc" = "1" ]; then \
+		echo "[observability] continuing because OBSERVABILITY_REQUIRED=0"; \
+	fi
+
+stop-observability-stack:
+	@echo "[observability] stopping Tempo, Prometheus, and Grafana via systemd"
+	@$(SUDO) $(SYSTEMCTL) stop "$(TEMPO_SERVICE)" "$(PROMETHEUS_SERVICE)" "$(GRAFANA_SERVICE)" >/dev/null 2>&1 || true
+
+observability-status:
+	@for item in \
+		"Grafana $(GRAFANA_HEALTH_URL)" \
+		"Prometheus $(PROMETHEUS_HEALTH_URL)" \
+		"Tempo $(TEMPO_HEALTH_URL)" \
+		"AppMetrics http://127.0.0.1:$(BACKEND_PORT)$(PROMETHEUS_METRICS_PATH)"; do \
+		name="$${item%% *}"; url="$${item#* }"; \
+		if curl -fsS "$$url" >/dev/null 2>&1; then \
+			echo "$$name OK $$url"; \
+		else \
+			echo "$$name DOWN $$url"; \
+		fi; \
+	done
+
+# -----------------------------------------------------------------------------
+# Main local dev flow
+# -----------------------------------------------------------------------------
+
+kill-dev: kill-celery kill-app-processes kill-ports
+
+db-migrate:
+	@echo "[db] applying pending migrations..."
+	@cd backend && $(PYTHON) -m alembic upgrade head
+
+local-dev: check-local-tools kill-dev db-migrate start-observability-stack
+	$(HONCHO) -f Procfile.dev start $(DEV_PROCS)
+
+local-dev-no-observability:
+	$(MAKE) -f $(LOCAL_MAKEFILE) OBSERVABILITY_ENABLED=false OBSERVABILITY_STACK_ENABLED=0 local-dev

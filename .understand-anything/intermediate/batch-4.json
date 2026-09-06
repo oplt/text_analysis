@@ -1,0 +1,4728 @@
+{
+  "nodes": [
+    {
+      "id": "file:backend/modules/identity_access/service.py",
+      "type": "file",
+      "name": "service.py",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "identity_access module file: service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "service"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:_hash_token",
+      "type": "function",
+      "name": "_hash_token",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Function _hash_token in backend/modules/identity_access/service.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/identity_access/service.py:IdentityService",
+      "type": "class",
+      "name": "IdentityService",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Class IdentityService in backend/modules/identity_access/service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.__init__",
+      "type": "function",
+      "name": "IdentityService.__init__",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method __init__ on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService._get_platform_app_name",
+      "type": "function",
+      "name": "IdentityService._get_platform_app_name",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method _get_platform_app_name on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.sign_up",
+      "type": "function",
+      "name": "IdentityService.sign_up",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method sign_up on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.sign_in",
+      "type": "function",
+      "name": "IdentityService.sign_in",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method sign_in on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.refresh",
+      "type": "function",
+      "name": "IdentityService.refresh",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method refresh on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.logout",
+      "type": "function",
+      "name": "IdentityService.logout",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method logout on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService._store_verification_token",
+      "type": "function",
+      "name": "IdentityService._store_verification_token",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method _store_verification_token on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.verify_email",
+      "type": "function",
+      "name": "IdentityService.verify_email",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method verify_email on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.resend_verification",
+      "type": "function",
+      "name": "IdentityService.resend_verification",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method resend_verification on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.forgot_password",
+      "type": "function",
+      "name": "IdentityService.forgot_password",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method forgot_password on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.reset_password",
+      "type": "function",
+      "name": "IdentityService.reset_password",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method reset_password on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.mfa_enable",
+      "type": "function",
+      "name": "IdentityService.mfa_enable",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method mfa_enable on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.mfa_verify_enable",
+      "type": "function",
+      "name": "IdentityService.mfa_verify_enable",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method mfa_verify_enable on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/identity_access/service.py:IdentityService.mfa_disable",
+      "type": "function",
+      "name": "IdentityService.mfa_disable",
+      "filePath": "backend/modules/identity_access/service.py",
+      "summary": "Method mfa_disable on IdentityService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/api/routes.py",
+      "type": "file",
+      "name": "routes.py",
+      "filePath": "backend/modules/memory/api/routes.py",
+      "summary": "memory module file: routes.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "api-route"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "function:backend/modules/memory/api/routes.py:_memory_to_response",
+      "type": "function",
+      "name": "_memory_to_response",
+      "filePath": "backend/modules/memory/api/routes.py",
+      "summary": "Function _memory_to_response in backend/modules/memory/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/api/routes.py:_require_memory_enabled",
+      "type": "function",
+      "name": "_require_memory_enabled",
+      "filePath": "backend/modules/memory/api/routes.py",
+      "summary": "Function _require_memory_enabled in backend/modules/memory/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/api/routes.py:list_memories",
+      "type": "function",
+      "name": "list_memories",
+      "filePath": "backend/modules/memory/api/routes.py",
+      "summary": "Function list_memories in backend/modules/memory/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/api/routes.py:search_memories",
+      "type": "function",
+      "name": "search_memories",
+      "filePath": "backend/modules/memory/api/routes.py",
+      "summary": "Function search_memories in backend/modules/memory/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/api/routes.py:list_audit_logs",
+      "type": "function",
+      "name": "list_audit_logs",
+      "filePath": "backend/modules/memory/api/routes.py",
+      "summary": "Function list_audit_logs in backend/modules/memory/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/api/routes.py:create_memory",
+      "type": "function",
+      "name": "create_memory",
+      "filePath": "backend/modules/memory/api/routes.py",
+      "summary": "Function create_memory in backend/modules/memory/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/api/routes.py:forget_memory",
+      "type": "function",
+      "name": "forget_memory",
+      "filePath": "backend/modules/memory/api/routes.py",
+      "summary": "Function forget_memory in backend/modules/memory/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/api/routes.py:get_memory",
+      "type": "function",
+      "name": "get_memory",
+      "filePath": "backend/modules/memory/api/routes.py",
+      "summary": "Function get_memory in backend/modules/memory/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/memory/api/routes.py:delete_memory",
+      "type": "function",
+      "name": "delete_memory",
+      "filePath": "backend/modules/memory/api/routes.py",
+      "summary": "Function delete_memory in backend/modules/memory/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/api/schemas.py",
+      "type": "file",
+      "name": "schemas.py",
+      "filePath": "backend/modules/memory/api/schemas.py",
+      "summary": "memory module file: schemas.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/memory/api/schemas.py:MemoryMetadataResponse",
+      "type": "class",
+      "name": "MemoryMetadataResponse",
+      "filePath": "backend/modules/memory/api/schemas.py",
+      "summary": "Class MemoryMetadataResponse in backend/modules/memory/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/api/schemas.py:MemoryItemResponse",
+      "type": "class",
+      "name": "MemoryItemResponse",
+      "filePath": "backend/modules/memory/api/schemas.py",
+      "summary": "Class MemoryItemResponse in backend/modules/memory/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/api/schemas.py:MemoryWriteRequest",
+      "type": "class",
+      "name": "MemoryWriteRequest",
+      "filePath": "backend/modules/memory/api/schemas.py",
+      "summary": "Class MemoryWriteRequest in backend/modules/memory/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/api/schemas.py:MemoryWriteResponse",
+      "type": "class",
+      "name": "MemoryWriteResponse",
+      "filePath": "backend/modules/memory/api/schemas.py",
+      "summary": "Class MemoryWriteResponse in backend/modules/memory/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/api/schemas.py:MemorySearchRequestBody",
+      "type": "class",
+      "name": "MemorySearchRequestBody",
+      "filePath": "backend/modules/memory/api/schemas.py",
+      "summary": "Class MemorySearchRequestBody in backend/modules/memory/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/api/schemas.py:MemoryForgetRequest",
+      "type": "class",
+      "name": "MemoryForgetRequest",
+      "filePath": "backend/modules/memory/api/schemas.py",
+      "summary": "Class MemoryForgetRequest in backend/modules/memory/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/api/schemas.py:MemoryAuditLogResponse",
+      "type": "class",
+      "name": "MemoryAuditLogResponse",
+      "filePath": "backend/modules/memory/api/schemas.py",
+      "summary": "Class MemoryAuditLogResponse in backend/modules/memory/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/memory/infrastructure/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "backend/modules/memory/infrastructure/models.py",
+      "summary": "memory module file: models.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/memory/infrastructure/models.py:MemoryAuditLog",
+      "type": "class",
+      "name": "MemoryAuditLog",
+      "filePath": "backend/modules/memory/infrastructure/models.py",
+      "summary": "Class MemoryAuditLog in backend/modules/memory/infrastructure/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/memory/infrastructure/models.py:MemoryRegistry",
+      "type": "class",
+      "name": "MemoryRegistry",
+      "filePath": "backend/modules/memory/infrastructure/models.py",
+      "summary": "Class MemoryRegistry in backend/modules/memory/infrastructure/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/notifications/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "backend/modules/notifications/models.py",
+      "summary": "notifications module file: models.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/notifications/models.py:Notification",
+      "type": "class",
+      "name": "Notification",
+      "filePath": "backend/modules/notifications/models.py",
+      "summary": "Class Notification in backend/modules/notifications/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/notifications/models.py:NotificationPreference",
+      "type": "class",
+      "name": "NotificationPreference",
+      "filePath": "backend/modules/notifications/models.py",
+      "summary": "Class NotificationPreference in backend/modules/notifications/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/notifications/repository.py",
+      "type": "file",
+      "name": "repository.py",
+      "filePath": "backend/modules/notifications/repository.py",
+      "summary": "notifications module file: repository.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "repository"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/notifications/repository.py:NotificationsRepository",
+      "type": "class",
+      "name": "NotificationsRepository",
+      "filePath": "backend/modules/notifications/repository.py",
+      "summary": "Class NotificationsRepository in backend/modules/notifications/repository.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/notifications/repository.py:NotificationsRepository.__init__",
+      "type": "function",
+      "name": "NotificationsRepository.__init__",
+      "filePath": "backend/modules/notifications/repository.py",
+      "summary": "Method __init__ on NotificationsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/notifications/repository.py:NotificationsRepository.create",
+      "type": "function",
+      "name": "NotificationsRepository.create",
+      "filePath": "backend/modules/notifications/repository.py",
+      "summary": "Method create on NotificationsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/notifications/repository.py:NotificationsRepository.list_for_user",
+      "type": "function",
+      "name": "NotificationsRepository.list_for_user",
+      "filePath": "backend/modules/notifications/repository.py",
+      "summary": "Method list_for_user on NotificationsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/notifications/repository.py:NotificationsRepository.get_by_id",
+      "type": "function",
+      "name": "NotificationsRepository.get_by_id",
+      "filePath": "backend/modules/notifications/repository.py",
+      "summary": "Method get_by_id on NotificationsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/notifications/repository.py:NotificationsRepository.mark_read",
+      "type": "function",
+      "name": "NotificationsRepository.mark_read",
+      "filePath": "backend/modules/notifications/repository.py",
+      "summary": "Method mark_read on NotificationsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/notifications/repository.py:NotificationsRepository.mark_all_read",
+      "type": "function",
+      "name": "NotificationsRepository.mark_all_read",
+      "filePath": "backend/modules/notifications/repository.py",
+      "summary": "Method mark_all_read on NotificationsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/notifications/repository.py:NotificationsRepository.get_or_create_preferences",
+      "type": "function",
+      "name": "NotificationsRepository.get_or_create_preferences",
+      "filePath": "backend/modules/notifications/repository.py",
+      "summary": "Method get_or_create_preferences on NotificationsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/notifications/router.py",
+      "type": "file",
+      "name": "router.py",
+      "filePath": "backend/modules/notifications/router.py",
+      "summary": "notifications module file: router.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "api-route"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "function:backend/modules/notifications/router.py:list_notifications",
+      "type": "function",
+      "name": "list_notifications",
+      "filePath": "backend/modules/notifications/router.py",
+      "summary": "Function list_notifications in backend/modules/notifications/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/notifications/router.py:mark_read",
+      "type": "function",
+      "name": "mark_read",
+      "filePath": "backend/modules/notifications/router.py",
+      "summary": "Function mark_read in backend/modules/notifications/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/notifications/router.py:mark_all_read",
+      "type": "function",
+      "name": "mark_all_read",
+      "filePath": "backend/modules/notifications/router.py",
+      "summary": "Function mark_all_read in backend/modules/notifications/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/notifications/router.py:get_preferences",
+      "type": "function",
+      "name": "get_preferences",
+      "filePath": "backend/modules/notifications/router.py",
+      "summary": "Function get_preferences in backend/modules/notifications/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/notifications/router.py:update_preferences",
+      "type": "function",
+      "name": "update_preferences",
+      "filePath": "backend/modules/notifications/router.py",
+      "summary": "Function update_preferences in backend/modules/notifications/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/notifications/schemas.py",
+      "type": "file",
+      "name": "schemas.py",
+      "filePath": "backend/modules/notifications/schemas.py",
+      "summary": "notifications module file: schemas.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/notifications/schemas.py:NotificationResponse",
+      "type": "class",
+      "name": "NotificationResponse",
+      "filePath": "backend/modules/notifications/schemas.py",
+      "summary": "Class NotificationResponse in backend/modules/notifications/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/notifications/schemas.py:NotificationPreferenceResponse",
+      "type": "class",
+      "name": "NotificationPreferenceResponse",
+      "filePath": "backend/modules/notifications/schemas.py",
+      "summary": "Class NotificationPreferenceResponse in backend/modules/notifications/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/notifications/schemas.py:NotificationPreferenceUpdate",
+      "type": "class",
+      "name": "NotificationPreferenceUpdate",
+      "filePath": "backend/modules/notifications/schemas.py",
+      "summary": "Class NotificationPreferenceUpdate in backend/modules/notifications/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/platform/router.py",
+      "type": "file",
+      "name": "router.py",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "platform module file: router.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "api-route"
+      ],
+      "complexity": "complex",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:_log_admin_action",
+      "type": "function",
+      "name": "_log_admin_action",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function _log_admin_action in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:_plan_to_response",
+      "type": "function",
+      "name": "_plan_to_response",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function _plan_to_response in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:_subscription_to_response",
+      "type": "function",
+      "name": "_subscription_to_response",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function _subscription_to_response in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:_api_key_to_response",
+      "type": "function",
+      "name": "_api_key_to_response",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function _api_key_to_response in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:_webhook_to_response",
+      "type": "function",
+      "name": "_webhook_to_response",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function _webhook_to_response in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:_feature_flag_to_response",
+      "type": "function",
+      "name": "_feature_flag_to_response",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function _feature_flag_to_response in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:_email_template_to_response",
+      "type": "function",
+      "name": "_email_template_to_response",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function _email_template_to_response in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:get_platform_metadata",
+      "type": "function",
+      "name": "get_platform_metadata",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function get_platform_metadata in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:list_subscription_plans",
+      "type": "function",
+      "name": "list_subscription_plans",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function list_subscription_plans in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:get_subscription",
+      "type": "function",
+      "name": "get_subscription",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function get_subscription in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:select_subscription_plan",
+      "type": "function",
+      "name": "select_subscription_plan",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function select_subscription_plan in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:list_api_keys",
+      "type": "function",
+      "name": "list_api_keys",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function list_api_keys in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:create_api_key",
+      "type": "function",
+      "name": "create_api_key",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function create_api_key in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:revoke_api_key",
+      "type": "function",
+      "name": "revoke_api_key",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function revoke_api_key in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:list_webhooks",
+      "type": "function",
+      "name": "list_webhooks",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function list_webhooks in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:create_webhook",
+      "type": "function",
+      "name": "create_webhook",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function create_webhook in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:update_webhook",
+      "type": "function",
+      "name": "update_webhook",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function update_webhook in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:delete_webhook",
+      "type": "function",
+      "name": "delete_webhook",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function delete_webhook in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:test_webhook",
+      "type": "function",
+      "name": "test_webhook",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function test_webhook in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:list_effective_feature_flags",
+      "type": "function",
+      "name": "list_effective_feature_flags",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function list_effective_feature_flags in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:get_platform_config",
+      "type": "function",
+      "name": "get_platform_config",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function get_platform_config in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:update_platform_config",
+      "type": "function",
+      "name": "update_platform_config",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function update_platform_config in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:list_admin_plans",
+      "type": "function",
+      "name": "list_admin_plans",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function list_admin_plans in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:create_plan",
+      "type": "function",
+      "name": "create_plan",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function create_plan in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:update_plan",
+      "type": "function",
+      "name": "update_plan",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function update_plan in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:list_feature_flags",
+      "type": "function",
+      "name": "list_feature_flags",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function list_feature_flags in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:create_feature_flag",
+      "type": "function",
+      "name": "create_feature_flag",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function create_feature_flag in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:update_feature_flag",
+      "type": "function",
+      "name": "update_feature_flag",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function update_feature_flag in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:list_email_templates",
+      "type": "function",
+      "name": "list_email_templates",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function list_email_templates in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:create_email_template",
+      "type": "function",
+      "name": "create_email_template",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function create_email_template in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/router.py:update_email_template",
+      "type": "function",
+      "name": "update_email_template",
+      "filePath": "backend/modules/platform/router.py",
+      "summary": "Function update_email_template in backend/modules/platform/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/profile/router.py",
+      "type": "file",
+      "name": "router.py",
+      "filePath": "backend/modules/profile/router.py",
+      "summary": "profile module file: router.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "api-route"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "function:backend/modules/profile/router.py:_to_response",
+      "type": "function",
+      "name": "_to_response",
+      "filePath": "backend/modules/profile/router.py",
+      "summary": "Function _to_response in backend/modules/profile/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/router.py:_build_avatar_object_key",
+      "type": "function",
+      "name": "_build_avatar_object_key",
+      "filePath": "backend/modules/profile/router.py",
+      "summary": "Function _build_avatar_object_key in backend/modules/profile/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/router.py:get_profile",
+      "type": "function",
+      "name": "get_profile",
+      "filePath": "backend/modules/profile/router.py",
+      "summary": "Function get_profile in backend/modules/profile/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/router.py:update_profile",
+      "type": "function",
+      "name": "update_profile",
+      "filePath": "backend/modules/profile/router.py",
+      "summary": "Function update_profile in backend/modules/profile/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/router.py:upload_avatar",
+      "type": "function",
+      "name": "upload_avatar",
+      "filePath": "backend/modules/profile/router.py",
+      "summary": "Function upload_avatar in backend/modules/profile/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/router.py:delete_avatar",
+      "type": "function",
+      "name": "delete_avatar",
+      "filePath": "backend/modules/profile/router.py",
+      "summary": "Function delete_avatar in backend/modules/profile/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/profile/schemas.py",
+      "type": "file",
+      "name": "schemas.py",
+      "filePath": "backend/modules/profile/schemas.py",
+      "summary": "profile module file: schemas.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/profile/schemas.py:ProfileResponse",
+      "type": "class",
+      "name": "ProfileResponse",
+      "filePath": "backend/modules/profile/schemas.py",
+      "summary": "Class ProfileResponse in backend/modules/profile/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/profile/schemas.py:ProfileUpdate",
+      "type": "class",
+      "name": "ProfileUpdate",
+      "filePath": "backend/modules/profile/schemas.py",
+      "summary": "Class ProfileUpdate in backend/modules/profile/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/projects/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "backend/modules/projects/models.py",
+      "summary": "projects module file: models.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/projects/models.py:Project",
+      "type": "class",
+      "name": "Project",
+      "filePath": "backend/modules/projects/models.py",
+      "summary": "Class Project in backend/modules/projects/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/projects/models.py:ProjectTask",
+      "type": "class",
+      "name": "ProjectTask",
+      "filePath": "backend/modules/projects/models.py",
+      "summary": "Class ProjectTask in backend/modules/projects/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/projects/repository.py",
+      "type": "file",
+      "name": "repository.py",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "projects module file: repository.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "repository"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "type": "class",
+      "name": "ProjectsRepository",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Class ProjectsRepository in backend/modules/projects/repository.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.__init__",
+      "type": "function",
+      "name": "ProjectsRepository.__init__",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method __init__ on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.create",
+      "type": "function",
+      "name": "ProjectsRepository.create",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method create on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.list_accessible_by_user",
+      "type": "function",
+      "name": "ProjectsRepository.list_accessible_by_user",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method list_accessible_by_user on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.get_by_id_for_user",
+      "type": "function",
+      "name": "ProjectsRepository.get_by_id_for_user",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method get_by_id_for_user on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.filter_accessible_project_ids",
+      "type": "function",
+      "name": "ProjectsRepository.filter_accessible_project_ids",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method filter_accessible_project_ids on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.get_task_by_id",
+      "type": "function",
+      "name": "ProjectsRepository.get_task_by_id",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method get_task_by_id on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.list_tasks_with_assignees",
+      "type": "function",
+      "name": "ProjectsRepository.list_tasks_with_assignees",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method list_tasks_with_assignees on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.get_task_with_assignee",
+      "type": "function",
+      "name": "ProjectsRepository.get_task_with_assignee",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method get_task_with_assignee on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.get_next_task_position",
+      "type": "function",
+      "name": "ProjectsRepository.get_next_task_position",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method get_next_task_position on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.create_task",
+      "type": "function",
+      "name": "ProjectsRepository.create_task",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method create_task on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.delete_task",
+      "type": "function",
+      "name": "ProjectsRepository.delete_task",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method delete_task on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/repository.py:ProjectsRepository.list_tasks_due_for_user",
+      "type": "function",
+      "name": "ProjectsRepository.list_tasks_due_for_user",
+      "filePath": "backend/modules/projects/repository.py",
+      "summary": "Method list_tasks_due_for_user on ProjectsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/projects/router.py",
+      "type": "file",
+      "name": "router.py",
+      "filePath": "backend/modules/projects/router.py",
+      "summary": "projects module file: router.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "api-route"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "function:backend/modules/projects/router.py:_project_to_response",
+      "type": "function",
+      "name": "_project_to_response",
+      "filePath": "backend/modules/projects/router.py",
+      "summary": "Function _project_to_response in backend/modules/projects/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/router.py:_task_to_response",
+      "type": "function",
+      "name": "_task_to_response",
+      "filePath": "backend/modules/projects/router.py",
+      "summary": "Function _task_to_response in backend/modules/projects/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/router.py:list_projects",
+      "type": "function",
+      "name": "list_projects",
+      "filePath": "backend/modules/projects/router.py",
+      "summary": "Function list_projects in backend/modules/projects/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/router.py:create_project",
+      "type": "function",
+      "name": "create_project",
+      "filePath": "backend/modules/projects/router.py",
+      "summary": "Function create_project in backend/modules/projects/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/router.py:get_project",
+      "type": "function",
+      "name": "get_project",
+      "filePath": "backend/modules/projects/router.py",
+      "summary": "Function get_project in backend/modules/projects/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/router.py:list_project_tasks",
+      "type": "function",
+      "name": "list_project_tasks",
+      "filePath": "backend/modules/projects/router.py",
+      "summary": "Function list_project_tasks in backend/modules/projects/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/router.py:create_project_task",
+      "type": "function",
+      "name": "create_project_task",
+      "filePath": "backend/modules/projects/router.py",
+      "summary": "Function create_project_task in backend/modules/projects/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/router.py:update_project_task",
+      "type": "function",
+      "name": "update_project_task",
+      "filePath": "backend/modules/projects/router.py",
+      "summary": "Function update_project_task in backend/modules/projects/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/router.py:delete_project_task",
+      "type": "function",
+      "name": "delete_project_task",
+      "filePath": "backend/modules/projects/router.py",
+      "summary": "Function delete_project_task in backend/modules/projects/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/router.py:reorder_project_tasks",
+      "type": "function",
+      "name": "reorder_project_tasks",
+      "filePath": "backend/modules/projects/router.py",
+      "summary": "Function reorder_project_tasks in backend/modules/projects/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/projects/schemas.py",
+      "type": "file",
+      "name": "schemas.py",
+      "filePath": "backend/modules/projects/schemas.py",
+      "summary": "projects module file: schemas.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/projects/schemas.py:ProjectCreate",
+      "type": "class",
+      "name": "ProjectCreate",
+      "filePath": "backend/modules/projects/schemas.py",
+      "summary": "Class ProjectCreate in backend/modules/projects/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/projects/schemas.py:ProjectResponse",
+      "type": "class",
+      "name": "ProjectResponse",
+      "filePath": "backend/modules/projects/schemas.py",
+      "summary": "Class ProjectResponse in backend/modules/projects/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/projects/schemas.py:ProjectTaskAssigneeResponse",
+      "type": "class",
+      "name": "ProjectTaskAssigneeResponse",
+      "filePath": "backend/modules/projects/schemas.py",
+      "summary": "Class ProjectTaskAssigneeResponse in backend/modules/projects/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/projects/schemas.py:ProjectTaskCreate",
+      "type": "class",
+      "name": "ProjectTaskCreate",
+      "filePath": "backend/modules/projects/schemas.py",
+      "summary": "Class ProjectTaskCreate in backend/modules/projects/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/projects/schemas.py:ProjectTaskUpdate",
+      "type": "class",
+      "name": "ProjectTaskUpdate",
+      "filePath": "backend/modules/projects/schemas.py",
+      "summary": "Class ProjectTaskUpdate in backend/modules/projects/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/projects/schemas.py:ProjectTaskResponse",
+      "type": "class",
+      "name": "ProjectTaskResponse",
+      "filePath": "backend/modules/projects/schemas.py",
+      "summary": "Class ProjectTaskResponse in backend/modules/projects/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/projects/schemas.py:ProjectTaskReorderColumn",
+      "type": "class",
+      "name": "ProjectTaskReorderColumn",
+      "filePath": "backend/modules/projects/schemas.py",
+      "summary": "Class ProjectTaskReorderColumn in backend/modules/projects/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/projects/schemas.py:ProjectTaskReorderRequest",
+      "type": "class",
+      "name": "ProjectTaskReorderRequest",
+      "filePath": "backend/modules/projects/schemas.py",
+      "summary": "Class ProjectTaskReorderRequest in backend/modules/projects/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/projects/service.py",
+      "type": "file",
+      "name": "service.py",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "projects module file: service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "service"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/projects/service.py:ProjectsService",
+      "type": "class",
+      "name": "ProjectsService",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Class ProjectsService in backend/modules/projects/service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService.__init__",
+      "type": "function",
+      "name": "ProjectsService.__init__",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method __init__ on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService.create_project",
+      "type": "function",
+      "name": "ProjectsService.create_project",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method create_project on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService.list_projects",
+      "type": "function",
+      "name": "ProjectsService.list_projects",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method list_projects on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService.get_project",
+      "type": "function",
+      "name": "ProjectsService.get_project",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method get_project on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService.list_tasks",
+      "type": "function",
+      "name": "ProjectsService.list_tasks",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method list_tasks on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService.create_task",
+      "type": "function",
+      "name": "ProjectsService.create_task",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method create_task on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService.update_task",
+      "type": "function",
+      "name": "ProjectsService.update_task",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method update_task on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService.delete_task",
+      "type": "function",
+      "name": "ProjectsService.delete_task",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method delete_task on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService.reorder_tasks",
+      "type": "function",
+      "name": "ProjectsService.reorder_tasks",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method reorder_tasks on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService._get_project_or_404",
+      "type": "function",
+      "name": "ProjectsService._get_project_or_404",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method _get_project_or_404 on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService._get_assignee_or_404",
+      "type": "function",
+      "name": "ProjectsService._get_assignee_or_404",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method _get_assignee_or_404 on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService._normalize_positions",
+      "type": "function",
+      "name": "ProjectsService._normalize_positions",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method _normalize_positions on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService._notify_assignment",
+      "type": "function",
+      "name": "ProjectsService._notify_assignment",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method _notify_assignment on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService._notify_due_date_change",
+      "type": "function",
+      "name": "ProjectsService._notify_due_date_change",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method _notify_due_date_change on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService._notify_status_change",
+      "type": "function",
+      "name": "ProjectsService._notify_status_change",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method _notify_status_change on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/projects/service.py:ProjectsService._actor_label",
+      "type": "function",
+      "name": "ProjectsService._actor_label",
+      "filePath": "backend/modules/projects/service.py",
+      "summary": "Method _actor_label on ProjectsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/api/routes.py",
+      "type": "file",
+      "name": "routes.py",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "rag module file: routes.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "api-route"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:_require_rag_enabled",
+      "type": "function",
+      "name": "_require_rag_enabled",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function _require_rag_enabled in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:_document_to_response",
+      "type": "function",
+      "name": "_document_to_response",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function _document_to_response in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:upload_document",
+      "type": "function",
+      "name": "upload_document",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function upload_document in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:list_documents",
+      "type": "function",
+      "name": "list_documents",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function list_documents in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:get_document",
+      "type": "function",
+      "name": "get_document",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function get_document in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:delete_document",
+      "type": "function",
+      "name": "delete_document",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function delete_document in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:index_document",
+      "type": "function",
+      "name": "index_document",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function index_document in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:list_document_chunks",
+      "type": "function",
+      "name": "list_document_chunks",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function list_document_chunks in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:retrieve_chunks",
+      "type": "function",
+      "name": "retrieve_chunks",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function retrieve_chunks in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:ask_rag",
+      "type": "function",
+      "name": "ask_rag",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function ask_rag in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:list_queries",
+      "type": "function",
+      "name": "list_queries",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function list_queries in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/api/routes.py:get_job",
+      "type": "function",
+      "name": "get_job",
+      "filePath": "backend/modules/rag/api/routes.py",
+      "summary": "Function get_job in backend/modules/rag/api/routes.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/api/schemas.py",
+      "type": "file",
+      "name": "schemas.py",
+      "filePath": "backend/modules/rag/api/schemas.py",
+      "summary": "rag module file: schemas.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/rag/api/schemas.py:RagDocumentResponse",
+      "type": "class",
+      "name": "RagDocumentResponse",
+      "filePath": "backend/modules/rag/api/schemas.py",
+      "summary": "Class RagDocumentResponse in backend/modules/rag/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/api/schemas.py:RagDocumentUploadResponse",
+      "type": "class",
+      "name": "RagDocumentUploadResponse",
+      "filePath": "backend/modules/rag/api/schemas.py",
+      "summary": "Class RagDocumentUploadResponse in backend/modules/rag/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/api/schemas.py:RagChunkResponse",
+      "type": "class",
+      "name": "RagChunkResponse",
+      "filePath": "backend/modules/rag/api/schemas.py",
+      "summary": "Class RagChunkResponse in backend/modules/rag/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/api/schemas.py:RagIngestionJobResponse",
+      "type": "class",
+      "name": "RagIngestionJobResponse",
+      "filePath": "backend/modules/rag/api/schemas.py",
+      "summary": "Class RagIngestionJobResponse in backend/modules/rag/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/api/schemas.py:RagRetrieveRequest",
+      "type": "class",
+      "name": "RagRetrieveRequest",
+      "filePath": "backend/modules/rag/api/schemas.py",
+      "summary": "Class RagRetrieveRequest in backend/modules/rag/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/api/schemas.py:RagRetrievedChunkResponse",
+      "type": "class",
+      "name": "RagRetrievedChunkResponse",
+      "filePath": "backend/modules/rag/api/schemas.py",
+      "summary": "Class RagRetrievedChunkResponse in backend/modules/rag/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/api/schemas.py:RagAskRequest",
+      "type": "class",
+      "name": "RagAskRequest",
+      "filePath": "backend/modules/rag/api/schemas.py",
+      "summary": "Class RagAskRequest in backend/modules/rag/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/api/schemas.py:RagCitationResponse",
+      "type": "class",
+      "name": "RagCitationResponse",
+      "filePath": "backend/modules/rag/api/schemas.py",
+      "summary": "Class RagCitationResponse in backend/modules/rag/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/api/schemas.py:RagAskResponse",
+      "type": "class",
+      "name": "RagAskResponse",
+      "filePath": "backend/modules/rag/api/schemas.py",
+      "summary": "Class RagAskResponse in backend/modules/rag/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/rag/api/schemas.py:RagQueryResponse",
+      "type": "class",
+      "name": "RagQueryResponse",
+      "filePath": "backend/modules/rag/api/schemas.py",
+      "summary": "Class RagQueryResponse in backend/modules/rag/api/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/settings/router.py",
+      "type": "file",
+      "name": "router.py",
+      "filePath": "backend/modules/settings/router.py",
+      "summary": "settings module file: router.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "api-route"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "function:backend/modules/settings/router.py:_log_admin_settings_action",
+      "type": "function",
+      "name": "_log_admin_settings_action",
+      "filePath": "backend/modules/settings/router.py",
+      "summary": "Function _log_admin_settings_action in backend/modules/settings/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/router.py:get_config_settings",
+      "type": "function",
+      "name": "get_config_settings",
+      "filePath": "backend/modules/settings/router.py",
+      "summary": "Function get_config_settings in backend/modules/settings/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/router.py:update_config_settings",
+      "type": "function",
+      "name": "update_config_settings",
+      "filePath": "backend/modules/settings/router.py",
+      "summary": "Function update_config_settings in backend/modules/settings/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/router.py:list_database_settings",
+      "type": "function",
+      "name": "list_database_settings",
+      "filePath": "backend/modules/settings/router.py",
+      "summary": "Function list_database_settings in backend/modules/settings/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/router.py:create_database_setting",
+      "type": "function",
+      "name": "create_database_setting",
+      "filePath": "backend/modules/settings/router.py",
+      "summary": "Function create_database_setting in backend/modules/settings/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/router.py:update_database_setting",
+      "type": "function",
+      "name": "update_database_setting",
+      "filePath": "backend/modules/settings/router.py",
+      "summary": "Function update_database_setting in backend/modules/settings/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/router.py:delete_database_setting",
+      "type": "function",
+      "name": "delete_database_setting",
+      "filePath": "backend/modules/settings/router.py",
+      "summary": "Function delete_database_setting in backend/modules/settings/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/users/repository.py",
+      "type": "file",
+      "name": "repository.py",
+      "filePath": "backend/modules/users/repository.py",
+      "summary": "users module file: repository.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "repository"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/users/repository.py:UsersRepository",
+      "type": "class",
+      "name": "UsersRepository",
+      "filePath": "backend/modules/users/repository.py",
+      "summary": "Class UsersRepository in backend/modules/users/repository.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/repository.py:UsersRepository.__init__",
+      "type": "function",
+      "name": "UsersRepository.__init__",
+      "filePath": "backend/modules/users/repository.py",
+      "summary": "Method __init__ on UsersRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/repository.py:UsersRepository.update_profile",
+      "type": "function",
+      "name": "UsersRepository.update_profile",
+      "filePath": "backend/modules/users/repository.py",
+      "summary": "Method update_profile on UsersRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/repository.py:UsersRepository.list_active_users",
+      "type": "function",
+      "name": "UsersRepository.list_active_users",
+      "filePath": "backend/modules/users/repository.py",
+      "summary": "Method list_active_users on UsersRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/repository.py:UsersRepository.get_active_user_by_id",
+      "type": "function",
+      "name": "UsersRepository.get_active_user_by_id",
+      "filePath": "backend/modules/users/repository.py",
+      "summary": "Method get_active_user_by_id on UsersRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/users/router.py",
+      "type": "file",
+      "name": "router.py",
+      "filePath": "backend/modules/users/router.py",
+      "summary": "users module file: router.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "api-route"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "function:backend/modules/users/router.py:get_me",
+      "type": "function",
+      "name": "get_me",
+      "filePath": "backend/modules/users/router.py",
+      "summary": "Function get_me in backend/modules/users/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/router.py:list_directory",
+      "type": "function",
+      "name": "list_directory",
+      "filePath": "backend/modules/users/router.py",
+      "summary": "Function list_directory in backend/modules/users/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/router.py:update_me",
+      "type": "function",
+      "name": "update_me",
+      "filePath": "backend/modules/users/router.py",
+      "summary": "Function update_me in backend/modules/users/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/router.py:change_password",
+      "type": "function",
+      "name": "change_password",
+      "filePath": "backend/modules/users/router.py",
+      "summary": "Function change_password in backend/modules/users/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/router.py:list_sessions",
+      "type": "function",
+      "name": "list_sessions",
+      "filePath": "backend/modules/users/router.py",
+      "summary": "Function list_sessions in backend/modules/users/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/router.py:revoke_session",
+      "type": "function",
+      "name": "revoke_session",
+      "filePath": "backend/modules/users/router.py",
+      "summary": "Function revoke_session in backend/modules/users/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/users/schemas.py",
+      "type": "file",
+      "name": "schemas.py",
+      "filePath": "backend/modules/users/schemas.py",
+      "summary": "users module file: schemas.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/users/schemas.py:UserProfileUpdate",
+      "type": "class",
+      "name": "UserProfileUpdate",
+      "filePath": "backend/modules/users/schemas.py",
+      "summary": "Class UserProfileUpdate in backend/modules/users/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/users/schemas.py:UserProfileResponse",
+      "type": "class",
+      "name": "UserProfileResponse",
+      "filePath": "backend/modules/users/schemas.py",
+      "summary": "Class UserProfileResponse in backend/modules/users/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/users/schemas.py:UserDirectoryResponse",
+      "type": "class",
+      "name": "UserDirectoryResponse",
+      "filePath": "backend/modules/users/schemas.py",
+      "summary": "Class UserDirectoryResponse in backend/modules/users/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/users/schemas.py:PasswordChangeRequest",
+      "type": "class",
+      "name": "PasswordChangeRequest",
+      "filePath": "backend/modules/users/schemas.py",
+      "summary": "Class PasswordChangeRequest in backend/modules/users/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/users/schemas.py:SessionResponse",
+      "type": "class",
+      "name": "SessionResponse",
+      "filePath": "backend/modules/users/schemas.py",
+      "summary": "Class SessionResponse in backend/modules/users/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/users/service.py",
+      "type": "file",
+      "name": "service.py",
+      "filePath": "backend/modules/users/service.py",
+      "summary": "users module file: service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "service"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/users/service.py:UsersService",
+      "type": "class",
+      "name": "UsersService",
+      "filePath": "backend/modules/users/service.py",
+      "summary": "Class UsersService in backend/modules/users/service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/service.py:UsersService.__init__",
+      "type": "function",
+      "name": "UsersService.__init__",
+      "filePath": "backend/modules/users/service.py",
+      "summary": "Method __init__ on UsersService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/service.py:UsersService.update_profile",
+      "type": "function",
+      "name": "UsersService.update_profile",
+      "filePath": "backend/modules/users/service.py",
+      "summary": "Method update_profile on UsersService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/service.py:UsersService.change_password",
+      "type": "function",
+      "name": "UsersService.change_password",
+      "filePath": "backend/modules/users/service.py",
+      "summary": "Method change_password on UsersService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/service.py:UsersService.list_sessions",
+      "type": "function",
+      "name": "UsersService.list_sessions",
+      "filePath": "backend/modules/users/service.py",
+      "summary": "Method list_sessions on UsersService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/service.py:UsersService.revoke_session",
+      "type": "function",
+      "name": "UsersService.revoke_session",
+      "filePath": "backend/modules/users/service.py",
+      "summary": "Method revoke_session on UsersService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/users/service.py:UsersService.list_directory",
+      "type": "function",
+      "name": "UsersService.list_directory",
+      "filePath": "backend/modules/users/service.py",
+      "summary": "Method list_directory on UsersService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/observability/router.py",
+      "type": "file",
+      "name": "router.py",
+      "filePath": "backend/observability/router.py",
+      "summary": "router.py (2 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python",
+        "api-route"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "function:backend/observability/router.py:get_observability_links",
+      "type": "function",
+      "name": "get_observability_links",
+      "filePath": "backend/observability/router.py",
+      "summary": "Function get_observability_links in backend/observability/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/router.py:get_observability_status",
+      "type": "function",
+      "name": "get_observability_status",
+      "filePath": "backend/observability/router.py",
+      "summary": "Function get_observability_status in backend/observability/router.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_pagination.py",
+      "type": "file",
+      "name": "test_pagination.py",
+      "filePath": "backend/tests/test_pagination.py",
+      "summary": "test_pagination.py (0 functions, 1 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_pagination.py:PaginationDefaultsTest",
+      "type": "class",
+      "name": "PaginationDefaultsTest",
+      "filePath": "backend/tests/test_pagination.py",
+      "summary": "Class PaginationDefaultsTest in backend/tests/test_pagination.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_pagination.py:PaginationDefaultsTest.test_paginated_response_shape",
+      "type": "function",
+      "name": "PaginationDefaultsTest.test_paginated_response_shape",
+      "filePath": "backend/tests/test_pagination.py",
+      "summary": "Method test_paginated_response_shape on PaginationDefaultsTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_pagination.py:PaginationDefaultsTest.test_constants",
+      "type": "function",
+      "name": "PaginationDefaultsTest.test_constants",
+      "filePath": "backend/tests/test_pagination.py",
+      "summary": "Method test_constants on PaginationDefaultsTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_pagination.py:PaginationDefaultsTest.test_generic_response_model",
+      "type": "function",
+      "name": "PaginationDefaultsTest.test_generic_response_model",
+      "filePath": "backend/tests/test_pagination.py",
+      "summary": "Method test_generic_response_model on PaginationDefaultsTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_text_snippet.py",
+      "type": "file",
+      "name": "test_text_snippet.py",
+      "filePath": "backend/tests/test_text_snippet.py",
+      "summary": "test_text_snippet.py (0 functions, 1 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_text_snippet.py:TextSnippetTest",
+      "type": "class",
+      "name": "TextSnippetTest",
+      "filePath": "backend/tests/test_text_snippet.py",
+      "summary": "Class TextSnippetTest in backend/tests/test_text_snippet.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_text_snippet.py:TextSnippetTest.test_short_text_unchanged",
+      "type": "function",
+      "name": "TextSnippetTest.test_short_text_unchanged",
+      "filePath": "backend/tests/test_text_snippet.py",
+      "summary": "Method test_short_text_unchanged on TextSnippetTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_text_snippet.py:TextSnippetTest.test_long_text_truncated_with_ellipsis",
+      "type": "function",
+      "name": "TextSnippetTest.test_long_text_truncated_with_ellipsis",
+      "filePath": "backend/tests/test_text_snippet.py",
+      "summary": "Method test_long_text_truncated_with_ellipsis on TextSnippetTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:backend/modules/identity_access/service.py",
+      "target": "file:backend/core/cache.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/identity_access/service.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/identity_access/service.py",
+      "target": "file:backend/core/security.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/identity_access/service.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/identity_access/service.py",
+      "target": "file:backend/modules/identity_access/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/identity_access/service.py",
+      "target": "file:backend/modules/platform/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/identity_access/service.py",
+      "target": "file:backend/workers/email.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/identity_access/service.py",
+      "target": "function:backend/modules/identity_access/service.py:_hash_token",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/identity_access/service.py",
+      "target": "class:backend/modules/identity_access/service.py:IdentityService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService._get_platform_app_name",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.sign_up",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.sign_in",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.refresh",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.logout",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService._store_verification_token",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.verify_email",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.resend_verification",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.forgot_password",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.reset_password",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.mfa_enable",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.mfa_verify_enable",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/identity_access/service.py:IdentityService",
+      "target": "function:backend/modules/identity_access/service.py:IdentityService.mfa_disable",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "file:backend/api/deps/auth.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "file:backend/api/deps/db.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "file:backend/modules/memory/api/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "file:backend/modules/memory/application/memory_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "file:backend/modules/memory/domain/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "file:backend/modules/memory/infrastructure/memory_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "function:backend/modules/memory/api/routes.py:_memory_to_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "function:backend/modules/memory/api/routes.py:_require_memory_enabled",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "function:backend/modules/memory/api/routes.py:list_memories",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "function:backend/modules/memory/api/routes.py:search_memories",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "function:backend/modules/memory/api/routes.py:list_audit_logs",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "function:backend/modules/memory/api/routes.py:create_memory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "function:backend/modules/memory/api/routes.py:forget_memory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "function:backend/modules/memory/api/routes.py:get_memory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/routes.py",
+      "target": "function:backend/modules/memory/api/routes.py:delete_memory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/schemas.py",
+      "target": "file:backend/modules/ai/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/api/schemas.py",
+      "target": "class:backend/modules/memory/api/schemas.py:MemoryMetadataResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/schemas.py",
+      "target": "class:backend/modules/memory/api/schemas.py:MemoryItemResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/schemas.py",
+      "target": "class:backend/modules/memory/api/schemas.py:MemoryWriteRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/schemas.py",
+      "target": "class:backend/modules/memory/api/schemas.py:MemoryWriteResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/schemas.py",
+      "target": "class:backend/modules/memory/api/schemas.py:MemorySearchRequestBody",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/schemas.py",
+      "target": "class:backend/modules/memory/api/schemas.py:MemoryForgetRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/api/schemas.py",
+      "target": "class:backend/modules/memory/api/schemas.py:MemoryAuditLogResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/models.py",
+      "target": "file:backend/db/base.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/models.py",
+      "target": "class:backend/modules/memory/infrastructure/models.py:MemoryAuditLog",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/memory/infrastructure/models.py",
+      "target": "class:backend/modules/memory/infrastructure/models.py:MemoryRegistry",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/notifications/models.py",
+      "target": "file:backend/db/base.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/notifications/models.py",
+      "target": "class:backend/modules/notifications/models.py:Notification",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/notifications/models.py",
+      "target": "class:backend/modules/notifications/models.py:NotificationPreference",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/notifications/repository.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/notifications/repository.py",
+      "target": "file:backend/modules/notifications/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/notifications/repository.py",
+      "target": "class:backend/modules/notifications/repository.py:NotificationsRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/notifications/repository.py:NotificationsRepository",
+      "target": "function:backend/modules/notifications/repository.py:NotificationsRepository.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/notifications/repository.py:NotificationsRepository",
+      "target": "function:backend/modules/notifications/repository.py:NotificationsRepository.create",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/notifications/repository.py:NotificationsRepository",
+      "target": "function:backend/modules/notifications/repository.py:NotificationsRepository.list_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/notifications/repository.py:NotificationsRepository",
+      "target": "function:backend/modules/notifications/repository.py:NotificationsRepository.get_by_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/notifications/repository.py:NotificationsRepository",
+      "target": "function:backend/modules/notifications/repository.py:NotificationsRepository.mark_read",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/notifications/repository.py:NotificationsRepository",
+      "target": "function:backend/modules/notifications/repository.py:NotificationsRepository.mark_all_read",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/notifications/repository.py:NotificationsRepository",
+      "target": "function:backend/modules/notifications/repository.py:NotificationsRepository.get_or_create_preferences",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/notifications/router.py",
+      "target": "file:backend/api/deps/auth.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/notifications/router.py",
+      "target": "file:backend/api/deps/db.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/notifications/router.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/notifications/router.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/notifications/router.py",
+      "target": "file:backend/modules/notifications/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/notifications/router.py",
+      "target": "file:backend/modules/notifications/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/notifications/router.py",
+      "target": "function:backend/modules/notifications/router.py:list_notifications",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/notifications/router.py",
+      "target": "function:backend/modules/notifications/router.py:mark_read",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/notifications/router.py",
+      "target": "function:backend/modules/notifications/router.py:mark_all_read",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/notifications/router.py",
+      "target": "function:backend/modules/notifications/router.py:get_preferences",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/notifications/router.py",
+      "target": "function:backend/modules/notifications/router.py:update_preferences",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/notifications/schemas.py",
+      "target": "file:backend/core/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/notifications/schemas.py",
+      "target": "class:backend/modules/notifications/schemas.py:NotificationResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/notifications/schemas.py",
+      "target": "class:backend/modules/notifications/schemas.py:NotificationPreferenceResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/notifications/schemas.py",
+      "target": "class:backend/modules/notifications/schemas.py:NotificationPreferenceUpdate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "file:backend/api/deps/admin.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "file:backend/api/deps/auth.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "file:backend/api/deps/db.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "file:backend/modules/audit/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "file:backend/modules/platform/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "file:backend/modules/platform/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:_log_admin_action",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:_plan_to_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:_subscription_to_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:_api_key_to_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:_webhook_to_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:_feature_flag_to_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:_email_template_to_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:get_platform_metadata",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:list_subscription_plans",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:get_subscription",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:select_subscription_plan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:list_api_keys",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:create_api_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:revoke_api_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:list_webhooks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:create_webhook",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:update_webhook",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:delete_webhook",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:test_webhook",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:list_effective_feature_flags",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:get_platform_config",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:update_platform_config",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:list_admin_plans",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:create_plan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:update_plan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:list_feature_flags",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:create_feature_flag",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:update_feature_flag",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:list_email_templates",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:create_email_template",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/router.py",
+      "target": "function:backend/modules/platform/router.py:update_email_template",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "file:backend/api/deps/auth.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "file:backend/api/deps/db.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "file:backend/core/storage.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "file:backend/modules/profile/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "file:backend/modules/profile/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "function:backend/modules/profile/router.py:_to_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "function:backend/modules/profile/router.py:_build_avatar_object_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "function:backend/modules/profile/router.py:get_profile",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "function:backend/modules/profile/router.py:update_profile",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "function:backend/modules/profile/router.py:upload_avatar",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/profile/router.py",
+      "target": "function:backend/modules/profile/router.py:delete_avatar",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/profile/schemas.py",
+      "target": "file:backend/core/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/schemas.py",
+      "target": "class:backend/modules/profile/schemas.py:ProfileResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/profile/schemas.py",
+      "target": "class:backend/modules/profile/schemas.py:ProfileUpdate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/models.py",
+      "target": "file:backend/db/base.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/models.py",
+      "target": "class:backend/modules/projects/models.py:Project",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/models.py",
+      "target": "class:backend/modules/projects/models.py:ProjectTask",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/repository.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/repository.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/repository.py",
+      "target": "file:backend/modules/projects/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/repository.py",
+      "target": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.create",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.list_accessible_by_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.get_by_id_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.filter_accessible_project_ids",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.get_task_by_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.list_tasks_with_assignees",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.get_task_with_assignee",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.get_next_task_position",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.create_task",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.delete_task",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/repository.py:ProjectsRepository",
+      "target": "function:backend/modules/projects/repository.py:ProjectsRepository.list_tasks_due_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "file:backend/api/deps/auth.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "file:backend/api/deps/db.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "file:backend/modules/projects/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "file:backend/modules/projects/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "file:backend/modules/projects/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "function:backend/modules/projects/router.py:_project_to_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "function:backend/modules/projects/router.py:_task_to_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "function:backend/modules/projects/router.py:list_projects",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "function:backend/modules/projects/router.py:create_project",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "function:backend/modules/projects/router.py:get_project",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "function:backend/modules/projects/router.py:list_project_tasks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "function:backend/modules/projects/router.py:create_project_task",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "function:backend/modules/projects/router.py:update_project_task",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "function:backend/modules/projects/router.py:delete_project_task",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/router.py",
+      "target": "function:backend/modules/projects/router.py:reorder_project_tasks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/schemas.py",
+      "target": "file:backend/core/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/schemas.py",
+      "target": "class:backend/modules/projects/schemas.py:ProjectCreate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/schemas.py",
+      "target": "class:backend/modules/projects/schemas.py:ProjectResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/schemas.py",
+      "target": "class:backend/modules/projects/schemas.py:ProjectTaskAssigneeResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/schemas.py",
+      "target": "class:backend/modules/projects/schemas.py:ProjectTaskCreate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/schemas.py",
+      "target": "class:backend/modules/projects/schemas.py:ProjectTaskUpdate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/schemas.py",
+      "target": "class:backend/modules/projects/schemas.py:ProjectTaskResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/schemas.py",
+      "target": "class:backend/modules/projects/schemas.py:ProjectTaskReorderColumn",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/schemas.py",
+      "target": "class:backend/modules/projects/schemas.py:ProjectTaskReorderRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/projects/service.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/service.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/service.py",
+      "target": "file:backend/modules/notifications/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/service.py",
+      "target": "file:backend/modules/projects/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/service.py",
+      "target": "file:backend/modules/projects/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/service.py",
+      "target": "file:backend/modules/projects/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/service.py",
+      "target": "file:backend/modules/users/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/projects/service.py",
+      "target": "class:backend/modules/projects/service.py:ProjectsService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService.create_project",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService.list_projects",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService.get_project",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService.list_tasks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService.create_task",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService.update_task",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService.delete_task",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService.reorder_tasks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService._get_project_or_404",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService._get_assignee_or_404",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService._normalize_positions",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService._notify_assignment",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService._notify_due_date_change",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService._notify_status_change",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/projects/service.py:ProjectsService",
+      "target": "function:backend/modules/projects/service.py:ProjectsService._actor_label",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/api/deps/auth.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/api/deps/db.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/core/text_snippet.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/modules/rag/api/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/modules/rag/application/document_ingestion_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/modules/rag/application/rag_answer_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/modules/rag/application/retrieval_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/modules/rag/infrastructure/repositories.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "file:backend/modules/rag/workers.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:_require_rag_enabled",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:_document_to_response",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:upload_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:list_documents",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:get_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:delete_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:index_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:list_document_chunks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:retrieve_chunks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:ask_rag",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:list_queries",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/routes.py",
+      "target": "function:backend/modules/rag/api/routes.py:get_job",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/schemas.py",
+      "target": "file:backend/modules/ai/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/api/schemas.py",
+      "target": "class:backend/modules/rag/api/schemas.py:RagDocumentResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/schemas.py",
+      "target": "class:backend/modules/rag/api/schemas.py:RagDocumentUploadResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/schemas.py",
+      "target": "class:backend/modules/rag/api/schemas.py:RagChunkResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/schemas.py",
+      "target": "class:backend/modules/rag/api/schemas.py:RagIngestionJobResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/schemas.py",
+      "target": "class:backend/modules/rag/api/schemas.py:RagRetrieveRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/schemas.py",
+      "target": "class:backend/modules/rag/api/schemas.py:RagRetrievedChunkResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/schemas.py",
+      "target": "class:backend/modules/rag/api/schemas.py:RagAskRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/schemas.py",
+      "target": "class:backend/modules/rag/api/schemas.py:RagCitationResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/schemas.py",
+      "target": "class:backend/modules/rag/api/schemas.py:RagAskResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/api/schemas.py",
+      "target": "class:backend/modules/rag/api/schemas.py:RagQueryResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "file:backend/api/deps/admin.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "file:backend/api/deps/db.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "file:backend/modules/audit/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "file:backend/modules/settings/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "file:backend/modules/settings/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "function:backend/modules/settings/router.py:_log_admin_settings_action",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "function:backend/modules/settings/router.py:get_config_settings",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "function:backend/modules/settings/router.py:update_config_settings",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "function:backend/modules/settings/router.py:list_database_settings",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "function:backend/modules/settings/router.py:create_database_setting",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "function:backend/modules/settings/router.py:update_database_setting",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/router.py",
+      "target": "function:backend/modules/settings/router.py:delete_database_setting",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/repository.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/repository.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/repository.py",
+      "target": "class:backend/modules/users/repository.py:UsersRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/users/repository.py:UsersRepository",
+      "target": "function:backend/modules/users/repository.py:UsersRepository.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/users/repository.py:UsersRepository",
+      "target": "function:backend/modules/users/repository.py:UsersRepository.update_profile",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/users/repository.py:UsersRepository",
+      "target": "function:backend/modules/users/repository.py:UsersRepository.list_active_users",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/users/repository.py:UsersRepository",
+      "target": "function:backend/modules/users/repository.py:UsersRepository.get_active_user_by_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "file:backend/api/deps/auth.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "file:backend/api/deps/db.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "file:backend/modules/audit/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "file:backend/modules/users/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "file:backend/modules/users/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "function:backend/modules/users/router.py:get_me",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "function:backend/modules/users/router.py:list_directory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "function:backend/modules/users/router.py:update_me",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "function:backend/modules/users/router.py:change_password",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "function:backend/modules/users/router.py:list_sessions",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/router.py",
+      "target": "function:backend/modules/users/router.py:revoke_session",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/schemas.py",
+      "target": "file:backend/core/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/schemas.py",
+      "target": "class:backend/modules/users/schemas.py:UserProfileUpdate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/schemas.py",
+      "target": "class:backend/modules/users/schemas.py:UserProfileResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/schemas.py",
+      "target": "class:backend/modules/users/schemas.py:UserDirectoryResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/schemas.py",
+      "target": "class:backend/modules/users/schemas.py:PasswordChangeRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/schemas.py",
+      "target": "class:backend/modules/users/schemas.py:SessionResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/users/service.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/service.py",
+      "target": "file:backend/core/security.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/service.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/service.py",
+      "target": "file:backend/modules/identity_access/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/service.py",
+      "target": "file:backend/modules/users/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/users/service.py",
+      "target": "class:backend/modules/users/service.py:UsersService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/users/service.py:UsersService",
+      "target": "function:backend/modules/users/service.py:UsersService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/users/service.py:UsersService",
+      "target": "function:backend/modules/users/service.py:UsersService.update_profile",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/users/service.py:UsersService",
+      "target": "function:backend/modules/users/service.py:UsersService.change_password",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/users/service.py:UsersService",
+      "target": "function:backend/modules/users/service.py:UsersService.list_sessions",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/users/service.py:UsersService",
+      "target": "function:backend/modules/users/service.py:UsersService.revoke_session",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/users/service.py:UsersService",
+      "target": "function:backend/modules/users/service.py:UsersService.list_directory",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/router.py",
+      "target": "file:backend/api/deps/auth.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/router.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/router.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/router.py",
+      "target": "file:backend/observability/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/router.py",
+      "target": "file:backend/observability/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/router.py",
+      "target": "function:backend/observability/router.py:get_observability_links",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/router.py",
+      "target": "function:backend/observability/router.py:get_observability_status",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_pagination.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_pagination.py",
+      "target": "class:backend/tests/test_pagination.py:PaginationDefaultsTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_pagination.py:PaginationDefaultsTest",
+      "target": "function:backend/tests/test_pagination.py:PaginationDefaultsTest.test_paginated_response_shape",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_pagination.py:PaginationDefaultsTest",
+      "target": "function:backend/tests/test_pagination.py:PaginationDefaultsTest.test_constants",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_pagination.py:PaginationDefaultsTest",
+      "target": "function:backend/tests/test_pagination.py:PaginationDefaultsTest.test_generic_response_model",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_text_snippet.py",
+      "target": "file:backend/core/text_snippet.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_text_snippet.py",
+      "target": "class:backend/tests/test_text_snippet.py:TextSnippetTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_text_snippet.py:TextSnippetTest",
+      "target": "function:backend/tests/test_text_snippet.py:TextSnippetTest.test_short_text_unchanged",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_text_snippet.py:TextSnippetTest",
+      "target": "function:backend/tests/test_text_snippet.py:TextSnippetTest.test_long_text_truncated_with_ellipsis",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

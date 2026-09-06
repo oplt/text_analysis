@@ -1,0 +1,59 @@
+{
+  "nodes": [
+    {
+      "id": "config:backend/.env.example",
+      "type": "config",
+      "name": ".env.example",
+      "filePath": "backend/.env.example",
+      "summary": "config file: .env.example",
+      "tags": [
+        "config"
+      ],
+      "complexity": "simple",
+      "language": "config",
+      "layerHint": "other"
+    },
+    {
+      "id": "config:backend/alembic.ini",
+      "type": "config",
+      "name": "alembic.ini",
+      "filePath": "backend/alembic.ini",
+      "summary": "config file: alembic.ini",
+      "tags": [
+        "config"
+      ],
+      "complexity": "simple",
+      "language": "config",
+      "layerHint": "other"
+    },
+    {
+      "id": "config:backend/pyproject.toml",
+      "type": "config",
+      "name": "pyproject.toml",
+      "filePath": "backend/pyproject.toml",
+      "summary": "config file: pyproject.toml",
+      "tags": [
+        "config",
+        "toml"
+      ],
+      "complexity": "simple",
+      "language": "toml",
+      "layerHint": "other"
+    },
+    {
+      "id": "document:backend/requirements.txt",
+      "type": "document",
+      "name": "requirements.txt",
+      "filePath": "backend/requirements.txt",
+      "summary": "docs file: requirements.txt",
+      "tags": [
+        "docs",
+        "txt"
+      ],
+      "complexity": "simple",
+      "language": "txt",
+      "layerHint": "other"
+    }
+  ],
+  "edges": []
+}

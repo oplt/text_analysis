@@ -1,0 +1,793 @@
+{
+  "nodes": [
+    {
+      "id": "document:backend/modules/memory/README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "backend/modules/memory/README.md",
+      "summary": "memory module file: README.md",
+      "tags": [
+        "docs",
+        "markdown",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "markdown",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/rag/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/rag/__init__.py",
+      "summary": "rag module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/rag/domain/value_objects.py",
+      "type": "file",
+      "name": "value_objects.py",
+      "filePath": "backend/modules/rag/domain/value_objects.py",
+      "summary": "rag module file: value_objects.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/rag/domain/value_objects.py:ChunkMetadata",
+      "type": "class",
+      "name": "ChunkMetadata",
+      "filePath": "backend/modules/rag/domain/value_objects.py",
+      "summary": "Class ChunkMetadata in backend/modules/rag/domain/value_objects.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/domain/value_objects.py:ChunkMetadata.to_dict",
+      "type": "function",
+      "name": "ChunkMetadata.to_dict",
+      "filePath": "backend/modules/rag/domain/value_objects.py",
+      "summary": "Method to_dict on ChunkMetadata",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/infrastructure/metrics.py",
+      "type": "file",
+      "name": "metrics.py",
+      "filePath": "backend/modules/rag/infrastructure/metrics.py",
+      "summary": "rag module file: metrics.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "infrastructure"
+    },
+    {
+      "id": "document:backend/modules/rag/README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "backend/modules/rag/README.md",
+      "summary": "rag module file: README.md",
+      "tags": [
+        "docs",
+        "markdown",
+        "backend-module"
+      ],
+      "complexity": "moderate",
+      "language": "markdown",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/rag/tests/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/modules/rag/tests/__init__.py",
+      "summary": "rag module file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/rag/tests/test_chunk_listing.py",
+      "type": "file",
+      "name": "test_chunk_listing.py",
+      "filePath": "backend/modules/rag/tests/test_chunk_listing.py",
+      "summary": "rag module file: test_chunk_listing.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_chunk_listing.py:RagChunkListingTest",
+      "type": "class",
+      "name": "RagChunkListingTest",
+      "filePath": "backend/modules/rag/tests/test_chunk_listing.py",
+      "summary": "Class RagChunkListingTest in backend/modules/rag/tests/test_chunk_listing.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_chunk_listing.py:RagChunkListingTest.test_list_document_chunks_defaults_to_snippet_content",
+      "type": "function",
+      "name": "RagChunkListingTest.test_list_document_chunks_defaults_to_snippet_content",
+      "filePath": "backend/modules/rag/tests/test_chunk_listing.py",
+      "summary": "Method test_list_document_chunks_defaults_to_snippet_content on RagChunkListingTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_chunk_listing.py:RagChunkListingTest.test_list_document_chunks_full_mode_returns_raw_content",
+      "type": "function",
+      "name": "RagChunkListingTest.test_list_document_chunks_full_mode_returns_raw_content",
+      "filePath": "backend/modules/rag/tests/test_chunk_listing.py",
+      "summary": "Method test_list_document_chunks_full_mode_returns_raw_content on RagChunkListingTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/tests/test_vector_search.py",
+      "type": "file",
+      "name": "test_vector_search.py",
+      "filePath": "backend/modules/rag/tests/test_vector_search.py",
+      "summary": "rag module file: test_vector_search.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/rag/tests/test_vector_search.py:VectorUtilsTest",
+      "type": "class",
+      "name": "VectorUtilsTest",
+      "filePath": "backend/modules/rag/tests/test_vector_search.py",
+      "summary": "Class VectorUtilsTest in backend/modules/rag/tests/test_vector_search.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_vector_search.py:VectorUtilsTest.test_vector_literal_format",
+      "type": "function",
+      "name": "VectorUtilsTest.test_vector_literal_format",
+      "filePath": "backend/modules/rag/tests/test_vector_search.py",
+      "summary": "Method test_vector_literal_format on VectorUtilsTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_vector_search.py:VectorUtilsTest.test_can_index_requires_matching_dimensions",
+      "type": "function",
+      "name": "VectorUtilsTest.test_can_index_requires_matching_dimensions",
+      "filePath": "backend/modules/rag/tests/test_vector_search.py",
+      "summary": "Method test_can_index_requires_matching_dimensions on VectorUtilsTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/tests/test_vector_search.py:VectorUtilsTest.test_cosine_similarity_orthogonal",
+      "type": "function",
+      "name": "VectorUtilsTest.test_cosine_similarity_orthogonal",
+      "filePath": "backend/modules/rag/tests/test_vector_search.py",
+      "summary": "Method test_cosine_similarity_orthogonal on VectorUtilsTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/users/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "backend/modules/users/models.py",
+      "summary": "users module file: models.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "file:backend/observability/prometheus_metrics.py",
+      "type": "file",
+      "name": "prometheus_metrics.py",
+      "filePath": "backend/observability/prometheus_metrics.py",
+      "summary": "code file: prometheus_metrics.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/tests/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/tests/__init__.py",
+      "summary": "code file: __init__.py",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/tests/test_runtime_observability.py",
+      "type": "file",
+      "name": "test_runtime_observability.py",
+      "filePath": "backend/tests/test_runtime_observability.py",
+      "summary": "test_runtime_observability.py (0 functions, 1 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest",
+      "type": "class",
+      "name": "RuntimeObservabilityTest",
+      "filePath": "backend/tests/test_runtime_observability.py",
+      "summary": "Class RuntimeObservabilityTest in backend/tests/test_runtime_observability.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest.test_setup_observability_disabled_does_not_crash",
+      "type": "function",
+      "name": "RuntimeObservabilityTest.test_setup_observability_disabled_does_not_crash",
+      "filePath": "backend/tests/test_runtime_observability.py",
+      "summary": "Method test_setup_observability_disabled_does_not_crash on RuntimeObservabilityTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest.test_setup_observability_idempotent_fastapi",
+      "type": "function",
+      "name": "RuntimeObservabilityTest.test_setup_observability_idempotent_fastapi",
+      "filePath": "backend/tests/test_runtime_observability.py",
+      "summary": "Method test_setup_observability_idempotent_fastapi on RuntimeObservabilityTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest.test_metrics_endpoint_exposes_prometheus_text",
+      "type": "function",
+      "name": "RuntimeObservabilityTest.test_metrics_endpoint_exposes_prometheus_text",
+      "filePath": "backend/tests/test_runtime_observability.py",
+      "summary": "Method test_metrics_endpoint_exposes_prometheus_text on RuntimeObservabilityTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest.test_signal_endpoint_accepts_base_or_full_endpoint",
+      "type": "function",
+      "name": "RuntimeObservabilityTest.test_signal_endpoint_accepts_base_or_full_endpoint",
+      "filePath": "backend/tests/test_runtime_observability.py",
+      "summary": "Method test_signal_endpoint_accepts_base_or_full_endpoint on RuntimeObservabilityTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest.test_observed_span_records_exception_and_reraises",
+      "type": "function",
+      "name": "RuntimeObservabilityTest.test_observed_span_records_exception_and_reraises",
+      "filePath": "backend/tests/test_runtime_observability.py",
+      "summary": "Method test_observed_span_records_exception_and_reraises on RuntimeObservabilityTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_vector_search.py",
+      "type": "file",
+      "name": "test_vector_search.py",
+      "filePath": "backend/tests/test_vector_search.py",
+      "summary": "test_vector_search.py (0 functions, 2 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_vector_search.py:VectorSearchHelpersTest",
+      "type": "class",
+      "name": "VectorSearchHelpersTest",
+      "filePath": "backend/tests/test_vector_search.py",
+      "summary": "Class VectorSearchHelpersTest in backend/tests/test_vector_search.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_vector_search.py:VectorSearchHelpersTest.test_json_fallback_max_candidates_scales_with_top_k",
+      "type": "function",
+      "name": "VectorSearchHelpersTest.test_json_fallback_max_candidates_scales_with_top_k",
+      "filePath": "backend/tests/test_vector_search.py",
+      "summary": "Method test_json_fallback_max_candidates_scales_with_top_k on VectorSearchHelpersTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_vector_search.py:VectorSearchHelpersTest.test_rank_embedding_matches_returns_top_scoring_rows",
+      "type": "function",
+      "name": "VectorSearchHelpersTest.test_rank_embedding_matches_returns_top_scoring_rows",
+      "filePath": "backend/tests/test_vector_search.py",
+      "summary": "Method test_rank_embedding_matches_returns_top_scoring_rows on VectorSearchHelpersTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_vector_search.py:VectorSearchHelpersTest.test_rank_embedding_matches_respects_threshold",
+      "type": "function",
+      "name": "VectorSearchHelpersTest.test_rank_embedding_matches_respects_threshold",
+      "filePath": "backend/tests/test_vector_search.py",
+      "summary": "Method test_rank_embedding_matches_respects_threshold on VectorSearchHelpersTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_vector_search.py:CosineSimilarityTest",
+      "type": "class",
+      "name": "CosineSimilarityTest",
+      "filePath": "backend/tests/test_vector_search.py",
+      "summary": "Class CosineSimilarityTest in backend/tests/test_vector_search.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_vector_search.py:CosineSimilarityTest.test_identical_vectors_score_high",
+      "type": "function",
+      "name": "CosineSimilarityTest.test_identical_vectors_score_high",
+      "filePath": "backend/tests/test_vector_search.py",
+      "summary": "Method test_identical_vectors_score_high on CosineSimilarityTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "document:docs/performance-audit.md",
+      "type": "document",
+      "name": "performance-audit.md",
+      "filePath": "docs/performance-audit.md",
+      "summary": "Documentation: performance-audit.md",
+      "tags": [
+        "docs",
+        "markdown"
+      ],
+      "complexity": "simple",
+      "language": "markdown",
+      "layerHint": "docs"
+    },
+    {
+      "id": "file:frontend/e2e/auth-rag.spec.ts",
+      "type": "file",
+      "name": "auth-rag.spec.ts",
+      "filePath": "frontend/e2e/auth-rag.spec.ts",
+      "summary": "auth-rag.spec.ts (1 functions, 0 classes)",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/e2e/auth-rag.spec.ts:createAuthenticatedContext",
+      "type": "function",
+      "name": "createAuthenticatedContext",
+      "filePath": "frontend/e2e/auth-rag.spec.ts",
+      "summary": "Function createAuthenticatedContext in frontend/e2e/auth-rag.spec.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/eslint.config.js",
+      "type": "file",
+      "name": "eslint.config.js",
+      "filePath": "frontend/eslint.config.js",
+      "summary": "code file: eslint.config.js",
+      "tags": [
+        "code",
+        "javascript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "javascript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/playwright.config.ts",
+      "type": "file",
+      "name": "playwright.config.ts",
+      "filePath": "frontend/playwright.config.ts",
+      "summary": "code file: playwright.config.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "document:frontend/src/App.css",
+      "type": "document",
+      "name": "App.css",
+      "filePath": "frontend/src/App.css",
+      "summary": "Frontend markup: App.css",
+      "tags": [
+        "markup",
+        "css",
+        "frontend"
+      ],
+      "complexity": "moderate",
+      "language": "css",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "document:frontend/src/index.css",
+      "type": "document",
+      "name": "index.css",
+      "filePath": "frontend/src/index.css",
+      "summary": "Frontend markup: index.css",
+      "tags": [
+        "markup",
+        "css",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "css",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/src/test/setup.ts",
+      "type": "file",
+      "name": "setup.ts",
+      "filePath": "frontend/src/test/setup.ts",
+      "summary": "Frontend code: setup.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/src/types/qrcode.d.ts",
+      "type": "file",
+      "name": "qrcode.d.ts",
+      "filePath": "frontend/src/types/qrcode.d.ts",
+      "summary": "Frontend code: qrcode.d.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/tsconfig.tsbuildinfo",
+      "type": "file",
+      "name": "tsconfig.tsbuildinfo",
+      "filePath": "frontend/tsconfig.tsbuildinfo",
+      "summary": "code file: tsconfig.tsbuildinfo",
+      "tags": [
+        "code",
+        "tsbuildinfo",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "tsbuildinfo",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/vite.config.d.ts",
+      "type": "file",
+      "name": "vite.config.d.ts",
+      "filePath": "frontend/vite.config.d.ts",
+      "summary": "code file: vite.config.d.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/vite.config.js",
+      "type": "file",
+      "name": "vite.config.js",
+      "filePath": "frontend/vite.config.js",
+      "summary": "code file: vite.config.js",
+      "tags": [
+        "code",
+        "javascript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "javascript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/vite.config.ts",
+      "type": "file",
+      "name": "vite.config.ts",
+      "filePath": "frontend/vite.config.ts",
+      "summary": "code file: vite.config.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:backend/modules/rag/domain/value_objects.py",
+      "target": "class:backend/modules/rag/domain/value_objects.py:ChunkMetadata",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/domain/value_objects.py:ChunkMetadata",
+      "target": "function:backend/modules/rag/domain/value_objects.py:ChunkMetadata.to_dict",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_chunk_listing.py",
+      "target": "class:backend/modules/rag/tests/test_chunk_listing.py:RagChunkListingTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_chunk_listing.py:RagChunkListingTest",
+      "target": "function:backend/modules/rag/tests/test_chunk_listing.py:RagChunkListingTest.test_list_document_chunks_defaults_to_snippet_content",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_chunk_listing.py:RagChunkListingTest",
+      "target": "function:backend/modules/rag/tests/test_chunk_listing.py:RagChunkListingTest.test_list_document_chunks_full_mode_returns_raw_content",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/tests/test_vector_search.py",
+      "target": "class:backend/modules/rag/tests/test_vector_search.py:VectorUtilsTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_vector_search.py:VectorUtilsTest",
+      "target": "function:backend/modules/rag/tests/test_vector_search.py:VectorUtilsTest.test_vector_literal_format",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_vector_search.py:VectorUtilsTest",
+      "target": "function:backend/modules/rag/tests/test_vector_search.py:VectorUtilsTest.test_can_index_requires_matching_dimensions",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/rag/tests/test_vector_search.py:VectorUtilsTest",
+      "target": "function:backend/modules/rag/tests/test_vector_search.py:VectorUtilsTest.test_cosine_similarity_orthogonal",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_runtime_observability.py",
+      "target": "class:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest",
+      "target": "function:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest.test_setup_observability_disabled_does_not_crash",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest",
+      "target": "function:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest.test_setup_observability_idempotent_fastapi",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest",
+      "target": "function:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest.test_metrics_endpoint_exposes_prometheus_text",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest",
+      "target": "function:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest.test_signal_endpoint_accepts_base_or_full_endpoint",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest",
+      "target": "function:backend/tests/test_runtime_observability.py:RuntimeObservabilityTest.test_observed_span_records_exception_and_reraises",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_vector_search.py",
+      "target": "class:backend/tests/test_vector_search.py:VectorSearchHelpersTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_vector_search.py:VectorSearchHelpersTest",
+      "target": "function:backend/tests/test_vector_search.py:VectorSearchHelpersTest.test_json_fallback_max_candidates_scales_with_top_k",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_vector_search.py:VectorSearchHelpersTest",
+      "target": "function:backend/tests/test_vector_search.py:VectorSearchHelpersTest.test_rank_embedding_matches_returns_top_scoring_rows",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_vector_search.py:VectorSearchHelpersTest",
+      "target": "function:backend/tests/test_vector_search.py:VectorSearchHelpersTest.test_rank_embedding_matches_respects_threshold",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_vector_search.py",
+      "target": "class:backend/tests/test_vector_search.py:CosineSimilarityTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_vector_search.py:CosineSimilarityTest",
+      "target": "function:backend/tests/test_vector_search.py:CosineSimilarityTest.test_identical_vectors_score_high",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/e2e/auth-rag.spec.ts",
+      "target": "function:frontend/e2e/auth-rag.spec.ts:createAuthenticatedContext",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

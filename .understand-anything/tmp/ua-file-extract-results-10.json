@@ -1,0 +1,272 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 11,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "backend/alembic/env.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 117,
+      "nonEmptyLines": 88,
+      "functions": [
+        {
+          "name": "run_migrations_offline",
+          "startLine": 54,
+          "endLine": 75,
+          "params": []
+        },
+        {
+          "name": "do_run_migrations",
+          "startLine": 78,
+          "endLine": 87,
+          "params": [
+            "connection"
+          ]
+        },
+        {
+          "name": "run_async_migrations",
+          "startLine": 90,
+          "endLine": 105,
+          "params": []
+        },
+        {
+          "name": "run_migrations_online",
+          "startLine": 108,
+          "endLine": 111,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "run_migrations_offline",
+          "line": 54,
+          "isDefault": false
+        },
+        {
+          "name": "do_run_migrations",
+          "line": 78,
+          "isDefault": false
+        },
+        {
+          "name": "run_async_migrations",
+          "line": 90,
+          "isDefault": false
+        },
+        {
+          "name": "run_migrations_online",
+          "line": 108,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "run_migrations_offline",
+          "callee": "config.get_main_option",
+          "lineNumber": 66
+        },
+        {
+          "caller": "run_migrations_offline",
+          "callee": "context.configure",
+          "lineNumber": 67
+        },
+        {
+          "caller": "run_migrations_offline",
+          "callee": "context.begin_transaction",
+          "lineNumber": 74
+        },
+        {
+          "caller": "run_migrations_offline",
+          "callee": "context.run_migrations",
+          "lineNumber": 75
+        },
+        {
+          "caller": "do_run_migrations",
+          "callee": "context.configure",
+          "lineNumber": 79
+        },
+        {
+          "caller": "do_run_migrations",
+          "callee": "context.begin_transaction",
+          "lineNumber": 86
+        },
+        {
+          "caller": "do_run_migrations",
+          "callee": "context.run_migrations",
+          "lineNumber": 87
+        },
+        {
+          "caller": "run_async_migrations",
+          "callee": "async_engine_from_config",
+          "lineNumber": 96
+        },
+        {
+          "caller": "run_async_migrations",
+          "callee": "config.get_section",
+          "lineNumber": 97
+        },
+        {
+          "caller": "run_async_migrations",
+          "callee": "connectable.connect",
+          "lineNumber": 102
+        },
+        {
+          "caller": "run_async_migrations",
+          "callee": "connection.run_sync",
+          "lineNumber": 103
+        },
+        {
+          "caller": "run_async_migrations",
+          "callee": "connectable.dispose",
+          "lineNumber": 105
+        },
+        {
+          "caller": "run_migrations_online",
+          "callee": "asyncio.run",
+          "lineNumber": 111
+        },
+        {
+          "caller": "run_migrations_online",
+          "callee": "run_async_migrations",
+          "lineNumber": 111
+        }
+      ],
+      "metrics": {
+        "importCount": 13,
+        "exportCount": 4,
+        "functionCount": 4,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/ai/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 1,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/audit/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/calendar/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/identity_access/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/notifications/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/platform/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/profile/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/projects/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/settings/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "backend/modules/users/__init__.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 1,
+      "nonEmptyLines": 0,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

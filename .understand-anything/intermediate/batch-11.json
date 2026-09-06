@@ -1,0 +1,2108 @@
+{
+  "nodes": [
+    {
+      "id": "file:backend/modules/ai/application/rag_answer_prompt.py",
+      "type": "file",
+      "name": "rag_answer_prompt.py",
+      "filePath": "backend/modules/ai/application/rag_answer_prompt.py",
+      "summary": "ai module file: rag_answer_prompt.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "function:backend/modules/ai/application/rag_answer_prompt.py:_default_model_name",
+      "type": "function",
+      "name": "_default_model_name",
+      "filePath": "backend/modules/ai/application/rag_answer_prompt.py",
+      "summary": "Function _default_model_name in backend/modules/ai/application/rag_answer_prompt.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/application/rag_answer_prompt.py:_default_prompt_spec",
+      "type": "function",
+      "name": "_default_prompt_spec",
+      "filePath": "backend/modules/ai/application/rag_answer_prompt.py",
+      "summary": "Function _default_prompt_spec in backend/modules/ai/application/rag_answer_prompt.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/application/rag_answer_prompt.py:resolve_rag_answer_prompt",
+      "type": "function",
+      "name": "resolve_rag_answer_prompt",
+      "filePath": "backend/modules/ai/application/rag_answer_prompt.py",
+      "summary": "Function resolve_rag_answer_prompt in backend/modules/ai/application/rag_answer_prompt.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/application/rag_answer_prompt.py:RagAnswerPromptSpec",
+      "type": "class",
+      "name": "RagAnswerPromptSpec",
+      "filePath": "backend/modules/ai/application/rag_answer_prompt.py",
+      "summary": "Class RagAnswerPromptSpec in backend/modules/ai/application/rag_answer_prompt.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/application/rag_answer_prompt.py:RagAnswerPromptSpec.execution_version",
+      "type": "function",
+      "name": "RagAnswerPromptSpec.execution_version",
+      "filePath": "backend/modules/ai/application/rag_answer_prompt.py",
+      "summary": "Method execution_version on RagAnswerPromptSpec",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/ai/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "ai module file: models.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/ai/models.py:AiPromptTemplate",
+      "type": "class",
+      "name": "AiPromptTemplate",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "Class AiPromptTemplate in backend/modules/ai/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/models.py:AiPromptVersion",
+      "type": "class",
+      "name": "AiPromptVersion",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "Class AiPromptVersion in backend/modules/ai/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/models.py:AiDocument",
+      "type": "class",
+      "name": "AiDocument",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "Class AiDocument in backend/modules/ai/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/models.py:AiDocumentChunk",
+      "type": "class",
+      "name": "AiDocumentChunk",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "Class AiDocumentChunk in backend/modules/ai/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/models.py:AiRun",
+      "type": "class",
+      "name": "AiRun",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "Class AiRun in backend/modules/ai/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/models.py:AiReviewItem",
+      "type": "class",
+      "name": "AiReviewItem",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "Class AiReviewItem in backend/modules/ai/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/models.py:AiFeedback",
+      "type": "class",
+      "name": "AiFeedback",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "Class AiFeedback in backend/modules/ai/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/models.py:AiEvaluationDataset",
+      "type": "class",
+      "name": "AiEvaluationDataset",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "Class AiEvaluationDataset in backend/modules/ai/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/models.py:AiEvaluationCase",
+      "type": "class",
+      "name": "AiEvaluationCase",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "Class AiEvaluationCase in backend/modules/ai/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/models.py:AiEvaluationRun",
+      "type": "class",
+      "name": "AiEvaluationRun",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "Class AiEvaluationRun in backend/modules/ai/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/models.py:AiEvaluationRunItem",
+      "type": "class",
+      "name": "AiEvaluationRunItem",
+      "filePath": "backend/modules/ai/models.py",
+      "summary": "Class AiEvaluationRunItem in backend/modules/ai/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/ai/repository.py",
+      "type": "file",
+      "name": "repository.py",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "ai module file: repository.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "repository"
+      ],
+      "complexity": "complex",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/ai/repository.py:AiRepository",
+      "type": "class",
+      "name": "AiRepository",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Class AiRepository in backend/modules/ai/repository.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.__init__",
+      "type": "function",
+      "name": "AiRepository.__init__",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method __init__ on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.list_prompt_templates_for_user",
+      "type": "function",
+      "name": "AiRepository.list_prompt_templates_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method list_prompt_templates_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.get_prompt_template_for_user",
+      "type": "function",
+      "name": "AiRepository.get_prompt_template_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method get_prompt_template_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.get_prompt_template_by_key_for_user",
+      "type": "function",
+      "name": "AiRepository.get_prompt_template_by_key_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method get_prompt_template_by_key_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.create_prompt_template",
+      "type": "function",
+      "name": "AiRepository.create_prompt_template",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method create_prompt_template on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.list_prompt_versions",
+      "type": "function",
+      "name": "AiRepository.list_prompt_versions",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method list_prompt_versions on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.get_prompt_version",
+      "type": "function",
+      "name": "AiRepository.get_prompt_version",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method get_prompt_version on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.create_prompt_version",
+      "type": "function",
+      "name": "AiRepository.create_prompt_version",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method create_prompt_version on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.list_documents_for_user",
+      "type": "function",
+      "name": "AiRepository.list_documents_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method list_documents_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.list_document_ids_for_user",
+      "type": "function",
+      "name": "AiRepository.list_document_ids_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method list_document_ids_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.filter_document_ids_for_user",
+      "type": "function",
+      "name": "AiRepository.filter_document_ids_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method filter_document_ids_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.get_document_for_user",
+      "type": "function",
+      "name": "AiRepository.get_document_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method get_document_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.create_document",
+      "type": "function",
+      "name": "AiRepository.create_document",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method create_document on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.update_document_ingestion_status",
+      "type": "function",
+      "name": "AiRepository.update_document_ingestion_status",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method update_document_ingestion_status on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.replace_document_chunks",
+      "type": "function",
+      "name": "AiRepository.replace_document_chunks",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method replace_document_chunks on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.similarity_search_indexed",
+      "type": "function",
+      "name": "AiRepository.similarity_search_indexed",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method similarity_search_indexed on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.similarity_search_json_fallback",
+      "type": "function",
+      "name": "AiRepository.similarity_search_json_fallback",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method similarity_search_json_fallback on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.list_document_chunks",
+      "type": "function",
+      "name": "AiRepository.list_document_chunks",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method list_document_chunks on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.create_run",
+      "type": "function",
+      "name": "AiRepository.create_run",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method create_run on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.get_run_for_user",
+      "type": "function",
+      "name": "AiRepository.get_run_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method get_run_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.list_runs_for_user",
+      "type": "function",
+      "name": "AiRepository.list_runs_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method list_runs_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.list_reviews_for_user",
+      "type": "function",
+      "name": "AiRepository.list_reviews_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method list_reviews_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.get_review",
+      "type": "function",
+      "name": "AiRepository.get_review",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method get_review on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.create_review",
+      "type": "function",
+      "name": "AiRepository.create_review",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method create_review on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.list_feedback_for_run",
+      "type": "function",
+      "name": "AiRepository.list_feedback_for_run",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method list_feedback_for_run on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.create_feedback",
+      "type": "function",
+      "name": "AiRepository.create_feedback",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method create_feedback on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.list_datasets_for_user",
+      "type": "function",
+      "name": "AiRepository.list_datasets_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method list_datasets_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.get_dataset_for_user",
+      "type": "function",
+      "name": "AiRepository.get_dataset_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method get_dataset_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.create_dataset",
+      "type": "function",
+      "name": "AiRepository.create_dataset",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method create_dataset on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.list_dataset_cases",
+      "type": "function",
+      "name": "AiRepository.list_dataset_cases",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method list_dataset_cases on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.get_dataset_case",
+      "type": "function",
+      "name": "AiRepository.get_dataset_case",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method get_dataset_case on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.create_dataset_case",
+      "type": "function",
+      "name": "AiRepository.create_dataset_case",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method create_dataset_case on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.create_evaluation_run",
+      "type": "function",
+      "name": "AiRepository.create_evaluation_run",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method create_evaluation_run on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.create_evaluation_run_item",
+      "type": "function",
+      "name": "AiRepository.create_evaluation_run_item",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method create_evaluation_run_item on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/repository.py:AiRepository.list_evaluation_runs_for_user",
+      "type": "function",
+      "name": "AiRepository.list_evaluation_runs_for_user",
+      "filePath": "backend/modules/ai/repository.py",
+      "summary": "Method list_evaluation_runs_for_user on AiRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/ai/service.py",
+      "type": "file",
+      "name": "service.py",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "ai module file: service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "service"
+      ],
+      "complexity": "complex",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:_render_template",
+      "type": "function",
+      "name": "_render_template",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Function _render_template in backend/modules/ai/service.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/service.py:_EvaluationCaseResult",
+      "type": "class",
+      "name": "_EvaluationCaseResult",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Class _EvaluationCaseResult in backend/modules/ai/service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/service.py:AiService",
+      "type": "class",
+      "name": "AiService",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Class AiService in backend/modules/ai/service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.__init__",
+      "type": "function",
+      "name": "AiService.__init__",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method __init__ on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.list_provider_descriptors",
+      "type": "function",
+      "name": "AiService.list_provider_descriptors",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method list_provider_descriptors on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.list_prompt_templates",
+      "type": "function",
+      "name": "AiService.list_prompt_templates",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method list_prompt_templates on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.create_prompt_template",
+      "type": "function",
+      "name": "AiService.create_prompt_template",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method create_prompt_template on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.update_prompt_template",
+      "type": "function",
+      "name": "AiService.update_prompt_template",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method update_prompt_template on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.create_prompt_version",
+      "type": "function",
+      "name": "AiService.create_prompt_version",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method create_prompt_version on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.update_prompt_version",
+      "type": "function",
+      "name": "AiService.update_prompt_version",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method update_prompt_version on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.list_prompt_versions",
+      "type": "function",
+      "name": "AiService.list_prompt_versions",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method list_prompt_versions on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.list_documents",
+      "type": "function",
+      "name": "AiService.list_documents",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method list_documents on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.create_document_from_text",
+      "type": "function",
+      "name": "AiService.create_document_from_text",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method create_document_from_text on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.create_document_from_upload",
+      "type": "function",
+      "name": "AiService.create_document_from_upload",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method create_document_from_upload on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.retrieve_chunks",
+      "type": "function",
+      "name": "AiService.retrieve_chunks",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method retrieve_chunks on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService._require_rag_documents",
+      "type": "function",
+      "name": "AiService._require_rag_documents",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method _require_rag_documents on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService._resolve_prompt_version",
+      "type": "function",
+      "name": "AiService._resolve_prompt_version",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method _resolve_prompt_version on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.run_prompt",
+      "type": "function",
+      "name": "AiService.run_prompt",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method run_prompt on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.run_rag_answer",
+      "type": "function",
+      "name": "AiService.run_rag_answer",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method run_rag_answer on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService._finalize_run_generation",
+      "type": "function",
+      "name": "AiService._finalize_run_generation",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method _finalize_run_generation on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.list_runs",
+      "type": "function",
+      "name": "AiService.list_runs",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method list_runs on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.create_review",
+      "type": "function",
+      "name": "AiService.create_review",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method create_review on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.list_reviews",
+      "type": "function",
+      "name": "AiService.list_reviews",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method list_reviews on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.decide_review",
+      "type": "function",
+      "name": "AiService.decide_review",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method decide_review on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.add_feedback",
+      "type": "function",
+      "name": "AiService.add_feedback",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method add_feedback on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.list_feedback",
+      "type": "function",
+      "name": "AiService.list_feedback",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method list_feedback on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.list_datasets",
+      "type": "function",
+      "name": "AiService.list_datasets",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method list_datasets on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.create_dataset",
+      "type": "function",
+      "name": "AiService.create_dataset",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method create_dataset on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.update_dataset",
+      "type": "function",
+      "name": "AiService.update_dataset",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method update_dataset on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.list_dataset_cases",
+      "type": "function",
+      "name": "AiService.list_dataset_cases",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method list_dataset_cases on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.create_dataset_case",
+      "type": "function",
+      "name": "AiService.create_dataset_case",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method create_dataset_case on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService._list_all_dataset_cases",
+      "type": "function",
+      "name": "AiService._list_all_dataset_cases",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method _list_all_dataset_cases on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService._execute_evaluation_case",
+      "type": "function",
+      "name": "AiService._execute_evaluation_case",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method _execute_evaluation_case on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.run_evaluation",
+      "type": "function",
+      "name": "AiService.run_evaluation",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method run_evaluation on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService._score_evaluation_case",
+      "type": "function",
+      "name": "AiService._score_evaluation_case",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method _score_evaluation_case on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.list_evaluation_runs",
+      "type": "function",
+      "name": "AiService.list_evaluation_runs",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method list_evaluation_runs on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/service.py:AiService.get_overview",
+      "type": "function",
+      "name": "AiService.get_overview",
+      "filePath": "backend/modules/ai/service.py",
+      "summary": "Method get_overview on AiService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/ai/tests/test_rag_answer_run.py",
+      "type": "file",
+      "name": "test_rag_answer_run.py",
+      "filePath": "backend/modules/ai/tests/test_rag_answer_run.py",
+      "summary": "ai module file: test_rag_answer_run.py",
+      "tags": [
+        "code",
+        "python",
+        "test",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/ai/tests/test_rag_answer_run.py:RagAnswerPromptTest",
+      "type": "class",
+      "name": "RagAnswerPromptTest",
+      "filePath": "backend/modules/ai/tests/test_rag_answer_run.py",
+      "summary": "Class RagAnswerPromptTest in backend/modules/ai/tests/test_rag_answer_run.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_rag_answer_run.py:RagAnswerPromptTest.test_resolve_rag_answer_prompt_falls_back_to_defaults",
+      "type": "function",
+      "name": "RagAnswerPromptTest.test_resolve_rag_answer_prompt_falls_back_to_defaults",
+      "filePath": "backend/modules/ai/tests/test_rag_answer_run.py",
+      "summary": "Method test_resolve_rag_answer_prompt_falls_back_to_defaults on RagAnswerPromptTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/tests/test_rag_answer_run.py:AiServiceRagAnswerTest",
+      "type": "class",
+      "name": "AiServiceRagAnswerTest",
+      "filePath": "backend/modules/ai/tests/test_rag_answer_run.py",
+      "summary": "Class AiServiceRagAnswerTest in backend/modules/ai/tests/test_rag_answer_run.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/tests/test_rag_answer_run.py:AiServiceRagAnswerTest.test_run_rag_answer_creates_run_with_retrieved_chunk_ids",
+      "type": "function",
+      "name": "AiServiceRagAnswerTest.test_run_rag_answer_creates_run_with_retrieved_chunk_ids",
+      "filePath": "backend/modules/ai/tests/test_rag_answer_run.py",
+      "summary": "Method test_run_rag_answer_creates_run_with_retrieved_chunk_ids on AiServiceRagAnswerTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_ai_repository.py",
+      "type": "file",
+      "name": "test_ai_repository.py",
+      "filePath": "backend/tests/test_ai_repository.py",
+      "summary": "test_ai_repository.py (0 functions, 2 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/tests/test_ai_repository.py:AiRepositoryChunkReplaceTest",
+      "type": "class",
+      "name": "AiRepositoryChunkReplaceTest",
+      "filePath": "backend/tests/test_ai_repository.py",
+      "summary": "Class AiRepositoryChunkReplaceTest in backend/tests/test_ai_repository.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_ai_repository.py:AiRepositoryChunkReplaceTest.test_replace_document_chunks_uses_bulk_delete",
+      "type": "function",
+      "name": "AiRepositoryChunkReplaceTest.test_replace_document_chunks_uses_bulk_delete",
+      "filePath": "backend/tests/test_ai_repository.py",
+      "summary": "Method test_replace_document_chunks_uses_bulk_delete on AiRepositoryChunkReplaceTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/tests/test_ai_repository.py:AiRepositoryDocumentAccessTest",
+      "type": "class",
+      "name": "AiRepositoryDocumentAccessTest",
+      "filePath": "backend/tests/test_ai_repository.py",
+      "summary": "Class AiRepositoryDocumentAccessTest in backend/tests/test_ai_repository.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_ai_repository.py:AiRepositoryDocumentAccessTest.test_filter_document_ids_for_user_returns_only_owned_ids",
+      "type": "function",
+      "name": "AiRepositoryDocumentAccessTest.test_filter_document_ids_for_user_returns_only_owned_ids",
+      "filePath": "backend/tests/test_ai_repository.py",
+      "summary": "Method test_filter_document_ids_for_user_returns_only_owned_ids on AiRepositoryDocumentAccessTest",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/tests/test_evaluation_concurrency.py",
+      "type": "file",
+      "name": "test_evaluation_concurrency.py",
+      "filePath": "backend/tests/test_evaluation_concurrency.py",
+      "summary": "test_evaluation_concurrency.py (3 functions, 0 classes)",
+      "tags": [
+        "code",
+        "python",
+        "test"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/tests/test_evaluation_concurrency.py:service",
+      "type": "function",
+      "name": "service",
+      "filePath": "backend/tests/test_evaluation_concurrency.py",
+      "summary": "Function service in backend/tests/test_evaluation_concurrency.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_evaluation_concurrency.py:test_list_all_dataset_cases_fetches_every_page",
+      "type": "function",
+      "name": "test_list_all_dataset_cases_fetches_every_page",
+      "filePath": "backend/tests/test_evaluation_concurrency.py",
+      "summary": "Function test_list_all_dataset_cases_fetches_every_page in backend/tests/test_evaluation_concurrency.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/tests/test_evaluation_concurrency.py:test_run_evaluation_respects_concurrency_limit",
+      "type": "function",
+      "name": "test_run_evaluation_respects_concurrency_limit",
+      "filePath": "backend/tests/test_evaluation_concurrency.py",
+      "summary": "Function test_run_evaluation_respects_concurrency_limit in backend/tests/test_evaluation_concurrency.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:backend/modules/ai/application/rag_answer_prompt.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/rag_answer_prompt.py",
+      "target": "file:backend/modules/ai/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/rag_answer_prompt.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/application/rag_answer_prompt.py",
+      "target": "function:backend/modules/ai/application/rag_answer_prompt.py:_default_model_name",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/application/rag_answer_prompt.py",
+      "target": "function:backend/modules/ai/application/rag_answer_prompt.py:_default_prompt_spec",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/application/rag_answer_prompt.py",
+      "target": "function:backend/modules/ai/application/rag_answer_prompt.py:resolve_rag_answer_prompt",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/application/rag_answer_prompt.py",
+      "target": "class:backend/modules/ai/application/rag_answer_prompt.py:RagAnswerPromptSpec",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/application/rag_answer_prompt.py:RagAnswerPromptSpec",
+      "target": "function:backend/modules/ai/application/rag_answer_prompt.py:RagAnswerPromptSpec.execution_version",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "file:backend/db/base.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "class:backend/modules/ai/models.py:AiPromptTemplate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "class:backend/modules/ai/models.py:AiPromptVersion",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "class:backend/modules/ai/models.py:AiDocument",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "class:backend/modules/ai/models.py:AiDocumentChunk",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "class:backend/modules/ai/models.py:AiRun",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "class:backend/modules/ai/models.py:AiReviewItem",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "class:backend/modules/ai/models.py:AiFeedback",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "class:backend/modules/ai/models.py:AiEvaluationDataset",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "class:backend/modules/ai/models.py:AiEvaluationCase",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "class:backend/modules/ai/models.py:AiEvaluationRun",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/models.py",
+      "target": "class:backend/modules/ai/models.py:AiEvaluationRunItem",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/repository.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/repository.py",
+      "target": "file:backend/modules/ai/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/repository.py",
+      "target": "class:backend/modules/ai/repository.py:AiRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.list_prompt_templates_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.get_prompt_template_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.get_prompt_template_by_key_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.create_prompt_template",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.list_prompt_versions",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.get_prompt_version",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.create_prompt_version",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.list_documents_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.list_document_ids_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.filter_document_ids_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.get_document_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.create_document",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.update_document_ingestion_status",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.replace_document_chunks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.similarity_search_indexed",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.similarity_search_json_fallback",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.list_document_chunks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.create_run",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.get_run_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.list_runs_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.list_reviews_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.get_review",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.create_review",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.list_feedback_for_run",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.create_feedback",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.list_datasets_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.get_dataset_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.create_dataset",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.list_dataset_cases",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.get_dataset_case",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.create_dataset_case",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.create_evaluation_run",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.create_evaluation_run_item",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/repository.py:AiRepository",
+      "target": "function:backend/modules/ai/repository.py:AiRepository.list_evaluation_runs_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "file:backend/modules/ai/application/rag_answer_prompt.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "file:backend/modules/ai/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "file:backend/modules/ai/providers.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "file:backend/modules/ai/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "file:backend/modules/ai/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "file:backend/modules/rag/application/legacy_ai_document_service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "function:backend/modules/ai/service.py:_render_template",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "class:backend/modules/ai/service.py:_EvaluationCaseResult",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/service.py",
+      "target": "class:backend/modules/ai/service.py:AiService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.list_provider_descriptors",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.list_prompt_templates",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.create_prompt_template",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.update_prompt_template",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.create_prompt_version",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.update_prompt_version",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.list_prompt_versions",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.list_documents",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.create_document_from_text",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.create_document_from_upload",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.retrieve_chunks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService._require_rag_documents",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService._resolve_prompt_version",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.run_prompt",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.run_rag_answer",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService._finalize_run_generation",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.list_runs",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.create_review",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.list_reviews",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.decide_review",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.add_feedback",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.list_feedback",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.list_datasets",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.create_dataset",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.update_dataset",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.list_dataset_cases",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.create_dataset_case",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService._list_all_dataset_cases",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService._execute_evaluation_case",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.run_evaluation",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService._score_evaluation_case",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.list_evaluation_runs",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/service.py:AiService",
+      "target": "function:backend/modules/ai/service.py:AiService.get_overview",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_rag_answer_run.py",
+      "target": "file:backend/modules/ai/application/rag_answer_prompt.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_rag_answer_run.py",
+      "target": "file:backend/modules/ai/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_rag_answer_run.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_rag_answer_run.py",
+      "target": "class:backend/modules/ai/tests/test_rag_answer_run.py:RagAnswerPromptTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_rag_answer_run.py:RagAnswerPromptTest",
+      "target": "function:backend/modules/ai/tests/test_rag_answer_run.py:RagAnswerPromptTest.test_resolve_rag_answer_prompt_falls_back_to_defaults",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/tests/test_rag_answer_run.py",
+      "target": "class:backend/modules/ai/tests/test_rag_answer_run.py:AiServiceRagAnswerTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/tests/test_rag_answer_run.py:AiServiceRagAnswerTest",
+      "target": "function:backend/modules/ai/tests/test_rag_answer_run.py:AiServiceRagAnswerTest.test_run_rag_answer_creates_run_with_retrieved_chunk_ids",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_ai_repository.py",
+      "target": "file:backend/modules/ai/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_ai_repository.py",
+      "target": "class:backend/tests/test_ai_repository.py:AiRepositoryChunkReplaceTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_ai_repository.py:AiRepositoryChunkReplaceTest",
+      "target": "function:backend/tests/test_ai_repository.py:AiRepositoryChunkReplaceTest.test_replace_document_chunks_uses_bulk_delete",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_ai_repository.py",
+      "target": "class:backend/tests/test_ai_repository.py:AiRepositoryDocumentAccessTest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/tests/test_ai_repository.py:AiRepositoryDocumentAccessTest",
+      "target": "function:backend/tests/test_ai_repository.py:AiRepositoryDocumentAccessTest.test_filter_document_ids_for_user_returns_only_owned_ids",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_evaluation_concurrency.py",
+      "target": "file:backend/modules/ai/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/tests/test_evaluation_concurrency.py",
+      "target": "function:backend/tests/test_evaluation_concurrency.py:service",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_evaluation_concurrency.py",
+      "target": "function:backend/tests/test_evaluation_concurrency.py:test_list_all_dataset_cases_fetches_every_page",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/tests/test_evaluation_concurrency.py",
+      "target": "function:backend/tests/test_evaluation_concurrency.py:test_run_evaluation_respects_concurrency_limit",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

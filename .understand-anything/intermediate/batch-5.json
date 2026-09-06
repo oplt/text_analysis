@@ -1,0 +1,5025 @@
+{
+  "nodes": [
+    {
+      "id": "file:backend/api/main.py",
+      "type": "file",
+      "name": "main.py",
+      "filePath": "backend/api/main.py",
+      "summary": "API layer: main.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "function:backend/api/main.py:lifespan",
+      "type": "function",
+      "name": "lifespan",
+      "filePath": "backend/api/main.py",
+      "summary": "Function lifespan in backend/api/main.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/api/middleware/correlation_id.py",
+      "type": "file",
+      "name": "correlation_id.py",
+      "filePath": "backend/api/middleware/correlation_id.py",
+      "summary": "API layer: correlation_id.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "class:backend/api/middleware/correlation_id.py:CorrelationIdMiddleware",
+      "type": "class",
+      "name": "CorrelationIdMiddleware",
+      "filePath": "backend/api/middleware/correlation_id.py",
+      "summary": "Class CorrelationIdMiddleware in backend/api/middleware/correlation_id.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/api/middleware/correlation_id.py:CorrelationIdMiddleware.dispatch",
+      "type": "function",
+      "name": "CorrelationIdMiddleware.dispatch",
+      "filePath": "backend/api/middleware/correlation_id.py",
+      "summary": "Method dispatch on CorrelationIdMiddleware",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/api/middleware/csrf.py",
+      "type": "file",
+      "name": "csrf.py",
+      "filePath": "backend/api/middleware/csrf.py",
+      "summary": "API layer: csrf.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "class:backend/api/middleware/csrf.py:CSRFMiddleware",
+      "type": "class",
+      "name": "CSRFMiddleware",
+      "filePath": "backend/api/middleware/csrf.py",
+      "summary": "Class CSRFMiddleware in backend/api/middleware/csrf.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/api/middleware/csrf.py:CSRFMiddleware.dispatch",
+      "type": "function",
+      "name": "CSRFMiddleware.dispatch",
+      "filePath": "backend/api/middleware/csrf.py",
+      "summary": "Method dispatch on CSRFMiddleware",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/api/middleware/public_rate_limit.py",
+      "type": "file",
+      "name": "public_rate_limit.py",
+      "filePath": "backend/api/middleware/public_rate_limit.py",
+      "summary": "API layer: public_rate_limit.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "class:backend/api/middleware/public_rate_limit.py:PublicRateLimitMiddleware",
+      "type": "class",
+      "name": "PublicRateLimitMiddleware",
+      "filePath": "backend/api/middleware/public_rate_limit.py",
+      "summary": "Class PublicRateLimitMiddleware in backend/api/middleware/public_rate_limit.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/api/middleware/public_rate_limit.py:PublicRateLimitMiddleware.dispatch",
+      "type": "function",
+      "name": "PublicRateLimitMiddleware.dispatch",
+      "filePath": "backend/api/middleware/public_rate_limit.py",
+      "summary": "Method dispatch on PublicRateLimitMiddleware",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/api/middleware/request_logging.py",
+      "type": "file",
+      "name": "request_logging.py",
+      "filePath": "backend/api/middleware/request_logging.py",
+      "summary": "API layer: request_logging.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "class:backend/api/middleware/request_logging.py:RequestLoggingMiddleware",
+      "type": "class",
+      "name": "RequestLoggingMiddleware",
+      "filePath": "backend/api/middleware/request_logging.py",
+      "summary": "Class RequestLoggingMiddleware in backend/api/middleware/request_logging.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/api/middleware/request_logging.py:RequestLoggingMiddleware.dispatch",
+      "type": "function",
+      "name": "RequestLoggingMiddleware.dispatch",
+      "filePath": "backend/api/middleware/request_logging.py",
+      "summary": "Method dispatch on RequestLoggingMiddleware",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/api/middleware/security_headers.py",
+      "type": "file",
+      "name": "security_headers.py",
+      "filePath": "backend/api/middleware/security_headers.py",
+      "summary": "API layer: security_headers.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "class:backend/api/middleware/security_headers.py:SecurityHeadersMiddleware",
+      "type": "class",
+      "name": "SecurityHeadersMiddleware",
+      "filePath": "backend/api/middleware/security_headers.py",
+      "summary": "Class SecurityHeadersMiddleware in backend/api/middleware/security_headers.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/api/middleware/security_headers.py:SecurityHeadersMiddleware.dispatch",
+      "type": "function",
+      "name": "SecurityHeadersMiddleware.dispatch",
+      "filePath": "backend/api/middleware/security_headers.py",
+      "summary": "Method dispatch on SecurityHeadersMiddleware",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/api/v1/health.py",
+      "type": "file",
+      "name": "health.py",
+      "filePath": "backend/api/v1/health.py",
+      "summary": "API layer: health.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "api"
+    },
+    {
+      "id": "function:backend/api/v1/health.py:live",
+      "type": "function",
+      "name": "live",
+      "filePath": "backend/api/v1/health.py",
+      "summary": "Function live in backend/api/v1/health.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/api/v1/health.py:ready",
+      "type": "function",
+      "name": "ready",
+      "filePath": "backend/api/v1/health.py",
+      "summary": "Function ready in backend/api/v1/health.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/api/v1/health.py:version",
+      "type": "function",
+      "name": "version",
+      "filePath": "backend/api/v1/health.py",
+      "summary": "Function version in backend/api/v1/health.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/core/cache.py",
+      "type": "file",
+      "name": "cache.py",
+      "filePath": "backend/core/cache.py",
+      "summary": "Core shared: cache.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "core"
+    },
+    {
+      "id": "function:backend/core/cache.py:_uses_local_cache",
+      "type": "function",
+      "name": "_uses_local_cache",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function _uses_local_cache in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:_uses_redis_cache",
+      "type": "function",
+      "name": "_uses_redis_cache",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function _uses_redis_cache in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:_local_ttl_for_key",
+      "type": "function",
+      "name": "_local_ttl_for_key",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function _local_ttl_for_key in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:get_local_cached_json",
+      "type": "function",
+      "name": "get_local_cached_json",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function get_local_cached_json in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:set_local_cached_json",
+      "type": "function",
+      "name": "set_local_cached_json",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function set_local_cached_json in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:delete_local_cached_json",
+      "type": "function",
+      "name": "delete_local_cached_json",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function delete_local_cached_json in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:cache_key",
+      "type": "function",
+      "name": "cache_key",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function cache_key in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:embedding_cache_key",
+      "type": "function",
+      "name": "embedding_cache_key",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function embedding_cache_key in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:cache_get_json",
+      "type": "function",
+      "name": "cache_get_json",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function cache_get_json in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:cache_set_json",
+      "type": "function",
+      "name": "cache_set_json",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function cache_set_json in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:cache_delete",
+      "type": "function",
+      "name": "cache_delete",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function cache_delete in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:cache_delete_pattern",
+      "type": "function",
+      "name": "cache_delete_pattern",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function cache_delete_pattern in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:cache_get_model",
+      "type": "function",
+      "name": "cache_get_model",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function cache_get_model in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:cache_set_model",
+      "type": "function",
+      "name": "cache_set_model",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function cache_set_model in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:cache_get_or_load_model",
+      "type": "function",
+      "name": "cache_get_or_load_model",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function cache_get_or_load_model in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:cache_get_or_load_json",
+      "type": "function",
+      "name": "cache_get_or_load_json",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function cache_get_or_load_json in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:invalidate_platform_caches",
+      "type": "function",
+      "name": "invalidate_platform_caches",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function invalidate_platform_caches in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:invalidate_platform_email_template_cache",
+      "type": "function",
+      "name": "invalidate_platform_email_template_cache",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function invalidate_platform_email_template_cache in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:invalidate_settings_database_cache",
+      "type": "function",
+      "name": "invalidate_settings_database_cache",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function invalidate_settings_database_cache in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:invalidate_settings_config_cache",
+      "type": "function",
+      "name": "invalidate_settings_config_cache",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function invalidate_settings_config_cache in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:invalidate_settings_related_caches",
+      "type": "function",
+      "name": "invalidate_settings_related_caches",
+      "filePath": "backend/core/cache.py",
+      "summary": "Function invalidate_settings_related_caches in backend/core/cache.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/core/cache.py:_LocalTTLCache",
+      "type": "class",
+      "name": "_LocalTTLCache",
+      "filePath": "backend/core/cache.py",
+      "summary": "Class _LocalTTLCache in backend/core/cache.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:_LocalTTLCache.__init__",
+      "type": "function",
+      "name": "_LocalTTLCache.__init__",
+      "filePath": "backend/core/cache.py",
+      "summary": "Method __init__ on _LocalTTLCache",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:_LocalTTLCache.get",
+      "type": "function",
+      "name": "_LocalTTLCache.get",
+      "filePath": "backend/core/cache.py",
+      "summary": "Method get on _LocalTTLCache",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:_LocalTTLCache.set",
+      "type": "function",
+      "name": "_LocalTTLCache.set",
+      "filePath": "backend/core/cache.py",
+      "summary": "Method set on _LocalTTLCache",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/cache.py:_LocalTTLCache.delete",
+      "type": "function",
+      "name": "_LocalTTLCache.delete",
+      "filePath": "backend/core/cache.py",
+      "summary": "Method delete on _LocalTTLCache",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/core/config.py",
+      "type": "file",
+      "name": "config.py",
+      "filePath": "backend/core/config.py",
+      "summary": "Core shared: config.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "core"
+    },
+    {
+      "id": "class:backend/core/config.py:Settings",
+      "type": "class",
+      "name": "Settings",
+      "filePath": "backend/core/config.py",
+      "summary": "Class Settings in backend/core/config.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/core/config.py:Settings.celery_broker_url",
+      "type": "function",
+      "name": "Settings.celery_broker_url",
+      "filePath": "backend/core/config.py",
+      "summary": "Method celery_broker_url on Settings",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/config.py:Settings.celery_result_backend",
+      "type": "function",
+      "name": "Settings.celery_result_backend",
+      "filePath": "backend/core/config.py",
+      "summary": "Method celery_result_backend on Settings",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/config.py:Settings.is_production",
+      "type": "function",
+      "name": "Settings.is_production",
+      "filePath": "backend/core/config.py",
+      "summary": "Method is_production on Settings",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/config.py:Settings.allowed_origins",
+      "type": "function",
+      "name": "Settings.allowed_origins",
+      "filePath": "backend/core/config.py",
+      "summary": "Method allowed_origins on Settings",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/config.py:Settings.content_security_policy",
+      "type": "function",
+      "name": "Settings.content_security_policy",
+      "filePath": "backend/core/config.py",
+      "summary": "Method content_security_policy on Settings",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/config.py:Settings.validate_cookie_samesite",
+      "type": "function",
+      "name": "Settings.validate_cookie_samesite",
+      "filePath": "backend/core/config.py",
+      "summary": "Method validate_cookie_samesite on Settings",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/config.py:Settings.validate_jwt_secret",
+      "type": "function",
+      "name": "Settings.validate_jwt_secret",
+      "filePath": "backend/core/config.py",
+      "summary": "Method validate_jwt_secret on Settings",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/config.py:Settings.validate_access_ttl",
+      "type": "function",
+      "name": "Settings.validate_access_ttl",
+      "filePath": "backend/core/config.py",
+      "summary": "Method validate_access_ttl on Settings",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/config.py:Settings.validate_refresh_ttl",
+      "type": "function",
+      "name": "Settings.validate_refresh_ttl",
+      "filePath": "backend/core/config.py",
+      "summary": "Method validate_refresh_ttl on Settings",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/config.py:Settings.parse_cors_allowed_origins",
+      "type": "function",
+      "name": "Settings.parse_cors_allowed_origins",
+      "filePath": "backend/core/config.py",
+      "summary": "Method parse_cors_allowed_origins on Settings",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/config.py:Settings.validate_security_posture",
+      "type": "function",
+      "name": "Settings.validate_security_posture",
+      "filePath": "backend/core/config.py",
+      "summary": "Method validate_security_posture on Settings",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/core/error_handler.py",
+      "type": "file",
+      "name": "error_handler.py",
+      "filePath": "backend/core/error_handler.py",
+      "summary": "Core shared: error_handler.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "core"
+    },
+    {
+      "id": "function:backend/core/error_handler.py:register_exception_handlers",
+      "type": "function",
+      "name": "register_exception_handlers",
+      "filePath": "backend/core/error_handler.py",
+      "summary": "Function register_exception_handlers in backend/core/error_handler.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/core/logging.py",
+      "type": "file",
+      "name": "logging.py",
+      "filePath": "backend/core/logging.py",
+      "summary": "Core shared: logging.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "core"
+    },
+    {
+      "id": "function:backend/core/logging.py:setup_logging",
+      "type": "function",
+      "name": "setup_logging",
+      "filePath": "backend/core/logging.py",
+      "summary": "Function setup_logging in backend/core/logging.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/core/storage.py",
+      "type": "file",
+      "name": "storage.py",
+      "filePath": "backend/core/storage.py",
+      "summary": "Core shared: storage.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "core"
+    },
+    {
+      "id": "class:backend/core/storage.py:StorageNotConfiguredError",
+      "type": "class",
+      "name": "StorageNotConfiguredError",
+      "filePath": "backend/core/storage.py",
+      "summary": "Class StorageNotConfiguredError in backend/core/storage.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/core/storage.py:ObjectStorageError",
+      "type": "class",
+      "name": "ObjectStorageError",
+      "filePath": "backend/core/storage.py",
+      "summary": "Class ObjectStorageError in backend/core/storage.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/core/storage.py:ObjectStorage",
+      "type": "class",
+      "name": "ObjectStorage",
+      "filePath": "backend/core/storage.py",
+      "summary": "Class ObjectStorage in backend/core/storage.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/core/storage.py:ObjectStorage.is_configured",
+      "type": "function",
+      "name": "ObjectStorage.is_configured",
+      "filePath": "backend/core/storage.py",
+      "summary": "Method is_configured on ObjectStorage",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/storage.py:ObjectStorage._client",
+      "type": "function",
+      "name": "ObjectStorage._client",
+      "filePath": "backend/core/storage.py",
+      "summary": "Method _client on ObjectStorage",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/storage.py:ObjectStorage.ensure_bucket",
+      "type": "function",
+      "name": "ObjectStorage.ensure_bucket",
+      "filePath": "backend/core/storage.py",
+      "summary": "Method ensure_bucket on ObjectStorage",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/storage.py:ObjectStorage.upload_bytes",
+      "type": "function",
+      "name": "ObjectStorage.upload_bytes",
+      "filePath": "backend/core/storage.py",
+      "summary": "Method upload_bytes on ObjectStorage",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/storage.py:ObjectStorage.delete_object",
+      "type": "function",
+      "name": "ObjectStorage.delete_object",
+      "filePath": "backend/core/storage.py",
+      "summary": "Method delete_object on ObjectStorage",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/core/storage.py:ObjectStorage.public_url_for",
+      "type": "function",
+      "name": "ObjectStorage.public_url_for",
+      "filePath": "backend/core/storage.py",
+      "summary": "Method public_url_for on ObjectStorage",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/db/session.py",
+      "type": "file",
+      "name": "session.py",
+      "filePath": "backend/db/session.py",
+      "summary": "code file: session.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/modules/ai/providers.py",
+      "type": "file",
+      "name": "providers.py",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "ai module file: providers.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:_get_openai_http_client",
+      "type": "function",
+      "name": "_get_openai_http_client",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Function _get_openai_http_client in backend/modules/ai/providers.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:_get_anthropic_http_client",
+      "type": "function",
+      "name": "_get_anthropic_http_client",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Function _get_anthropic_http_client in backend/modules/ai/providers.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:close_ai_provider_http_clients",
+      "type": "function",
+      "name": "close_ai_provider_http_clients",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Function close_ai_provider_http_clients in backend/modules/ai/providers.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:_hash_embedding",
+      "type": "function",
+      "name": "_hash_embedding",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Function _hash_embedding in backend/modules/ai/providers.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/providers.py:ProviderGenerateRequest",
+      "type": "class",
+      "name": "ProviderGenerateRequest",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Class ProviderGenerateRequest in backend/modules/ai/providers.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/providers.py:ProviderGenerateResult",
+      "type": "class",
+      "name": "ProviderGenerateResult",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Class ProviderGenerateResult in backend/modules/ai/providers.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:ProviderGenerateResult.total_tokens",
+      "type": "function",
+      "name": "ProviderGenerateResult.total_tokens",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method total_tokens on ProviderGenerateResult",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/providers.py:BaseAiProvider",
+      "type": "class",
+      "name": "BaseAiProvider",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Class BaseAiProvider in backend/modules/ai/providers.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:BaseAiProvider.generate",
+      "type": "function",
+      "name": "BaseAiProvider.generate",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method generate on BaseAiProvider",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:BaseAiProvider.embed_texts",
+      "type": "function",
+      "name": "BaseAiProvider.embed_texts",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method embed_texts on BaseAiProvider",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/providers.py:LocalHeuristicProvider",
+      "type": "class",
+      "name": "LocalHeuristicProvider",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Class LocalHeuristicProvider in backend/modules/ai/providers.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:LocalHeuristicProvider.generate",
+      "type": "function",
+      "name": "LocalHeuristicProvider.generate",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method generate on LocalHeuristicProvider",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:LocalHeuristicProvider.embed_texts",
+      "type": "function",
+      "name": "LocalHeuristicProvider.embed_texts",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method embed_texts on LocalHeuristicProvider",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/providers.py:OpenAIProvider",
+      "type": "class",
+      "name": "OpenAIProvider",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Class OpenAIProvider in backend/modules/ai/providers.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:OpenAIProvider.generate",
+      "type": "function",
+      "name": "OpenAIProvider.generate",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method generate on OpenAIProvider",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:OpenAIProvider.embed_texts",
+      "type": "function",
+      "name": "OpenAIProvider.embed_texts",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method embed_texts on OpenAIProvider",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/providers.py:AnthropicProvider",
+      "type": "class",
+      "name": "AnthropicProvider",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Class AnthropicProvider in backend/modules/ai/providers.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:AnthropicProvider.generate",
+      "type": "function",
+      "name": "AnthropicProvider.generate",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method generate on AnthropicProvider",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:AnthropicProvider.embed_texts",
+      "type": "function",
+      "name": "AnthropicProvider.embed_texts",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method embed_texts on AnthropicProvider",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/ai/providers.py:AiProviderRegistry",
+      "type": "class",
+      "name": "AiProviderRegistry",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Class AiProviderRegistry in backend/modules/ai/providers.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:AiProviderRegistry.__init__",
+      "type": "function",
+      "name": "AiProviderRegistry.__init__",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method __init__ on AiProviderRegistry",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:AiProviderRegistry.get",
+      "type": "function",
+      "name": "AiProviderRegistry.get",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method get on AiProviderRegistry",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:AiProviderRegistry.embedding_provider_and_model",
+      "type": "function",
+      "name": "AiProviderRegistry.embedding_provider_and_model",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method embedding_provider_and_model on AiProviderRegistry",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:AiProviderRegistry.embed_texts",
+      "type": "function",
+      "name": "AiProviderRegistry.embed_texts",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method embed_texts on AiProviderRegistry",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/ai/providers.py:AiProviderRegistry.embed_retrieval_queries",
+      "type": "function",
+      "name": "AiProviderRegistry.embed_retrieval_queries",
+      "filePath": "backend/modules/ai/providers.py",
+      "summary": "Method embed_retrieval_queries on AiProviderRegistry",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/platform/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "backend/modules/platform/models.py",
+      "summary": "platform module file: models.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/platform/models.py:SubscriptionPlan",
+      "type": "class",
+      "name": "SubscriptionPlan",
+      "filePath": "backend/modules/platform/models.py",
+      "summary": "Class SubscriptionPlan in backend/modules/platform/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/models.py:UserSubscription",
+      "type": "class",
+      "name": "UserSubscription",
+      "filePath": "backend/modules/platform/models.py",
+      "summary": "Class UserSubscription in backend/modules/platform/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/models.py:ApiKey",
+      "type": "class",
+      "name": "ApiKey",
+      "filePath": "backend/modules/platform/models.py",
+      "summary": "Class ApiKey in backend/modules/platform/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/models.py:WebhookEndpoint",
+      "type": "class",
+      "name": "WebhookEndpoint",
+      "filePath": "backend/modules/platform/models.py",
+      "summary": "Class WebhookEndpoint in backend/modules/platform/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/models.py:FeatureFlag",
+      "type": "class",
+      "name": "FeatureFlag",
+      "filePath": "backend/modules/platform/models.py",
+      "summary": "Class FeatureFlag in backend/modules/platform/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/models.py:EmailTemplate",
+      "type": "class",
+      "name": "EmailTemplate",
+      "filePath": "backend/modules/platform/models.py",
+      "summary": "Class EmailTemplate in backend/modules/platform/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/platform/repository.py",
+      "type": "file",
+      "name": "repository.py",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "platform module file: repository.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "repository"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "type": "class",
+      "name": "PlatformRepository",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Class PlatformRepository in backend/modules/platform/repository.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.__init__",
+      "type": "function",
+      "name": "PlatformRepository.__init__",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method __init__ on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.list_plans",
+      "type": "function",
+      "name": "PlatformRepository.list_plans",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method list_plans on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.get_plan_by_id",
+      "type": "function",
+      "name": "PlatformRepository.get_plan_by_id",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method get_plan_by_id on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.get_plan_by_code",
+      "type": "function",
+      "name": "PlatformRepository.get_plan_by_code",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method get_plan_by_code on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.create_plan",
+      "type": "function",
+      "name": "PlatformRepository.create_plan",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method create_plan on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.list_subscriptions",
+      "type": "function",
+      "name": "PlatformRepository.list_subscriptions",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method list_subscriptions on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.get_subscription_for_user",
+      "type": "function",
+      "name": "PlatformRepository.get_subscription_for_user",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method get_subscription_for_user on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.create_subscription",
+      "type": "function",
+      "name": "PlatformRepository.create_subscription",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method create_subscription on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.list_api_keys_for_user",
+      "type": "function",
+      "name": "PlatformRepository.list_api_keys_for_user",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method list_api_keys_for_user on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.get_api_key_for_user",
+      "type": "function",
+      "name": "PlatformRepository.get_api_key_for_user",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method get_api_key_for_user on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.create_api_key",
+      "type": "function",
+      "name": "PlatformRepository.create_api_key",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method create_api_key on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.list_webhooks_for_user",
+      "type": "function",
+      "name": "PlatformRepository.list_webhooks_for_user",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method list_webhooks_for_user on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.get_webhook_for_user",
+      "type": "function",
+      "name": "PlatformRepository.get_webhook_for_user",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method get_webhook_for_user on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.create_webhook",
+      "type": "function",
+      "name": "PlatformRepository.create_webhook",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method create_webhook on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.delete_webhook",
+      "type": "function",
+      "name": "PlatformRepository.delete_webhook",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method delete_webhook on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.list_feature_flags",
+      "type": "function",
+      "name": "PlatformRepository.list_feature_flags",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method list_feature_flags on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.get_feature_flag_by_key",
+      "type": "function",
+      "name": "PlatformRepository.get_feature_flag_by_key",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method get_feature_flag_by_key on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.get_feature_flag_by_id",
+      "type": "function",
+      "name": "PlatformRepository.get_feature_flag_by_id",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method get_feature_flag_by_id on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.create_feature_flag",
+      "type": "function",
+      "name": "PlatformRepository.create_feature_flag",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method create_feature_flag on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.list_email_templates",
+      "type": "function",
+      "name": "PlatformRepository.list_email_templates",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method list_email_templates on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.get_email_template_by_key",
+      "type": "function",
+      "name": "PlatformRepository.get_email_template_by_key",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method get_email_template_by_key on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.get_email_template_by_id",
+      "type": "function",
+      "name": "PlatformRepository.get_email_template_by_id",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method get_email_template_by_id on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/repository.py:PlatformRepository.create_email_template",
+      "type": "function",
+      "name": "PlatformRepository.create_email_template",
+      "filePath": "backend/modules/platform/repository.py",
+      "summary": "Method create_email_template on PlatformRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/platform/schemas.py",
+      "type": "file",
+      "name": "schemas.py",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "platform module file: schemas.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "moderate",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:ModuleCatalogItem",
+      "type": "class",
+      "name": "ModuleCatalogItem",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class ModuleCatalogItem in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:ModulePackResponse",
+      "type": "class",
+      "name": "ModulePackResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class ModulePackResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:PlatformMetadataResponse",
+      "type": "class",
+      "name": "PlatformMetadataResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class PlatformMetadataResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:PlatformConfigResponse",
+      "type": "class",
+      "name": "PlatformConfigResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class PlatformConfigResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:PlatformConfigUpdateRequest",
+      "type": "class",
+      "name": "PlatformConfigUpdateRequest",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class PlatformConfigUpdateRequest in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:SubscriptionPlanCreate",
+      "type": "class",
+      "name": "SubscriptionPlanCreate",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class SubscriptionPlanCreate in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:SubscriptionPlanUpdate",
+      "type": "class",
+      "name": "SubscriptionPlanUpdate",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class SubscriptionPlanUpdate in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:SubscriptionPlanResponse",
+      "type": "class",
+      "name": "SubscriptionPlanResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class SubscriptionPlanResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:UserSubscriptionResponse",
+      "type": "class",
+      "name": "UserSubscriptionResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class UserSubscriptionResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:SubscriptionSelectionRequest",
+      "type": "class",
+      "name": "SubscriptionSelectionRequest",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class SubscriptionSelectionRequest in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:ApiKeyCreateRequest",
+      "type": "class",
+      "name": "ApiKeyCreateRequest",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class ApiKeyCreateRequest in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:ApiKeyResponse",
+      "type": "class",
+      "name": "ApiKeyResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class ApiKeyResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:ApiKeyCreateResponse",
+      "type": "class",
+      "name": "ApiKeyCreateResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class ApiKeyCreateResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:WebhookEndpointCreate",
+      "type": "class",
+      "name": "WebhookEndpointCreate",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class WebhookEndpointCreate in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:WebhookEndpointUpdate",
+      "type": "class",
+      "name": "WebhookEndpointUpdate",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class WebhookEndpointUpdate in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:WebhookEndpointResponse",
+      "type": "class",
+      "name": "WebhookEndpointResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class WebhookEndpointResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:WebhookEndpointCreateResponse",
+      "type": "class",
+      "name": "WebhookEndpointCreateResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class WebhookEndpointCreateResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:WebhookTestResponse",
+      "type": "class",
+      "name": "WebhookTestResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class WebhookTestResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:FeatureFlagCreate",
+      "type": "class",
+      "name": "FeatureFlagCreate",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class FeatureFlagCreate in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:FeatureFlagUpdate",
+      "type": "class",
+      "name": "FeatureFlagUpdate",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class FeatureFlagUpdate in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:FeatureFlagResponse",
+      "type": "class",
+      "name": "FeatureFlagResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class FeatureFlagResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:EffectiveFeatureFlagResponse",
+      "type": "class",
+      "name": "EffectiveFeatureFlagResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class EffectiveFeatureFlagResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:EmailTemplateCreate",
+      "type": "class",
+      "name": "EmailTemplateCreate",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class EmailTemplateCreate in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:EmailTemplateUpdate",
+      "type": "class",
+      "name": "EmailTemplateUpdate",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class EmailTemplateUpdate in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/platform/schemas.py:EmailTemplateResponse",
+      "type": "class",
+      "name": "EmailTemplateResponse",
+      "filePath": "backend/modules/platform/schemas.py",
+      "summary": "Class EmailTemplateResponse in backend/modules/platform/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/platform/service.py",
+      "type": "file",
+      "name": "service.py",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "platform module file: service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "service"
+      ],
+      "complexity": "complex",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/platform/service.py:PlatformService",
+      "type": "class",
+      "name": "PlatformService",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Class PlatformService in backend/modules/platform/service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.__init__",
+      "type": "function",
+      "name": "PlatformService.__init__",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method __init__ on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.ensure_defaults",
+      "type": "function",
+      "name": "PlatformService.ensure_defaults",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method ensure_defaults on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.get_platform_metadata",
+      "type": "function",
+      "name": "PlatformService.get_platform_metadata",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method get_platform_metadata on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.get_platform_config",
+      "type": "function",
+      "name": "PlatformService.get_platform_config",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method get_platform_config on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._load_platform_config",
+      "type": "function",
+      "name": "PlatformService._load_platform_config",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _load_platform_config on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.update_platform_config",
+      "type": "function",
+      "name": "PlatformService.update_platform_config",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method update_platform_config on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.list_plans",
+      "type": "function",
+      "name": "PlatformService.list_plans",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method list_plans on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.create_plan",
+      "type": "function",
+      "name": "PlatformService.create_plan",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method create_plan on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.update_plan",
+      "type": "function",
+      "name": "PlatformService.update_plan",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method update_plan on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.get_subscription_for_user",
+      "type": "function",
+      "name": "PlatformService.get_subscription_for_user",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method get_subscription_for_user on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.select_plan_for_user",
+      "type": "function",
+      "name": "PlatformService.select_plan_for_user",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method select_plan_for_user on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.list_api_keys_for_user",
+      "type": "function",
+      "name": "PlatformService.list_api_keys_for_user",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method list_api_keys_for_user on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.create_api_key_for_user",
+      "type": "function",
+      "name": "PlatformService.create_api_key_for_user",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method create_api_key_for_user on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.revoke_api_key_for_user",
+      "type": "function",
+      "name": "PlatformService.revoke_api_key_for_user",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method revoke_api_key_for_user on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.list_webhooks_for_user",
+      "type": "function",
+      "name": "PlatformService.list_webhooks_for_user",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method list_webhooks_for_user on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.create_webhook_for_user",
+      "type": "function",
+      "name": "PlatformService.create_webhook_for_user",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method create_webhook_for_user on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.update_webhook_for_user",
+      "type": "function",
+      "name": "PlatformService.update_webhook_for_user",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method update_webhook_for_user on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.delete_webhook_for_user",
+      "type": "function",
+      "name": "PlatformService.delete_webhook_for_user",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method delete_webhook_for_user on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.test_webhook_for_user",
+      "type": "function",
+      "name": "PlatformService.test_webhook_for_user",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method test_webhook_for_user on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.list_feature_flags",
+      "type": "function",
+      "name": "PlatformService.list_feature_flags",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method list_feature_flags on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._load_feature_flags_for_cache",
+      "type": "function",
+      "name": "PlatformService._load_feature_flags_for_cache",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _load_feature_flags_for_cache on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.list_effective_feature_flags_for_user",
+      "type": "function",
+      "name": "PlatformService.list_effective_feature_flags_for_user",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method list_effective_feature_flags_for_user on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.create_feature_flag",
+      "type": "function",
+      "name": "PlatformService.create_feature_flag",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method create_feature_flag on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.update_feature_flag",
+      "type": "function",
+      "name": "PlatformService.update_feature_flag",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method update_feature_flag on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.list_email_templates",
+      "type": "function",
+      "name": "PlatformService.list_email_templates",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method list_email_templates on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._load_email_templates_for_cache",
+      "type": "function",
+      "name": "PlatformService._load_email_templates_for_cache",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _load_email_templates_for_cache on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.create_email_template",
+      "type": "function",
+      "name": "PlatformService.create_email_template",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method create_email_template on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.update_email_template",
+      "type": "function",
+      "name": "PlatformService.update_email_template",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method update_email_template on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.render_email_template",
+      "type": "function",
+      "name": "PlatformService.render_email_template",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method render_email_template on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService.ensure_module_enabled",
+      "type": "function",
+      "name": "PlatformService.ensure_module_enabled",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method ensure_module_enabled on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._feature_flag_to_cache",
+      "type": "function",
+      "name": "PlatformService._feature_flag_to_cache",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _feature_flag_to_cache on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._feature_flag_from_cache",
+      "type": "function",
+      "name": "PlatformService._feature_flag_from_cache",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _feature_flag_from_cache on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._email_template_to_cache",
+      "type": "function",
+      "name": "PlatformService._email_template_to_cache",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _email_template_to_cache on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._email_template_from_cache",
+      "type": "function",
+      "name": "PlatformService._email_template_from_cache",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _email_template_from_cache on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._normalize_default_plan",
+      "type": "function",
+      "name": "PlatformService._normalize_default_plan",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _normalize_default_plan on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._upsert_setting",
+      "type": "function",
+      "name": "PlatformService._upsert_setting",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _upsert_setting on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._resolve_enabled_modules",
+      "type": "function",
+      "name": "PlatformService._resolve_enabled_modules",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _resolve_enabled_modules on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._parse_bool",
+      "type": "function",
+      "name": "PlatformService._parse_bool",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _parse_bool on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._serialize_bool",
+      "type": "function",
+      "name": "PlatformService._serialize_bool",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _serialize_bool on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._hash_secret",
+      "type": "function",
+      "name": "PlatformService._hash_secret",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _hash_secret on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._validate_webhook_target",
+      "type": "function",
+      "name": "PlatformService._validate_webhook_target",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _validate_webhook_target on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._calculate_period_end",
+      "type": "function",
+      "name": "PlatformService._calculate_period_end",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _calculate_period_end on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._render_template_string",
+      "type": "function",
+      "name": "PlatformService._render_template_string",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _render_template_string on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/platform/service.py:PlatformService._is_flag_effective",
+      "type": "function",
+      "name": "PlatformService._is_flag_effective",
+      "filePath": "backend/modules/platform/service.py",
+      "summary": "Method _is_flag_effective on PlatformService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/rag/workers.py",
+      "type": "file",
+      "name": "workers.py",
+      "filePath": "backend/modules/rag/workers.py",
+      "summary": "rag module file: workers.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/modules/rag/workers.py:store_pending_content",
+      "type": "function",
+      "name": "store_pending_content",
+      "filePath": "backend/modules/rag/workers.py",
+      "summary": "Function store_pending_content in backend/modules/rag/workers.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/workers.py:get_pending_content",
+      "type": "function",
+      "name": "get_pending_content",
+      "filePath": "backend/modules/rag/workers.py",
+      "summary": "Function get_pending_content in backend/modules/rag/workers.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/workers.py:pop_pending_content",
+      "type": "function",
+      "name": "pop_pending_content",
+      "filePath": "backend/modules/rag/workers.py",
+      "summary": "Function pop_pending_content in backend/modules/rag/workers.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/workers.py:index_document_sync",
+      "type": "function",
+      "name": "index_document_sync",
+      "filePath": "backend/modules/rag/workers.py",
+      "summary": "Function index_document_sync in backend/modules/rag/workers.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/rag/workers.py:queue_document_indexing",
+      "type": "function",
+      "name": "queue_document_indexing",
+      "filePath": "backend/modules/rag/workers.py",
+      "summary": "Function queue_document_indexing in backend/modules/rag/workers.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/settings/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "backend/modules/settings/models.py",
+      "summary": "settings module file: models.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/settings/models.py:AppSetting",
+      "type": "class",
+      "name": "AppSetting",
+      "filePath": "backend/modules/settings/models.py",
+      "summary": "Class AppSetting in backend/modules/settings/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/settings/repository.py",
+      "type": "file",
+      "name": "repository.py",
+      "filePath": "backend/modules/settings/repository.py",
+      "summary": "settings module file: repository.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "repository"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/settings/repository.py:SettingsRepository",
+      "type": "class",
+      "name": "SettingsRepository",
+      "filePath": "backend/modules/settings/repository.py",
+      "summary": "Class SettingsRepository in backend/modules/settings/repository.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/repository.py:SettingsRepository.__init__",
+      "type": "function",
+      "name": "SettingsRepository.__init__",
+      "filePath": "backend/modules/settings/repository.py",
+      "summary": "Method __init__ on SettingsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/repository.py:SettingsRepository.list_all",
+      "type": "function",
+      "name": "SettingsRepository.list_all",
+      "filePath": "backend/modules/settings/repository.py",
+      "summary": "Method list_all on SettingsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/repository.py:SettingsRepository.list_by_prefix",
+      "type": "function",
+      "name": "SettingsRepository.list_by_prefix",
+      "filePath": "backend/modules/settings/repository.py",
+      "summary": "Method list_by_prefix on SettingsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/repository.py:SettingsRepository.get_by_id",
+      "type": "function",
+      "name": "SettingsRepository.get_by_id",
+      "filePath": "backend/modules/settings/repository.py",
+      "summary": "Method get_by_id on SettingsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/repository.py:SettingsRepository.get_by_key",
+      "type": "function",
+      "name": "SettingsRepository.get_by_key",
+      "filePath": "backend/modules/settings/repository.py",
+      "summary": "Method get_by_key on SettingsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/repository.py:SettingsRepository.create",
+      "type": "function",
+      "name": "SettingsRepository.create",
+      "filePath": "backend/modules/settings/repository.py",
+      "summary": "Method create on SettingsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/repository.py:SettingsRepository.delete",
+      "type": "function",
+      "name": "SettingsRepository.delete",
+      "filePath": "backend/modules/settings/repository.py",
+      "summary": "Method delete on SettingsRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/settings/schemas.py",
+      "type": "file",
+      "name": "schemas.py",
+      "filePath": "backend/modules/settings/schemas.py",
+      "summary": "settings module file: schemas.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/settings/schemas.py:ConfigEntryResponse",
+      "type": "class",
+      "name": "ConfigEntryResponse",
+      "filePath": "backend/modules/settings/schemas.py",
+      "summary": "Class ConfigEntryResponse in backend/modules/settings/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/settings/schemas.py:ConfigSettingsResponse",
+      "type": "class",
+      "name": "ConfigSettingsResponse",
+      "filePath": "backend/modules/settings/schemas.py",
+      "summary": "Class ConfigSettingsResponse in backend/modules/settings/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/settings/schemas.py:ConfigEntryUpdate",
+      "type": "class",
+      "name": "ConfigEntryUpdate",
+      "filePath": "backend/modules/settings/schemas.py",
+      "summary": "Class ConfigEntryUpdate in backend/modules/settings/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/settings/schemas.py:ConfigSettingsUpdateRequest",
+      "type": "class",
+      "name": "ConfigSettingsUpdateRequest",
+      "filePath": "backend/modules/settings/schemas.py",
+      "summary": "Class ConfigSettingsUpdateRequest in backend/modules/settings/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/settings/schemas.py:DatabaseSettingCreate",
+      "type": "class",
+      "name": "DatabaseSettingCreate",
+      "filePath": "backend/modules/settings/schemas.py",
+      "summary": "Class DatabaseSettingCreate in backend/modules/settings/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/settings/schemas.py:DatabaseSettingUpdate",
+      "type": "class",
+      "name": "DatabaseSettingUpdate",
+      "filePath": "backend/modules/settings/schemas.py",
+      "summary": "Class DatabaseSettingUpdate in backend/modules/settings/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/modules/settings/schemas.py:DatabaseSettingResponse",
+      "type": "class",
+      "name": "DatabaseSettingResponse",
+      "filePath": "backend/modules/settings/schemas.py",
+      "summary": "Class DatabaseSettingResponse in backend/modules/settings/schemas.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/settings/service.py",
+      "type": "file",
+      "name": "service.py",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "settings module file: service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "service"
+      ],
+      "complexity": "complex",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/settings/service.py:SettingsService",
+      "type": "class",
+      "name": "SettingsService",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Class SettingsService in backend/modules/settings/service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService.__init__",
+      "type": "function",
+      "name": "SettingsService.__init__",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method __init__ on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService.list_database_settings",
+      "type": "function",
+      "name": "SettingsService.list_database_settings",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method list_database_settings on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService._load_database_settings_for_cache",
+      "type": "function",
+      "name": "SettingsService._load_database_settings_for_cache",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method _load_database_settings_for_cache on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService.create_database_setting",
+      "type": "function",
+      "name": "SettingsService.create_database_setting",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method create_database_setting on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService.update_database_setting",
+      "type": "function",
+      "name": "SettingsService.update_database_setting",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method update_database_setting on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService.delete_database_setting",
+      "type": "function",
+      "name": "SettingsService.delete_database_setting",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method delete_database_setting on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService._setting_to_cache",
+      "type": "function",
+      "name": "SettingsService._setting_to_cache",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method _setting_to_cache on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService._setting_from_cache",
+      "type": "function",
+      "name": "SettingsService._setting_from_cache",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method _setting_from_cache on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService.list_config_entries",
+      "type": "function",
+      "name": "SettingsService.list_config_entries",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method list_config_entries on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService._build_config_entries",
+      "type": "function",
+      "name": "SettingsService._build_config_entries",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method _build_config_entries on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService.update_config_entries",
+      "type": "function",
+      "name": "SettingsService.update_config_entries",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method update_config_entries on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService._get_value_type",
+      "type": "function",
+      "name": "SettingsService._get_value_type",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method _get_value_type on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService._serialize_value",
+      "type": "function",
+      "name": "SettingsService._serialize_value",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method _serialize_value on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService._is_secret_key",
+      "type": "function",
+      "name": "SettingsService._is_secret_key",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method _is_secret_key on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService._parse_env_line",
+      "type": "function",
+      "name": "SettingsService._parse_env_line",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method _parse_env_line on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService._read_env_entries",
+      "type": "function",
+      "name": "SettingsService._read_env_entries",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method _read_env_entries on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/settings/service.py:SettingsService._write_env_entries",
+      "type": "function",
+      "name": "SettingsService._write_env_entries",
+      "filePath": "backend/modules/settings/service.py",
+      "summary": "Method _write_env_entries on SettingsService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/observability/__init__.py",
+      "type": "file",
+      "name": "__init__.py",
+      "filePath": "backend/observability/__init__.py",
+      "summary": "code file: __init__.py",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "file:backend/observability/config.py",
+      "type": "file",
+      "name": "config.py",
+      "filePath": "backend/observability/config.py",
+      "summary": "config.py (3 functions, 1 classes)",
+      "tags": [
+        "code",
+        "python"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "function:backend/observability/config.py:env_bool",
+      "type": "function",
+      "name": "env_bool",
+      "filePath": "backend/observability/config.py",
+      "summary": "Function env_bool in backend/observability/config.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/config.py:env_str",
+      "type": "function",
+      "name": "env_str",
+      "filePath": "backend/observability/config.py",
+      "summary": "Function env_str in backend/observability/config.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/observability/config.py:load_config",
+      "type": "function",
+      "name": "load_config",
+      "filePath": "backend/observability/config.py",
+      "summary": "Function load_config in backend/observability/config.py",
+      "tags": [
+        "function",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "class:backend/observability/config.py:ObservabilityConfig",
+      "type": "class",
+      "name": "ObservabilityConfig",
+      "filePath": "backend/observability/config.py",
+      "summary": "Class ObservabilityConfig in backend/observability/config.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/api/middleware/correlation_id.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/api/middleware/csrf.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/api/middleware/public_rate_limit.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/api/middleware/request_logging.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/api/middleware/security_headers.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/api/router.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/api/v1/health.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/core/cache.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/core/error_handler.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/core/logging.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/core/storage.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/db/session.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/modules/ai/providers.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/modules/platform/service.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/modules/rag/infrastructure/rag_config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/observability/__init__.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "file:backend/workers/async_dispatch.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/main.py",
+      "target": "function:backend/api/main.py:lifespan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/api/middleware/correlation_id.py",
+      "target": "class:backend/api/middleware/correlation_id.py:CorrelationIdMiddleware",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/api/middleware/correlation_id.py:CorrelationIdMiddleware",
+      "target": "function:backend/api/middleware/correlation_id.py:CorrelationIdMiddleware.dispatch",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/api/middleware/csrf.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/middleware/csrf.py",
+      "target": "class:backend/api/middleware/csrf.py:CSRFMiddleware",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/api/middleware/csrf.py:CSRFMiddleware",
+      "target": "function:backend/api/middleware/csrf.py:CSRFMiddleware.dispatch",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/api/middleware/public_rate_limit.py",
+      "target": "file:backend/core/cache.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/middleware/public_rate_limit.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/middleware/public_rate_limit.py",
+      "target": "class:backend/api/middleware/public_rate_limit.py:PublicRateLimitMiddleware",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/api/middleware/public_rate_limit.py:PublicRateLimitMiddleware",
+      "target": "function:backend/api/middleware/public_rate_limit.py:PublicRateLimitMiddleware.dispatch",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/api/middleware/request_logging.py",
+      "target": "class:backend/api/middleware/request_logging.py:RequestLoggingMiddleware",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/api/middleware/request_logging.py:RequestLoggingMiddleware",
+      "target": "function:backend/api/middleware/request_logging.py:RequestLoggingMiddleware.dispatch",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/api/middleware/security_headers.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/middleware/security_headers.py",
+      "target": "class:backend/api/middleware/security_headers.py:SecurityHeadersMiddleware",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/api/middleware/security_headers.py:SecurityHeadersMiddleware",
+      "target": "function:backend/api/middleware/security_headers.py:SecurityHeadersMiddleware.dispatch",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/api/v1/health.py",
+      "target": "file:backend/core/cache.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/v1/health.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/v1/health.py",
+      "target": "file:backend/db/session.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/api/v1/health.py",
+      "target": "function:backend/api/v1/health.py:live",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/api/v1/health.py",
+      "target": "function:backend/api/v1/health.py:ready",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/api/v1/health.py",
+      "target": "function:backend/api/v1/health.py:version",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "file:backend/core/logging.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:_uses_local_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:_uses_redis_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:_local_ttl_for_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:get_local_cached_json",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:set_local_cached_json",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:delete_local_cached_json",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:cache_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:embedding_cache_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:cache_get_json",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:cache_set_json",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:cache_delete",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:cache_delete_pattern",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:cache_get_model",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:cache_set_model",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:cache_get_or_load_model",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:cache_get_or_load_json",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:invalidate_platform_caches",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:invalidate_platform_email_template_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:invalidate_settings_database_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:invalidate_settings_config_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "function:backend/core/cache.py:invalidate_settings_related_caches",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/cache.py",
+      "target": "class:backend/core/cache.py:_LocalTTLCache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/cache.py:_LocalTTLCache",
+      "target": "function:backend/core/cache.py:_LocalTTLCache.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/cache.py:_LocalTTLCache",
+      "target": "function:backend/core/cache.py:_LocalTTLCache.get",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/cache.py:_LocalTTLCache",
+      "target": "function:backend/core/cache.py:_LocalTTLCache.set",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/cache.py:_LocalTTLCache",
+      "target": "function:backend/core/cache.py:_LocalTTLCache.delete",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/config.py",
+      "target": "class:backend/core/config.py:Settings",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/config.py:Settings",
+      "target": "function:backend/core/config.py:Settings.celery_broker_url",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/config.py:Settings",
+      "target": "function:backend/core/config.py:Settings.celery_result_backend",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/config.py:Settings",
+      "target": "function:backend/core/config.py:Settings.is_production",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/config.py:Settings",
+      "target": "function:backend/core/config.py:Settings.allowed_origins",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/config.py:Settings",
+      "target": "function:backend/core/config.py:Settings.content_security_policy",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/config.py:Settings",
+      "target": "function:backend/core/config.py:Settings.validate_cookie_samesite",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/config.py:Settings",
+      "target": "function:backend/core/config.py:Settings.validate_jwt_secret",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/config.py:Settings",
+      "target": "function:backend/core/config.py:Settings.validate_access_ttl",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/config.py:Settings",
+      "target": "function:backend/core/config.py:Settings.validate_refresh_ttl",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/config.py:Settings",
+      "target": "function:backend/core/config.py:Settings.parse_cors_allowed_origins",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/config.py:Settings",
+      "target": "function:backend/core/config.py:Settings.validate_security_posture",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/error_handler.py",
+      "target": "file:backend/core/logging.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/core/error_handler.py",
+      "target": "function:backend/core/error_handler.py:register_exception_handlers",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/logging.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/core/logging.py",
+      "target": "file:backend/core/logging.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/core/logging.py",
+      "target": "function:backend/core/logging.py:setup_logging",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/storage.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/core/storage.py",
+      "target": "file:backend/core/logging.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/core/storage.py",
+      "target": "class:backend/core/storage.py:StorageNotConfiguredError",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/storage.py",
+      "target": "class:backend/core/storage.py:ObjectStorageError",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/core/storage.py",
+      "target": "class:backend/core/storage.py:ObjectStorage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/storage.py:ObjectStorage",
+      "target": "function:backend/core/storage.py:ObjectStorage.is_configured",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/storage.py:ObjectStorage",
+      "target": "function:backend/core/storage.py:ObjectStorage._client",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/storage.py:ObjectStorage",
+      "target": "function:backend/core/storage.py:ObjectStorage.ensure_bucket",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/storage.py:ObjectStorage",
+      "target": "function:backend/core/storage.py:ObjectStorage.upload_bytes",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/storage.py:ObjectStorage",
+      "target": "function:backend/core/storage.py:ObjectStorage.delete_object",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/core/storage.py:ObjectStorage",
+      "target": "function:backend/core/storage.py:ObjectStorage.public_url_for",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/db/session.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "function:backend/modules/ai/providers.py:_get_openai_http_client",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "function:backend/modules/ai/providers.py:_get_anthropic_http_client",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "function:backend/modules/ai/providers.py:close_ai_provider_http_clients",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "function:backend/modules/ai/providers.py:_hash_embedding",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "class:backend/modules/ai/providers.py:ProviderGenerateRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "class:backend/modules/ai/providers.py:ProviderGenerateResult",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:ProviderGenerateResult",
+      "target": "function:backend/modules/ai/providers.py:ProviderGenerateResult.total_tokens",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "class:backend/modules/ai/providers.py:BaseAiProvider",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:BaseAiProvider",
+      "target": "function:backend/modules/ai/providers.py:BaseAiProvider.generate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:BaseAiProvider",
+      "target": "function:backend/modules/ai/providers.py:BaseAiProvider.embed_texts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "class:backend/modules/ai/providers.py:LocalHeuristicProvider",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:LocalHeuristicProvider",
+      "target": "function:backend/modules/ai/providers.py:LocalHeuristicProvider.generate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:LocalHeuristicProvider",
+      "target": "function:backend/modules/ai/providers.py:LocalHeuristicProvider.embed_texts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "class:backend/modules/ai/providers.py:OpenAIProvider",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:OpenAIProvider",
+      "target": "function:backend/modules/ai/providers.py:OpenAIProvider.generate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:OpenAIProvider",
+      "target": "function:backend/modules/ai/providers.py:OpenAIProvider.embed_texts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "class:backend/modules/ai/providers.py:AnthropicProvider",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:AnthropicProvider",
+      "target": "function:backend/modules/ai/providers.py:AnthropicProvider.generate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:AnthropicProvider",
+      "target": "function:backend/modules/ai/providers.py:AnthropicProvider.embed_texts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/ai/providers.py",
+      "target": "class:backend/modules/ai/providers.py:AiProviderRegistry",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:AiProviderRegistry",
+      "target": "function:backend/modules/ai/providers.py:AiProviderRegistry.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:AiProviderRegistry",
+      "target": "function:backend/modules/ai/providers.py:AiProviderRegistry.get",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:AiProviderRegistry",
+      "target": "function:backend/modules/ai/providers.py:AiProviderRegistry.embedding_provider_and_model",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:AiProviderRegistry",
+      "target": "function:backend/modules/ai/providers.py:AiProviderRegistry.embed_texts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/ai/providers.py:AiProviderRegistry",
+      "target": "function:backend/modules/ai/providers.py:AiProviderRegistry.embed_retrieval_queries",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/models.py",
+      "target": "file:backend/db/base.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/models.py",
+      "target": "class:backend/modules/platform/models.py:SubscriptionPlan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/models.py",
+      "target": "class:backend/modules/platform/models.py:UserSubscription",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/models.py",
+      "target": "class:backend/modules/platform/models.py:ApiKey",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/models.py",
+      "target": "class:backend/modules/platform/models.py:WebhookEndpoint",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/models.py",
+      "target": "class:backend/modules/platform/models.py:FeatureFlag",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/models.py",
+      "target": "class:backend/modules/platform/models.py:EmailTemplate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/repository.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/repository.py",
+      "target": "file:backend/modules/platform/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/repository.py",
+      "target": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.list_plans",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.get_plan_by_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.get_plan_by_code",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.create_plan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.list_subscriptions",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.get_subscription_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.create_subscription",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.list_api_keys_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.get_api_key_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.create_api_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.list_webhooks_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.get_webhook_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.create_webhook",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.delete_webhook",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.list_feature_flags",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.get_feature_flag_by_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.get_feature_flag_by_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.create_feature_flag",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.list_email_templates",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.get_email_template_by_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.get_email_template_by_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/repository.py:PlatformRepository",
+      "target": "function:backend/modules/platform/repository.py:PlatformRepository.create_email_template",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "file:backend/core/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:ModuleCatalogItem",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:ModulePackResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:PlatformMetadataResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:PlatformConfigResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:PlatformConfigUpdateRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:SubscriptionPlanCreate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:SubscriptionPlanUpdate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:SubscriptionPlanResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:UserSubscriptionResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:SubscriptionSelectionRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:ApiKeyCreateRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:ApiKeyResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:ApiKeyCreateResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:WebhookEndpointCreate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:WebhookEndpointUpdate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:WebhookEndpointResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:WebhookEndpointCreateResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:WebhookTestResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:FeatureFlagCreate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:FeatureFlagUpdate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:FeatureFlagResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:EffectiveFeatureFlagResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:EmailTemplateCreate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:EmailTemplateUpdate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/schemas.py",
+      "target": "class:backend/modules/platform/schemas.py:EmailTemplateResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/platform/service.py",
+      "target": "file:backend/core/cache.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/service.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/service.py",
+      "target": "file:backend/core/pagination.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/service.py",
+      "target": "file:backend/modules/identity_access/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/service.py",
+      "target": "file:backend/modules/platform/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/service.py",
+      "target": "file:backend/modules/platform/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/service.py",
+      "target": "file:backend/modules/platform/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/service.py",
+      "target": "file:backend/modules/settings/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/platform/service.py",
+      "target": "class:backend/modules/platform/service.py:PlatformService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.ensure_defaults",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.get_platform_metadata",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.get_platform_config",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._load_platform_config",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.update_platform_config",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.list_plans",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.create_plan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.update_plan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.get_subscription_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.select_plan_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.list_api_keys_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.create_api_key_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.revoke_api_key_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.list_webhooks_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.create_webhook_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.update_webhook_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.delete_webhook_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.test_webhook_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.list_feature_flags",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._load_feature_flags_for_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.list_effective_feature_flags_for_user",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.create_feature_flag",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.update_feature_flag",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.list_email_templates",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._load_email_templates_for_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.create_email_template",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.update_email_template",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.render_email_template",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService.ensure_module_enabled",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._feature_flag_to_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._feature_flag_from_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._email_template_to_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._email_template_from_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._normalize_default_plan",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._upsert_setting",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._resolve_enabled_modules",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._parse_bool",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._serialize_bool",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._hash_secret",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._validate_webhook_target",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._calculate_period_end",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._render_template_string",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/platform/service.py:PlatformService",
+      "target": "function:backend/modules/platform/service.py:PlatformService._is_flag_effective",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/workers.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/workers.py",
+      "target": "file:backend/workers/async_dispatch.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/rag/workers.py",
+      "target": "function:backend/modules/rag/workers.py:store_pending_content",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/workers.py",
+      "target": "function:backend/modules/rag/workers.py:get_pending_content",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/workers.py",
+      "target": "function:backend/modules/rag/workers.py:pop_pending_content",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/workers.py",
+      "target": "function:backend/modules/rag/workers.py:index_document_sync",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/rag/workers.py",
+      "target": "function:backend/modules/rag/workers.py:queue_document_indexing",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/models.py",
+      "target": "file:backend/db/base.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/models.py",
+      "target": "class:backend/modules/settings/models.py:AppSetting",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/repository.py",
+      "target": "file:backend/modules/settings/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/repository.py",
+      "target": "class:backend/modules/settings/repository.py:SettingsRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/repository.py:SettingsRepository",
+      "target": "function:backend/modules/settings/repository.py:SettingsRepository.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/repository.py:SettingsRepository",
+      "target": "function:backend/modules/settings/repository.py:SettingsRepository.list_all",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/repository.py:SettingsRepository",
+      "target": "function:backend/modules/settings/repository.py:SettingsRepository.list_by_prefix",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/repository.py:SettingsRepository",
+      "target": "function:backend/modules/settings/repository.py:SettingsRepository.get_by_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/repository.py:SettingsRepository",
+      "target": "function:backend/modules/settings/repository.py:SettingsRepository.get_by_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/repository.py:SettingsRepository",
+      "target": "function:backend/modules/settings/repository.py:SettingsRepository.create",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/repository.py:SettingsRepository",
+      "target": "function:backend/modules/settings/repository.py:SettingsRepository.delete",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/schemas.py",
+      "target": "file:backend/core/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/schemas.py",
+      "target": "class:backend/modules/settings/schemas.py:ConfigEntryResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/schemas.py",
+      "target": "class:backend/modules/settings/schemas.py:ConfigSettingsResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/schemas.py",
+      "target": "class:backend/modules/settings/schemas.py:ConfigEntryUpdate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/schemas.py",
+      "target": "class:backend/modules/settings/schemas.py:ConfigSettingsUpdateRequest",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/schemas.py",
+      "target": "class:backend/modules/settings/schemas.py:DatabaseSettingCreate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/schemas.py",
+      "target": "class:backend/modules/settings/schemas.py:DatabaseSettingUpdate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/schemas.py",
+      "target": "class:backend/modules/settings/schemas.py:DatabaseSettingResponse",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/settings/service.py",
+      "target": "file:backend/core/cache.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/service.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/service.py",
+      "target": "file:backend/modules/settings/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/service.py",
+      "target": "file:backend/modules/settings/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/service.py",
+      "target": "file:backend/modules/settings/schemas.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/settings/service.py",
+      "target": "class:backend/modules/settings/service.py:SettingsService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService.list_database_settings",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService._load_database_settings_for_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService.create_database_setting",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService.update_database_setting",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService.delete_database_setting",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService._setting_to_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService._setting_from_cache",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService.list_config_entries",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService._build_config_entries",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService.update_config_entries",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService._get_value_type",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService._serialize_value",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService._is_secret_key",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService._parse_env_line",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService._read_env_entries",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/settings/service.py:SettingsService",
+      "target": "function:backend/modules/settings/service.py:SettingsService._write_env_entries",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/__init__.py",
+      "target": "file:backend/observability/instruments.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/__init__.py",
+      "target": "file:backend/observability/metrics.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/__init__.py",
+      "target": "file:backend/observability/setup.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/__init__.py",
+      "target": "file:backend/observability/tracing.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/config.py",
+      "target": "file:backend/core/config.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/observability/config.py",
+      "target": "function:backend/observability/config.py:env_bool",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/config.py",
+      "target": "function:backend/observability/config.py:env_str",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/config.py",
+      "target": "function:backend/observability/config.py:load_config",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/observability/config.py",
+      "target": "class:backend/observability/config.py:ObservabilityConfig",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

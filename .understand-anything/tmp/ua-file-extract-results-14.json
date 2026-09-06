@@ -1,0 +1,831 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 4,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "backend/.env.example",
+      "language": "config",
+      "fileCategory": "config",
+      "totalLines": 123,
+      "nonEmptyLines": 114,
+      "definitions": [
+        {
+          "name": "APP_NAME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 1,
+          "endLine": 1
+        },
+        {
+          "name": "APP_ENV",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 2,
+          "endLine": 2
+        },
+        {
+          "name": "APP_HOST",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 3,
+          "endLine": 3
+        },
+        {
+          "name": "APP_PORT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 4,
+          "endLine": 4
+        },
+        {
+          "name": "LOG_LEVEL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 5,
+          "endLine": 5
+        },
+        {
+          "name": "CORE_DOMAIN_SINGULAR",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 6,
+          "endLine": 6
+        },
+        {
+          "name": "CORE_DOMAIN_PLURAL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 7,
+          "endLine": 7
+        },
+        {
+          "name": "PLATFORM_DEFAULT_MODULE_PACK",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 8,
+          "endLine": 8
+        },
+        {
+          "name": "DATABASE_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 10,
+          "endLine": 10
+        },
+        {
+          "name": "REDIS_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 11,
+          "endLine": 11
+        },
+        {
+          "name": "CACHE_ENABLED",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 12,
+          "endLine": 12
+        },
+        {
+          "name": "CACHE_EMBEDDING_TTL_SECONDS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 14,
+          "endLine": 14
+        },
+        {
+          "name": "CACHE_EMBEDDING_MAX_TEXT_CHARS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 15,
+          "endLine": 15
+        },
+        {
+          "name": "CACHE_RETRIEVAL_TTL_SECONDS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 16,
+          "endLine": 16
+        },
+        {
+          "name": "CACHE_PLATFORM_TTL_SECONDS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 17,
+          "endLine": 17
+        },
+        {
+          "name": "CACHE_SETTINGS_TTL_SECONDS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 18,
+          "endLine": 18
+        },
+        {
+          "name": "CACHE_OBSERVABILITY_STATUS_TTL_SECONDS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 19,
+          "endLine": 19
+        },
+        {
+          "name": "CACHE_MEMORY_SEARCH_TTL_SECONDS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 20,
+          "endLine": 20
+        },
+        {
+          "name": "CELERY_BROKER_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 21,
+          "endLine": 21
+        },
+        {
+          "name": "CELERY_RESULT_BACKEND",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 22,
+          "endLine": 22
+        },
+        {
+          "name": "CELERY_TASK_ALWAYS_EAGER",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 25,
+          "endLine": 25
+        },
+        {
+          "name": "CELERY_TASK_DEFAULT_QUEUE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 26,
+          "endLine": 26
+        },
+        {
+          "name": "CELERY_EMAIL_QUEUE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 27,
+          "endLine": 27
+        },
+        {
+          "name": "CELERY_RESULT_EXPIRES_SECONDS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 28,
+          "endLine": 28
+        },
+        {
+          "name": "JWT_SECRET",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 30,
+          "endLine": 30
+        },
+        {
+          "name": "JWT_ALGORITHM",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 31,
+          "endLine": 31
+        },
+        {
+          "name": "ACCESS_TOKEN_EXPIRE_MINUTES",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 32,
+          "endLine": 32
+        },
+        {
+          "name": "REFRESH_TOKEN_EXPIRE_DAYS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 33,
+          "endLine": 33
+        },
+        {
+          "name": "FRONTEND_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 35,
+          "endLine": 35
+        },
+        {
+          "name": "COOKIE_SECURE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 36,
+          "endLine": 36
+        },
+        {
+          "name": "COOKIE_SAMESITE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 37,
+          "endLine": 37
+        },
+        {
+          "name": "COOKIE_DOMAIN",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 38,
+          "endLine": 38
+        },
+        {
+          "name": "CORS_ALLOWED_ORIGINS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 39,
+          "endLine": 39
+        },
+        {
+          "name": "ADMIN_SIGNUP_INVITE_CODE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 40,
+          "endLine": 40
+        },
+        {
+          "name": "ACCESS_COOKIE_NAME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 41,
+          "endLine": 41
+        },
+        {
+          "name": "REFRESH_COOKIE_NAME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 42,
+          "endLine": 42
+        },
+        {
+          "name": "CSRF_COOKIE_NAME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 43,
+          "endLine": 43
+        },
+        {
+          "name": "CSRF_HEADER_NAME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 44,
+          "endLine": 44
+        },
+        {
+          "name": "PUBLIC_RATE_LIMIT_REQUESTS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 45,
+          "endLine": 45
+        },
+        {
+          "name": "PUBLIC_RATE_LIMIT_WINDOW_SECONDS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 46,
+          "endLine": 46
+        },
+        {
+          "name": "AUTH_FAILURE_LIMIT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 47,
+          "endLine": 47
+        },
+        {
+          "name": "AUTH_FAILURE_WINDOW_SECONDS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 48,
+          "endLine": 48
+        },
+        {
+          "name": "HEALTH_READY_PUBLIC",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 49,
+          "endLine": 49
+        },
+        {
+          "name": "HEALTH_VERSION_PUBLIC",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 50,
+          "endLine": 50
+        },
+        {
+          "name": "REQUIRE_EMAIL_VERIFICATION",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 51,
+          "endLine": 51
+        },
+        {
+          "name": "VERIFICATION_TOKEN_TTL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 53,
+          "endLine": 53
+        },
+        {
+          "name": "PASSWORD_RESET_TOKEN_TTL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 54,
+          "endLine": 54
+        },
+        {
+          "name": "SMTP_HOST",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 56,
+          "endLine": 56
+        },
+        {
+          "name": "SMTP_PORT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 57,
+          "endLine": 57
+        },
+        {
+          "name": "SMTP_USER",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 58,
+          "endLine": 58
+        },
+        {
+          "name": "SMTP_PASSWORD",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 59,
+          "endLine": 59
+        },
+        {
+          "name": "SMTP_FROM",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 60,
+          "endLine": 60
+        },
+        {
+          "name": "SMTP_TLS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 61,
+          "endLine": 61
+        },
+        {
+          "name": "SENTRY_DSN",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 63,
+          "endLine": 63
+        },
+        {
+          "name": "SENTRY_TRACES_SAMPLE_RATE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 64,
+          "endLine": 64
+        },
+        {
+          "name": "OTLP_ENDPOINT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 65,
+          "endLine": 65
+        },
+        {
+          "name": "OTLP_INSECURE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 66,
+          "endLine": 66
+        },
+        {
+          "name": "OTEL_SERVICE_NAME",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 67,
+          "endLine": 67
+        },
+        {
+          "name": "OTEL_EXPORTER_OTLP_ENDPOINT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 68,
+          "endLine": 68
+        },
+        {
+          "name": "OTEL_EXPORTER_OTLP_PROTOCOL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 69,
+          "endLine": 69
+        },
+        {
+          "name": "OTEL_TRACES_EXPORTER",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 70,
+          "endLine": 70
+        },
+        {
+          "name": "GRAFANA_PUBLIC_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 71,
+          "endLine": 71
+        },
+        {
+          "name": "PROMETHEUS_PUBLIC_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 72,
+          "endLine": 72
+        },
+        {
+          "name": "TEMPO_PUBLIC_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 73,
+          "endLine": 73
+        },
+        {
+          "name": "GRAFANA_APP_OVERVIEW_DASHBOARD_PATH",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 74,
+          "endLine": 74
+        },
+        {
+          "name": "GRAFANA_API_DASHBOARD_PATH",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 75,
+          "endLine": 75
+        },
+        {
+          "name": "GRAFANA_FRONTEND_DASHBOARD_PATH",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 76,
+          "endLine": 76
+        },
+        {
+          "name": "GRAFANA_DATABASE_DASHBOARD_PATH",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 77,
+          "endLine": 77
+        },
+        {
+          "name": "GRAFANA_CACHE_DASHBOARD_PATH",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 78,
+          "endLine": 78
+        },
+        {
+          "name": "GRAFANA_WORKERS_DASHBOARD_PATH",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 79,
+          "endLine": 79
+        },
+        {
+          "name": "GRAFANA_SCHEDULED_TASKS_DASHBOARD_PATH",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 80,
+          "endLine": 80
+        },
+        {
+          "name": "GRAFANA_ERRORS_DASHBOARD_PATH",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 81,
+          "endLine": 81
+        },
+        {
+          "name": "GRAFANA_TEMPO_EXPLORE_PATH",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 82,
+          "endLine": 82
+        },
+        {
+          "name": "STORAGE_BUCKET",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 84,
+          "endLine": 84
+        },
+        {
+          "name": "STORAGE_REGION",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 85,
+          "endLine": 85
+        },
+        {
+          "name": "STORAGE_ENDPOINT_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 86,
+          "endLine": 86
+        },
+        {
+          "name": "STORAGE_ACCESS_KEY",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 87,
+          "endLine": 87
+        },
+        {
+          "name": "STORAGE_SECRET_KEY",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 88,
+          "endLine": 88
+        },
+        {
+          "name": "STORAGE_USE_SSL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 89,
+          "endLine": 89
+        },
+        {
+          "name": "STORAGE_FORCE_PATH_STYLE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 90,
+          "endLine": 90
+        },
+        {
+          "name": "STORAGE_PUBLIC_BASE_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 91,
+          "endLine": 91
+        },
+        {
+          "name": "STORAGE_AUTO_CREATE_BUCKET",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 92,
+          "endLine": 92
+        },
+        {
+          "name": "STORAGE_PUBLIC_READ",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 93,
+          "endLine": 93
+        },
+        {
+          "name": "STORAGE_AVATAR_MAX_BYTES",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 94,
+          "endLine": 94
+        },
+        {
+          "name": "MEM0_MODE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 97,
+          "endLine": 97
+        },
+        {
+          "name": "MEM0_API_KEY",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 98,
+          "endLine": 98
+        },
+        {
+          "name": "MEM0_ORG_ID",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 99,
+          "endLine": 99
+        },
+        {
+          "name": "MEM0_PROJECT_ID",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 100,
+          "endLine": 100
+        },
+        {
+          "name": "MEM0_BASE_URL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 101,
+          "endLine": 101
+        },
+        {
+          "name": "MEMORY_ENABLED",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 102,
+          "endLine": 102
+        },
+        {
+          "name": "MEMORY_WRITE_ENABLED",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 103,
+          "endLine": 103
+        },
+        {
+          "name": "MEMORY_AUDIT_ENABLED",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 104,
+          "endLine": 104
+        },
+        {
+          "name": "MEMORY_DEFAULT_LIMIT",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 105,
+          "endLine": 105
+        },
+        {
+          "name": "MEMORY_MIN_CONFIDENCE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 106,
+          "endLine": 106
+        },
+        {
+          "name": "MEMORY_SESSION_TTL_DAYS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 107,
+          "endLine": 107
+        },
+        {
+          "name": "RAG_ENABLED",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 110,
+          "endLine": 110
+        },
+        {
+          "name": "RAG_VECTOR_BACKEND",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 111,
+          "endLine": 111
+        },
+        {
+          "name": "RAG_EMBEDDING_PROVIDER",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 112,
+          "endLine": 112
+        },
+        {
+          "name": "RAG_EMBEDDING_MODEL",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 114,
+          "endLine": 114
+        },
+        {
+          "name": "RAG_EMBEDDING_DIMENSIONS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 115,
+          "endLine": 115
+        },
+        {
+          "name": "RAG_CHUNK_SIZE",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 116,
+          "endLine": 116
+        },
+        {
+          "name": "RAG_CHUNK_OVERLAP",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 117,
+          "endLine": 117
+        },
+        {
+          "name": "RAG_TOP_K",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 118,
+          "endLine": 118
+        },
+        {
+          "name": "RAG_SCORE_THRESHOLD",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 119,
+          "endLine": 119
+        },
+        {
+          "name": "RAG_MAX_CONTEXT_TOKENS",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 120,
+          "endLine": 120
+        },
+        {
+          "name": "RAG_ALLOWED_FILE_TYPES",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 121,
+          "endLine": 121
+        },
+        {
+          "name": "RAG_MAX_FILE_BYTES",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 122,
+          "endLine": 122
+        },
+        {
+          "name": "RAG_ASK_PROMPT_TEMPLATE_KEY",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 123,
+          "endLine": 123
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 108
+      }
+    },
+    {
+      "path": "backend/alembic.ini",
+      "language": "config",
+      "fileCategory": "config",
+      "totalLines": 149,
+      "nonEmptyLines": 123,
+      "metrics": {}
+    },
+    {
+      "path": "backend/pyproject.toml",
+      "language": "toml",
+      "fileCategory": "config",
+      "totalLines": 47,
+      "nonEmptyLines": 44,
+      "sections": [
+        {
+          "heading": "project",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "tool.ruff",
+          "level": 2,
+          "line": 38
+        },
+        {
+          "heading": "tool.ruff.lint",
+          "level": 3,
+          "line": 41
+        },
+        {
+          "heading": "tool.ruff.lint.per-file-ignores",
+          "level": 4,
+          "line": 45
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 4
+      }
+    },
+    {
+      "path": "backend/requirements.txt",
+      "language": "txt",
+      "fileCategory": "docs",
+      "totalLines": 83,
+      "nonEmptyLines": 83,
+      "metrics": {}
+    }
+  ]
+}

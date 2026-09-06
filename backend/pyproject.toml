@@ -1,0 +1,55 @@
+[project]
+name = "app-backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "celery",
+    "sqlalchemy",
+    "asyncpg",
+    "alembic",
+    "redis",
+    "pydantic-settings",
+    "pyjwt",
+    "passlib[argon2]",
+    "python-multipart",
+    "email-validator",
+    "httpx",
+    "aiosmtplib",
+    "pyotp",
+    "boto3",
+    "sentry-sdk[fastapi]",
+    "prometheus-client",
+    "prometheus-fastapi-instrumentator",
+    "opentelemetry-api",
+    "opentelemetry-sdk",
+    "opentelemetry-instrumentation-fastapi",
+    "opentelemetry-instrumentation-sqlalchemy",
+    "opentelemetry-exporter-otlp-proto-http",
+    "opentelemetry-exporter-otlp-proto-grpc",
+    "mem0ai",
+    "langchain-text-splitters",
+    "pypdf",
+    "python-docx",
+    "pgvector",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["B008"]  # FastAPI Depends() in defaults
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*.py" = ["E501"]
+"alembic/env.py" = ["E402"]
+
+[dependency-groups]
+dev = [
+    "honcho>=2.0.0",
+]
+
+[tool.pytest.ini_options]
+faulthandler_timeout = 30

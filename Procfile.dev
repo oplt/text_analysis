@@ -1,0 +1,7 @@
+redis: sh -c 'redis-cli -h 127.0.0.1 -p "${REDIS_PORT:-6380}" ping >/dev/null 2>&1 && echo "Redis already running" && tail -f /dev/null || exec redis-server --bind 127.0.0.1 --port "${REDIS_PORT:-6380}"'
+backend: sh -c 'exec "${PYTHON:-python}" -m uvicorn backend.api.main:app --reload --reload-dir backend --port "${BACKEND_PORT:-8000}"'
+worker: sh -c 'exec "${PYTHON:-python}" -m celery -A backend.workers.celery_app:celery_app worker --loglevel=INFO --queues=default,email --concurrency="${CELERY_CONCURRENCY:-2}"'
+frontend: sh -c 'cd frontend && exec npm run dev -- --port "${FRONTEND_PORT:-5173}"'
+browser: sh -c 'until curl -s "http://localhost:${FRONTEND_PORT:-5173}" >/dev/null 2>&1; do sleep 1; done; xdg-open "http://localhost:${FRONTEND_PORT:-5173}" >/dev/null 2>&1 || true; tail -f /dev/null'
+# llama_cpp: sh -c 'curl -s http://localhost:8081/v1/models >/dev/null 2>&1 && echo "llama.cpp already running, skipping..." && tail -f /dev/null || /home/polat/Desktop/Projects/llama.cpp/build/bin/llama-server -m /home/polat/Desktop/Projects/llama.cpp/models/qwen2.5-14b-instruct-q5_k_m.gguf --host 127.0.0.1 --port 8081 -c 4096 -ngl 99 -fa -b 512 -ub 256 -t 8 --cache-type-k q8_0 --cache-type-v q8_0'
+# ollama: sh -c 'curl -s http://localhost:11434/api/tags >/dev/null 2>&1 && echo "Ollama already running, skipping..." && tail -f /dev/null || ollama serve'

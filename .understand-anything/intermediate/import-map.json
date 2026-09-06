@@ -1,0 +1,1243 @@
+{
+  "scriptCompleted": true,
+  "stats": {
+    "filesScanned": 331,
+    "filesWithImports": 206,
+    "totalEdges": 696
+  },
+  "importMap": {
+    ".understand-anything/.understandignore": [],
+    "adaptation.txt": [],
+    "AGENTS.md": [],
+    "backend/__init__.py": [],
+    "backend/.env.example": [],
+    "backend/alembic.ini": [],
+    "backend/alembic/env.py": [
+      "backend/core/config.py",
+      "backend/db/base.py",
+      "backend/modules/ai/__init__.py",
+      "backend/modules/audit/__init__.py",
+      "backend/modules/calendar/__init__.py",
+      "backend/modules/identity_access/__init__.py",
+      "backend/modules/memory/infrastructure/__init__.py",
+      "backend/modules/notifications/__init__.py",
+      "backend/modules/platform/__init__.py",
+      "backend/modules/profile/__init__.py",
+      "backend/modules/projects/__init__.py",
+      "backend/modules/settings/__init__.py",
+      "backend/modules/users/__init__.py"
+    ],
+    "backend/alembic/README": [],
+    "backend/alembic/script.py.mako": [],
+    "backend/alembic/versions/3f1bfc747f3e_generate_tables.py": [],
+    "backend/alembic/versions/a8c4e2f91b03_add_memory_tables.py": [],
+    "backend/alembic/versions/b7d2a1c94e08_add_rag_tables.py": [],
+    "backend/alembic/versions/c4e8f2a91d03_add_pgvector_embeddings.py": [],
+    "backend/alembic/versions/d6f9a3b82e14_add_ai_chunk_pgvector.py": [],
+    "backend/api/__init__.py": [],
+    "backend/api/deps/__init__.py": [],
+    "backend/api/deps/admin.py": [
+      "backend/api/deps/auth.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/api/deps/auth.py": [
+      "backend/api/deps/db.py",
+      "backend/core/config.py",
+      "backend/core/security.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/identity_access/repository.py"
+    ],
+    "backend/api/deps/db.py": [
+      "backend/db/session.py"
+    ],
+    "backend/api/main.py": [
+      "backend/api/middleware/correlation_id.py",
+      "backend/api/middleware/csrf.py",
+      "backend/api/middleware/public_rate_limit.py",
+      "backend/api/middleware/request_logging.py",
+      "backend/api/middleware/security_headers.py",
+      "backend/api/router.py",
+      "backend/api/v1/health.py",
+      "backend/core/cache.py",
+      "backend/core/config.py",
+      "backend/core/error_handler.py",
+      "backend/core/logging.py",
+      "backend/core/storage.py",
+      "backend/db/session.py",
+      "backend/modules/ai/providers.py",
+      "backend/modules/platform/service.py",
+      "backend/modules/rag/infrastructure/rag_config.py",
+      "backend/observability/__init__.py",
+      "backend/workers/async_dispatch.py"
+    ],
+    "backend/api/middleware/__init__.py": [],
+    "backend/api/middleware/correlation_id.py": [],
+    "backend/api/middleware/csrf.py": [
+      "backend/core/config.py"
+    ],
+    "backend/api/middleware/public_rate_limit.py": [
+      "backend/core/cache.py",
+      "backend/core/config.py"
+    ],
+    "backend/api/middleware/request_logging.py": [],
+    "backend/api/middleware/security_headers.py": [
+      "backend/core/config.py"
+    ],
+    "backend/api/router.py": [
+      "backend/modules/admin/router.py",
+      "backend/modules/ai/agent_router.py",
+      "backend/modules/ai/router.py",
+      "backend/modules/calendar/router.py",
+      "backend/modules/identity_access/router.py",
+      "backend/modules/memory/api/routes.py",
+      "backend/modules/notifications/router.py",
+      "backend/modules/platform/router.py",
+      "backend/modules/profile/router.py",
+      "backend/modules/projects/router.py",
+      "backend/modules/rag/api/routes.py",
+      "backend/modules/settings/router.py",
+      "backend/modules/users/router.py",
+      "backend/observability/router.py"
+    ],
+    "backend/api/v1/__init__.py": [],
+    "backend/api/v1/auth.py": [],
+    "backend/api/v1/health.py": [
+      "backend/core/cache.py",
+      "backend/core/config.py",
+      "backend/db/session.py"
+    ],
+    "backend/api/v1/projects.py": [],
+    "backend/api/v1/router.py": [],
+    "backend/api/v1/users.py": [],
+    "backend/api/v1/workspaces.py": [],
+    "backend/core/__init__.py": [],
+    "backend/core/cache.py": [
+      "backend/core/config.py",
+      "backend/core/logging.py"
+    ],
+    "backend/core/config.py": [],
+    "backend/core/error_handler.py": [
+      "backend/core/logging.py"
+    ],
+    "backend/core/logging.py": [
+      "backend/core/config.py",
+      "backend/core/logging.py"
+    ],
+    "backend/core/pagination.py": [],
+    "backend/core/rate_limit.py": [
+      "backend/core/cache.py"
+    ],
+    "backend/core/schemas.py": [],
+    "backend/core/security.py": [
+      "backend/core/config.py"
+    ],
+    "backend/core/storage.py": [
+      "backend/core/config.py",
+      "backend/core/logging.py"
+    ],
+    "backend/core/text_snippet.py": [],
+    "backend/db/__init__.py": [],
+    "backend/db/base.py": [],
+    "backend/db/session.py": [
+      "backend/core/config.py"
+    ],
+    "backend/modules/__init__.py": [],
+    "backend/modules/admin/__init__.py": [],
+    "backend/modules/admin/router.py": [
+      "backend/api/deps/admin.py",
+      "backend/api/deps/db.py",
+      "backend/modules/admin/schemas.py",
+      "backend/modules/audit/repository.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/identity_access/repository.py",
+      "backend/modules/notifications/models.py"
+    ],
+    "backend/modules/admin/schemas.py": [
+      "backend/core/schemas.py"
+    ],
+    "backend/modules/ai/__init__.py": [],
+    "backend/modules/ai/agent_router.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/modules/ai/application/agent_service.py",
+      "backend/modules/ai/schemas.py",
+      "backend/modules/ai/serializers.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/application/__init__.py": [],
+    "backend/modules/ai/application/agent_service.py": [
+      "backend/modules/ai/application/prompt_context_builder.py",
+      "backend/modules/ai/service.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/memory/application/memory_service.py",
+      "backend/modules/memory/domain/models.py",
+      "backend/modules/memory/infrastructure/memory_config.py"
+    ],
+    "backend/modules/ai/application/prompt_context_builder.py": [
+      "backend/modules/memory/application/memory_service.py",
+      "backend/modules/memory/domain/models.py",
+      "backend/modules/memory/infrastructure/memory_config.py",
+      "backend/modules/rag/application/agent_context_service.py",
+      "backend/modules/rag/application/rag_context_builder.py"
+    ],
+    "backend/modules/ai/application/rag_answer_prompt.py": [
+      "backend/core/config.py",
+      "backend/modules/ai/repository.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/ai/providers.py": [
+      "backend/core/config.py"
+    ],
+    "backend/modules/ai/repository.py": [
+      "backend/core/pagination.py",
+      "backend/modules/ai/models.py"
+    ],
+    "backend/modules/ai/router.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/modules/ai/schemas.py",
+      "backend/modules/ai/serializers.py",
+      "backend/modules/ai/service.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/schemas.py": [
+      "backend/core/schemas.py"
+    ],
+    "backend/modules/ai/serializers.py": [
+      "backend/modules/ai/schemas.py"
+    ],
+    "backend/modules/ai/service.py": [
+      "backend/core/config.py",
+      "backend/core/pagination.py",
+      "backend/modules/ai/application/rag_answer_prompt.py",
+      "backend/modules/ai/models.py",
+      "backend/modules/ai/providers.py",
+      "backend/modules/ai/repository.py",
+      "backend/modules/ai/schemas.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/rag/application/legacy_ai_document_service.py"
+    ],
+    "backend/modules/ai/tests/test_document_consolidation.py": [
+      "backend/modules/ai/service.py",
+      "backend/modules/rag/application/legacy_ai_document_service.py",
+      "backend/modules/rag/domain/enums.py",
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/modules/ai/tests/test_rag_answer_run.py": [
+      "backend/modules/ai/application/rag_answer_prompt.py",
+      "backend/modules/ai/service.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/ai/tests/test_retrieval_consolidation.py": [
+      "backend/modules/ai/application/agent_service.py",
+      "backend/modules/ai/application/prompt_context_builder.py"
+    ],
+    "backend/modules/audit/__init__.py": [],
+    "backend/modules/audit/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/audit/repository.py": [
+      "backend/modules/audit/models.py"
+    ],
+    "backend/modules/calendar/__init__.py": [],
+    "backend/modules/calendar/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/calendar/repository.py": [
+      "backend/modules/calendar/models.py"
+    ],
+    "backend/modules/calendar/router.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/modules/calendar/schemas.py",
+      "backend/modules/calendar/service.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/calendar/schemas.py": [
+      "backend/core/schemas.py",
+      "backend/modules/projects/schemas.py"
+    ],
+    "backend/modules/calendar/service.py": [
+      "backend/modules/calendar/models.py",
+      "backend/modules/calendar/repository.py",
+      "backend/modules/calendar/schemas.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/projects/models.py",
+      "backend/modules/projects/repository.py",
+      "backend/modules/projects/schemas.py",
+      "backend/modules/projects/service.py"
+    ],
+    "backend/modules/identity_access/__init__.py": [],
+    "backend/modules/identity_access/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/identity_access/repository.py": [
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/identity_access/router.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/config.py",
+      "backend/core/rate_limit.py",
+      "backend/core/security.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/identity_access/schemas.py",
+      "backend/modules/identity_access/service.py"
+    ],
+    "backend/modules/identity_access/schemas.py": [
+      "backend/core/schemas.py"
+    ],
+    "backend/modules/identity_access/service.py": [
+      "backend/core/cache.py",
+      "backend/core/config.py",
+      "backend/core/security.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/identity_access/repository.py",
+      "backend/modules/platform/service.py",
+      "backend/workers/email.py"
+    ],
+    "backend/modules/memory/__init__.py": [],
+    "backend/modules/memory/api/routes.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/memory/api/schemas.py",
+      "backend/modules/memory/application/memory_service.py",
+      "backend/modules/memory/domain/models.py",
+      "backend/modules/memory/infrastructure/memory_config.py"
+    ],
+    "backend/modules/memory/api/schemas.py": [
+      "backend/modules/ai/schemas.py"
+    ],
+    "backend/modules/memory/application/__init__.py": [],
+    "backend/modules/memory/application/memory_consolidator.py": [
+      "backend/modules/memory/domain/models.py"
+    ],
+    "backend/modules/memory/application/memory_context_builder.py": [
+      "backend/modules/memory/application/memory_consolidator.py",
+      "backend/modules/memory/domain/enums.py",
+      "backend/modules/memory/domain/models.py",
+      "backend/modules/memory/infrastructure/mem0_client.py",
+      "backend/modules/memory/infrastructure/metrics.py"
+    ],
+    "backend/modules/memory/application/memory_extractor.py": [
+      "backend/modules/memory/application/memory_router.py",
+      "backend/modules/memory/domain/policies.py"
+    ],
+    "backend/modules/memory/application/memory_policy_service.py": [
+      "backend/modules/memory/domain/enums.py"
+    ],
+    "backend/modules/memory/application/memory_router.py": [
+      "backend/modules/memory/domain/enums.py"
+    ],
+    "backend/modules/memory/application/memory_service.py": [
+      "backend/modules/memory/application/memory_consolidator.py",
+      "backend/modules/memory/application/memory_context_builder.py",
+      "backend/modules/memory/application/memory_extractor.py",
+      "backend/modules/memory/application/memory_policy_service.py",
+      "backend/modules/memory/application/memory_router.py",
+      "backend/modules/memory/domain/enums.py",
+      "backend/modules/memory/domain/models.py",
+      "backend/modules/memory/domain/policies.py",
+      "backend/modules/memory/infrastructure/__init__.py",
+      "backend/modules/memory/infrastructure/mem0_client.py",
+      "backend/modules/memory/infrastructure/memory_audit_repository.py",
+      "backend/modules/memory/infrastructure/memory_config.py",
+      "backend/modules/memory/infrastructure/metrics.py",
+      "backend/modules/projects/repository.py"
+    ],
+    "backend/modules/memory/domain/__init__.py": [
+      "backend/modules/memory/domain/enums.py",
+      "backend/modules/memory/domain/models.py"
+    ],
+    "backend/modules/memory/domain/enums.py": [],
+    "backend/modules/memory/domain/models.py": [
+      "backend/modules/memory/domain/enums.py"
+    ],
+    "backend/modules/memory/domain/policies.py": [
+      "backend/modules/memory/domain/enums.py"
+    ],
+    "backend/modules/memory/infrastructure/__init__.py": [],
+    "backend/modules/memory/infrastructure/mem0_client.py": [
+      "backend/modules/memory/domain/enums.py",
+      "backend/modules/memory/domain/models.py",
+      "backend/modules/memory/infrastructure/__init__.py",
+      "backend/modules/memory/infrastructure/memory_config.py",
+      "backend/modules/memory/infrastructure/metrics.py"
+    ],
+    "backend/modules/memory/infrastructure/memory_audit_repository.py": [
+      "backend/core/pagination.py",
+      "backend/modules/memory/domain/enums.py",
+      "backend/modules/memory/infrastructure/models.py"
+    ],
+    "backend/modules/memory/infrastructure/memory_config.py": [
+      "backend/core/config.py"
+    ],
+    "backend/modules/memory/infrastructure/metrics.py": [],
+    "backend/modules/memory/infrastructure/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/memory/README.md": [],
+    "backend/modules/notifications/__init__.py": [],
+    "backend/modules/notifications/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/notifications/repository.py": [
+      "backend/core/pagination.py",
+      "backend/modules/notifications/models.py"
+    ],
+    "backend/modules/notifications/router.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/notifications/repository.py",
+      "backend/modules/notifications/schemas.py"
+    ],
+    "backend/modules/notifications/schemas.py": [
+      "backend/core/schemas.py"
+    ],
+    "backend/modules/platform/__init__.py": [],
+    "backend/modules/platform/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/platform/repository.py": [
+      "backend/core/pagination.py",
+      "backend/modules/platform/models.py"
+    ],
+    "backend/modules/platform/router.py": [
+      "backend/api/deps/admin.py",
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/modules/audit/repository.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/platform/schemas.py",
+      "backend/modules/platform/service.py"
+    ],
+    "backend/modules/platform/schemas.py": [
+      "backend/core/schemas.py"
+    ],
+    "backend/modules/platform/service.py": [
+      "backend/core/cache.py",
+      "backend/core/config.py",
+      "backend/core/pagination.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/platform/models.py",
+      "backend/modules/platform/repository.py",
+      "backend/modules/platform/schemas.py",
+      "backend/modules/settings/repository.py"
+    ],
+    "backend/modules/profile/__init__.py": [],
+    "backend/modules/profile/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/profile/repository.py": [
+      "backend/modules/profile/models.py"
+    ],
+    "backend/modules/profile/router.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/config.py",
+      "backend/core/storage.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/profile/schemas.py",
+      "backend/modules/profile/service.py"
+    ],
+    "backend/modules/profile/schemas.py": [
+      "backend/core/schemas.py"
+    ],
+    "backend/modules/profile/service.py": [
+      "backend/modules/profile/models.py",
+      "backend/modules/profile/repository.py"
+    ],
+    "backend/modules/projects/__init__.py": [],
+    "backend/modules/projects/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/projects/repository.py": [
+      "backend/core/pagination.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/projects/models.py"
+    ],
+    "backend/modules/projects/router.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/projects/models.py",
+      "backend/modules/projects/schemas.py",
+      "backend/modules/projects/service.py"
+    ],
+    "backend/modules/projects/schemas.py": [
+      "backend/core/schemas.py"
+    ],
+    "backend/modules/projects/service.py": [
+      "backend/core/pagination.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/notifications/repository.py",
+      "backend/modules/projects/models.py",
+      "backend/modules/projects/repository.py",
+      "backend/modules/projects/schemas.py",
+      "backend/modules/users/repository.py"
+    ],
+    "backend/modules/rag/__init__.py": [],
+    "backend/modules/rag/api/routes.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/core/text_snippet.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/rag/api/schemas.py",
+      "backend/modules/rag/application/document_ingestion_service.py",
+      "backend/modules/rag/application/rag_answer_service.py",
+      "backend/modules/rag/application/retrieval_service.py",
+      "backend/modules/rag/infrastructure/rag_config.py",
+      "backend/modules/rag/infrastructure/repositories.py",
+      "backend/modules/rag/workers.py"
+    ],
+    "backend/modules/rag/api/schemas.py": [
+      "backend/modules/ai/schemas.py"
+    ],
+    "backend/modules/rag/application/agent_context_service.py": [
+      "backend/modules/rag/application/rag_tool.py",
+      "backend/modules/rag/infrastructure/rag_config.py"
+    ],
+    "backend/modules/rag/application/chunking_service.py": [
+      "backend/modules/rag/domain/models.py",
+      "backend/modules/rag/infrastructure/langchain_text_splitters.py",
+      "backend/modules/rag/infrastructure/rag_config.py"
+    ],
+    "backend/modules/rag/application/citation_service.py": [
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/modules/rag/application/document_ingestion_service.py": [
+      "backend/modules/projects/repository.py",
+      "backend/modules/rag/application/chunking_service.py",
+      "backend/modules/rag/application/document_parser_service.py",
+      "backend/modules/rag/application/embedding_service.py",
+      "backend/modules/rag/application/rag_policy_service.py",
+      "backend/modules/rag/domain/enums.py",
+      "backend/modules/rag/infrastructure/file_storage_adapter.py",
+      "backend/modules/rag/infrastructure/rag_config.py",
+      "backend/modules/rag/infrastructure/repositories.py",
+      "backend/modules/rag/infrastructure/vector_store_adapter.py",
+      "backend/modules/rag/workers.py"
+    ],
+    "backend/modules/rag/application/document_parser_service.py": [
+      "backend/modules/rag/domain/models.py",
+      "backend/modules/rag/infrastructure/langchain_document_loaders.py"
+    ],
+    "backend/modules/rag/application/embedding_service.py": [
+      "backend/modules/rag/infrastructure/langchain_embeddings.py",
+      "backend/modules/rag/infrastructure/rag_config.py"
+    ],
+    "backend/modules/rag/application/legacy_ai_document_service.py": [
+      "backend/core/pagination.py",
+      "backend/modules/rag/application/document_ingestion_service.py",
+      "backend/modules/rag/application/retrieval_service.py",
+      "backend/modules/rag/domain/enums.py",
+      "backend/modules/rag/infrastructure/models.py",
+      "backend/modules/rag/infrastructure/rag_config.py",
+      "backend/modules/rag/infrastructure/repositories.py",
+      "backend/modules/rag/workers.py"
+    ],
+    "backend/modules/rag/application/rag_answer_service.py": [
+      "backend/modules/ai/service.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/memory/application/memory_service.py",
+      "backend/modules/memory/domain/models.py",
+      "backend/modules/memory/infrastructure/memory_config.py",
+      "backend/modules/projects/repository.py",
+      "backend/modules/rag/application/citation_service.py",
+      "backend/modules/rag/application/rag_context_builder.py",
+      "backend/modules/rag/application/retrieval_service.py",
+      "backend/modules/rag/domain/models.py",
+      "backend/modules/rag/infrastructure/rag_config.py",
+      "backend/modules/rag/infrastructure/repositories.py"
+    ],
+    "backend/modules/rag/application/rag_context_builder.py": [
+      "backend/modules/rag/application/citation_service.py",
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/modules/rag/application/rag_policy_service.py": [],
+    "backend/modules/rag/application/rag_tool.py": [
+      "backend/modules/rag/application/rag_context_builder.py",
+      "backend/modules/rag/application/retrieval_service.py",
+      "backend/modules/rag/domain/models.py",
+      "backend/modules/rag/infrastructure/rag_config.py"
+    ],
+    "backend/modules/rag/application/retrieval_service.py": [
+      "backend/modules/rag/application/embedding_service.py",
+      "backend/modules/rag/domain/models.py",
+      "backend/modules/rag/infrastructure/rag_config.py",
+      "backend/modules/rag/infrastructure/vector_store_adapter.py"
+    ],
+    "backend/modules/rag/domain/enums.py": [],
+    "backend/modules/rag/domain/models.py": [
+      "backend/modules/rag/domain/enums.py"
+    ],
+    "backend/modules/rag/domain/value_objects.py": [],
+    "backend/modules/rag/infrastructure/file_storage_adapter.py": [
+      "backend/core/storage.py"
+    ],
+    "backend/modules/rag/infrastructure/langchain_document_loaders.py": [
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/modules/rag/infrastructure/langchain_embeddings.py": [
+      "backend/modules/ai/providers.py",
+      "backend/modules/rag/infrastructure/rag_config.py"
+    ],
+    "backend/modules/rag/infrastructure/langchain_text_splitters.py": [
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/modules/rag/infrastructure/metrics.py": [],
+    "backend/modules/rag/infrastructure/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/rag/infrastructure/pgvector_adapter.py": [
+      "backend/modules/rag/domain/models.py",
+      "backend/modules/rag/infrastructure/rag_config.py",
+      "backend/modules/rag/infrastructure/repositories.py"
+    ],
+    "backend/modules/rag/infrastructure/rag_config.py": [
+      "backend/core/config.py"
+    ],
+    "backend/modules/rag/infrastructure/repositories.py": [
+      "backend/core/config.py",
+      "backend/core/pagination.py",
+      "backend/modules/rag/domain/enums.py",
+      "backend/modules/rag/domain/models.py",
+      "backend/modules/rag/infrastructure/models.py"
+    ],
+    "backend/modules/rag/infrastructure/vector_store_adapter.py": [
+      "backend/modules/rag/infrastructure/pgvector_adapter.py"
+    ],
+    "backend/modules/rag/README.md": [],
+    "backend/modules/rag/tests/__init__.py": [],
+    "backend/modules/rag/tests/test_chunk_listing.py": [],
+    "backend/modules/rag/tests/test_ingestion_policy.py": [
+      "backend/modules/rag/application/document_ingestion_service.py",
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/modules/rag/tests/test_ingestion.py": [
+      "backend/modules/rag/application/chunking_service.py",
+      "backend/modules/rag/application/document_parser_service.py",
+      "backend/modules/rag/domain/enums.py",
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/modules/rag/tests/test_permissions.py": [
+      "backend/modules/rag/application/document_ingestion_service.py"
+    ],
+    "backend/modules/rag/tests/test_rag_answer.py": [
+      "backend/modules/identity_access/models.py",
+      "backend/modules/rag/application/citation_service.py",
+      "backend/modules/rag/application/rag_answer_service.py",
+      "backend/modules/rag/application/rag_context_builder.py",
+      "backend/modules/rag/application/rag_policy_service.py",
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/modules/rag/tests/test_rag_config_validation.py": [
+      "backend/modules/rag/infrastructure/rag_config.py"
+    ],
+    "backend/modules/rag/tests/test_retrieval.py": [
+      "backend/modules/rag/domain/models.py",
+      "backend/modules/rag/infrastructure/pgvector_adapter.py"
+    ],
+    "backend/modules/rag/tests/test_vector_search.py": [],
+    "backend/modules/rag/workers.py": [
+      "backend/core/config.py",
+      "backend/workers/async_dispatch.py"
+    ],
+    "backend/modules/settings/__init__.py": [],
+    "backend/modules/settings/models.py": [
+      "backend/db/base.py"
+    ],
+    "backend/modules/settings/repository.py": [
+      "backend/modules/settings/models.py"
+    ],
+    "backend/modules/settings/router.py": [
+      "backend/api/deps/admin.py",
+      "backend/api/deps/db.py",
+      "backend/modules/audit/repository.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/settings/schemas.py",
+      "backend/modules/settings/service.py"
+    ],
+    "backend/modules/settings/schemas.py": [
+      "backend/core/schemas.py"
+    ],
+    "backend/modules/settings/service.py": [
+      "backend/core/cache.py",
+      "backend/core/config.py",
+      "backend/modules/settings/models.py",
+      "backend/modules/settings/repository.py",
+      "backend/modules/settings/schemas.py"
+    ],
+    "backend/modules/users/__init__.py": [],
+    "backend/modules/users/models.py": [],
+    "backend/modules/users/repository.py": [
+      "backend/core/pagination.py",
+      "backend/modules/identity_access/models.py"
+    ],
+    "backend/modules/users/router.py": [
+      "backend/api/deps/auth.py",
+      "backend/api/deps/db.py",
+      "backend/core/pagination.py",
+      "backend/modules/audit/repository.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/users/schemas.py",
+      "backend/modules/users/service.py"
+    ],
+    "backend/modules/users/schemas.py": [
+      "backend/core/schemas.py"
+    ],
+    "backend/modules/users/service.py": [
+      "backend/core/pagination.py",
+      "backend/core/security.py",
+      "backend/modules/identity_access/models.py",
+      "backend/modules/identity_access/repository.py",
+      "backend/modules/users/repository.py"
+    ],
+    "backend/observability/__init__.py": [
+      "backend/observability/instruments.py",
+      "backend/observability/metrics.py",
+      "backend/observability/setup.py",
+      "backend/observability/tracing.py"
+    ],
+    "backend/observability/config.py": [
+      "backend/core/config.py"
+    ],
+    "backend/observability/instruments.py": [],
+    "backend/observability/metrics.py": [
+      "backend/observability/config.py"
+    ],
+    "backend/observability/otel.py": [
+      "backend/observability/config.py"
+    ],
+    "backend/observability/prometheus_metrics.py": [],
+    "backend/observability/router.py": [
+      "backend/api/deps/auth.py",
+      "backend/core/config.py",
+      "backend/modules/identity_access/models.py",
+      "backend/observability/schemas.py",
+      "backend/observability/service.py"
+    ],
+    "backend/observability/schemas.py": [],
+    "backend/observability/sentry.py": [],
+    "backend/observability/service.py": [
+      "backend/core/cache.py",
+      "backend/core/config.py",
+      "backend/db/session.py",
+      "backend/modules/identity_access/models.py",
+      "backend/observability/schemas.py"
+    ],
+    "backend/observability/setup.py": [
+      "backend/core/config.py",
+      "backend/observability/otel.py",
+      "backend/observability/sentry.py"
+    ],
+    "backend/observability/tracing.py": [],
+    "backend/pyproject.toml": [],
+    "backend/requirements.txt": [],
+    "backend/tests/__init__.py": [],
+    "backend/tests/integration_support.py": [
+      "backend/core/config.py"
+    ],
+    "backend/tests/test_agent_run_smoke.py": [
+      "backend/tests/integration_support.py"
+    ],
+    "backend/tests/test_ai_provider_http_clients.py": [
+      "backend/modules/ai/providers.py"
+    ],
+    "backend/tests/test_ai_repository.py": [
+      "backend/modules/ai/repository.py"
+    ],
+    "backend/tests/test_api_auth.py": [
+      "backend/tests/integration_support.py"
+    ],
+    "backend/tests/test_async_dispatch.py": [
+      "backend/workers/async_dispatch.py"
+    ],
+    "backend/tests/test_cache.py": [
+      "backend/core/cache.py"
+    ],
+    "backend/tests/test_evaluation_concurrency.py": [
+      "backend/modules/ai/service.py"
+    ],
+    "backend/tests/test_memory_ranking.py": [
+      "backend/modules/memory/application/memory_context_builder.py",
+      "backend/modules/memory/domain/enums.py",
+      "backend/modules/memory/domain/models.py",
+      "backend/modules/rag/application/rag_context_builder.py",
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/tests/test_memory_search_cache.py": [
+      "backend/core/storage.py",
+      "backend/modules/memory/domain/enums.py",
+      "backend/modules/memory/domain/models.py"
+    ],
+    "backend/tests/test_memory.py": [
+      "backend/modules/memory/application/memory_consolidator.py",
+      "backend/modules/memory/application/memory_context_builder.py",
+      "backend/modules/memory/application/memory_extractor.py",
+      "backend/modules/memory/application/memory_router.py",
+      "backend/modules/memory/application/memory_service.py",
+      "backend/modules/memory/domain/enums.py",
+      "backend/modules/memory/domain/models.py",
+      "backend/modules/memory/domain/policies.py",
+      "backend/modules/memory/infrastructure/mem0_client.py",
+      "backend/modules/memory/infrastructure/memory_config.py"
+    ],
+    "backend/tests/test_observability.py": [
+      "backend/observability/schemas.py",
+      "backend/observability/service.py"
+    ],
+    "backend/tests/test_pagination.py": [
+      "backend/core/pagination.py"
+    ],
+    "backend/tests/test_platform_cache.py": [
+      "backend/core/cache.py",
+      "backend/modules/platform/schemas.py",
+      "backend/modules/platform/service.py"
+    ],
+    "backend/tests/test_rag_permissions_integration.py": [
+      "backend/tests/integration_support.py"
+    ],
+    "backend/tests/test_retrieval_cache.py": [
+      "backend/modules/rag/domain/models.py"
+    ],
+    "backend/tests/test_runtime_observability.py": [],
+    "backend/tests/test_settings_observability_cache.py": [
+      "backend/core/cache.py",
+      "backend/modules/settings/schemas.py",
+      "backend/modules/settings/service.py"
+    ],
+    "backend/tests/test_text_snippet.py": [
+      "backend/core/text_snippet.py"
+    ],
+    "backend/tests/test_vector_search.py": [],
+    "backend/workers/__init__.py": [
+      "backend/workers/celery_app.py"
+    ],
+    "backend/workers/async_dispatch.py": [
+      "backend/core/config.py"
+    ],
+    "backend/workers/celery_app.py": [
+      "backend/core/config.py"
+    ],
+    "backend/workers/email.py": [
+      "backend/core/config.py"
+    ],
+    "backend/workers/rag_indexing.py": [
+      "backend/modules/rag/workers.py"
+    ],
+    "backend/workers/tasks.py": [
+      "backend/workers/celery_app.py",
+      "backend/workers/email.py",
+      "backend/workers/rag_indexing.py"
+    ],
+    "DESIGN.md": [],
+    "docs/adr/0001-modular-monolith.md": [],
+    "docs/adr/0002-celery-redis-async-jobs.md": [],
+    "docs/adr/0003-module-dependency-graph.md": [],
+    "docs/performance-audit.md": [],
+    "frontend/.env.example": [],
+    "frontend/e2e/auth-rag.spec.ts": [],
+    "frontend/eslint.config.js": [],
+    "frontend/index.html": [],
+    "frontend/package.json": [],
+    "frontend/playwright.config.ts": [],
+    "frontend/README.md": [],
+    "frontend/src/api/admin.ts": [
+      "frontend/src/api/client.ts"
+    ],
+    "frontend/src/api/ai.ts": [
+      "frontend/src/api/client.ts"
+    ],
+    "frontend/src/api/auth.ts": [
+      "frontend/src/api/client.ts"
+    ],
+    "frontend/src/api/calendar.ts": [
+      "frontend/src/api/client.ts",
+      "frontend/src/api/projects.ts"
+    ],
+    "frontend/src/api/client.ts": [],
+    "frontend/src/api/notifications.ts": [
+      "frontend/src/api/client.ts"
+    ],
+    "frontend/src/api/platform.ts": [
+      "frontend/src/api/client.ts"
+    ],
+    "frontend/src/api/profile.ts": [
+      "frontend/src/api/client.ts"
+    ],
+    "frontend/src/api/projects.ts": [
+      "frontend/src/api/client.ts"
+    ],
+    "frontend/src/api/settings.ts": [
+      "frontend/src/api/client.ts"
+    ],
+    "frontend/src/api/users.ts": [
+      "frontend/src/api/client.ts"
+    ],
+    "frontend/src/App.css": [],
+    "frontend/src/app/colorModeContext.ts": [
+      "frontend/src/app/theme.ts"
+    ],
+    "frontend/src/app/designTokens.ts": [],
+    "frontend/src/app/providers.tsx": [
+      "frontend/src/app/colorModeContext.ts",
+      "frontend/src/app/SnackbarProvider.tsx",
+      "frontend/src/app/theme.ts",
+      "frontend/src/config/queryClient.ts",
+      "frontend/src/features/auth/context/AuthContext.tsx"
+    ],
+    "frontend/src/app/router.tsx": [
+      "frontend/src/components/guards/ProtectedRoute.tsx",
+      "frontend/src/hooks/useAuth.ts",
+      "frontend/src/pages/AuthHomePage.tsx"
+    ],
+    "frontend/src/app/snackbarContext.ts": [],
+    "frontend/src/app/SnackbarProvider.tsx": [
+      "frontend/src/app/snackbarContext.ts"
+    ],
+    "frontend/src/app/theme.ts": [
+      "frontend/src/app/designTokens.ts"
+    ],
+    "frontend/src/components/auth/AuthMarketingPanel.tsx": [],
+    "frontend/src/components/auth/AuthShell.tsx": [
+      "frontend/src/app/designTokens.ts"
+    ],
+    "frontend/src/components/dashboard/DashboardCalendar.tsx": [
+      "frontend/src/api/calendar.ts",
+      "frontend/src/api/projects.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/components/guards/ProtectedRoute.test.tsx": [
+      "frontend/src/components/guards/ProtectedRoute.tsx"
+    ],
+    "frontend/src/components/guards/ProtectedRoute.tsx": [],
+    "frontend/src/components/layout/AdminSettingsTabs.tsx": [],
+    "frontend/src/components/layout/AppLayout.tsx": [
+      "frontend/src/app/colorModeContext.ts",
+      "frontend/src/app/designTokens.ts",
+      "frontend/src/hooks/useAuth.ts",
+      "frontend/src/hooks/useNotifications.ts",
+      "frontend/src/hooks/usePlatformMetadata.ts",
+      "frontend/src/hooks/useUserProfile.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/components/notifications/NotificationListItem.tsx": [
+      "frontend/src/api/notifications.ts",
+      "frontend/src/app/designTokens.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/components/ui/EmptyState.tsx": [],
+    "frontend/src/components/ui/PageHeader.tsx": [],
+    "frontend/src/components/ui/PageShell.tsx": [],
+    "frontend/src/components/ui/QueryBoundary.test.tsx": [
+      "frontend/src/components/ui/QueryBoundary.tsx"
+    ],
+    "frontend/src/components/ui/QueryBoundary.tsx": [
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/components/ui/SectionCard.tsx": [
+      "frontend/src/app/designTokens.ts"
+    ],
+    "frontend/src/components/ui/StatCard.tsx": [
+      "frontend/src/app/designTokens.ts"
+    ],
+    "frontend/src/config/queryClient.ts": [
+      "frontend/src/config/queryTiming.ts"
+    ],
+    "frontend/src/config/queryKeys.test.ts": [
+      "frontend/src/config/queryKeys.ts"
+    ],
+    "frontend/src/config/queryKeys.ts": [],
+    "frontend/src/config/queryTiming.ts": [],
+    "frontend/src/features/auth/context/authContext.ts": [
+      "frontend/src/api/auth.ts"
+    ],
+    "frontend/src/features/auth/context/AuthContext.tsx": [
+      "frontend/src/api/auth.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts",
+      "frontend/src/features/auth/context/authContext.ts"
+    ],
+    "frontend/src/features/auth/schemas.ts": [],
+    "frontend/src/features/observability/api.ts": [
+      "frontend/src/api/client.ts",
+      "frontend/src/features/observability/types.ts"
+    ],
+    "frontend/src/features/observability/components/HealthStatusCard.tsx": [
+      "frontend/src/features/observability/types.ts"
+    ],
+    "frontend/src/features/observability/components/ObservabilityShortcutCard.tsx": [],
+    "frontend/src/features/observability/types.ts": [],
+    "frontend/src/features/observability/urlBuilders.test.ts": [
+      "frontend/src/features/observability/urlBuilders.ts"
+    ],
+    "frontend/src/features/observability/urlBuilders.ts": [
+      "frontend/src/features/observability/types.ts"
+    ],
+    "frontend/src/hooks/useAuth.ts": [],
+    "frontend/src/hooks/useCurrentUser.ts": [
+      "frontend/src/api/users.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts"
+    ],
+    "frontend/src/hooks/useDebounce.ts": [],
+    "frontend/src/hooks/useMutationErrorToast.ts": [
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/utils/queryErrors.ts"
+    ],
+    "frontend/src/hooks/useNotificationPreferences.ts": [
+      "frontend/src/api/notifications.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts"
+    ],
+    "frontend/src/hooks/useNotifications.test.tsx": [
+      "frontend/src/api/notifications.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/hooks/useNotifications.ts"
+    ],
+    "frontend/src/hooks/useNotifications.ts": [
+      "frontend/src/api/notifications.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts"
+    ],
+    "frontend/src/hooks/usePlatformMetadata.ts": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts"
+    ],
+    "frontend/src/hooks/useUserProfile.ts": [
+      "frontend/src/api/profile.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts"
+    ],
+    "frontend/src/hooks/useUserSessions.ts": [
+      "frontend/src/api/users.ts",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts"
+    ],
+    "frontend/src/index.css": [],
+    "frontend/src/main.tsx": [
+      "frontend/src/app/providers.tsx",
+      "frontend/src/app/router.tsx",
+      "frontend/src/index.css"
+    ],
+    "frontend/src/pages/AdminPlatformPage.tsx": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/hooks/useMutationErrorToast.ts"
+    ],
+    "frontend/src/pages/AdminSettingsPage.tsx": [
+      "frontend/src/api/settings.ts",
+      "frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/hooks/useMutationErrorToast.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/pages/AdminUsersPage.tsx": [
+      "frontend/src/api/admin.ts",
+      "frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/hooks/useDebounce.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/pages/AiStudioPage.tsx": [
+      "frontend/src/api/ai.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/config/queryTiming.ts",
+      "frontend/src/hooks/useMutationErrorToast.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/pages/AuthHomePage.tsx": [
+      "frontend/src/api/auth.ts",
+      "frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "frontend/src/components/auth/AuthShell.tsx",
+      "frontend/src/features/auth/schemas.ts",
+      "frontend/src/hooks/useAuth.ts",
+      "frontend/src/hooks/usePlatformMetadata.ts"
+    ],
+    "frontend/src/pages/CalendarPage.tsx": [
+      "frontend/src/api/projects.ts",
+      "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/hooks/usePlatformMetadata.ts"
+    ],
+    "frontend/src/pages/DashboardPage.tsx": [
+      "frontend/src/api/projects.ts",
+      "frontend/src/app/designTokens.ts",
+      "frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "frontend/src/components/notifications/NotificationListItem.tsx",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/hooks/useAuth.ts",
+      "frontend/src/hooks/useNotifications.ts",
+      "frontend/src/hooks/usePlatformMetadata.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/pages/NotificationsPage.tsx": [
+      "frontend/src/api/notifications.ts",
+      "frontend/src/components/notifications/NotificationListItem.tsx",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/hooks/useMutationErrorToast.ts",
+      "frontend/src/hooks/useNotificationPreferences.ts",
+      "frontend/src/hooks/useNotifications.ts"
+    ],
+    "frontend/src/pages/ObservabilityPage.test.tsx": [
+      "frontend/src/features/observability/api.ts",
+      "frontend/src/hooks/useAuth.ts",
+      "frontend/src/pages/ObservabilityPage.tsx"
+    ],
+    "frontend/src/pages/ObservabilityPage.tsx": [
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/features/observability/api.ts",
+      "frontend/src/features/observability/components/HealthStatusCard.tsx",
+      "frontend/src/features/observability/components/ObservabilityShortcutCard.tsx",
+      "frontend/src/features/observability/types.ts",
+      "frontend/src/features/observability/urlBuilders.ts",
+      "frontend/src/hooks/useAuth.ts"
+    ],
+    "frontend/src/pages/PlatformPage.tsx": [
+      "frontend/src/api/platform.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/hooks/useMutationErrorToast.ts",
+      "frontend/src/hooks/usePlatformMetadata.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/pages/ProfilePage.tsx": [
+      "frontend/src/api/auth.ts",
+      "frontend/src/api/profile.ts",
+      "frontend/src/api/users.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/QueryBoundary.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/hooks/useCurrentUser.ts",
+      "frontend/src/hooks/useMutationErrorToast.ts",
+      "frontend/src/hooks/useUserProfile.ts",
+      "frontend/src/hooks/useUserSessions.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/pages/ProjectDetailPage.tsx": [
+      "frontend/src/api/projects.ts",
+      "frontend/src/api/users.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/components/ui/StatCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/pages/ProjectsPage.tsx": [
+      "frontend/src/api/projects.ts",
+      "frontend/src/app/snackbarContext.ts",
+      "frontend/src/components/ui/EmptyState.tsx",
+      "frontend/src/components/ui/PageHeader.tsx",
+      "frontend/src/components/ui/PageShell.tsx",
+      "frontend/src/components/ui/SectionCard.tsx",
+      "frontend/src/config/queryKeys.ts",
+      "frontend/src/hooks/usePlatformMetadata.ts",
+      "frontend/src/utils/formatters.ts"
+    ],
+    "frontend/src/pages/ResetPasswordPage.tsx": [
+      "frontend/src/api/auth.ts",
+      "frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "frontend/src/components/auth/AuthShell.tsx",
+      "frontend/src/hooks/usePlatformMetadata.ts"
+    ],
+    "frontend/src/pages/VerifyEmailPage.tsx": [
+      "frontend/src/api/auth.ts",
+      "frontend/src/components/auth/AuthMarketingPanel.tsx",
+      "frontend/src/components/auth/AuthShell.tsx",
+      "frontend/src/hooks/usePlatformMetadata.ts"
+    ],
+    "frontend/src/test/setup.ts": [],
+    "frontend/src/types/qrcode.d.ts": [],
+    "frontend/src/utils/formatters.ts": [],
+    "frontend/src/utils/queryErrors.ts": [],
+    "frontend/tsconfig.app.json": [],
+    "frontend/tsconfig.json": [],
+    "frontend/tsconfig.node.json": [],
+    "frontend/tsconfig.tsbuildinfo": [],
+    "frontend/vite.config.d.ts": [],
+    "frontend/vite.config.js": [],
+    "frontend/vite.config.ts": [],
+    "frontend/vitest.config.ts": [],
+    "infra/.env.example": [],
+    "infra/docker-compose.yml": [],
+    "infra/nginx/frontend.conf.example": [],
+    "Makefile": [],
+    "Makefile.local": [],
+    "observability/grafana/dashboards/fastapi-overview.json": [],
+    "observability/grafana/provisioning/dashboards/dashboards.yml": [],
+    "observability/grafana/provisioning/datasources/datasources.yml": [],
+    "observability/prometheus/prometheus.yml": [],
+    "observability/README.md": [],
+    "observability/tempo/tempo.yml": [],
+    "Procfile.dev": [],
+    "README.md": []
+  }
+}

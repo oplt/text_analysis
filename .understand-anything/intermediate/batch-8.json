@@ -1,0 +1,2095 @@
+{
+  "nodes": [
+    {
+      "id": "file:frontend/src/config/queryKeys.ts",
+      "type": "file",
+      "name": "queryKeys.ts",
+      "filePath": "frontend/src/config/queryKeys.ts",
+      "summary": "Frontend code: queryKeys.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/config/queryKeys.ts:invalidateUserIdentity",
+      "type": "function",
+      "name": "invalidateUserIdentity",
+      "filePath": "frontend/src/config/queryKeys.ts",
+      "summary": "Function invalidateUserIdentity in frontend/src/config/queryKeys.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/config/queryKeys.ts:invalidateAiOverview",
+      "type": "function",
+      "name": "invalidateAiOverview",
+      "filePath": "frontend/src/config/queryKeys.ts",
+      "summary": "Function invalidateAiOverview in frontend/src/config/queryKeys.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/config/queryTiming.ts",
+      "type": "file",
+      "name": "queryTiming.ts",
+      "filePath": "frontend/src/config/queryTiming.ts",
+      "summary": "Frontend code: queryTiming.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "file:frontend/src/hooks/useCurrentUser.ts",
+      "type": "file",
+      "name": "useCurrentUser.ts",
+      "filePath": "frontend/src/hooks/useCurrentUser.ts",
+      "summary": "Frontend code: useCurrentUser.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/hooks/useCurrentUser.ts:useCurrentUser",
+      "type": "function",
+      "name": "useCurrentUser",
+      "filePath": "frontend/src/hooks/useCurrentUser.ts",
+      "summary": "Function useCurrentUser in frontend/src/hooks/useCurrentUser.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/hooks/useDebounce.ts",
+      "type": "file",
+      "name": "useDebounce.ts",
+      "filePath": "frontend/src/hooks/useDebounce.ts",
+      "summary": "Frontend code: useDebounce.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/hooks/useDebounce.ts:useDebounce",
+      "type": "function",
+      "name": "useDebounce",
+      "filePath": "frontend/src/hooks/useDebounce.ts",
+      "summary": "Function useDebounce in frontend/src/hooks/useDebounce.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/hooks/useMutationErrorToast.ts",
+      "type": "file",
+      "name": "useMutationErrorToast.ts",
+      "filePath": "frontend/src/hooks/useMutationErrorToast.ts",
+      "summary": "Frontend code: useMutationErrorToast.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/hooks/useMutationErrorToast.ts:useMutationErrorToast",
+      "type": "function",
+      "name": "useMutationErrorToast",
+      "filePath": "frontend/src/hooks/useMutationErrorToast.ts",
+      "summary": "Function useMutationErrorToast in frontend/src/hooks/useMutationErrorToast.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/hooks/useNotificationPreferences.ts",
+      "type": "file",
+      "name": "useNotificationPreferences.ts",
+      "filePath": "frontend/src/hooks/useNotificationPreferences.ts",
+      "summary": "Frontend code: useNotificationPreferences.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/hooks/useNotificationPreferences.ts:useNotificationPreferences",
+      "type": "function",
+      "name": "useNotificationPreferences",
+      "filePath": "frontend/src/hooks/useNotificationPreferences.ts",
+      "summary": "Function useNotificationPreferences in frontend/src/hooks/useNotificationPreferences.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/hooks/useNotifications.test.tsx",
+      "type": "file",
+      "name": "useNotifications.test.tsx",
+      "filePath": "frontend/src/hooks/useNotifications.test.tsx",
+      "summary": "Frontend code: useNotifications.test.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "test",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/hooks/useNotifications.test.tsx:createWrapper",
+      "type": "function",
+      "name": "createWrapper",
+      "filePath": "frontend/src/hooks/useNotifications.test.tsx",
+      "summary": "Function createWrapper in frontend/src/hooks/useNotifications.test.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/hooks/useNotifications.ts",
+      "type": "file",
+      "name": "useNotifications.ts",
+      "filePath": "frontend/src/hooks/useNotifications.ts",
+      "summary": "Frontend code: useNotifications.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/hooks/useNotifications.ts:useNotifications",
+      "type": "function",
+      "name": "useNotifications",
+      "filePath": "frontend/src/hooks/useNotifications.ts",
+      "summary": "Function useNotifications in frontend/src/hooks/useNotifications.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "type": "file",
+      "name": "usePlatformMetadata.ts",
+      "filePath": "frontend/src/hooks/usePlatformMetadata.ts",
+      "summary": "Frontend code: usePlatformMetadata.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/hooks/usePlatformMetadata.ts:usePlatformMetadata",
+      "type": "function",
+      "name": "usePlatformMetadata",
+      "filePath": "frontend/src/hooks/usePlatformMetadata.ts",
+      "summary": "Function usePlatformMetadata in frontend/src/hooks/usePlatformMetadata.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/hooks/useUserProfile.ts",
+      "type": "file",
+      "name": "useUserProfile.ts",
+      "filePath": "frontend/src/hooks/useUserProfile.ts",
+      "summary": "Frontend code: useUserProfile.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/hooks/useUserProfile.ts:useUserProfile",
+      "type": "function",
+      "name": "useUserProfile",
+      "filePath": "frontend/src/hooks/useUserProfile.ts",
+      "summary": "Function useUserProfile in frontend/src/hooks/useUserProfile.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/hooks/useUserSessions.ts",
+      "type": "file",
+      "name": "useUserSessions.ts",
+      "filePath": "frontend/src/hooks/useUserSessions.ts",
+      "summary": "Frontend code: useUserSessions.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/hooks/useUserSessions.ts:useUserSessions",
+      "type": "function",
+      "name": "useUserSessions",
+      "filePath": "frontend/src/hooks/useUserSessions.ts",
+      "summary": "Function useUserSessions in frontend/src/hooks/useUserSessions.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "type": "file",
+      "name": "AdminPlatformPage.tsx",
+      "filePath": "frontend/src/pages/AdminPlatformPage.tsx",
+      "summary": "Frontend code: AdminPlatformPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminPlatformPage.tsx:buildConfigDraft",
+      "type": "function",
+      "name": "buildConfigDraft",
+      "filePath": "frontend/src/pages/AdminPlatformPage.tsx",
+      "summary": "Function buildConfigDraft in frontend/src/pages/AdminPlatformPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminPlatformPage.tsx:buildPlanDrafts",
+      "type": "function",
+      "name": "buildPlanDrafts",
+      "filePath": "frontend/src/pages/AdminPlatformPage.tsx",
+      "summary": "Function buildPlanDrafts in frontend/src/pages/AdminPlatformPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminPlatformPage.tsx:buildFlagDrafts",
+      "type": "function",
+      "name": "buildFlagDrafts",
+      "filePath": "frontend/src/pages/AdminPlatformPage.tsx",
+      "summary": "Function buildFlagDrafts in frontend/src/pages/AdminPlatformPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminPlatformPage.tsx:buildTemplateDrafts",
+      "type": "function",
+      "name": "buildTemplateDrafts",
+      "filePath": "frontend/src/pages/AdminPlatformPage.tsx",
+      "summary": "Function buildTemplateDrafts in frontend/src/pages/AdminPlatformPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminPlatformPage.tsx:AdminPlatformContent",
+      "type": "function",
+      "name": "AdminPlatformContent",
+      "filePath": "frontend/src/pages/AdminPlatformPage.tsx",
+      "summary": "Function AdminPlatformContent in frontend/src/pages/AdminPlatformPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminPlatformPage.tsx:AdminPlatformPage",
+      "type": "function",
+      "name": "AdminPlatformPage",
+      "filePath": "frontend/src/pages/AdminPlatformPage.tsx",
+      "summary": "Function AdminPlatformPage in frontend/src/pages/AdminPlatformPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "type": "file",
+      "name": "AdminSettingsPage.tsx",
+      "filePath": "frontend/src/pages/AdminSettingsPage.tsx",
+      "summary": "Frontend code: AdminSettingsPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminSettingsPage.tsx:getConfigGroupId",
+      "type": "function",
+      "name": "getConfigGroupId",
+      "filePath": "frontend/src/pages/AdminSettingsPage.tsx",
+      "summary": "Function getConfigGroupId in frontend/src/pages/AdminSettingsPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminSettingsPage.tsx:buildConfigGroups",
+      "type": "function",
+      "name": "buildConfigGroups",
+      "filePath": "frontend/src/pages/AdminSettingsPage.tsx",
+      "summary": "Function buildConfigGroups in frontend/src/pages/AdminSettingsPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminSettingsPage.tsx:ConfigEntryEditor",
+      "type": "function",
+      "name": "ConfigEntryEditor",
+      "filePath": "frontend/src/pages/AdminSettingsPage.tsx",
+      "summary": "Function ConfigEntryEditor in frontend/src/pages/AdminSettingsPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminSettingsPage.tsx:DatabaseSettingEditor",
+      "type": "function",
+      "name": "DatabaseSettingEditor",
+      "filePath": "frontend/src/pages/AdminSettingsPage.tsx",
+      "summary": "Function DatabaseSettingEditor in frontend/src/pages/AdminSettingsPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminSettingsPage.tsx:AdminSettingsContent",
+      "type": "function",
+      "name": "AdminSettingsContent",
+      "filePath": "frontend/src/pages/AdminSettingsPage.tsx",
+      "summary": "Function AdminSettingsContent in frontend/src/pages/AdminSettingsPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminSettingsPage.tsx:AdminSettingsPage",
+      "type": "function",
+      "name": "AdminSettingsPage",
+      "filePath": "frontend/src/pages/AdminSettingsPage.tsx",
+      "summary": "Function AdminSettingsPage in frontend/src/pages/AdminSettingsPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/AdminUsersPage.tsx",
+      "type": "file",
+      "name": "AdminUsersPage.tsx",
+      "filePath": "frontend/src/pages/AdminUsersPage.tsx",
+      "summary": "Frontend code: AdminUsersPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/AdminUsersPage.tsx:AdminUsersPage",
+      "type": "function",
+      "name": "AdminUsersPage",
+      "filePath": "frontend/src/pages/AdminUsersPage.tsx",
+      "summary": "Function AdminUsersPage in frontend/src/pages/AdminUsersPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/AiStudioPage.tsx",
+      "type": "file",
+      "name": "AiStudioPage.tsx",
+      "filePath": "frontend/src/pages/AiStudioPage.tsx",
+      "summary": "Frontend code: AiStudioPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/AiStudioPage.tsx:parseJsonObject",
+      "type": "function",
+      "name": "parseJsonObject",
+      "filePath": "frontend/src/pages/AiStudioPage.tsx",
+      "summary": "Function parseJsonObject in frontend/src/pages/AiStudioPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AiStudioPage.tsx:formatCostMicros",
+      "type": "function",
+      "name": "formatCostMicros",
+      "filePath": "frontend/src/pages/AiStudioPage.tsx",
+      "summary": "Function formatCostMicros in frontend/src/pages/AiStudioPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/AiStudioPage.tsx:AiStudioPage",
+      "type": "function",
+      "name": "AiStudioPage",
+      "filePath": "frontend/src/pages/AiStudioPage.tsx",
+      "summary": "Function AiStudioPage in frontend/src/pages/AiStudioPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/CalendarPage.tsx",
+      "type": "file",
+      "name": "CalendarPage.tsx",
+      "filePath": "frontend/src/pages/CalendarPage.tsx",
+      "summary": "Frontend code: CalendarPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/CalendarPage.tsx:CalendarPage",
+      "type": "function",
+      "name": "CalendarPage",
+      "filePath": "frontend/src/pages/CalendarPage.tsx",
+      "summary": "Function CalendarPage in frontend/src/pages/CalendarPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/pages/DashboardPage.tsx",
+      "type": "file",
+      "name": "DashboardPage.tsx",
+      "filePath": "frontend/src/pages/DashboardPage.tsx",
+      "summary": "Frontend code: DashboardPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/DashboardPage.tsx:DashboardPage",
+      "type": "function",
+      "name": "DashboardPage",
+      "filePath": "frontend/src/pages/DashboardPage.tsx",
+      "summary": "Function DashboardPage in frontend/src/pages/DashboardPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/NotificationsPage.tsx",
+      "type": "file",
+      "name": "NotificationsPage.tsx",
+      "filePath": "frontend/src/pages/NotificationsPage.tsx",
+      "summary": "Frontend code: NotificationsPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/NotificationsPage.tsx:PreferenceItem",
+      "type": "function",
+      "name": "PreferenceItem",
+      "filePath": "frontend/src/pages/NotificationsPage.tsx",
+      "summary": "Function PreferenceItem in frontend/src/pages/NotificationsPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/NotificationsPage.tsx:NotificationsPage",
+      "type": "function",
+      "name": "NotificationsPage",
+      "filePath": "frontend/src/pages/NotificationsPage.tsx",
+      "summary": "Function NotificationsPage in frontend/src/pages/NotificationsPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/PlatformPage.tsx",
+      "type": "file",
+      "name": "PlatformPage.tsx",
+      "filePath": "frontend/src/pages/PlatformPage.tsx",
+      "summary": "Frontend code: PlatformPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/PlatformPage.tsx:PlatformPage",
+      "type": "function",
+      "name": "PlatformPage",
+      "filePath": "frontend/src/pages/PlatformPage.tsx",
+      "summary": "Function PlatformPage in frontend/src/pages/PlatformPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/ProfilePage.tsx",
+      "type": "file",
+      "name": "ProfilePage.tsx",
+      "filePath": "frontend/src/pages/ProfilePage.tsx",
+      "summary": "Frontend code: ProfilePage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/ProfilePage.tsx:MfaQrCode",
+      "type": "function",
+      "name": "MfaQrCode",
+      "filePath": "frontend/src/pages/ProfilePage.tsx",
+      "summary": "Function MfaQrCode in frontend/src/pages/ProfilePage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ProfilePage.tsx:ProfilePage",
+      "type": "function",
+      "name": "ProfilePage",
+      "filePath": "frontend/src/pages/ProfilePage.tsx",
+      "summary": "Function ProfilePage in frontend/src/pages/ProfilePage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "type": "file",
+      "name": "ProjectDetailPage.tsx",
+      "filePath": "frontend/src/pages/ProjectDetailPage.tsx",
+      "summary": "Frontend code: ProjectDetailPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "complex",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/ProjectDetailPage.tsx:sortTasks",
+      "type": "function",
+      "name": "sortTasks",
+      "filePath": "frontend/src/pages/ProjectDetailPage.tsx",
+      "summary": "Function sortTasks in frontend/src/pages/ProjectDetailPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ProjectDetailPage.tsx:taskToDraft",
+      "type": "function",
+      "name": "taskToDraft",
+      "filePath": "frontend/src/pages/ProjectDetailPage.tsx",
+      "summary": "Function taskToDraft in frontend/src/pages/ProjectDetailPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ProjectDetailPage.tsx:TaskMetaChips",
+      "type": "function",
+      "name": "TaskMetaChips",
+      "filePath": "frontend/src/pages/ProjectDetailPage.tsx",
+      "summary": "Function TaskMetaChips in frontend/src/pages/ProjectDetailPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ProjectDetailPage.tsx:TaskBoardCard",
+      "type": "function",
+      "name": "TaskBoardCard",
+      "filePath": "frontend/src/pages/ProjectDetailPage.tsx",
+      "summary": "Function TaskBoardCard in frontend/src/pages/ProjectDetailPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ProjectDetailPage.tsx:TaskListCard",
+      "type": "function",
+      "name": "TaskListCard",
+      "filePath": "frontend/src/pages/ProjectDetailPage.tsx",
+      "summary": "Function TaskListCard in frontend/src/pages/ProjectDetailPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/pages/ProjectDetailPage.tsx:ProjectDetailPage",
+      "type": "function",
+      "name": "ProjectDetailPage",
+      "filePath": "frontend/src/pages/ProjectDetailPage.tsx",
+      "summary": "Function ProjectDetailPage in frontend/src/pages/ProjectDetailPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/pages/ProjectsPage.tsx",
+      "type": "file",
+      "name": "ProjectsPage.tsx",
+      "filePath": "frontend/src/pages/ProjectsPage.tsx",
+      "summary": "Frontend code: ProjectsPage.tsx",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "moderate",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/pages/ProjectsPage.tsx:ProjectsPage",
+      "type": "function",
+      "name": "ProjectsPage",
+      "filePath": "frontend/src/pages/ProjectsPage.tsx",
+      "summary": "Function ProjectsPage in frontend/src/pages/ProjectsPage.tsx",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "file:frontend/src/utils/formatters.ts",
+      "type": "file",
+      "name": "formatters.ts",
+      "filePath": "frontend/src/utils/formatters.ts",
+      "summary": "Frontend code: formatters.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/utils/formatters.ts:formatCurrency",
+      "type": "function",
+      "name": "formatCurrency",
+      "filePath": "frontend/src/utils/formatters.ts",
+      "summary": "Function formatCurrency in frontend/src/utils/formatters.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/utils/formatters.ts:formatDate",
+      "type": "function",
+      "name": "formatDate",
+      "filePath": "frontend/src/utils/formatters.ts",
+      "summary": "Function formatDate in frontend/src/utils/formatters.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/utils/formatters.ts:formatDateOnly",
+      "type": "function",
+      "name": "formatDateOnly",
+      "filePath": "frontend/src/utils/formatters.ts",
+      "summary": "Function formatDateOnly in frontend/src/utils/formatters.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/utils/formatters.ts:formatDateTime",
+      "type": "function",
+      "name": "formatDateTime",
+      "filePath": "frontend/src/utils/formatters.ts",
+      "summary": "Function formatDateTime in frontend/src/utils/formatters.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/utils/formatters.ts:getInitials",
+      "type": "function",
+      "name": "getInitials",
+      "filePath": "frontend/src/utils/formatters.ts",
+      "summary": "Function getInitials in frontend/src/utils/formatters.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/utils/formatters.ts:getFirstName",
+      "type": "function",
+      "name": "getFirstName",
+      "filePath": "frontend/src/utils/formatters.ts",
+      "summary": "Function getFirstName in frontend/src/utils/formatters.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:frontend/src/utils/formatters.ts:humanizeKey",
+      "type": "function",
+      "name": "humanizeKey",
+      "filePath": "frontend/src/utils/formatters.ts",
+      "summary": "Function humanizeKey in frontend/src/utils/formatters.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:frontend/src/utils/queryErrors.ts",
+      "type": "file",
+      "name": "queryErrors.ts",
+      "filePath": "frontend/src/utils/queryErrors.ts",
+      "summary": "Frontend code: queryErrors.ts",
+      "tags": [
+        "code",
+        "typescript",
+        "frontend"
+      ],
+      "complexity": "simple",
+      "language": "typescript",
+      "layerHint": "frontend"
+    },
+    {
+      "id": "function:frontend/src/utils/queryErrors.ts:getQueryErrorMessage",
+      "type": "function",
+      "name": "getQueryErrorMessage",
+      "filePath": "frontend/src/utils/queryErrors.ts",
+      "summary": "Function getQueryErrorMessage in frontend/src/utils/queryErrors.ts",
+      "tags": [
+        "function",
+        "typescript"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:frontend/src/config/queryKeys.ts",
+      "target": "function:frontend/src/config/queryKeys.ts:invalidateUserIdentity",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/config/queryKeys.ts",
+      "target": "function:frontend/src/config/queryKeys.ts:invalidateAiOverview",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/hooks/useCurrentUser.ts",
+      "target": "file:frontend/src/api/users.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useCurrentUser.ts",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useCurrentUser.ts",
+      "target": "file:frontend/src/config/queryTiming.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useCurrentUser.ts",
+      "target": "function:frontend/src/hooks/useCurrentUser.ts:useCurrentUser",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/hooks/useDebounce.ts",
+      "target": "function:frontend/src/hooks/useDebounce.ts:useDebounce",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/hooks/useMutationErrorToast.ts",
+      "target": "file:frontend/src/app/snackbarContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useMutationErrorToast.ts",
+      "target": "file:frontend/src/utils/queryErrors.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useMutationErrorToast.ts",
+      "target": "function:frontend/src/hooks/useMutationErrorToast.ts:useMutationErrorToast",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotificationPreferences.ts",
+      "target": "file:frontend/src/api/notifications.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotificationPreferences.ts",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotificationPreferences.ts",
+      "target": "file:frontend/src/config/queryTiming.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotificationPreferences.ts",
+      "target": "function:frontend/src/hooks/useNotificationPreferences.ts:useNotificationPreferences",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotifications.test.tsx",
+      "target": "file:frontend/src/api/notifications.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotifications.test.tsx",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotifications.test.tsx",
+      "target": "file:frontend/src/hooks/useNotifications.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotifications.test.tsx",
+      "target": "function:frontend/src/hooks/useNotifications.test.tsx:createWrapper",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotifications.ts",
+      "target": "file:frontend/src/api/notifications.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotifications.ts",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotifications.ts",
+      "target": "file:frontend/src/config/queryTiming.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useNotifications.ts",
+      "target": "function:frontend/src/hooks/useNotifications.ts:useNotifications",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "target": "file:frontend/src/api/platform.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "target": "file:frontend/src/config/queryTiming.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "target": "function:frontend/src/hooks/usePlatformMetadata.ts:usePlatformMetadata",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/hooks/useUserProfile.ts",
+      "target": "file:frontend/src/api/profile.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useUserProfile.ts",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useUserProfile.ts",
+      "target": "file:frontend/src/config/queryTiming.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useUserProfile.ts",
+      "target": "function:frontend/src/hooks/useUserProfile.ts:useUserProfile",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/hooks/useUserSessions.ts",
+      "target": "file:frontend/src/api/users.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useUserSessions.ts",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useUserSessions.ts",
+      "target": "file:frontend/src/config/queryTiming.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/hooks/useUserSessions.ts",
+      "target": "function:frontend/src/hooks/useUserSessions.ts:useUserSessions",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "file:frontend/src/api/platform.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "file:frontend/src/app/snackbarContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "file:frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "file:frontend/src/components/ui/StatCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "file:frontend/src/hooks/useMutationErrorToast.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "function:frontend/src/pages/AdminPlatformPage.tsx:buildConfigDraft",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "function:frontend/src/pages/AdminPlatformPage.tsx:buildPlanDrafts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "function:frontend/src/pages/AdminPlatformPage.tsx:buildFlagDrafts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "function:frontend/src/pages/AdminPlatformPage.tsx:buildTemplateDrafts",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "function:frontend/src/pages/AdminPlatformPage.tsx:AdminPlatformContent",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminPlatformPage.tsx",
+      "target": "function:frontend/src/pages/AdminPlatformPage.tsx:AdminPlatformPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "file:frontend/src/api/settings.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "file:frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "file:frontend/src/components/ui/StatCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "file:frontend/src/hooks/useMutationErrorToast.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "file:frontend/src/utils/formatters.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "function:frontend/src/pages/AdminSettingsPage.tsx:getConfigGroupId",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "function:frontend/src/pages/AdminSettingsPage.tsx:buildConfigGroups",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "function:frontend/src/pages/AdminSettingsPage.tsx:ConfigEntryEditor",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "function:frontend/src/pages/AdminSettingsPage.tsx:DatabaseSettingEditor",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "function:frontend/src/pages/AdminSettingsPage.tsx:AdminSettingsContent",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminSettingsPage.tsx",
+      "target": "function:frontend/src/pages/AdminSettingsPage.tsx:AdminSettingsPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AdminUsersPage.tsx",
+      "target": "file:frontend/src/api/admin.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminUsersPage.tsx",
+      "target": "file:frontend/src/components/layout/AdminSettingsTabs.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminUsersPage.tsx",
+      "target": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminUsersPage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminUsersPage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminUsersPage.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminUsersPage.tsx",
+      "target": "file:frontend/src/components/ui/StatCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminUsersPage.tsx",
+      "target": "file:frontend/src/hooks/useDebounce.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminUsersPage.tsx",
+      "target": "file:frontend/src/utils/formatters.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AdminUsersPage.tsx",
+      "target": "function:frontend/src/pages/AdminUsersPage.tsx:AdminUsersPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/api/ai.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/app/snackbarContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/components/ui/StatCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/config/queryTiming.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/hooks/useMutationErrorToast.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "file:frontend/src/utils/formatters.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "function:frontend/src/pages/AiStudioPage.tsx:parseJsonObject",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "function:frontend/src/pages/AiStudioPage.tsx:formatCostMicros",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/AiStudioPage.tsx",
+      "target": "function:frontend/src/pages/AiStudioPage.tsx:AiStudioPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/CalendarPage.tsx",
+      "target": "file:frontend/src/api/projects.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/CalendarPage.tsx",
+      "target": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/CalendarPage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/CalendarPage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/CalendarPage.tsx",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/CalendarPage.tsx",
+      "target": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/CalendarPage.tsx",
+      "target": "function:frontend/src/pages/CalendarPage.tsx:CalendarPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/api/projects.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/app/designTokens.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/components/dashboard/DashboardCalendar.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/components/notifications/NotificationListItem.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/components/ui/StatCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/hooks/useAuth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/hooks/useNotifications.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "file:frontend/src/utils/formatters.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/DashboardPage.tsx",
+      "target": "function:frontend/src/pages/DashboardPage.tsx:DashboardPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/api/notifications.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/components/notifications/NotificationListItem.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/components/ui/StatCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/hooks/useMutationErrorToast.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/hooks/useNotificationPreferences.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "file:frontend/src/hooks/useNotifications.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "function:frontend/src/pages/NotificationsPage.tsx:PreferenceItem",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/NotificationsPage.tsx",
+      "target": "function:frontend/src/pages/NotificationsPage.tsx:NotificationsPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "file:frontend/src/api/platform.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "file:frontend/src/app/snackbarContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "file:frontend/src/components/ui/StatCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "file:frontend/src/hooks/useMutationErrorToast.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "file:frontend/src/utils/formatters.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/PlatformPage.tsx",
+      "target": "function:frontend/src/pages/PlatformPage.tsx:PlatformPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/api/auth.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/api/profile.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/api/users.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/app/snackbarContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/components/ui/QueryBoundary.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/hooks/useCurrentUser.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/hooks/useMutationErrorToast.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/hooks/useUserProfile.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/hooks/useUserSessions.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "file:frontend/src/utils/formatters.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "function:frontend/src/pages/ProfilePage.tsx:MfaQrCode",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ProfilePage.tsx",
+      "target": "function:frontend/src/pages/ProfilePage.tsx:ProfilePage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "file:frontend/src/api/projects.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "file:frontend/src/api/users.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "file:frontend/src/app/snackbarContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "file:frontend/src/components/ui/StatCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "file:frontend/src/utils/formatters.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "function:frontend/src/pages/ProjectDetailPage.tsx:sortTasks",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "function:frontend/src/pages/ProjectDetailPage.tsx:taskToDraft",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "function:frontend/src/pages/ProjectDetailPage.tsx:TaskMetaChips",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "function:frontend/src/pages/ProjectDetailPage.tsx:TaskBoardCard",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "function:frontend/src/pages/ProjectDetailPage.tsx:TaskListCard",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectDetailPage.tsx",
+      "target": "function:frontend/src/pages/ProjectDetailPage.tsx:ProjectDetailPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectsPage.tsx",
+      "target": "file:frontend/src/api/projects.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectsPage.tsx",
+      "target": "file:frontend/src/app/snackbarContext.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectsPage.tsx",
+      "target": "file:frontend/src/components/ui/EmptyState.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectsPage.tsx",
+      "target": "file:frontend/src/components/ui/PageHeader.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectsPage.tsx",
+      "target": "file:frontend/src/components/ui/PageShell.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectsPage.tsx",
+      "target": "file:frontend/src/components/ui/SectionCard.tsx",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectsPage.tsx",
+      "target": "file:frontend/src/config/queryKeys.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectsPage.tsx",
+      "target": "file:frontend/src/hooks/usePlatformMetadata.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectsPage.tsx",
+      "target": "file:frontend/src/utils/formatters.ts",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:frontend/src/pages/ProjectsPage.tsx",
+      "target": "function:frontend/src/pages/ProjectsPage.tsx:ProjectsPage",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/utils/formatters.ts",
+      "target": "function:frontend/src/utils/formatters.ts:formatCurrency",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/utils/formatters.ts",
+      "target": "function:frontend/src/utils/formatters.ts:formatDate",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/utils/formatters.ts",
+      "target": "function:frontend/src/utils/formatters.ts:formatDateOnly",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/utils/formatters.ts",
+      "target": "function:frontend/src/utils/formatters.ts:formatDateTime",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/utils/formatters.ts",
+      "target": "function:frontend/src/utils/formatters.ts:getInitials",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/utils/formatters.ts",
+      "target": "function:frontend/src/utils/formatters.ts:getFirstName",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/utils/formatters.ts",
+      "target": "function:frontend/src/utils/formatters.ts:humanizeKey",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:frontend/src/utils/queryErrors.ts",
+      "target": "function:frontend/src/utils/queryErrors.ts:getQueryErrorMessage",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

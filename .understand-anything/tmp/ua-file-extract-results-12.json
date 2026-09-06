@@ -1,0 +1,249 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 3,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "backend/modules/profile/models.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 26,
+      "nonEmptyLines": 21,
+      "classes": [
+        {
+          "name": "UserProfile",
+          "startLine": 10,
+          "endLine": 26,
+          "methods": [],
+          "properties": [
+            "id",
+            "user_id",
+            "bio",
+            "avatar_url",
+            "avatar_storage_key",
+            "location",
+            "website",
+            "updated_at"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "UserProfile",
+          "line": 10,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/profile/repository.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 30,
+      "nonEmptyLines": 24,
+      "classes": [
+        {
+          "name": "ProfileRepository",
+          "startLine": 7,
+          "endLine": 30,
+          "methods": [
+            "__init__",
+            "get_by_user_id",
+            "get_or_create",
+            "update"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ProfileRepository",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "get_by_user_id",
+          "callee": "self.db.execute",
+          "lineNumber": 12
+        },
+        {
+          "caller": "get_by_user_id",
+          "callee": "select(UserProfile).where",
+          "lineNumber": 13
+        },
+        {
+          "caller": "get_by_user_id",
+          "callee": "select",
+          "lineNumber": 13
+        },
+        {
+          "caller": "get_by_user_id",
+          "callee": "result.scalar_one_or_none",
+          "lineNumber": 15
+        },
+        {
+          "caller": "get_or_create",
+          "callee": "self.get_by_user_id",
+          "lineNumber": 18
+        },
+        {
+          "caller": "get_or_create",
+          "callee": "UserProfile",
+          "lineNumber": 20
+        },
+        {
+          "caller": "get_or_create",
+          "callee": "self.db.add",
+          "lineNumber": 21
+        },
+        {
+          "caller": "get_or_create",
+          "callee": "self.db.flush",
+          "lineNumber": 22
+        },
+        {
+          "caller": "update",
+          "callee": "kwargs.items",
+          "lineNumber": 26
+        },
+        {
+          "caller": "update",
+          "callee": "setattr",
+          "lineNumber": 28
+        },
+        {
+          "caller": "update",
+          "callee": "self.db.flush",
+          "lineNumber": 29
+        }
+      ],
+      "metrics": {
+        "importCount": 1,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "backend/modules/profile/service.py",
+      "language": "python",
+      "fileCategory": "code",
+      "totalLines": 58,
+      "nonEmptyLines": 50,
+      "classes": [
+        {
+          "name": "ProfileService",
+          "startLine": 7,
+          "endLine": 58,
+          "methods": [
+            "__init__",
+            "get_profile",
+            "update_profile",
+            "set_avatar_url",
+            "replace_avatar",
+            "clear_avatar"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ProfileService",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "__init__",
+          "callee": "ProfileRepository",
+          "lineNumber": 10
+        },
+        {
+          "caller": "get_profile",
+          "callee": "self.repo.get_or_create",
+          "lineNumber": 13
+        },
+        {
+          "caller": "update_profile",
+          "callee": "self.repo.get_or_create",
+          "lineNumber": 22
+        },
+        {
+          "caller": "update_profile",
+          "callee": "self.repo.update",
+          "lineNumber": 23
+        },
+        {
+          "caller": "update_profile",
+          "callee": "self.db.commit",
+          "lineNumber": 24
+        },
+        {
+          "caller": "update_profile",
+          "callee": "self.db.refresh",
+          "lineNumber": 25
+        },
+        {
+          "caller": "set_avatar_url",
+          "callee": "self.repo.get_or_create",
+          "lineNumber": 29
+        },
+        {
+          "caller": "set_avatar_url",
+          "callee": "self.db.commit",
+          "lineNumber": 33
+        },
+        {
+          "caller": "set_avatar_url",
+          "callee": "self.db.refresh",
+          "lineNumber": 34
+        },
+        {
+          "caller": "replace_avatar",
+          "callee": "self.repo.get_or_create",
+          "lineNumber": 43
+        },
+        {
+          "caller": "replace_avatar",
+          "callee": "self.db.commit",
+          "lineNumber": 47
+        },
+        {
+          "caller": "replace_avatar",
+          "callee": "self.db.refresh",
+          "lineNumber": 48
+        },
+        {
+          "caller": "clear_avatar",
+          "callee": "self.repo.get_or_create",
+          "lineNumber": 52
+        },
+        {
+          "caller": "clear_avatar",
+          "callee": "self.db.commit",
+          "lineNumber": 56
+        },
+        {
+          "caller": "clear_avatar",
+          "callee": "self.db.refresh",
+          "lineNumber": 57
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 0,
+        "classCount": 1
+      }
+    }
+  ]
+}

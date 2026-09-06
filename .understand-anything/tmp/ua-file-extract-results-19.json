@@ -1,0 +1,432 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 12,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "frontend/vitest.config.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 17,
+      "nonEmptyLines": 16,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "infra/.env.example",
+      "language": "config",
+      "fileCategory": "config",
+      "totalLines": 5,
+      "nonEmptyLines": 5,
+      "definitions": [
+        {
+          "name": "POSTGRES_USER",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 1,
+          "endLine": 1
+        },
+        {
+          "name": "POSTGRES_PASSWORD",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 2,
+          "endLine": 2
+        },
+        {
+          "name": "POSTGRES_DB",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 3,
+          "endLine": 3
+        },
+        {
+          "name": "MINIO_ROOT_USER",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 4,
+          "endLine": 4
+        },
+        {
+          "name": "MINIO_ROOT_PASSWORD",
+          "kind": "variable",
+          "fields": [],
+          "startLine": 5,
+          "endLine": 5
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "definitionCount": 5
+      }
+    },
+    {
+      "path": "infra/docker-compose.yml",
+      "language": "yaml",
+      "fileCategory": "infra",
+      "totalLines": 49,
+      "nonEmptyLines": 44,
+      "sections": [
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "services",
+          "level": 1,
+          "line": 3
+        },
+        {
+          "heading": "volumes",
+          "level": 1,
+          "line": 47
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 3
+      }
+    },
+    {
+      "path": "infra/nginx/frontend.conf.example",
+      "language": "example",
+      "fileCategory": "code",
+      "totalLines": 21,
+      "nonEmptyLines": 18,
+      "metrics": {}
+    },
+    {
+      "path": "Makefile.local",
+      "language": "local",
+      "fileCategory": "code",
+      "totalLines": 283,
+      "nonEmptyLines": 254,
+      "metrics": {}
+    },
+    {
+      "path": "observability/grafana/dashboards/fastapi-overview.json",
+      "language": "json",
+      "fileCategory": "config",
+      "totalLines": 434,
+      "nonEmptyLines": 434,
+      "sections": [
+        {
+          "heading": "annotations",
+          "level": 1,
+          "line": 2
+        },
+        {
+          "heading": "editable",
+          "level": 1,
+          "line": 18
+        },
+        {
+          "heading": "fiscalYearStartMonth",
+          "level": 1,
+          "line": 19
+        },
+        {
+          "heading": "graphTooltip",
+          "level": 1,
+          "line": 20
+        },
+        {
+          "heading": "id",
+          "level": 1,
+          "line": 21
+        },
+        {
+          "heading": "links",
+          "level": 1,
+          "line": 22
+        },
+        {
+          "heading": "liveNow",
+          "level": 1,
+          "line": 23
+        },
+        {
+          "heading": "panels",
+          "level": 1,
+          "line": 24
+        },
+        {
+          "heading": "refresh",
+          "level": 1,
+          "line": 415
+        },
+        {
+          "heading": "schemaVersion",
+          "level": 1,
+          "line": 416
+        },
+        {
+          "heading": "tags",
+          "level": 1,
+          "line": 417
+        },
+        {
+          "heading": "templating",
+          "level": 1,
+          "line": 421
+        },
+        {
+          "heading": "time",
+          "level": 1,
+          "line": 424
+        },
+        {
+          "heading": "timepicker",
+          "level": 1,
+          "line": 428
+        },
+        {
+          "heading": "timezone",
+          "level": 1,
+          "line": 429
+        },
+        {
+          "heading": "title",
+          "level": 1,
+          "line": 62
+        },
+        {
+          "heading": "uid",
+          "level": 1,
+          "line": 8
+        },
+        {
+          "heading": "version",
+          "level": 1,
+          "line": 432
+        },
+        {
+          "heading": "weekStart",
+          "level": 1,
+          "line": 433
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 19
+      }
+    },
+    {
+      "path": "observability/grafana/provisioning/dashboards/dashboards.yml",
+      "language": "yaml",
+      "fileCategory": "config",
+      "totalLines": 12,
+      "nonEmptyLines": 11,
+      "sections": [
+        {
+          "heading": "apiVersion",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "providers",
+          "level": 1,
+          "line": 3
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    },
+    {
+      "path": "observability/grafana/provisioning/datasources/datasources.yml",
+      "language": "yaml",
+      "fileCategory": "config",
+      "totalLines": 22,
+      "nonEmptyLines": 20,
+      "sections": [
+        {
+          "heading": "apiVersion",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "datasources",
+          "level": 1,
+          "line": 3
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    },
+    {
+      "path": "observability/prometheus/prometheus.yml",
+      "language": "yaml",
+      "fileCategory": "config",
+      "totalLines": 8,
+      "nonEmptyLines": 7,
+      "sections": [
+        {
+          "heading": "global",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "scrape_configs",
+          "level": 1,
+          "line": 4
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 2
+      }
+    },
+    {
+      "path": "observability/README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 180,
+      "nonEmptyLines": 129,
+      "sections": [
+        {
+          "heading": "Local Observability",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "Services",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "Required Binaries",
+          "level": 2,
+          "line": 15
+        },
+        {
+          "heading": "Start Everything",
+          "level": 2,
+          "line": 40
+        },
+        {
+          "heading": "Observability-Only Commands",
+          "level": 2,
+          "line": 55
+        },
+        {
+          "heading": "Verify Metrics",
+          "level": 2,
+          "line": 65
+        },
+        {
+          "heading": "Verify Traces",
+          "level": 2,
+          "line": 87
+        },
+        {
+          "heading": "Backend OpenTelemetry Defaults",
+          "level": 2,
+          "line": 95
+        },
+        {
+          "heading": "Observability Hub",
+          "level": 2,
+          "line": 108
+        },
+        {
+          "heading": "Hub Environment Variables",
+          "level": 2,
+          "line": 133
+        },
+        {
+          "heading": "Grafana Dashboard Variables",
+          "level": 2,
+          "line": 153
+        },
+        {
+          "heading": "Access Expectations",
+          "level": 2,
+          "line": 170
+        },
+        {
+          "heading": "Troubleshooting Missing Configuration",
+          "level": 2,
+          "line": 177
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 13
+      }
+    },
+    {
+      "path": "observability/tempo/tempo.yml",
+      "language": "yaml",
+      "fileCategory": "config",
+      "totalLines": 23,
+      "nonEmptyLines": 20,
+      "sections": [
+        {
+          "heading": "server",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "distributor",
+          "level": 1,
+          "line": 4
+        },
+        {
+          "heading": "storage",
+          "level": 1,
+          "line": 13
+        },
+        {
+          "heading": "compactor",
+          "level": 1,
+          "line": 21
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 4
+      }
+    },
+    {
+      "path": "Procfile.dev",
+      "language": "dev",
+      "fileCategory": "code",
+      "totalLines": 7,
+      "nonEmptyLines": 7,
+      "metrics": {}
+    }
+  ]
+}

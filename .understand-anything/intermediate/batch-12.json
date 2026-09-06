@@ -1,0 +1,321 @@
+{
+  "nodes": [
+    {
+      "id": "file:backend/modules/profile/models.py",
+      "type": "file",
+      "name": "models.py",
+      "filePath": "backend/modules/profile/models.py",
+      "summary": "profile module file: models.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "domain"
+    },
+    {
+      "id": "class:backend/modules/profile/models.py:UserProfile",
+      "type": "class",
+      "name": "UserProfile",
+      "filePath": "backend/modules/profile/models.py",
+      "summary": "Class UserProfile in backend/modules/profile/models.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/profile/repository.py",
+      "type": "file",
+      "name": "repository.py",
+      "filePath": "backend/modules/profile/repository.py",
+      "summary": "profile module file: repository.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "repository"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "other"
+    },
+    {
+      "id": "class:backend/modules/profile/repository.py:ProfileRepository",
+      "type": "class",
+      "name": "ProfileRepository",
+      "filePath": "backend/modules/profile/repository.py",
+      "summary": "Class ProfileRepository in backend/modules/profile/repository.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/repository.py:ProfileRepository.__init__",
+      "type": "function",
+      "name": "ProfileRepository.__init__",
+      "filePath": "backend/modules/profile/repository.py",
+      "summary": "Method __init__ on ProfileRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/repository.py:ProfileRepository.get_by_user_id",
+      "type": "function",
+      "name": "ProfileRepository.get_by_user_id",
+      "filePath": "backend/modules/profile/repository.py",
+      "summary": "Method get_by_user_id on ProfileRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/repository.py:ProfileRepository.get_or_create",
+      "type": "function",
+      "name": "ProfileRepository.get_or_create",
+      "filePath": "backend/modules/profile/repository.py",
+      "summary": "Method get_or_create on ProfileRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/repository.py:ProfileRepository.update",
+      "type": "function",
+      "name": "ProfileRepository.update",
+      "filePath": "backend/modules/profile/repository.py",
+      "summary": "Method update on ProfileRepository",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "file:backend/modules/profile/service.py",
+      "type": "file",
+      "name": "service.py",
+      "filePath": "backend/modules/profile/service.py",
+      "summary": "profile module file: service.py",
+      "tags": [
+        "code",
+        "python",
+        "backend-module",
+        "service"
+      ],
+      "complexity": "simple",
+      "language": "python",
+      "layerHint": "application"
+    },
+    {
+      "id": "class:backend/modules/profile/service.py:ProfileService",
+      "type": "class",
+      "name": "ProfileService",
+      "filePath": "backend/modules/profile/service.py",
+      "summary": "Class ProfileService in backend/modules/profile/service.py",
+      "tags": [
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/service.py:ProfileService.__init__",
+      "type": "function",
+      "name": "ProfileService.__init__",
+      "filePath": "backend/modules/profile/service.py",
+      "summary": "Method __init__ on ProfileService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/service.py:ProfileService.get_profile",
+      "type": "function",
+      "name": "ProfileService.get_profile",
+      "filePath": "backend/modules/profile/service.py",
+      "summary": "Method get_profile on ProfileService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/service.py:ProfileService.update_profile",
+      "type": "function",
+      "name": "ProfileService.update_profile",
+      "filePath": "backend/modules/profile/service.py",
+      "summary": "Method update_profile on ProfileService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/service.py:ProfileService.set_avatar_url",
+      "type": "function",
+      "name": "ProfileService.set_avatar_url",
+      "filePath": "backend/modules/profile/service.py",
+      "summary": "Method set_avatar_url on ProfileService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/service.py:ProfileService.replace_avatar",
+      "type": "function",
+      "name": "ProfileService.replace_avatar",
+      "filePath": "backend/modules/profile/service.py",
+      "summary": "Method replace_avatar on ProfileService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "function:backend/modules/profile/service.py:ProfileService.clear_avatar",
+      "type": "function",
+      "name": "ProfileService.clear_avatar",
+      "filePath": "backend/modules/profile/service.py",
+      "summary": "Method clear_avatar on ProfileService",
+      "tags": [
+        "method",
+        "class",
+        "python"
+      ],
+      "complexity": "moderate"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:backend/modules/profile/models.py",
+      "target": "file:backend/db/base.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/models.py",
+      "target": "class:backend/modules/profile/models.py:UserProfile",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/profile/repository.py",
+      "target": "file:backend/modules/profile/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/repository.py",
+      "target": "class:backend/modules/profile/repository.py:ProfileRepository",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/profile/repository.py:ProfileRepository",
+      "target": "function:backend/modules/profile/repository.py:ProfileRepository.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/profile/repository.py:ProfileRepository",
+      "target": "function:backend/modules/profile/repository.py:ProfileRepository.get_by_user_id",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/profile/repository.py:ProfileRepository",
+      "target": "function:backend/modules/profile/repository.py:ProfileRepository.get_or_create",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/profile/repository.py:ProfileRepository",
+      "target": "function:backend/modules/profile/repository.py:ProfileRepository.update",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "file:backend/modules/profile/service.py",
+      "target": "file:backend/modules/profile/models.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/service.py",
+      "target": "file:backend/modules/profile/repository.py",
+      "type": "imports",
+      "weight": 0.7
+    },
+    {
+      "source": "file:backend/modules/profile/service.py",
+      "target": "class:backend/modules/profile/service.py:ProfileService",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/profile/service.py:ProfileService",
+      "target": "function:backend/modules/profile/service.py:ProfileService.__init__",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/profile/service.py:ProfileService",
+      "target": "function:backend/modules/profile/service.py:ProfileService.get_profile",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/profile/service.py:ProfileService",
+      "target": "function:backend/modules/profile/service.py:ProfileService.update_profile",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/profile/service.py:ProfileService",
+      "target": "function:backend/modules/profile/service.py:ProfileService.set_avatar_url",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/profile/service.py:ProfileService",
+      "target": "function:backend/modules/profile/service.py:ProfileService.replace_avatar",
+      "type": "contains",
+      "weight": 1
+    },
+    {
+      "source": "class:backend/modules/profile/service.py:ProfileService",
+      "target": "function:backend/modules/profile/service.py:ProfileService.clear_avatar",
+      "type": "contains",
+      "weight": 1
+    }
+  ]
+}

@@ -1,0 +1,5687 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 24,
+  "filesSkipped": [],
+  "results": [
+    {
+      "path": "frontend/src/config/queryKeys.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 47,
+      "nonEmptyLines": 44,
+      "functions": [
+        {
+          "name": "invalidateUserIdentity",
+          "startLine": 38,
+          "endLine": 43,
+          "params": [
+            "queryClient"
+          ]
+        },
+        {
+          "name": "invalidateAiOverview",
+          "startLine": 45,
+          "endLine": 47,
+          "params": [
+            "queryClient"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "queryKeys",
+          "line": 3,
+          "isDefault": false
+        },
+        {
+          "name": "invalidateUserIdentity",
+          "line": 38,
+          "isDefault": false
+        },
+        {
+          "name": "invalidateAiOverview",
+          "line": 45,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "invalidateUserIdentity",
+          "callee": "Promise.all",
+          "lineNumber": 39
+        },
+        {
+          "caller": "invalidateUserIdentity",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 40
+        },
+        {
+          "caller": "invalidateUserIdentity",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 41
+        },
+        {
+          "caller": "invalidateAiOverview",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 46
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/config/queryTiming.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 16,
+      "nonEmptyLines": 15,
+      "exports": [
+        {
+          "name": "QUERY_STALE_TIMES",
+          "line": 1,
+          "isDefault": false
+        },
+        {
+          "name": "NOTIFICATIONS_REFETCH_INTERVAL_MS",
+          "line": 15,
+          "isDefault": false
+        },
+        {
+          "name": "QUERY_GC_TIME_MS",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 3,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/hooks/useCurrentUser.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 16,
+      "nonEmptyLines": 13,
+      "functions": [
+        {
+          "name": "useCurrentUser",
+          "startLine": 9,
+          "endLine": 16,
+          "params": [
+            "options"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useCurrentUser",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useCurrentUser",
+          "callee": "useQuery",
+          "lineNumber": 10
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/hooks/useDebounce.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 10,
+      "nonEmptyLines": 9,
+      "functions": [
+        {
+          "name": "useDebounce",
+          "startLine": 3,
+          "endLine": 10,
+          "params": [
+            "value",
+            "delay"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useDebounce",
+          "line": 3,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useDebounce",
+          "callee": "useState",
+          "lineNumber": 4
+        },
+        {
+          "caller": "useDebounce",
+          "callee": "useEffect",
+          "lineNumber": 5
+        },
+        {
+          "caller": "useDebounce",
+          "callee": "setTimeout",
+          "lineNumber": 6
+        },
+        {
+          "caller": "useDebounce",
+          "callee": "setDebounced",
+          "lineNumber": 6
+        },
+        {
+          "caller": "useDebounce",
+          "callee": "clearTimeout",
+          "lineNumber": 7
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/hooks/useMutationErrorToast.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 18,
+      "nonEmptyLines": 15,
+      "functions": [
+        {
+          "name": "useMutationErrorToast",
+          "startLine": 6,
+          "endLine": 18,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "useMutationErrorToast",
+          "line": 6,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useMutationErrorToast",
+          "callee": "useSnackbar",
+          "lineNumber": 7
+        },
+        {
+          "caller": "useMutationErrorToast",
+          "callee": "useCallback",
+          "lineNumber": 9
+        },
+        {
+          "caller": "useMutationErrorToast",
+          "callee": "showToast",
+          "lineNumber": 11
+        },
+        {
+          "caller": "useMutationErrorToast",
+          "callee": "getQueryErrorMessage",
+          "lineNumber": 12
+        }
+      ],
+      "metrics": {
+        "importCount": 2,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/hooks/useNotificationPreferences.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 16,
+      "nonEmptyLines": 13,
+      "functions": [
+        {
+          "name": "useNotificationPreferences",
+          "startLine": 9,
+          "endLine": 16,
+          "params": [
+            "options"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useNotificationPreferences",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useNotificationPreferences",
+          "callee": "useQuery",
+          "lineNumber": 10
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/hooks/useNotifications.test.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 66,
+      "nonEmptyLines": 56,
+      "functions": [
+        {
+          "name": "createWrapper",
+          "startLine": 13,
+          "endLine": 25,
+          "params": []
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 0,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/hooks/useNotifications.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 23,
+      "nonEmptyLines": 20,
+      "functions": [
+        {
+          "name": "useNotifications",
+          "startLine": 15,
+          "endLine": 23,
+          "params": [
+            "options"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useNotifications",
+          "line": 15,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useNotifications",
+          "callee": "useQuery",
+          "lineNumber": 16
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/hooks/usePlatformMetadata.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 13,
+      "nonEmptyLines": 11,
+      "functions": [
+        {
+          "name": "usePlatformMetadata",
+          "startLine": 7,
+          "endLine": 13,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "usePlatformMetadata",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "usePlatformMetadata",
+          "callee": "useQuery",
+          "lineNumber": 8
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/hooks/useUserProfile.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 16,
+      "nonEmptyLines": 13,
+      "functions": [
+        {
+          "name": "useUserProfile",
+          "startLine": 9,
+          "endLine": 16,
+          "params": [
+            "options"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useUserProfile",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useUserProfile",
+          "callee": "useQuery",
+          "lineNumber": 10
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/hooks/useUserSessions.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 16,
+      "nonEmptyLines": 13,
+      "functions": [
+        {
+          "name": "useUserSessions",
+          "startLine": 9,
+          "endLine": 16,
+          "params": [
+            "options"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "useUserSessions",
+          "line": 9,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "useUserSessions",
+          "callee": "useQuery",
+          "lineNumber": 10
+        }
+      ],
+      "metrics": {
+        "importCount": 3,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/AdminPlatformPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 1212,
+      "nonEmptyLines": 1183,
+      "functions": [
+        {
+          "name": "buildConfigDraft",
+          "startLine": 74,
+          "endLine": 83,
+          "params": [
+            "configData"
+          ]
+        },
+        {
+          "name": "buildPlanDrafts",
+          "startLine": 85,
+          "endLine": 100,
+          "params": [
+            "plans"
+          ]
+        },
+        {
+          "name": "buildFlagDrafts",
+          "startLine": 102,
+          "endLine": 115,
+          "params": [
+            "flags"
+          ]
+        },
+        {
+          "name": "buildTemplateDrafts",
+          "startLine": 117,
+          "endLine": 130,
+          "params": [
+            "templates"
+          ]
+        },
+        {
+          "name": "AdminPlatformContent",
+          "startLine": 132,
+          "endLine": 1095,
+          "params": [
+            "{\n    configData,\n    plans,\n    flags,\n    templates,\n}"
+          ]
+        },
+        {
+          "name": "AdminPlatformPage",
+          "startLine": 1097,
+          "endLine": 1212,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AdminPlatformPage",
+          "line": 1097,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "buildConfigDraft",
+          "callee": "Object.fromEntries",
+          "lineNumber": 80
+        },
+        {
+          "caller": "buildConfigDraft",
+          "callee": "configData.module_catalog.map",
+          "lineNumber": 80
+        },
+        {
+          "caller": "buildPlanDrafts",
+          "callee": "Object.fromEntries",
+          "lineNumber": 86
+        },
+        {
+          "caller": "buildPlanDrafts",
+          "callee": "plans.map",
+          "lineNumber": 87
+        },
+        {
+          "caller": "buildPlanDrafts",
+          "callee": "String",
+          "lineNumber": 92
+        },
+        {
+          "caller": "buildPlanDrafts",
+          "callee": "plan.features.join",
+          "lineNumber": 96
+        },
+        {
+          "caller": "buildFlagDrafts",
+          "callee": "Object.fromEntries",
+          "lineNumber": 103
+        },
+        {
+          "caller": "buildFlagDrafts",
+          "callee": "flags.map",
+          "lineNumber": 104
+        },
+        {
+          "caller": "buildFlagDrafts",
+          "callee": "String",
+          "lineNumber": 111
+        },
+        {
+          "caller": "buildTemplateDrafts",
+          "callee": "Object.fromEntries",
+          "lineNumber": 118
+        },
+        {
+          "caller": "buildTemplateDrafts",
+          "callee": "templates.map",
+          "lineNumber": 119
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useQueryClient",
+          "lineNumber": 143
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useSnackbar",
+          "lineNumber": 144
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useMutationErrorToast",
+          "lineNumber": 145
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useState",
+          "lineNumber": 146
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "buildConfigDraft",
+          "lineNumber": 146
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useState",
+          "lineNumber": 147
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "buildPlanDrafts",
+          "lineNumber": 147
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useState",
+          "lineNumber": 148
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "buildFlagDrafts",
+          "lineNumber": 148
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useState",
+          "lineNumber": 149
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "buildTemplateDrafts",
+          "lineNumber": 149
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useState",
+          "lineNumber": 150
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useState",
+          "lineNumber": 159
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useState",
+          "lineNumber": 167
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "packOptions.find",
+          "lineNumber": 178
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useMutation",
+          "lineNumber": 180
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 183
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "showToast",
+          "lineNumber": 184
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "toastMutationError",
+          "lineNumber": 186
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useMutation",
+          "lineNumber": 188
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewPlan",
+          "lineNumber": 191
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 200
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "showToast",
+          "lineNumber": 201
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "toastMutationError",
+          "lineNumber": 203
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useMutation",
+          "lineNumber": 205
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "updateAdminPlan",
+          "lineNumber": 207
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "Number",
+          "lineNumber": 210
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "draft.features.split(\",\").map((item) => item.trim()).filter",
+          "lineNumber": 214
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "draft.features.split(\",\").map",
+          "lineNumber": 214
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "draft.features.split",
+          "lineNumber": 214
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "item.trim",
+          "lineNumber": 214
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 217
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "showToast",
+          "lineNumber": 218
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "toastMutationError",
+          "lineNumber": 220
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useMutation",
+          "lineNumber": 222
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewFlag",
+          "lineNumber": 225
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 233
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "showToast",
+          "lineNumber": 234
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "toastMutationError",
+          "lineNumber": 236
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useMutation",
+          "lineNumber": 238
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "updateAdminFeatureFlag",
+          "lineNumber": 240
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "Number",
+          "lineNumber": 245
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 248
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "showToast",
+          "lineNumber": 249
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "toastMutationError",
+          "lineNumber": 251
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useMutation",
+          "lineNumber": 253
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewTemplate",
+          "lineNumber": 256
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 264
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "showToast",
+          "lineNumber": 265
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "toastMutationError",
+          "lineNumber": 267
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "useMutation",
+          "lineNumber": 269
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "updateAdminEmailTemplate",
+          "lineNumber": 271
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 279
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "showToast",
+          "lineNumber": 280
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "toastMutationError",
+          "lineNumber": 282
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "Object.values(configDraft.module_states).filter",
+          "lineNumber": 314
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "Object.values",
+          "lineNumber": 314
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "saveConfigMutation.mutate",
+          "lineNumber": 349
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setConfigDraft",
+          "lineNumber": 374
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setConfigDraft",
+          "lineNumber": 388
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setConfigDraft",
+          "lineNumber": 399
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "packOptions.find",
+          "lineNumber": 413
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setConfigDraft",
+          "lineNumber": 414
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "Object.fromEntries",
+          "lineNumber": 417
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "moduleCatalog.map",
+          "lineNumber": 418
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "packDefaults.includes",
+          "lineNumber": 418
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "packOptions.map",
+          "lineNumber": 424
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setConfigDraft",
+          "lineNumber": 449
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "moduleCatalog.map",
+          "lineNumber": 469
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setConfigDraft",
+          "lineNumber": 488
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewPlan",
+          "lineNumber": 526
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewPlan",
+          "lineNumber": 532
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewPlan",
+          "lineNumber": 539
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewPlan",
+          "lineNumber": 547
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewPlan",
+          "lineNumber": 556
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewPlan",
+          "lineNumber": 564
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewPlan",
+          "lineNumber": 574
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newPlan.code.trim",
+          "lineNumber": 582
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "createPlanMutation.mutate",
+          "lineNumber": 584
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newPlan.code.trim",
+          "lineNumber": 585
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newPlan.name.trim",
+          "lineNumber": 586
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newPlan.description.trim",
+          "lineNumber": 587
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "Number",
+          "lineNumber": 588
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newPlan.interval.trim",
+          "lineNumber": 589
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newPlan.features.split(\",\").map((item) => item.trim()).filter",
+          "lineNumber": 591
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newPlan.features.split(\",\").map",
+          "lineNumber": 591
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newPlan.features.split",
+          "lineNumber": 591
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "item.trim",
+          "lineNumber": 591
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "plans.map",
+          "lineNumber": 601
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setPlanDrafts",
+          "lineNumber": 631
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setPlanDrafts",
+          "lineNumber": 642
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setPlanDrafts",
+          "lineNumber": 653
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setPlanDrafts",
+          "lineNumber": 664
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setPlanDrafts",
+          "lineNumber": 676
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setPlanDrafts",
+          "lineNumber": 689
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setPlanDrafts",
+          "lineNumber": 703
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "updatePlanMutation.mutate",
+          "lineNumber": 716
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewFlag",
+          "lineNumber": 749
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewFlag",
+          "lineNumber": 755
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewFlag",
+          "lineNumber": 762
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewFlag",
+          "lineNumber": 770
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewFlag",
+          "lineNumber": 779
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewFlag",
+          "lineNumber": 788
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newFlag.key.trim",
+          "lineNumber": 796
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "createFlagMutation.mutate",
+          "lineNumber": 798
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newFlag.key.trim",
+          "lineNumber": 799
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newFlag.name.trim",
+          "lineNumber": 800
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newFlag.description.trim",
+          "lineNumber": 801
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newFlag.module_key.trim",
+          "lineNumber": 802
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "Number",
+          "lineNumber": 804
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "flags.map",
+          "lineNumber": 814
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setFlagDrafts",
+          "lineNumber": 841
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setFlagDrafts",
+          "lineNumber": 852
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setFlagDrafts",
+          "lineNumber": 863
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setFlagDrafts",
+          "lineNumber": 875
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setFlagDrafts",
+          "lineNumber": 887
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "updateFlagMutation.mutate",
+          "lineNumber": 899
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewTemplate",
+          "lineNumber": 932
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewTemplate",
+          "lineNumber": 938
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewTemplate",
+          "lineNumber": 946
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewTemplate",
+          "lineNumber": 954
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewTemplate",
+          "lineNumber": 964
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setNewTemplate",
+          "lineNumber": 975
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newTemplate.key.trim",
+          "lineNumber": 983
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "createTemplateMutation.mutate",
+          "lineNumber": 985
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newTemplate.key.trim",
+          "lineNumber": 986
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "newTemplate.name.trim",
+          "lineNumber": 987
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "templates.map",
+          "lineNumber": 1001
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setTemplateDrafts",
+          "lineNumber": 1021
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setTemplateDrafts",
+          "lineNumber": 1032
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setTemplateDrafts",
+          "lineNumber": 1043
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setTemplateDrafts",
+          "lineNumber": 1056
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "setTemplateDrafts",
+          "lineNumber": 1070
+        },
+        {
+          "caller": "AdminPlatformContent",
+          "callee": "updateTemplateMutation.mutate",
+          "lineNumber": 1082
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "useQuery",
+          "lineNumber": 1103
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "useQuery",
+          "lineNumber": 1112
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "useQuery",
+          "lineNumber": 1121
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "useQuery",
+          "lineNumber": 1130
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "refetchConfig",
+          "lineNumber": 1162
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "refetchPlans",
+          "lineNumber": 1170
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "refetchFlags",
+          "lineNumber": 1178
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "refetchTemplates",
+          "lineNumber": 1186
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "[\n        configData.app_name,\n        configData.module_pack,\n        configData.module_catalog.map((item) => `${item.key}:${item.enabled}`).join(\"|\"),\n        plans.map((plan) => `${plan.id}:${plan.updated_at}`).join(\"|\"),\n        flags.map((flag) => `${flag.id}:${flag.updated_at}`).join(\"|\"),\n        templates.map((template) => `${template.id}:${template.updated_at}`).join(\"|\"),\n    ].join",
+          "lineNumber": 1194
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "configData.module_catalog.map((item) => `${item.key}:${item.enabled}`).join",
+          "lineNumber": 1197
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "configData.module_catalog.map",
+          "lineNumber": 1197
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "plans.map((plan) => `${plan.id}:${plan.updated_at}`).join",
+          "lineNumber": 1198
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "plans.map",
+          "lineNumber": 1198
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "flags.map((flag) => `${flag.id}:${flag.updated_at}`).join",
+          "lineNumber": 1199
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "flags.map",
+          "lineNumber": 1199
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "templates.map((template) => `${template.id}:${template.updated_at}`).join",
+          "lineNumber": 1200
+        },
+        {
+          "caller": "AdminPlatformPage",
+          "callee": "templates.map",
+          "lineNumber": 1200
+        }
+      ],
+      "metrics": {
+        "importCount": 9,
+        "exportCount": 1,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/AdminSettingsPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 774,
+      "nonEmptyLines": 744,
+      "functions": [
+        {
+          "name": "getConfigGroupId",
+          "startLine": 107,
+          "endLine": 151,
+          "params": [
+            "item"
+          ]
+        },
+        {
+          "name": "buildConfigGroups",
+          "startLine": 153,
+          "endLine": 168,
+          "params": [
+            "items"
+          ]
+        },
+        {
+          "name": "ConfigEntryEditor",
+          "startLine": 170,
+          "endLine": 225,
+          "params": [
+            "{\n    item,\n    value,\n    onChange,\n}"
+          ]
+        },
+        {
+          "name": "DatabaseSettingEditor",
+          "startLine": 227,
+          "endLine": 299,
+          "params": [
+            "{\n    item,\n    draft,\n    onDraftChange,\n    onSave,\n    onDelete,\n    isSaving,\n    isDeleting,\n}"
+          ]
+        },
+        {
+          "name": "AdminSettingsContent",
+          "startLine": 301,
+          "endLine": 683,
+          "params": [
+            "{\n    configData,\n    databaseSettings,\n    configErrorMessage,\n    databaseErrorMessage,\n    hasConfigError,\n    hasDatabaseError,\n    activeTab,\n    onTabChange,\n}"
+          ]
+        },
+        {
+          "name": "AdminSettingsPage",
+          "startLine": 685,
+          "endLine": 774,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AdminSettingsPage",
+          "line": 685,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "getConfigGroupId",
+          "callee": "key.startsWith",
+          "lineNumber": 114
+        },
+        {
+          "caller": "getConfigGroupId",
+          "callee": "key.startsWith",
+          "lineNumber": 116
+        },
+        {
+          "caller": "getConfigGroupId",
+          "callee": "key.startsWith",
+          "lineNumber": 125
+        },
+        {
+          "caller": "getConfigGroupId",
+          "callee": "key.startsWith",
+          "lineNumber": 130
+        },
+        {
+          "caller": "getConfigGroupId",
+          "callee": "key.startsWith",
+          "lineNumber": 140
+        },
+        {
+          "caller": "getConfigGroupId",
+          "callee": "key.startsWith",
+          "lineNumber": 143
+        },
+        {
+          "caller": "getConfigGroupId",
+          "callee": "key.startsWith",
+          "lineNumber": 143
+        },
+        {
+          "caller": "getConfigGroupId",
+          "callee": "key.startsWith",
+          "lineNumber": 146
+        },
+        {
+          "caller": "buildConfigGroups",
+          "callee": "Object.fromEntries",
+          "lineNumber": 154
+        },
+        {
+          "caller": "buildConfigGroups",
+          "callee": "CONFIG_GROUP_DEFINITIONS.map",
+          "lineNumber": 155
+        },
+        {
+          "caller": "buildConfigGroups",
+          "callee": "items.forEach",
+          "lineNumber": 158
+        },
+        {
+          "caller": "buildConfigGroups",
+          "callee": "grouped[getConfigGroupId(item)].push",
+          "lineNumber": 159
+        },
+        {
+          "caller": "buildConfigGroups",
+          "callee": "getConfigGroupId",
+          "lineNumber": 159
+        },
+        {
+          "caller": "buildConfigGroups",
+          "callee": "CONFIG_GROUP_DEFINITIONS\n        .map((group) => ({\n            ...group,\n            items: grouped[group.id],\n        }))\n        .filter",
+          "lineNumber": 162
+        },
+        {
+          "caller": "buildConfigGroups",
+          "callee": "CONFIG_GROUP_DEFINITIONS\n        .map",
+          "lineNumber": 162
+        },
+        {
+          "caller": "ConfigEntryEditor",
+          "callee": "alpha",
+          "lineNumber": 185
+        },
+        {
+          "caller": "ConfigEntryEditor",
+          "callee": "onChange",
+          "lineNumber": 218
+        },
+        {
+          "caller": "DatabaseSettingEditor",
+          "callee": "formatDateTime",
+          "lineNumber": 260
+        },
+        {
+          "caller": "DatabaseSettingEditor",
+          "callee": "onDraftChange",
+          "lineNumber": 271
+        },
+        {
+          "caller": "DatabaseSettingEditor",
+          "callee": "onDraftChange",
+          "lineNumber": 284
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "useQueryClient",
+          "lineNumber": 320
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "useMutationErrorToast",
+          "lineNumber": 321
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "buildConfigGroups",
+          "lineNumber": 322
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "useState",
+          "lineNumber": 323
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "Object.fromEntries",
+          "lineNumber": 324
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "configData.items.map",
+          "lineNumber": 324
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "useState",
+          "lineNumber": 326
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "Object.fromEntries",
+          "lineNumber": 327
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "databaseSettings.map",
+          "lineNumber": 328
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "useState",
+          "lineNumber": 337
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "configGroups.find",
+          "lineNumber": 346
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "configData.items.filter",
+          "lineNumber": 347
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "configData.items.filter",
+          "lineNumber": 348
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "configData.items.filter",
+          "lineNumber": 349
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "useMutation",
+          "lineNumber": 353
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "queryClient.setQueryData",
+          "lineNumber": 356
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "setConfigDrafts",
+          "lineNumber": 357
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "Object.fromEntries",
+          "lineNumber": 357
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "data.items.map",
+          "lineNumber": 357
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "toastMutationError",
+          "lineNumber": 359
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "useMutation",
+          "lineNumber": 361
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "setNewSetting",
+          "lineNumber": 364
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 365
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "toastMutationError",
+          "lineNumber": 367
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "useMutation",
+          "lineNumber": 369
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "updateDatabaseSetting",
+          "lineNumber": 371
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 373
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "toastMutationError",
+          "lineNumber": 375
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "useMutation",
+          "lineNumber": 377
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 380
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "toastMutationError",
+          "lineNumber": 382
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "alpha",
+          "lineNumber": 442
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "onTabChange",
+          "lineNumber": 447
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "configGroups.map",
+          "lineNumber": 452
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "configMutation.mutate",
+          "lineNumber": 475
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "configData.items.map",
+          "lineNumber": 476
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "activeConfigGroup.items.map",
+          "lineNumber": 526
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "setConfigDrafts",
+          "lineNumber": 532
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "setNewSetting",
+          "lineNumber": 570
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "setNewSetting",
+          "lineNumber": 581
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "setNewSetting",
+          "lineNumber": 594
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "newSetting.key.trim",
+          "lineNumber": 605
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "createDatabaseMutation.mutate",
+          "lineNumber": 607
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "newSetting.key.trim",
+          "lineNumber": 608
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "databaseSettings.map",
+          "lineNumber": 632
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "setDatabaseDrafts",
+          "lineNumber": 649
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "updateDatabaseMutation.mutate",
+          "lineNumber": 655
+        },
+        {
+          "caller": "AdminSettingsContent",
+          "callee": "deleteDatabaseMutation.mutate",
+          "lineNumber": 664
+        },
+        {
+          "caller": "AdminSettingsPage",
+          "callee": "useState",
+          "lineNumber": 686
+        },
+        {
+          "caller": "AdminSettingsPage",
+          "callee": "useQuery",
+          "lineNumber": 693
+        },
+        {
+          "caller": "AdminSettingsPage",
+          "callee": "useQuery",
+          "lineNumber": 703
+        },
+        {
+          "caller": "AdminSettingsPage",
+          "callee": "refetchConfig",
+          "lineNumber": 733
+        },
+        {
+          "caller": "AdminSettingsPage",
+          "callee": "refetchDatabase",
+          "lineNumber": 740
+        },
+        {
+          "caller": "AdminSettingsPage",
+          "callee": "buildConfigGroups",
+          "lineNumber": 748
+        },
+        {
+          "caller": "AdminSettingsPage",
+          "callee": "configGroups.some",
+          "lineNumber": 750
+        },
+        {
+          "caller": "AdminSettingsPage",
+          "callee": "configData.items.map((item) => `${item.key}:${item.value}`).join",
+          "lineNumber": 753
+        },
+        {
+          "caller": "AdminSettingsPage",
+          "callee": "configData.items.map",
+          "lineNumber": 753
+        },
+        {
+          "caller": "AdminSettingsPage",
+          "callee": "(databaseSettings ?? [])\n        .map((item) => `${item.id}:${item.updated_at}`)\n        .join",
+          "lineNumber": 753
+        },
+        {
+          "caller": "AdminSettingsPage",
+          "callee": "(databaseSettings ?? [])\n        .map",
+          "lineNumber": 753
+        }
+      ],
+      "metrics": {
+        "importCount": 10,
+        "exportCount": 1,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/AdminUsersPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 272,
+      "nonEmptyLines": 264,
+      "functions": [
+        {
+          "name": "AdminUsersPage",
+          "startLine": 36,
+          "endLine": 272,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AdminUsersPage",
+          "line": 36,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "AdminUsersPage",
+          "callee": "useQueryClient",
+          "lineNumber": 37
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "useTheme",
+          "lineNumber": 38
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "useMediaQuery",
+          "lineNumber": 39
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "theme.breakpoints.down",
+          "lineNumber": 39
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "useState",
+          "lineNumber": 40
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "useState",
+          "lineNumber": 41
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "useDebounce",
+          "lineNumber": 43
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "useQuery",
+          "lineNumber": 45
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "listAdminUsers",
+          "lineNumber": 48
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "useMutation",
+          "lineNumber": 54
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "updateUserStatus",
+          "lineNumber": 56
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 57
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "users.filter",
+          "lineNumber": 61
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "users.filter",
+          "lineNumber": 62
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "setSearch",
+          "lineNumber": 77
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "setPage",
+          "lineNumber": 78
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "Array.from({ length: 5 }).map",
+          "lineNumber": 131
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "Array.from",
+          "lineNumber": 131
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "users.map",
+          "lineNumber": 143
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "statusMutation.mutate",
+          "lineNumber": 169
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "user.roles.map",
+          "lineNumber": 177
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "formatDate",
+          "lineNumber": 188
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "users.map",
+          "lineNumber": 209
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "user.roles.map",
+          "lineNumber": 219
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "formatDate",
+          "lineNumber": 232
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "statusMutation.mutate",
+          "lineNumber": 243
+        },
+        {
+          "caller": "AdminUsersPage",
+          "callee": "setPage",
+          "lineNumber": 267
+        }
+      ],
+      "metrics": {
+        "importCount": 9,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/AiStudioPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 911,
+      "nonEmptyLines": 891,
+      "functions": [
+        {
+          "name": "parseJsonObject",
+          "startLine": 56,
+          "endLine": 65,
+          "params": [
+            "value",
+            "fallback"
+          ]
+        },
+        {
+          "name": "formatCostMicros",
+          "startLine": 67,
+          "endLine": 69,
+          "params": [
+            "micros"
+          ]
+        },
+        {
+          "name": "AiStudioPage",
+          "startLine": 71,
+          "endLine": 911,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "AiStudioPage",
+          "line": 71,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "parseJsonObject",
+          "callee": "value.trim",
+          "lineNumber": 57
+        },
+        {
+          "caller": "parseJsonObject",
+          "callee": "JSON.parse",
+          "lineNumber": 60
+        },
+        {
+          "caller": "parseJsonObject",
+          "callee": "Array.isArray",
+          "lineNumber": 61
+        },
+        {
+          "caller": "formatCostMicros",
+          "callee": "formatCurrency",
+          "lineNumber": 68
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useQueryClient",
+          "lineNumber": 72
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useSnackbar",
+          "lineNumber": 73
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutationErrorToast",
+          "lineNumber": 74
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useQuery",
+          "lineNumber": 81
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useQuery",
+          "lineNumber": 86
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useQuery",
+          "lineNumber": 91
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 97
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 98
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 99
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 100
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 101
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 114
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 120
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 121
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 129
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 130
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 131
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 132
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useState",
+          "lineNumber": 133
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useQuery",
+          "lineNumber": 146
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryKeys.ai.promptVersions",
+          "lineNumber": 147
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "listPromptVersions",
+          "lineNumber": 148
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useQuery",
+          "lineNumber": 152
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryKeys.ai.datasetCases",
+          "lineNumber": 153
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "listAiDatasetCases",
+          "lineNumber": 154
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "promptTemplates.map",
+          "lineNumber": 159
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 165
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setTemplateForm",
+          "lineNumber": 168
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "invalidateAiOverview",
+          "lineNumber": 169
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 170
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 172
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 174
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createPromptVersion",
+          "lineNumber": 181
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "invalidateAiOverview",
+          "lineNumber": 183
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 184
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryKeys.ai.promptVersions",
+          "lineNumber": 185
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 187
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 189
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 191
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "updatePromptTemplate",
+          "lineNumber": 193
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "invalidateAiOverview",
+          "lineNumber": 195
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 196
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 198
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 200
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "updatePromptVersion",
+          "lineNumber": 209
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 211
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryKeys.ai.promptVersions",
+          "lineNumber": 212
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 214
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 216
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 218
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setTextDocumentForm",
+          "lineNumber": 221
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "invalidateAiOverview",
+          "lineNumber": 222
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 223
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 225
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 227
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "uploadAiDocument",
+          "lineNumber": 229
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setUploadDescription",
+          "lineNumber": 231
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "invalidateAiOverview",
+          "lineNumber": 232
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 233
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 235
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 237
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "invalidateAiOverview",
+          "lineNumber": 240
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 241
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 242
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 244
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 246
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createAiReview",
+          "lineNumber": 247
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 249
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 250
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 252
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 254
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "decideAiReview",
+          "lineNumber": 265
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 267
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 268
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 270
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 272
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createAiFeedback",
+          "lineNumber": 283
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 285
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 287
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 289
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setDatasetForm",
+          "lineNumber": 292
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setSelectedDatasetId",
+          "lineNumber": 293
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "invalidateAiOverview",
+          "lineNumber": 294
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 295
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 297
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 299
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createAiDatasetCase",
+          "lineNumber": 306
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 308
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryKeys.ai.datasetCases",
+          "lineNumber": 309
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 311
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 313
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "useMutation",
+          "lineNumber": 315
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "runAiEvaluation",
+          "lineNumber": 317
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 319
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 320
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toastMutationError",
+          "lineNumber": 322
+        },
+        {
+          "caller": "parseVariableDefinitions",
+          "callee": "rawNames\n            .split(\",\")\n            .map((item) => item.trim())\n            .filter(Boolean)\n            .map",
+          "lineNumber": 326
+        },
+        {
+          "caller": "parseVariableDefinitions",
+          "callee": "rawNames\n            .split(\",\")\n            .map((item) => item.trim())\n            .filter",
+          "lineNumber": 326
+        },
+        {
+          "caller": "parseVariableDefinitions",
+          "callee": "rawNames\n            .split(\",\")\n            .map",
+          "lineNumber": 326
+        },
+        {
+          "caller": "parseVariableDefinitions",
+          "callee": "rawNames\n            .split",
+          "lineNumber": 326
+        },
+        {
+          "caller": "parseVariableDefinitions",
+          "callee": "item.trim",
+          "lineNumber": 328
+        },
+        {
+          "caller": "toggleDocument",
+          "callee": "setSelectedDocumentIds",
+          "lineNumber": 334
+        },
+        {
+          "caller": "toggleDocument",
+          "callee": "current.includes",
+          "lineNumber": 335
+        },
+        {
+          "caller": "toggleDocument",
+          "callee": "current.filter",
+          "lineNumber": 336
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "refetch",
+          "lineNumber": 360
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "reviews.filter",
+          "lineNumber": 390
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setTemplateForm",
+          "lineNumber": 407
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setTemplateForm",
+          "lineNumber": 408
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setTemplateForm",
+          "lineNumber": 410
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createTemplateMutation.mutate",
+          "lineNumber": 413
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "templateForm.key.trim",
+          "lineNumber": 414
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "templateForm.name.trim",
+          "lineNumber": 414
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "promptTemplates.map",
+          "lineNumber": 420
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setSelectedTemplateId",
+          "lineNumber": 440
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setRunForm",
+          "lineNumber": 463
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "templateKeyOptions.map",
+          "lineNumber": 466
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setRunForm",
+          "lineNumber": 475
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setRunForm",
+          "lineNumber": 483
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setRunForm",
+          "lineNumber": 489
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "documents.map",
+          "lineNumber": 493
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "selectedDocumentIds.includes",
+          "lineNumber": 497
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "selectedDocumentIds.includes",
+          "lineNumber": 498
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "toggleDocument",
+          "lineNumber": 499
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setRunForm",
+          "lineNumber": 507
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createRunMutation.mutate",
+          "lineNumber": 518
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "parseJsonObject",
+          "lineNumber": 520
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "Number",
+          "lineNumber": 523
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 527
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "recentRuns.map",
+          "lineNumber": 538
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "run.output_text?.slice",
+          "lineNumber": 548
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "JSON.stringify(run.output_json, null, 2).slice",
+          "lineNumber": 548
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "JSON.stringify",
+          "lineNumber": 548
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "formatDateTime",
+          "lineNumber": 551
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "formatCostMicros",
+          "lineNumber": 551
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createReviewMutation.mutate",
+          "lineNumber": 554
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createFeedbackMutation.mutate",
+          "lineNumber": 561
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createFeedbackMutation.mutate",
+          "lineNumber": 573
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setFeedbackCommentByRunId",
+          "lineNumber": 587
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setCorrectionsById",
+          "lineNumber": 596
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setSelectedTemplateId",
+          "lineNumber": 621
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "promptTemplates.map",
+          "lineNumber": 624
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setVersionForm",
+          "lineNumber": 634
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "providers.map",
+          "lineNumber": 637
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setVersionForm",
+          "lineNumber": 643
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setVersionForm",
+          "lineNumber": 644
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setVersionForm",
+          "lineNumber": 645
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setVersionForm",
+          "lineNumber": 646
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setVersionForm",
+          "lineNumber": 648
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setVersionForm",
+          "lineNumber": 652
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setVersionForm",
+          "lineNumber": 655
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setVersionForm",
+          "lineNumber": 656
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setVersionForm",
+          "lineNumber": 659
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setVersionForm",
+          "lineNumber": 660
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "versionForm.model_name.trim",
+          "lineNumber": 664
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "versionForm.user_prompt_template.trim",
+          "lineNumber": 664
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createVersionMutation.mutate",
+          "lineNumber": 666
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "parseVariableDefinitions",
+          "lineNumber": 673
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "Number",
+          "lineNumber": 675
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "Number",
+          "lineNumber": 676
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "Number",
+          "lineNumber": 678
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "Number",
+          "lineNumber": 679
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "selectedTemplateVersions.map",
+          "lineNumber": 688
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "version.user_prompt_template.slice",
+          "lineNumber": 701
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "activateVersionMutation.mutate",
+          "lineNumber": 704
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "publishVersionMutation.mutate",
+          "lineNumber": 710
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setTextDocumentForm",
+          "lineNumber": 725
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setTextDocumentForm",
+          "lineNumber": 726
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setTextDocumentForm",
+          "lineNumber": 727
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "textDocumentForm.title.trim",
+          "lineNumber": 730
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "textDocumentForm.content.trim",
+          "lineNumber": 730
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createTextDocumentMutation.mutate",
+          "lineNumber": 731
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "uploadDocumentMutation.mutate",
+          "lineNumber": 744
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setUploadDescription",
+          "lineNumber": 750
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "documents.map",
+          "lineNumber": 753
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "formatDateTime",
+          "lineNumber": 757
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "reviews.map",
+          "lineNumber": 773
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "review.run_id.slice",
+          "lineNumber": 777
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setReviewNotesById",
+          "lineNumber": 783
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setCorrectionsById",
+          "lineNumber": 790
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "decideReviewMutation.mutate",
+          "lineNumber": 797
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "decideReviewMutation.mutate",
+          "lineNumber": 800
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "decideReviewMutation.mutate",
+          "lineNumber": 803
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setDatasetForm",
+          "lineNumber": 817
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setDatasetForm",
+          "lineNumber": 818
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "datasetForm.name.trim",
+          "lineNumber": 819
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createDatasetMutation.mutate",
+          "lineNumber": 819
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setSelectedDatasetId",
+          "lineNumber": 822
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "datasets.map",
+          "lineNumber": 823
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setDatasetCaseForm",
+          "lineNumber": 829
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setDatasetCaseForm",
+          "lineNumber": 830
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setDatasetCaseForm",
+          "lineNumber": 831
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setDatasetCaseForm",
+          "lineNumber": 832
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "createDatasetCaseMutation.mutate",
+          "lineNumber": 838
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "parseJsonObject",
+          "lineNumber": 841
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "datasetCaseForm.expected_output_json.trim",
+          "lineNumber": 843
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "parseJsonObject",
+          "lineNumber": 844
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "showToast",
+          "lineNumber": 850
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "setRunForm",
+          "lineNumber": 863
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "selectedTemplateVersions.map",
+          "lineNumber": 866
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "runEvaluationMutation.mutate",
+          "lineNumber": 875
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "selectedDatasetCases.map",
+          "lineNumber": 881
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "JSON.stringify",
+          "lineNumber": 884
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "evaluationRuns.map",
+          "lineNumber": 897
+        },
+        {
+          "caller": "AiStudioPage",
+          "callee": "formatDateTime",
+          "lineNumber": 899
+        }
+      ],
+      "metrics": {
+        "importCount": 12,
+        "exportCount": 1,
+        "functionCount": 3,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/CalendarPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 54,
+      "nonEmptyLines": 50,
+      "functions": [
+        {
+          "name": "CalendarPage",
+          "startLine": 12,
+          "endLine": 54,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "CalendarPage",
+          "line": 12,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "CalendarPage",
+          "callee": "useNavigate",
+          "lineNumber": 13
+        },
+        {
+          "caller": "CalendarPage",
+          "callee": "usePlatformMetadata",
+          "lineNumber": 14
+        },
+        {
+          "caller": "CalendarPage",
+          "callee": "useQuery",
+          "lineNumber": 15
+        },
+        {
+          "caller": "CalendarPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 27
+        },
+        {
+          "caller": "CalendarPage",
+          "callee": "navigate",
+          "lineNumber": 32
+        },
+        {
+          "caller": "CalendarPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 39
+        },
+        {
+          "caller": "CalendarPage",
+          "callee": "navigate",
+          "lineNumber": 48
+        }
+      ],
+      "metrics": {
+        "importCount": 6,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/DashboardPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 317,
+      "nonEmptyLines": 308,
+      "functions": [
+        {
+          "name": "DashboardPage",
+          "startLine": 33,
+          "endLine": 317,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "DashboardPage",
+          "line": 33,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "DashboardPage",
+          "callee": "useNavigate",
+          "lineNumber": 34
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "useAuth",
+          "lineNumber": 35
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "usePlatformMetadata",
+          "lineNumber": 36
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "useQuery",
+          "lineNumber": 37
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "useNotifications",
+          "lineNumber": 41
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "getFirstName",
+          "lineNumber": 58
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "notifications?.filter",
+          "lineNumber": 59
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "notifications?.slice",
+          "lineNumber": 60
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 85
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "navigate",
+          "lineNumber": 88
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "navigate",
+          "lineNumber": 91
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 124
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "refetchProjects",
+          "lineNumber": 126
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "refetchNotifications",
+          "lineNumber": 134
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 154
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "navigate",
+          "lineNumber": 193
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "refetchNotifications",
+          "lineNumber": 203
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "navigate",
+          "lineNumber": 211
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "recentNotifications.map",
+          "lineNumber": 219
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "accountChecks.map",
+          "lineNumber": 233
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "navigate",
+          "lineNumber": 262
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 269
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 275
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "refetchProjects",
+          "lineNumber": 276
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 281
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "platformMetadata?.core_domain_singular?.toLowerCase",
+          "lineNumber": 282
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "navigate",
+          "lineNumber": 284
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "projects?.slice(0, 3).map",
+          "lineNumber": 292
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "projects?.slice",
+          "lineNumber": 292
+        },
+        {
+          "caller": "DashboardPage",
+          "callee": "platformMetadata?.core_domain_singular?.toLowerCase",
+          "lineNumber": 306
+        }
+      ],
+      "metrics": {
+        "importCount": 15,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/NotificationsPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 244,
+      "nonEmptyLines": 236,
+      "functions": [
+        {
+          "name": "PreferenceItem",
+          "startLine": 34,
+          "endLine": 76,
+          "params": [
+            "{\n    label,\n    description,\n    checked,\n    disabled,\n    onChange,\n}"
+          ]
+        },
+        {
+          "name": "NotificationsPage",
+          "startLine": 78,
+          "endLine": 244,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "NotificationsPage",
+          "line": 78,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "PreferenceItem",
+          "callee": "onChange",
+          "lineNumber": 61
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "useQueryClient",
+          "lineNumber": 79
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "useMutationErrorToast",
+          "lineNumber": 80
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "useNotifications",
+          "lineNumber": 87
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "useNotificationPreferences",
+          "lineNumber": 88
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "useMutation",
+          "lineNumber": 90
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 92
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "toastMutationError",
+          "lineNumber": 94
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "useMutation",
+          "lineNumber": 96
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 98
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "toastMutationError",
+          "lineNumber": 100
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "useMutation",
+          "lineNumber": 102
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 105
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "toastMutationError",
+          "lineNumber": 107
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "notifications?.filter",
+          "lineNumber": 110
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "[\n        prefs?.email_enabled,\n        prefs?.push_enabled,\n        prefs?.marketing_enabled,\n    ].filter",
+          "lineNumber": 112
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "markAllMutation.mutate",
+          "lineNumber": 130
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "refetch",
+          "lineNumber": 188
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "notifications?.map",
+          "lineNumber": 199
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "markOneMutation.mutate",
+          "lineNumber": 207
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "prefsMutation.mutate",
+          "lineNumber": 223
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "prefsMutation.mutate",
+          "lineNumber": 230
+        },
+        {
+          "caller": "NotificationsPage",
+          "callee": "prefsMutation.mutate",
+          "lineNumber": 237
+        }
+      ],
+      "metrics": {
+        "importCount": 12,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/PlatformPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 745,
+      "nonEmptyLines": 728,
+      "functions": [
+        {
+          "name": "PlatformPage",
+          "startLine": 51,
+          "endLine": 745,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "PlatformPage",
+          "line": 51,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "PlatformPage",
+          "callee": "useQueryClient",
+          "lineNumber": 52
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useSnackbar",
+          "lineNumber": 53
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useMutationErrorToast",
+          "lineNumber": 54
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "usePlatformMetadata",
+          "lineNumber": 61
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "enabledModules.includes",
+          "lineNumber": 63
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "enabledModules.includes",
+          "lineNumber": 64
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "enabledModules.includes",
+          "lineNumber": 65
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "enabledModules.includes",
+          "lineNumber": 66
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useQuery",
+          "lineNumber": 74
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useQuery",
+          "lineNumber": 85
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useQuery",
+          "lineNumber": 96
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useQuery",
+          "lineNumber": 107
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useQuery",
+          "lineNumber": 118
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useState",
+          "lineNumber": 124
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useState",
+          "lineNumber": 125
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useState",
+          "lineNumber": 126
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useState",
+          "lineNumber": 127
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useState",
+          "lineNumber": 132
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useState",
+          "lineNumber": 133
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useMutation",
+          "lineNumber": 135
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 138
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "showToast",
+          "lineNumber": 139
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "toastMutationError",
+          "lineNumber": 141
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useMutation",
+          "lineNumber": 143
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "setApiKeyName",
+          "lineNumber": 146
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "setRevealedKey",
+          "lineNumber": 147
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 148
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "toastMutationError",
+          "lineNumber": 150
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useMutation",
+          "lineNumber": 152
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 155
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "showToast",
+          "lineNumber": 156
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "toastMutationError",
+          "lineNumber": 158
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useMutation",
+          "lineNumber": 160
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "setWebhookDraft",
+          "lineNumber": 163
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "setRevealedWebhookSecret",
+          "lineNumber": 164
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 165
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "showToast",
+          "lineNumber": 166
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "toastMutationError",
+          "lineNumber": 168
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useMutation",
+          "lineNumber": 170
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "updateWebhook",
+          "lineNumber": 172
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 174
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "toastMutationError",
+          "lineNumber": 176
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useMutation",
+          "lineNumber": 178
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 181
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "showToast",
+          "lineNumber": 182
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "toastMutationError",
+          "lineNumber": 184
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "useMutation",
+          "lineNumber": 186
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "setLastWebhookResult",
+          "lineNumber": 189
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "toastMutationError",
+          "lineNumber": 197
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "refetchMetadata",
+          "lineNumber": 219
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "metadata?.module_catalog.filter",
+          "lineNumber": 226
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "featureFlags?.filter",
+          "lineNumber": 278
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "refetchSubscription",
+          "lineNumber": 299
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "refetchPlans",
+          "lineNumber": 300
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "Array.from({ length: 3 }).map",
+          "lineNumber": 316
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "Array.from",
+          "lineNumber": 316
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "plans?.map",
+          "lineNumber": 336
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "alpha",
+          "lineNumber": 346
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "formatCurrency",
+          "lineNumber": 364
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "plan.features.map",
+          "lineNumber": 368
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "selectPlanMutation.mutate",
+          "lineNumber": 375
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "refetchApiKeys",
+          "lineNumber": 396
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "setApiKeyName",
+          "lineNumber": 408
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "apiKeyName.trim",
+          "lineNumber": 413
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "createApiKeyMutation.mutate",
+          "lineNumber": 414
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "apiKeyName.trim",
+          "lineNumber": 414
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "Array.from({ length: 3 }).map",
+          "lineNumber": 421
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "Array.from",
+          "lineNumber": 421
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "apiKeys.map",
+          "lineNumber": 427
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "formatDateTime",
+          "lineNumber": 455
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "formatDateTime",
+          "lineNumber": 456
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "Boolean",
+          "lineNumber": 462
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "revokeApiKeyMutation.mutate",
+          "lineNumber": 463
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "refetchWebhooks",
+          "lineNumber": 490
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "setWebhookUrlError",
+          "lineNumber": 511
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "setWebhookDraft",
+          "lineNumber": 512
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "Boolean",
+          "lineNumber": 517
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "setWebhookDraft",
+          "lineNumber": 525
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "setWebhookDraft",
+          "lineNumber": 533
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "webhookDraft.target_url.trim",
+          "lineNumber": 540
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "webhookDraft.target_url.trim",
+          "lineNumber": 542
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "webhookTargetUrlSchema.safeParse",
+          "lineNumber": 543
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "setWebhookUrlError",
+          "lineNumber": 545
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "createWebhookMutation.mutate",
+          "lineNumber": 548
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "webhookDraft.description.trim",
+          "lineNumber": 550
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "webhookDraft.events\n                                                .split(\",\")\n                                                .map((item) => item.trim())\n                                                .filter",
+          "lineNumber": 551
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "webhookDraft.events\n                                                .split(\",\")\n                                                .map",
+          "lineNumber": 551
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "webhookDraft.events\n                                                .split",
+          "lineNumber": 551
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "item.trim",
+          "lineNumber": 553
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "Array.from({ length: 2 }).map",
+          "lineNumber": 564
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "Array.from",
+          "lineNumber": 564
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "webhooks.map",
+          "lineNumber": 570
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "toggleWebhookMutation.mutate",
+          "lineNumber": 606
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "webhook.events.map",
+          "lineNumber": 624
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "formatDateTime",
+          "lineNumber": 630
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "testWebhookMutation.mutate",
+          "lineNumber": 642
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "deleteWebhookMutation.mutate",
+          "lineNumber": 651
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "refetchFeatureFlags",
+          "lineNumber": 679
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "Array.from({ length: 3 }).map",
+          "lineNumber": 690
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "Array.from",
+          "lineNumber": 690
+        },
+        {
+          "caller": "PlatformPage",
+          "callee": "featureFlags.map",
+          "lineNumber": 702
+        }
+      ],
+      "metrics": {
+        "importCount": 11,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/ProfilePage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 716,
+      "nonEmptyLines": 688,
+      "functions": [
+        {
+          "name": "MfaQrCode",
+          "startLine": 76,
+          "endLine": 130,
+          "params": [
+            "{ provisioningUri }"
+          ]
+        },
+        {
+          "name": "ProfilePage",
+          "startLine": 132,
+          "endLine": 716,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ProfilePage",
+          "line": 132,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "MfaQrCode",
+          "callee": "useState",
+          "lineNumber": 77
+        },
+        {
+          "caller": "MfaQrCode",
+          "callee": "useState",
+          "lineNumber": 78
+        },
+        {
+          "caller": "MfaQrCode",
+          "callee": "useEffect",
+          "lineNumber": 80
+        },
+        {
+          "caller": "MfaQrCode",
+          "callee": "QRCode.toDataURL(provisioningUri, {\n            errorCorrectionLevel: \"M\",\n            margin: 1,\n            width: 220,\n        })\n            .then((dataUrl: string) => {\n                if (isActive) {\n                    setQrDataUrl(dataUrl);\n                }\n            })\n            .catch",
+          "lineNumber": 83
+        },
+        {
+          "caller": "MfaQrCode",
+          "callee": "QRCode.toDataURL(provisioningUri, {\n            errorCorrectionLevel: \"M\",\n            margin: 1,\n            width: 220,\n        })\n            .then",
+          "lineNumber": 83
+        },
+        {
+          "caller": "MfaQrCode",
+          "callee": "QRCode.toDataURL",
+          "lineNumber": 83
+        },
+        {
+          "caller": "MfaQrCode",
+          "callee": "setQrDataUrl",
+          "lineNumber": 90
+        },
+        {
+          "caller": "MfaQrCode",
+          "callee": "setQrError",
+          "lineNumber": 95
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useQueryClient",
+          "lineNumber": 133
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useSnackbar",
+          "lineNumber": 134
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useMutationErrorToast",
+          "lineNumber": 135
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useCurrentUser",
+          "lineNumber": 143
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useUserProfile",
+          "lineNumber": 150
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useUserSessions",
+          "lineNumber": 157
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useForm",
+          "lineNumber": 159
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "zodResolver",
+          "lineNumber": 160
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useForm",
+          "lineNumber": 163
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "zodResolver",
+          "lineNumber": 164
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useForm",
+          "lineNumber": 171
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "zodResolver",
+          "lineNumber": 172
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useForm",
+          "lineNumber": 174
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "zodResolver",
+          "lineNumber": 175
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useForm",
+          "lineNumber": 177
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "zodResolver",
+          "lineNumber": 178
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useMutation",
+          "lineNumber": 181
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "invalidateUserIdentity",
+          "lineNumber": 184
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "toastMutationError",
+          "lineNumber": 186
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useMutation",
+          "lineNumber": 188
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 190
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "toastMutationError",
+          "lineNumber": 191
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useMutation",
+          "lineNumber": 193
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "passwordForm.reset",
+          "lineNumber": 195
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "toastMutationError",
+          "lineNumber": 196
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useMutation",
+          "lineNumber": 198
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 200
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "toastMutationError",
+          "lineNumber": 201
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useMutation",
+          "lineNumber": 203
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "toastMutationError",
+          "lineNumber": 205
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useMutation",
+          "lineNumber": 207
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "verifyMfa",
+          "lineNumber": 208
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "mfaVerifyForm.reset",
+          "lineNumber": 210
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "invalidateUserIdentity",
+          "lineNumber": 211
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "showToast",
+          "lineNumber": 212
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useMutation",
+          "lineNumber": 215
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "disableMfa",
+          "lineNumber": 216
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "mfaDisableForm.reset",
+          "lineNumber": 218
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "invalidateUserIdentity",
+          "lineNumber": 219
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "showToast",
+          "lineNumber": 220
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useMutation",
+          "lineNumber": 223
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 226
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "showToast",
+          "lineNumber": 227
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "showToast",
+          "lineNumber": 230
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "useMutation",
+          "lineNumber": 236
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 239
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "showToast",
+          "lineNumber": 240
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "showToast",
+          "lineNumber": 243
+        },
+        {
+          "caller": "handleAvatarFileChange",
+          "callee": "uploadAvatarMutation.mutate",
+          "lineNumber": 254
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "refetchUser",
+          "lineNumber": 279
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "refetchProfile",
+          "lineNumber": 287
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "getInitials",
+          "lineNumber": 332
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "handleAvatarFileChange",
+          "lineNumber": 356
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "deleteAvatarMutation.mutate",
+          "lineNumber": 366
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "alpha",
+          "lineNumber": 384
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "alpha",
+          "lineNumber": 400
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "accountForm.handleSubmit",
+          "lineNumber": 422
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "accountMutation.mutate",
+          "lineNumber": 422
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "accountForm.register",
+          "lineNumber": 426
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "enableMfaMutation.mutate",
+          "lineNumber": 464
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "mfaVerifyForm.handleSubmit",
+          "lineNumber": 486
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "verifyMfaMutation.mutate",
+          "lineNumber": 486
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "mfaVerifyForm.register",
+          "lineNumber": 491
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "mfaDisableForm.handleSubmit",
+          "lineNumber": 514
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "disableMfaMutation.mutate",
+          "lineNumber": 514
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "mfaDisableForm.register",
+          "lineNumber": 519
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "profileForm.handleSubmit",
+          "lineNumber": 552
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "profileMutation.mutate",
+          "lineNumber": 553
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "profileForm.register",
+          "lineNumber": 563
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "profileForm.register",
+          "lineNumber": 572
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "profileForm.register",
+          "lineNumber": 579
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "refetchSessions",
+          "lineNumber": 606
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "sessions?.map",
+          "lineNumber": 617
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "formatDateTime",
+          "lineNumber": 638
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "formatDate",
+          "lineNumber": 641
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "revokeSessionMutation.mutate",
+          "lineNumber": 650
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "passwordForm.handleSubmit",
+          "lineNumber": 666
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "passwordMutation.mutate",
+          "lineNumber": 667
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "passwordForm.register",
+          "lineNumber": 677
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "passwordForm.register",
+          "lineNumber": 685
+        },
+        {
+          "caller": "ProfilePage",
+          "callee": "passwordForm.register",
+          "lineNumber": 693
+        }
+      ],
+      "metrics": {
+        "importCount": 15,
+        "exportCount": 1,
+        "functionCount": 2,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/ProjectDetailPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 812,
+      "nonEmptyLines": 772,
+      "functions": [
+        {
+          "name": "sortTasks",
+          "startLine": 86,
+          "endLine": 100,
+          "params": [
+            "tasks"
+          ]
+        },
+        {
+          "name": "taskToDraft",
+          "startLine": 102,
+          "endLine": 111,
+          "params": [
+            "task"
+          ]
+        },
+        {
+          "name": "TaskMetaChips",
+          "startLine": 113,
+          "endLine": 136,
+          "params": [
+            "{ task }"
+          ]
+        },
+        {
+          "name": "TaskBoardCard",
+          "startLine": 138,
+          "endLine": 191,
+          "params": [
+            "{\n    task,\n    selected,\n    onSelect,\n    onDragStart,\n    onDropBefore,\n}"
+          ]
+        },
+        {
+          "name": "TaskListCard",
+          "startLine": 193,
+          "endLine": 235,
+          "params": [
+            "{\n    task,\n    selected,\n    onSelect,\n}"
+          ]
+        },
+        {
+          "name": "ProjectDetailPage",
+          "startLine": 237,
+          "endLine": 812,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ProjectDetailPage",
+          "line": 237,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "sortTasks",
+          "callee": "[...tasks].sort",
+          "lineNumber": 94
+        },
+        {
+          "caller": "sortTasks",
+          "callee": "left.created_at.localeCompare",
+          "lineNumber": 98
+        },
+        {
+          "caller": "TaskMetaChips",
+          "callee": "humanizeKey",
+          "lineNumber": 116
+        },
+        {
+          "caller": "TaskMetaChips",
+          "callee": "humanizeKey",
+          "lineNumber": 117
+        },
+        {
+          "caller": "TaskMetaChips",
+          "callee": "formatDateOnly",
+          "lineNumber": 128
+        },
+        {
+          "caller": "TaskBoardCard",
+          "callee": "event.dataTransfer.setData",
+          "lineNumber": 156
+        },
+        {
+          "caller": "TaskBoardCard",
+          "callee": "onDragStart",
+          "lineNumber": 158
+        },
+        {
+          "caller": "TaskBoardCard",
+          "callee": "event.preventDefault",
+          "lineNumber": 160
+        },
+        {
+          "caller": "TaskBoardCard",
+          "callee": "event.preventDefault",
+          "lineNumber": 162
+        },
+        {
+          "caller": "TaskBoardCard",
+          "callee": "event.stopPropagation",
+          "lineNumber": 163
+        },
+        {
+          "caller": "TaskBoardCard",
+          "callee": "onDropBefore",
+          "lineNumber": 164
+        },
+        {
+          "caller": "TaskBoardCard",
+          "callee": "alpha",
+          "lineNumber": 172
+        },
+        {
+          "caller": "TaskBoardCard",
+          "callee": "alpha",
+          "lineNumber": 175
+        },
+        {
+          "caller": "TaskListCard",
+          "callee": "alpha",
+          "lineNumber": 211
+        },
+        {
+          "caller": "TaskListCard",
+          "callee": "formatDateTime",
+          "lineNumber": 228
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useParams",
+          "lineNumber": 238
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useNavigate",
+          "lineNumber": 239
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useQueryClient",
+          "lineNumber": 240
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useSnackbar",
+          "lineNumber": 241
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useState",
+          "lineNumber": 242
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useState",
+          "lineNumber": 243
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useState",
+          "lineNumber": 244
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useState",
+          "lineNumber": 245
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useState",
+          "lineNumber": 246
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useQuery",
+          "lineNumber": 248
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryKeys.projects.detail",
+          "lineNumber": 249
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "getProject",
+          "lineNumber": 250
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "Boolean",
+          "lineNumber": 251
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useQuery",
+          "lineNumber": 253
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryKeys.projects.tasks",
+          "lineNumber": 254
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "listProjectTasks",
+          "lineNumber": 255
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "Boolean",
+          "lineNumber": 256
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useQuery",
+          "lineNumber": 258
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "sortTasks",
+          "lineNumber": 263
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "orderedTasks.find",
+          "lineNumber": 264
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "orderedTasks.filter",
+          "lineNumber": 266
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "orderedTasks.filter",
+          "lineNumber": 267
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "[\"todo\", \"in_progress\", \"review\"].includes",
+          "lineNumber": 267
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "orderedTasks.filter",
+          "lineNumber": 268
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useMutation",
+          "lineNumber": 272
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "createProjectTask",
+          "lineNumber": 274
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "taskDraft.title.trim",
+          "lineNumber": 275
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "taskDraft.description.trim",
+          "lineNumber": 276
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryClient.setQueryData",
+          "lineNumber": 283
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryKeys.projects.tasks",
+          "lineNumber": 283
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "sortTasks",
+          "lineNumber": 284
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskDraft",
+          "lineNumber": 286
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setSelectedTaskId",
+          "lineNumber": 287
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskError",
+          "lineNumber": 288
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 289
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "showToast",
+          "lineNumber": 290
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskError",
+          "lineNumber": 293
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useMutation",
+          "lineNumber": 297
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "updateProjectTask",
+          "lineNumber": 299
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "taskDraft.title.trim",
+          "lineNumber": 300
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "taskDraft.description.trim",
+          "lineNumber": 301
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryClient.setQueryData",
+          "lineNumber": 308
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryKeys.projects.tasks",
+          "lineNumber": 308
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "sortTasks",
+          "lineNumber": 309
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "(current ?? []).map",
+          "lineNumber": 309
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setSelectedTaskId",
+          "lineNumber": 311
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskDraft",
+          "lineNumber": 312
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "taskToDraft",
+          "lineNumber": 312
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskError",
+          "lineNumber": 313
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "showToast",
+          "lineNumber": 314
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskError",
+          "lineNumber": 317
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useMutation",
+          "lineNumber": 321
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "deleteProjectTask",
+          "lineNumber": 322
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryClient.setQueryData",
+          "lineNumber": 324
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryKeys.projects.tasks",
+          "lineNumber": 324
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "(current ?? []).filter",
+          "lineNumber": 325
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setSelectedTaskId",
+          "lineNumber": 327
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskDraft",
+          "lineNumber": 328
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskError",
+          "lineNumber": 329
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "showToast",
+          "lineNumber": 330
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskError",
+          "lineNumber": 333
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "useMutation",
+          "lineNumber": 337
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "reorderProjectTasks",
+          "lineNumber": 340
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryClient.setQueryData",
+          "lineNumber": 342
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryKeys.projects.tasks",
+          "lineNumber": 342
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "sortTasks",
+          "lineNumber": 342
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 345
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "queryKeys.projects.tasks",
+          "lineNumber": 345
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "showToast",
+          "lineNumber": 346
+        },
+        {
+          "caller": "resetTaskEditor",
+          "callee": "setSelectedTaskId",
+          "lineNumber": 351
+        },
+        {
+          "caller": "resetTaskEditor",
+          "callee": "setTaskDraft",
+          "lineNumber": 352
+        },
+        {
+          "caller": "resetTaskEditor",
+          "callee": "setTaskError",
+          "lineNumber": 353
+        },
+        {
+          "caller": "selectTask",
+          "callee": "setSelectedTaskId",
+          "lineNumber": 357
+        },
+        {
+          "caller": "selectTask",
+          "callee": "setTaskDraft",
+          "lineNumber": 358
+        },
+        {
+          "caller": "selectTask",
+          "callee": "taskToDraft",
+          "lineNumber": 358
+        },
+        {
+          "caller": "selectTask",
+          "callee": "setTaskError",
+          "lineNumber": 359
+        },
+        {
+          "caller": "submitTask",
+          "callee": "taskDraft.title.trim",
+          "lineNumber": 363
+        },
+        {
+          "caller": "submitTask",
+          "callee": "setTaskError",
+          "lineNumber": 364
+        },
+        {
+          "caller": "submitTask",
+          "callee": "updateTaskMutation.mutate",
+          "lineNumber": 369
+        },
+        {
+          "caller": "submitTask",
+          "callee": "createTaskMutation.mutate",
+          "lineNumber": 373
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "setDraggingTaskId",
+          "lineNumber": 381
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "tasks.find",
+          "lineNumber": 385
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "Object.fromEntries",
+          "lineNumber": 390
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "TASK_STATUS_OPTIONS.map",
+          "lineNumber": 391
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "tasks.forEach",
+          "lineNumber": 394
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "byStatus[task.status].push",
+          "lineNumber": 396
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "targetTasks.findIndex",
+          "lineNumber": 403
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "targetTasks.splice",
+          "lineNumber": 406
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "targetTasks.push",
+          "lineNumber": 408
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "sortTasks",
+          "lineNumber": 411
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "TASK_STATUS_OPTIONS.flatMap",
+          "lineNumber": 412
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "byStatus[option.value].map",
+          "lineNumber": 413
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "queryClient.setQueryData",
+          "lineNumber": 421
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "queryKeys.projects.tasks",
+          "lineNumber": 421
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "reorderTaskMutation.mutate",
+          "lineNumber": 422
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "TASK_STATUS_OPTIONS.map",
+          "lineNumber": 423
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "nextTasks\n                    .filter((task) => task.status === option.value)\n                    .sort((left, right) => left.position - right.position)\n                    .map",
+          "lineNumber": 425
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "nextTasks\n                    .filter((task) => task.status === option.value)\n                    .sort",
+          "lineNumber": 425
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "nextTasks\n                    .filter",
+          "lineNumber": 425
+        },
+        {
+          "caller": "handleDrop",
+          "callee": "setDraggingTaskId",
+          "lineNumber": 431
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "navigate",
+          "lineNumber": 468
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "formatDate",
+          "lineNumber": 475
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskDraft",
+          "lineNumber": 564
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskDraft",
+          "lineNumber": 572
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskDraft",
+          "lineNumber": 583
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "TASK_STATUS_OPTIONS.map",
+          "lineNumber": 590
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskDraft",
+          "lineNumber": 601
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "TASK_PRIORITY_OPTIONS.map",
+          "lineNumber": 608
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskDraft",
+          "lineNumber": 619
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskDraft",
+          "lineNumber": 629
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "(users ?? []).map",
+          "lineNumber": 634
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "formatDateTime",
+          "lineNumber": 643
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "formatDateTime",
+          "lineNumber": 644
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "deleteTaskMutation.mutate",
+          "lineNumber": 669
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setTaskView",
+          "lineNumber": 686
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "TASK_STATUS_OPTIONS.map",
+          "lineNumber": 722
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "orderedTasks.filter",
+          "lineNumber": 723
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "event.preventDefault",
+          "lineNumber": 729
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "event.preventDefault",
+          "lineNumber": 731
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "handleDrop",
+          "lineNumber": 732
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "alpha",
+          "lineNumber": 739
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "columnTasks.map",
+          "lineNumber": 763
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "selectTask",
+          "lineNumber": 768
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "setDraggingTaskId",
+          "lineNumber": 769
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "handleDrop",
+          "lineNumber": 771
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "orderedTasks.map",
+          "lineNumber": 798
+        },
+        {
+          "caller": "ProjectDetailPage",
+          "callee": "selectTask",
+          "lineNumber": 803
+        }
+      ],
+      "metrics": {
+        "importCount": 10,
+        "exportCount": 1,
+        "functionCount": 6,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/pages/ProjectsPage.tsx",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 223,
+      "nonEmptyLines": 214,
+      "functions": [
+        {
+          "name": "ProjectsPage",
+          "startLine": 40,
+          "endLine": 223,
+          "params": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "ProjectsPage",
+          "line": 40,
+          "isDefault": true
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "ProjectsPage",
+          "callee": "useNavigate",
+          "lineNumber": 41
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "useQueryClient",
+          "lineNumber": 42
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "useSnackbar",
+          "lineNumber": 43
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "usePlatformMetadata",
+          "lineNumber": 44
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "useQuery",
+          "lineNumber": 45
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "useForm",
+          "lineNumber": 54
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "zodResolver",
+          "lineNumber": 54
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "useMutation",
+          "lineNumber": 56
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "queryClient.invalidateQueries",
+          "lineNumber": 59
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "reset",
+          "lineNumber": 60
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "showToast",
+          "lineNumber": 61
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "navigate",
+          "lineNumber": 62
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 74
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 77
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "coreDomainSingular.toLowerCase",
+          "lineNumber": 92
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "handleSubmit",
+          "lineNumber": 94
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "mutation.mutate",
+          "lineNumber": 94
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "register",
+          "lineNumber": 99
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "coreDomainSingular.toLowerCase",
+          "lineNumber": 106
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "register",
+          "lineNumber": 107
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "coreDomainSingular.toLowerCase",
+          "lineNumber": 118
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 135
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 139
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "Array.from({ length: 4 }).map",
+          "lineNumber": 151
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "Array.from",
+          "lineNumber": 151
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "projects.map",
+          "lineNumber": 163
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "alpha",
+          "lineNumber": 183
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "formatDate",
+          "lineNumber": 191
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "coreDomainSingular.toLowerCase",
+          "lineNumber": 196
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "navigate",
+          "lineNumber": 202
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "coreDomainPlural.toLowerCase",
+          "lineNumber": 215
+        },
+        {
+          "caller": "ProjectsPage",
+          "callee": "coreDomainSingular.toLowerCase",
+          "lineNumber": 216
+        }
+      ],
+      "metrics": {
+        "importCount": 9,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/utils/formatters.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 57,
+      "nonEmptyLines": 51,
+      "functions": [
+        {
+          "name": "formatCurrency",
+          "startLine": 1,
+          "endLine": 7,
+          "params": [
+            "priceCents",
+            "currency"
+          ]
+        },
+        {
+          "name": "formatDate",
+          "startLine": 9,
+          "endLine": 15,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "formatDateOnly",
+          "startLine": 17,
+          "endLine": 23,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "formatDateTime",
+          "startLine": 25,
+          "endLine": 33,
+          "params": [
+            "value"
+          ]
+        },
+        {
+          "name": "getInitials",
+          "startLine": 35,
+          "endLine": 45,
+          "params": [
+            "name",
+            "fallback"
+          ]
+        },
+        {
+          "name": "getFirstName",
+          "startLine": 47,
+          "endLine": 49,
+          "params": [
+            "name"
+          ]
+        },
+        {
+          "name": "humanizeKey",
+          "startLine": 51,
+          "endLine": 57,
+          "params": [
+            "value"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "formatCurrency",
+          "line": 1,
+          "isDefault": false
+        },
+        {
+          "name": "formatDate",
+          "line": 9,
+          "isDefault": false
+        },
+        {
+          "name": "formatDateOnly",
+          "line": 17,
+          "isDefault": false
+        },
+        {
+          "name": "formatDateTime",
+          "line": 25,
+          "isDefault": false
+        },
+        {
+          "name": "getInitials",
+          "line": 35,
+          "isDefault": false
+        },
+        {
+          "name": "getFirstName",
+          "line": 47,
+          "isDefault": false
+        },
+        {
+          "name": "humanizeKey",
+          "line": 51,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "formatCurrency",
+          "callee": "new Intl.NumberFormat(undefined, {\n        style: \"currency\",\n        currency,\n        maximumFractionDigits: 0,\n    }).format",
+          "lineNumber": 2
+        },
+        {
+          "caller": "formatDate",
+          "callee": "new Intl.DateTimeFormat(undefined, {\n        month: \"short\",\n        day: \"numeric\",\n        year: \"numeric\",\n    }).format",
+          "lineNumber": 10
+        },
+        {
+          "caller": "formatDateOnly",
+          "callee": "new Intl.DateTimeFormat(undefined, {\n        month: \"short\",\n        day: \"numeric\",\n        year: \"numeric\",\n    }).format",
+          "lineNumber": 18
+        },
+        {
+          "caller": "formatDateTime",
+          "callee": "new Intl.DateTimeFormat(undefined, {\n        month: \"short\",\n        day: \"numeric\",\n        year: \"numeric\",\n        hour: \"numeric\",\n        minute: \"2-digit\",\n    }).format",
+          "lineNumber": 26
+        },
+        {
+          "caller": "getInitials",
+          "callee": "name?.trim",
+          "lineNumber": 36
+        },
+        {
+          "caller": "getInitials",
+          "callee": "fallback?.trim",
+          "lineNumber": 36
+        },
+        {
+          "caller": "getInitials",
+          "callee": "source.split(/\\s+/).filter",
+          "lineNumber": 37
+        },
+        {
+          "caller": "getInitials",
+          "callee": "source.split",
+          "lineNumber": 37
+        },
+        {
+          "caller": "getInitials",
+          "callee": "parts[0].slice(0, 2).toUpperCase",
+          "lineNumber": 39
+        },
+        {
+          "caller": "getInitials",
+          "callee": "parts[0].slice",
+          "lineNumber": 39
+        },
+        {
+          "caller": "getInitials",
+          "callee": "parts\n        .slice(0, 2)\n        .map((part) => part[0]?.toUpperCase() ?? \"\")\n        .join",
+          "lineNumber": 41
+        },
+        {
+          "caller": "getInitials",
+          "callee": "parts\n        .slice(0, 2)\n        .map",
+          "lineNumber": 41
+        },
+        {
+          "caller": "getInitials",
+          "callee": "parts\n        .slice",
+          "lineNumber": 41
+        },
+        {
+          "caller": "getInitials",
+          "callee": "part[0]?.toUpperCase",
+          "lineNumber": 43
+        },
+        {
+          "caller": "getFirstName",
+          "callee": "name?.trim().split",
+          "lineNumber": 48
+        },
+        {
+          "caller": "getFirstName",
+          "callee": "name?.trim",
+          "lineNumber": 48
+        },
+        {
+          "caller": "humanizeKey",
+          "callee": "value\n        .replace(/[_-]+/g, \" \")\n        .replace(/\\s+/g, \" \")\n        .trim()\n        .replace",
+          "lineNumber": 52
+        },
+        {
+          "caller": "humanizeKey",
+          "callee": "value\n        .replace(/[_-]+/g, \" \")\n        .replace(/\\s+/g, \" \")\n        .trim",
+          "lineNumber": 52
+        },
+        {
+          "caller": "humanizeKey",
+          "callee": "value\n        .replace(/[_-]+/g, \" \")\n        .replace",
+          "lineNumber": 52
+        },
+        {
+          "caller": "humanizeKey",
+          "callee": "value\n        .replace",
+          "lineNumber": 52
+        },
+        {
+          "caller": "humanizeKey",
+          "callee": "match.toUpperCase",
+          "lineNumber": 56
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 7,
+        "functionCount": 7,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "frontend/src/utils/queryErrors.ts",
+      "language": "typescript",
+      "fileCategory": "code",
+      "totalLines": 3,
+      "nonEmptyLines": 3,
+      "functions": [
+        {
+          "name": "getQueryErrorMessage",
+          "startLine": 1,
+          "endLine": 3,
+          "params": [
+            "error",
+            "fallback"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "getQueryErrorMessage",
+          "line": 1,
+          "isDefault": false
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 1,
+        "functionCount": 1,
+        "classCount": 0
+      }
+    }
+  ]
+}
