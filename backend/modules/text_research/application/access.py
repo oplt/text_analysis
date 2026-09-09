@@ -106,6 +106,13 @@ class ResearchAccessMixin:
         await self.ensure_project_access(user_id=user_id, project_id=profile.project_id)
         return profile
 
+    async def get_cleaning_profile_or_404(self, profile_id: str, *, user_id: str):
+        profile = await self.repo.get_cleaning_profile(profile_id)
+        if profile is None:
+            raise HTTPException(status_code=404, detail="Cleaning profile not found")
+        await self.ensure_project_access(user_id=user_id, project_id=profile.project_id)
+        return profile
+
     async def get_contextual_dataset_or_404(self, dataset_id: str, *, user_id: str):
         dataset = await self.repo.get_contextual_dataset(dataset_id)
         if dataset is None:

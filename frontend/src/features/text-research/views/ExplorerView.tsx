@@ -208,8 +208,9 @@ export default function ExplorerView() {
     return (
         <Stack spacing={2}>
             <Alert severity="info">
-                This explorer shows patterns and evidence only. Interpretation — including any claim
-                about “Western bias” — belongs to the researcher. The tool does not conclude bias.
+                This explorer shows prevalence patterns and supporting passages only.
+                Interpretation belongs to the researcher — the tool does not impose comparison
+                hypotheses or substantive conclusions.
             </Alert>
 
             <SectionCard
@@ -462,8 +463,8 @@ export default function ExplorerView() {
                             {selection.label} · {selection.group}
                         </Typography>
                         <Alert severity="warning">
-                            Evidence only — this panel does not conclude “Western bias” or any other
-                            institutional judgment.
+                            Evidence only — this panel does not impose research hypotheses or
+                            institutional judgments.
                         </Alert>
                         <Stack spacing={0.5}>
                             <Typography variant="body2">

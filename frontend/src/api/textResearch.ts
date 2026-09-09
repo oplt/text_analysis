@@ -218,7 +218,7 @@ export async function createCodebook(
         body: JSON.stringify({
             name: payload.name,
             description: payload.description,
-            seed_demo_labels: payload.seed_demo_labels ?? true,
+            seed_demo_labels: payload.seed_demo_labels ?? false,
         }),
     });
 }
@@ -294,6 +294,13 @@ export async function assignCorpusAnnotationTasks(
         strategy?: "shared" | "disjoint" | "overlap";
         overlap_count?: number;
         overlap_percent?: number;
+        // Stratified annotation sampling (prompt.txt §24). Optional; with no
+        // stratify_by, sampling is a seeded random draw of sample_size units.
+        random_seed?: number;
+        stratify_by?: string[];
+        stratum_mode?: "proportional" | "equal";
+        sampling_level?: "unit" | "document";
+        max_units_per_document?: number;
     }
 ): Promise<{
     assigned_count: number;
@@ -302,6 +309,7 @@ export async function assignCorpusAnnotationTasks(
     strategy: string;
     unit_type: string;
     per_annotator: Record<string, number>;
+    sampling_plan?: Record<string, unknown> | null;
 }> {
     return apiFetch(`${BASE}/corpora/${corpusId}/annotations/assign`, {
         method: "POST",
@@ -477,11 +485,20 @@ export async function runKwic(
         keyword: string;
         window_size?: number;
         case_sensitive?: boolean;
+        query_mode?: string;
+        language?: string;
+        token_attribute?: string;
+        max_matches?: number;
     }
 ): Promise<AnalysisRun> {
     return apiFetch(`${BASE}/corpora/${corpusId}/analysis/kwic`, {
         method: "POST",
-        body: JSON.stringify({ window_size: 5, case_sensitive: false, ...payload }),
+        body: JSON.stringify({
+            window_size: 5,
+            case_sensitive: false,
+            query_mode: "auto",
+            ...payload,
+        }),
     });
 }
 
@@ -506,22 +523,47 @@ export async function runKeyness(
         preprocessing_profile_id?: string;
         filters_a: Record<string, unknown>;
         filters_b: Record<string, unknown>;
+        group_field?: string;
+        method?: string;
+        correction?: string;
+        min_frequency?: number;
         top_n?: number;
     }
 ): Promise<AnalysisRun> {
     return apiFetch(`${BASE}/corpora/${corpusId}/analysis/keyness`, {
         method: "POST",
-        body: JSON.stringify({ top_n: 50, ...payload }),
+        body: JSON.stringify({
+            top_n: 50,
+            method: "log_likelihood",
+            correction: "bh",
+            min_frequency: 1,
+            ...payload,
+        }),
     });
 }
 
 export async function runCooccurrence(
     corpusId: string,
-    payload: AnalysisBasePayload & { window_size?: number; top_n?: number }
+    payload: AnalysisBasePayload & {
+        window_size?: number;
+        top_n?: number;
+        association_method?: string;
+        directional?: boolean;
+        min_frequency?: number;
+        min_count?: number;
+    }
 ): Promise<AnalysisRun> {
     return apiFetch(`${BASE}/corpora/${corpusId}/analysis/cooccurrence`, {
         method: "POST",
-        body: JSON.stringify({ window_size: 5, top_n: 50, ...payload }),
+        body: JSON.stringify({
+            window_size: 5,
+            top_n: 50,
+            association_method: "pmi",
+            directional: false,
+            min_frequency: 1,
+            min_count: 1,
+            ...payload,
+        }),
     });
 }
 
@@ -531,7 +573,11 @@ export type ResearchDictionary = {
     name: string;
     version: string;
     description: string | null;
+    language?: string | null;
     terms: string[];
+    hierarchy?: Record<string, unknown> | null;
+    exclusions?: Array<Record<string, unknown>>;
+    format?: string;
     created_by: string;
     created_at: string;
 };
@@ -542,7 +588,15 @@ export async function listDictionaries(projectId: string): Promise<ResearchDicti
 
 export async function createDictionary(
     projectId: string,
-    payload: { name: string; description?: string; terms: string[] }
+    payload: {
+        name: string;
+        description?: string;
+        version?: string;
+        language?: string;
+        terms?: unknown[];
+        hierarchy?: Record<string, unknown>;
+        exclusions?: unknown[];
+    }
 ): Promise<ResearchDictionary> {
     return apiFetch(`${BASE}/projects/${projectId}/dictionaries`, {
         method: "POST",
@@ -556,7 +610,15 @@ export async function getDictionary(dictionaryId: string): Promise<ResearchDicti
 
 export async function updateDictionary(
     dictionaryId: string,
-    payload: { name?: string; description?: string; terms?: string[] }
+    payload: {
+        name?: string;
+        description?: string;
+        version?: string;
+        language?: string;
+        terms?: unknown[];
+        hierarchy?: Record<string, unknown>;
+        exclusions?: unknown[];
+    }
 ): Promise<ResearchDictionary> {
     return apiFetch(`${BASE}/dictionaries/${dictionaryId}`, {
         method: "PATCH",
@@ -752,6 +814,13 @@ export async function runRobustnessSweep(payload: {
     algorithm?: string;
     seeds?: number[];
     cv_folds?: number;
+    group_field?: string;
+    max_groups?: number;
+    temporal_field?: string;
+    temporal_windows?: boolean;
+    transfer_field?: string;
+    transfer_train_values?: string[];
+    transfer_test_values?: string[];
     run_async?: boolean;
 }): Promise<AnalysisRun> {
     return apiFetch(`${BASE}/robustness/sweep`, {

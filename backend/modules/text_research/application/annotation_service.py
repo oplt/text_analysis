@@ -17,8 +17,13 @@ from backend.modules.text_research.application.assignment_planning import (
     assignment_pairs,
     plan_annotation_assignment,
 )
+from backend.modules.text_research.application.sampling_service import SamplingService
 from backend.modules.text_research.domain.enums import AnnotationTaskStatus
 from backend.modules.text_research.domain.models import Annotation, AnnotationTask
+from backend.modules.text_research.infrastructure.sampling import (
+    SAMPLING_LEVEL_UNIT,
+    STRATUM_MODE_PROPORTIONAL,
+)
 
 
 class AnnotationService(ResearchAccessMixin):
@@ -56,8 +61,23 @@ class AnnotationService(ResearchAccessMixin):
         strategy: str = "overlap",
         overlap_count: int | None = None,
         overlap_percent: float | None = None,
+        random_seed: int | None = None,
+        stratify_by: list[str] | None = None,
+        stratum_mode: str = STRATUM_MODE_PROPORTIONAL,
+        sampling_level: str = SAMPLING_LEVEL_UNIT,
+        max_units_per_document: int | None = None,
     ) -> dict[str, Any]:
-        """Assign corpus text units using an explicit sampling / overlap strategy."""
+        """Assign corpus text units using an explicit sampling / overlap strategy.
+
+        Unit selection is always a `SamplingService` sampling plan (§24):
+        seeded random by default, or stratified by any caller-supplied
+        metadata field names via `stratify_by`. This replaces the previous
+        first-N default while staying backward compatible — with no
+        `stratify_by`, the result is simply a seeded random sample of
+        `sample_size` units. Overlap/shared/disjoint distribution across
+        annotators is then computed over the sampled pool via
+        `assignment_planning`.
+        """
         await self.get_corpus_or_404(corpus_id, user_id=user_id)
         targets = annotator_ids or [user_id]
         if not targets:
@@ -88,11 +108,27 @@ class AnnotationService(ResearchAccessMixin):
                 detail="All available units already have annotation tasks for these annotators.",
             )
 
+        sampling_plan = await SamplingService(self.db).build_corpus_sampling_plan(
+            corpus_id,
+            user_id=user_id,
+            unit_type=unit_type,
+            sample_size=sample_size,
+            candidate_unit_ids=candidate_ids,
+            random_seed=random_seed,
+            stratify_by=stratify_by,
+            stratum_mode=stratum_mode,
+            sampling_level=sampling_level,
+            max_units_per_document=max_units_per_document,
+        )
+        sampled_ids = sampling_plan["selected_unit_ids"]
+        if not sampled_ids:
+            raise HTTPException(status_code=422, detail="Sampling plan produced no units.")
+
         try:
             plan = plan_annotation_assignment(
-                candidate_ids,
+                sampled_ids,
                 targets,
-                sample_size=sample_size,
+                sample_size=len(sampled_ids),
                 strategy=strategy,
                 overlap_count=overlap_count,
                 overlap_percent=overlap_percent,
@@ -126,6 +162,7 @@ class AnnotationService(ResearchAccessMixin):
             "strategy": strategy,
             "unit_type": unit_type,
             "per_annotator": {annotator_id: len(unit_ids) for annotator_id, unit_ids in plan.items()},
+            "sampling_plan": sampling_plan,
         }
 
     async def list_queue(
@@ -168,8 +205,12 @@ class AnnotationService(ResearchAccessMixin):
                         "page_number": unit.page_number,
                         "paragraph_number": unit.paragraph_number,
                         "sentence_number": unit.sentence_number,
+                        "char_start": unit.char_start,
+                        "char_end": unit.char_end,
+                        "section_heading": unit.section_heading,
                         "text": unit.text,
                         "text_hash": unit.text_hash,
+                        "source_text_hash": unit.source_text_hash,
                         "created_at": unit.created_at,
                     }
                     if (unit := units.get(task.text_unit_id)) is not None
@@ -250,7 +291,15 @@ class AnnotationService(ResearchAccessMixin):
                 "corpus_document_id": row.corpus_document_id,
                 "unit_type": row.unit_type,
                 "position": row.position,
+                "page_number": row.page_number,
+                "paragraph_number": row.paragraph_number,
+                "sentence_number": row.sentence_number,
+                "char_start": row.char_start,
+                "char_end": row.char_end,
+                "section_heading": row.section_heading,
                 "text": row.text,
+                "text_hash": row.text_hash,
+                "source_text_hash": row.source_text_hash,
             }
 
         return {

@@ -9,7 +9,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
-        name: 'Policy Text Lab',
+        name: 'Text Research',
         short_name: 'Text Lab',
         description: 'Computational text research workspace',
         theme_color: '#171A20',

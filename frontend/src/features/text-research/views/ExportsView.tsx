@@ -22,12 +22,24 @@ import {
     listRuns,
     researchExportUrl,
 } from "../../../api/textResearch";
+import { PageTabs } from "../../../components/ui/PageTabs";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
+import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { JsonBlock } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
+
+const EXPORT_TABS = ["data", "models", "analysis", "reproducibility"] as const;
+type ExportTab = (typeof EXPORT_TABS)[number];
+
+const EXPORT_TAB_ITEMS: Array<{ value: ExportTab; label: string }> = [
+    { value: "data", label: "Data" },
+    { value: "models", label: "Models" },
+    { value: "analysis", label: "Analysis" },
+    { value: "reproducibility", label: "Reproducibility" },
+];
 
 async function downloadAuthenticated(path: string, filename: string) {
     const apiBase = import.meta.env.VITE_API_BASE ?? "/api/v1";
@@ -47,6 +59,7 @@ async function downloadAuthenticated(path: string, filename: string) {
 export default function ExportsView() {
     const ctx = useResearchContext();
     const { showToast } = useSnackbar();
+    const [tab, setTab] = useTabQueryParam(EXPORT_TABS, "data");
 
     const manifestQuery = useQuery({
         queryKey: queryKeys.textResearch.exportManifest(ctx.selectedCorpusId),
@@ -57,34 +70,33 @@ export default function ExportsView() {
     const scriptQuery = useQuery({
         queryKey: ["text-research", "quanteda-script", ctx.selectedCorpusId],
         queryFn: () => getQuantedaScript(ctx.selectedCorpusId),
-        enabled: Boolean(ctx.selectedCorpusId),
+        enabled: Boolean(ctx.selectedCorpusId) && tab === "reproducibility",
     });
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
         queryFn: () => listPreprocessingProfiles(ctx.projectId),
-        enabled: Boolean(ctx.projectId),
+        enabled: Boolean(ctx.projectId) && tab === "models",
     });
 
     const classifiersQuery = useQuery({
         queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
         queryFn: () => listClassifiers(ctx.projectId, ctx.selectedCorpusId),
-        enabled: Boolean(ctx.projectId && ctx.selectedCorpusId),
+        enabled: Boolean(ctx.projectId && ctx.selectedCorpusId) && tab === "models",
     });
     const runsQuery = useQuery({
         queryKey: queryKeys.textResearch.runs(ctx.projectId, ctx.selectedCorpusId),
         queryFn: () => listRuns(ctx.projectId, { corpus_id: ctx.selectedCorpusId, limit: 100 }),
-        enabled: Boolean(ctx.projectId && ctx.selectedCorpusId),
+        enabled: Boolean(ctx.projectId && ctx.selectedCorpusId) && tab === "analysis",
     });
 
     const handleDownload = useCallback(
         async (path: string, filename: string) => {
             try {
                 await downloadAuthenticated(path, filename);
-                showToast({ message: `Downloaded ${filename}.`, severity: "success" });
             } catch (error) {
                 showToast({
-                    message: getQueryErrorMessage(error, "Download failed."),
+                    message: getQueryErrorMessage(error, "Download failed"),
                     severity: "error",
                 });
             }
@@ -107,205 +119,282 @@ export default function ExportsView() {
 
     return (
         <Stack spacing={2}>
-            <SectionCard title="Data" description="Corpus manifest and tabular research data.">
-                <QueryBoundary
-                    isLoading={manifestQuery.isLoading}
-                    isError={manifestQuery.isError}
-                    error={manifestQuery.error}
-                    onRetry={() => void manifestQuery.refetch()}
+            <PageTabs
+                value={tab}
+                onChange={setTab}
+                tabs={EXPORT_TAB_ITEMS}
+                ariaLabel="Export categories"
+            />
+
+            {tab === "data" ? (
+                <SectionCard
+                    title="Data exports"
+                    description="Corpus manifest and tabular research downloads."
                 >
-                    {manifestQuery.data ? <JsonBlock data={manifestQuery.data.manifest} /> : null}
-                </QueryBoundary>
-            </SectionCard>
-
-            <SectionCard title="Data downloads" description="Download tabular exports for offline analysis.">
-                <Table size="small">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Export</TableCell>
-                            <TableCell>Description</TableCell>
-                            <TableCell align="right">Action</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        <TableRow>
-                            <TableCell>Text units</TableCell>
-                            <TableCell>Segmented units ({ctx.unitType})</TableCell>
-                            <TableCell align="right">
-                                <Button
-                                    size="small"
-                                    startIcon={<DownloadIcon />}
-                                    onClick={() =>
-                                        void handleDownload(unitsPath, `units-${ctx.unitType}.csv`)
-                                    }
-                                >
-                                    Download
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>Annotations</TableCell>
-                            <TableCell>
-                                Annotations for selected codebook
-                                {!ctx.selectedCodebookId ? " (select a codebook)" : ""}
-                            </TableCell>
-                            <TableCell align="right">
-                                <Button
-                                    size="small"
-                                    startIcon={<DownloadIcon />}
-                                    disabled={!annotationsPath}
-                                    onClick={() =>
-                                        annotationsPath
-                                            ? void handleDownload(
-                                                  annotationsPath,
-                                                  "annotations.csv"
-                                              )
-                                            : undefined
-                                    }
-                                >
-                                    Download
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    </TableBody>
-                </Table>
-                <Alert severity="info" sx={{ mt: 2 }}>
-                    Direct links (requires session cookie):{" "}
-                    <Link href={researchExportUrl(unitsPath)} target="_blank" rel="noopener">
-                        units.csv
-                    </Link>
-                    {annotationsPath ? (
-                        <>
-                            {" · "}
-                            <Link
-                                href={researchExportUrl(annotationsPath)}
-                                target="_blank"
-                                rel="noopener"
-                            >
-                                annotations.csv
-                            </Link>
-                        </>
-                    ) : null}
-                </Alert>
-            </SectionCard>
-
-            <SectionCard
-                title="Measurement & models"
-                description="Export codebooks, preprocessing profiles, model metrics, and individual robustness or analysis runs."
-            >
-                <Table size="small">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Export</TableCell>
-                            <TableCell>Description</TableCell>
-                            <TableCell align="right">Action</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {ctx.selectedCodebookId ? (
-                            <TableRow>
-                                <TableCell>Codebook</TableCell>
-                                <TableCell>Selected codebook with labels and version</TableCell>
-                                <TableCell align="right">
-                                    <Button
-                                        size="small"
-                                        startIcon={<DownloadIcon />}
-                                        onClick={() =>
-                                            void handleDownload(
-                                                `/research/codebooks/${ctx.selectedCodebookId}/export.json`,
-                                                "codebook.json"
-                                            )
-                                        }
-                                    >
-                                        Download
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ) : null}
-                        {(profilesQuery.data ?? []).map((profile) => (
-                            <TableRow key={profile.id}>
-                                <TableCell>Preprocessing: {profile.name}</TableCell>
-                                <TableCell>Versioned preprocessing configuration</TableCell>
-                                <TableCell align="right">
-                                    <Button
-                                        size="small"
-                                        startIcon={<DownloadIcon />}
-                                        onClick={() =>
-                                            void handleDownload(
-                                                `/research/preprocessing-profiles/${profile.id}/export.json`,
-                                                `preprocessing-${profile.id}.json`
-                                            )
-                                        }
-                                    >
-                                        Download
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {(classifiersQuery.data ?? []).map((model) => (
-                            <TableRow key={model.id}>
-                                <TableCell>Model metrics: {model.name || `v${model.version}`}</TableCell>
-                                <TableCell>Classifier metrics, features, and training configuration</TableCell>
-                                <TableCell align="right">
-                                    <Button
-                                        size="small"
-                                        startIcon={<DownloadIcon />}
-                                        onClick={() =>
-                                            void handleDownload(
-                                                `/research/classifiers/${model.id}/export/metrics.json`,
-                                                `model-${model.id}-metrics.json`
-                                            )
-                                        }
-                                    >
-                                        Download
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {(classifiersQuery.data ?? []).map((model) => (
-                            <TableRow key={`${model.id}:predictions`}>
-                                <TableCell>Predictions: {model.name || `v${model.version}`}</TableCell>
-                                <TableCell>Predicted labels, scores, uncertainty, and model provenance</TableCell>
-                                <TableCell align="right"><Button size="small" startIcon={<DownloadIcon />} onClick={() => void handleDownload(`/research/classifiers/${model.id}/export/predictions.csv`, `model-${model.id}-predictions.csv`)}>Download</Button></TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                <Alert severity="info" sx={{ mt: 2 }}>
-                    Export a robustness result or any other analysis from its Run detail page.
-                </Alert>
-            </SectionCard>
-
-            <SectionCard title="Analysis" description="Completed analysis runs in portable JSON.">
-                <Table size="small"><TableHead><TableRow><TableCell>Run</TableCell><TableCell>Status</TableCell><TableCell align="right">Action</TableCell></TableRow></TableHead><TableBody>
-                    {(runsQuery.data?.items ?? []).map((run) => <TableRow key={run.id}><TableCell>{run.run_type} · {run.id.slice(0, 8)}</TableCell><TableCell>{run.status}</TableCell><TableCell align="right"><Button size="small" startIcon={<DownloadIcon />} onClick={() => void handleDownload(`/research/runs/${run.id}/export.json`, `run-${run.id}.json`)}>Download JSON</Button></TableCell></TableRow>)}
-                </TableBody></Table>
-            </SectionCard>
-
-            <SectionCard title="Reproducibility" description="R script for reproducing corpus construction.">
-                <QueryBoundary
-                    isLoading={scriptQuery.isLoading}
-                    isError={scriptQuery.isError}
-                    error={scriptQuery.error}
-                    onRetry={() => void scriptQuery.refetch()}
-                >
-                    {scriptQuery.data ? (
-                        <Typography
-                            component="pre"
-                            sx={{
-                                p: 2,
-                                borderRadius: 2,
-                                bgcolor: "action.hover",
-                                overflow: "auto",
-                                fontSize: 12,
-                                whiteSpace: "pre-wrap",
-                            }}
+                    <Stack spacing={2}>
+                        <QueryBoundary
+                            isLoading={manifestQuery.isLoading}
+                            isError={manifestQuery.isError}
+                            error={manifestQuery.error}
+                            onRetry={() => void manifestQuery.refetch()}
                         >
-                            {scriptQuery.data.script}
-                        </Typography>
-                    ) : null}
-                </QueryBoundary>
-            </SectionCard>
+                            {manifestQuery.data ? (
+                                <JsonBlock data={manifestQuery.data.manifest} />
+                            ) : null}
+                        </QueryBoundary>
+
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Export</TableCell>
+                                    <TableCell>Description</TableCell>
+                                    <TableCell align="right">Action</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell>Text units</TableCell>
+                                    <TableCell>Segmented units ({ctx.unitType})</TableCell>
+                                    <TableCell align="right">
+                                        <Button
+                                            size="small"
+                                            startIcon={<DownloadIcon />}
+                                            onClick={() =>
+                                                void handleDownload(
+                                                    unitsPath,
+                                                    `units-${ctx.unitType}.csv`
+                                                )
+                                            }
+                                        >
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell>Annotations</TableCell>
+                                    <TableCell>
+                                        Annotations for selected codebook
+                                        {!ctx.selectedCodebookId ? " (select a codebook)" : ""}
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <Button
+                                            size="small"
+                                            startIcon={<DownloadIcon />}
+                                            disabled={!annotationsPath}
+                                            onClick={() =>
+                                                annotationsPath
+                                                    ? void handleDownload(
+                                                          annotationsPath,
+                                                          "annotations.csv"
+                                                      )
+                                                    : undefined
+                                            }
+                                        >
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                        <Alert severity="info">
+                            Direct links (requires session cookie):{" "}
+                            <Link href={researchExportUrl(unitsPath)} target="_blank" rel="noopener">
+                                units.csv
+                            </Link>
+                            {annotationsPath ? (
+                                <>
+                                    {" · "}
+                                    <Link
+                                        href={researchExportUrl(annotationsPath)}
+                                        target="_blank"
+                                        rel="noopener"
+                                    >
+                                        annotations.csv
+                                    </Link>
+                                </>
+                            ) : null}
+                        </Alert>
+                    </Stack>
+                </SectionCard>
+            ) : null}
+
+            {tab === "models" ? (
+                <SectionCard
+                    title="Measurement & models"
+                    description="Export codebooks, preprocessing profiles, model metrics, and predictions."
+                >
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Export</TableCell>
+                                <TableCell>Description</TableCell>
+                                <TableCell align="right">Action</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {ctx.selectedCodebookId ? (
+                                <TableRow>
+                                    <TableCell>Codebook</TableCell>
+                                    <TableCell>Selected codebook with labels and version</TableCell>
+                                    <TableCell align="right">
+                                        <Button
+                                            size="small"
+                                            startIcon={<DownloadIcon />}
+                                            onClick={() =>
+                                                void handleDownload(
+                                                    `/research/codebooks/${ctx.selectedCodebookId}/export.json`,
+                                                    "codebook.json"
+                                                )
+                                            }
+                                        >
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ) : null}
+                            {(profilesQuery.data ?? []).map((profile) => (
+                                <TableRow key={profile.id}>
+                                    <TableCell>Preprocessing: {profile.name}</TableCell>
+                                    <TableCell>Versioned preprocessing configuration</TableCell>
+                                    <TableCell align="right">
+                                        <Button
+                                            size="small"
+                                            startIcon={<DownloadIcon />}
+                                            onClick={() =>
+                                                void handleDownload(
+                                                    `/research/preprocessing-profiles/${profile.id}/export.json`,
+                                                    `preprocessing-${profile.id}.json`
+                                                )
+                                            }
+                                        >
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {(classifiersQuery.data ?? []).map((model) => (
+                                <TableRow key={model.id}>
+                                    <TableCell>
+                                        Model metrics: {model.name || `v${model.version}`}
+                                    </TableCell>
+                                    <TableCell>
+                                        Classifier metrics, features, and training configuration
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <Button
+                                            size="small"
+                                            startIcon={<DownloadIcon />}
+                                            onClick={() =>
+                                                void handleDownload(
+                                                    `/research/classifiers/${model.id}/export/metrics.json`,
+                                                    `model-${model.id}-metrics.json`
+                                                )
+                                            }
+                                        >
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                            {(classifiersQuery.data ?? []).map((model) => (
+                                <TableRow key={`${model.id}:predictions`}>
+                                    <TableCell>
+                                        Predictions: {model.name || `v${model.version}`}
+                                    </TableCell>
+                                    <TableCell>
+                                        Predicted labels, scores, uncertainty, and model provenance
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <Button
+                                            size="small"
+                                            startIcon={<DownloadIcon />}
+                                            onClick={() =>
+                                                void handleDownload(
+                                                    `/research/classifiers/${model.id}/export/predictions.csv`,
+                                                    `model-${model.id}-predictions.csv`
+                                                )
+                                            }
+                                        >
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    <Alert severity="info" sx={{ mt: 2 }}>
+                        Export a robustness result or any other analysis from its Run detail page.
+                    </Alert>
+                </SectionCard>
+            ) : null}
+
+            {tab === "analysis" ? (
+                <SectionCard title="Analysis" description="Completed analysis runs in portable JSON.">
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Run</TableCell>
+                                <TableCell>Status</TableCell>
+                                <TableCell align="right">Action</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {(runsQuery.data?.items ?? []).map((run) => (
+                                <TableRow key={run.id}>
+                                    <TableCell>
+                                        {run.run_type} · {run.id.slice(0, 8)}
+                                    </TableCell>
+                                    <TableCell>{run.status}</TableCell>
+                                    <TableCell align="right">
+                                        <Button
+                                            size="small"
+                                            startIcon={<DownloadIcon />}
+                                            onClick={() =>
+                                                void handleDownload(
+                                                    `/research/runs/${run.id}/export.json`,
+                                                    `run-${run.id}.json`
+                                                )
+                                            }
+                                        >
+                                            Download JSON
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </SectionCard>
+            ) : null}
+
+            {tab === "reproducibility" ? (
+                <SectionCard
+                    title="Reproducibility"
+                    description="R script for reproducing corpus construction."
+                >
+                    <QueryBoundary
+                        isLoading={scriptQuery.isLoading}
+                        isError={scriptQuery.isError}
+                        error={scriptQuery.error}
+                        onRetry={() => void scriptQuery.refetch()}
+                    >
+                        {scriptQuery.data ? (
+                            <Typography
+                                component="pre"
+                                sx={{
+                                    p: 2,
+                                    borderRadius: 2,
+                                    bgcolor: "action.hover",
+                                    overflow: "auto",
+                                    fontSize: 12,
+                                    whiteSpace: "pre-wrap",
+                                }}
+                            >
+                                {scriptQuery.data.script}
+                            </Typography>
+                        ) : null}
+                    </QueryBoundary>
+                </SectionCard>
+            ) : null}
         </Stack>
     );
 }

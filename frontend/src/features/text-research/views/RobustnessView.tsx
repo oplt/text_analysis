@@ -120,6 +120,7 @@ export default function RobustnessView() {
     const ctx = useResearchContext();
     const { showToast } = useSnackbar();
     const [snapshotId, setSnapshotId] = useState("");
+    const [groupField, setGroupField] = useState("organization");
     const [runId, setRunId] = useState<string | null>(null);
 
     const snapshotsQuery = useQuery({
@@ -136,7 +137,12 @@ export default function RobustnessView() {
     });
 
     const sweepMutation = useMutation({
-        mutationFn: () => runRobustnessSweep({ snapshot_id: snapshotId, run_async: true }),
+        mutationFn: () =>
+            runRobustnessSweep({
+                snapshot_id: snapshotId,
+                group_field: groupField || "organization",
+                run_async: true,
+            }),
         onSuccess: (run) => {
             setRunId(run.id);
             showToast({ message: "Robustness sweep started.", severity: "success" });
@@ -169,16 +175,19 @@ export default function RobustnessView() {
         (row) => String(row.class_weight ?? "none")
     );
 
-    const orgRows = asRows(results?.leave_one_organization_out);
-    const orgChart = chartableRows(
-        orgRows,
-        (row) => String(row.held_out_organization ?? "organization")
+    const groupOut = asRecord(results?.leave_one_group_out);
+    const groupField = typeof groupOut?.group_field === "string" ? groupOut.group_field : "group";
+    const groupRows = asRows(groupOut?.runs);
+    const groupChart = chartableRows(
+        groupRows,
+        (row) => String(row.held_out_value ?? groupField)
     );
 
-    const temporalRows = asRows(results?.temporal_holdout);
+    const temporalOut = asRecord(results?.temporal_holdout);
+    const temporalRows = asRows(temporalOut?.runs);
     const temporalChart = chartableRows(temporalRows, (row) => {
-        if (row.split_year != null) {
-            return `Train ≤${String(row.split_year)} · test >${String(row.split_year)}`;
+        if (row.train_period != null) {
+            return `Train ${String(row.train_period)} · test ${String(row.test_period ?? "later")}`;
         }
         return "Temporal holdout";
     });
@@ -234,6 +243,14 @@ export default function RobustnessView() {
                                 </MenuItem>
                             ))}
                         </TextField>
+                        <TextField
+                            size="small"
+                            label="Group field (leave-one-out)"
+                            value={groupField}
+                            onChange={(event) => setGroupField(event.target.value)}
+                            helperText="Any document metadata field, e.g. organization, region, country"
+                            sx={{ minWidth: 260 }}
+                        />
                         <Button
                             variant="contained"
                             onClick={() => sweepMutation.mutate()}
@@ -301,10 +318,10 @@ export default function RobustnessView() {
                                             blocked={classWeightChart.blocked}
                                         />
                                         <SweepSection
-                                            title="Leave-one-organization-out"
-                                            description="Held-out organization vs macro F1"
-                                            items={orgChart.items}
-                                            blocked={orgChart.blocked}
+                                            title={`Leave-one-${groupField}-out`}
+                                            description={`Held-out ${groupField} value vs macro F1`}
+                                            items={groupChart.items}
+                                            blocked={groupChart.blocked}
                                         />
                                         <SweepSection
                                             title="Temporal holdout"

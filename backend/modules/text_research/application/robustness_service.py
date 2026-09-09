@@ -1,10 +1,21 @@
 """Robustness testing: repeated-seed stability, grouped cross-validation,
-preprocessing sensitivity, class-weight sensitivity, leave-one-organization-
-out, and temporal holdout — all computed against a frozen
+preprocessing sensitivity, class-weight sensitivity, leave-one-group-out,
+generic transfer tests, and temporal holdout — all computed against a frozen
 `TrainingDatasetSnapshot`, never against mutable annotations.
+
+Group/temporal fields are USER CONFIGURABLE (§38/§39): callers pass
+``group_field`` (default ``"organization"``, but any facet field on
+``CorpusDocument`` — including custom ``metadata_json`` keys — works) and
+``temporal_field`` (default ``"publication_year"``). Nothing here hardcodes
+a specific grouping dimension; see
+:mod:`backend.modules.text_research.infrastructure.validation_splits` for the
+pure split logic.
 
 All robustness runs execute as a single `AnalysisRun` (optionally dispatched
 to Celery for larger sweeps) so results are persisted and auditable.
+
+Limitation: leave-one-group-out sweeps one fit per distinct group value, so
+very high-cardinality fields are capped via ``max_groups`` to bound cost.
 """
 
 from __future__ import annotations
@@ -24,6 +35,13 @@ from backend.modules.text_research.infrastructure.classifiers import (
     grouped_train_test_split,
 )
 from backend.modules.text_research.infrastructure.preprocessing import PreprocessingConfig
+from backend.modules.text_research.infrastructure.validation_splits import (
+    class_prevalence,
+    expanding_window_splits,
+    leave_one_group_out,
+    temporal_holdout_split,
+    transfer_split,
+)
 
 
 def _utcnow() -> datetime:
@@ -159,6 +177,13 @@ class RobustnessService(ResearchAccessMixin):
         cv_folds: int = 5,
         class_weights: list[str | None] | None = None,
         test_size: float = 0.25,
+        group_field: str = "organization",
+        max_groups: int | None = 25,
+        temporal_field: str = "publication_year",
+        temporal_windows: bool = False,
+        transfer_field: str | None = None,
+        transfer_train_values: list[str] | None = None,
+        transfer_test_values: list[str] | None = None,
         run_async: bool = False,
     ) -> AnalysisRun:
         snapshot = await self.get_snapshot_or_404(snapshot_id, user_id=user_id)
@@ -169,6 +194,13 @@ class RobustnessService(ResearchAccessMixin):
             "cv_folds": cv_folds,
             "class_weights": class_weights if class_weights is not None else [None, "balanced"],
             "test_size": test_size,
+            "group_field": group_field,
+            "max_groups": max_groups,
+            "temporal_field": temporal_field,
+            "temporal_windows": temporal_windows,
+            "transfer_field": transfer_field,
+            "transfer_train_values": transfer_train_values,
+            "transfer_test_values": transfer_test_values,
         }
         run = await self.repo.create_run(
             AnalysisRun(
@@ -297,41 +329,43 @@ class RobustnessService(ResearchAccessMixin):
                 class_weight_rows.append({"class_weight": class_weight or "none", **outcome})
             results["class_weight_sensitivity"] = class_weight_rows
 
-            # 5. Leave-one-organization-out
-            org_by_doc = {
-                doc_id: (doc.organization or "unspecified") for doc_id, doc in documents_by_id.items()
-            }
-            organizations = sorted({org_by_doc.get(g, "unspecified") for g in groups})
-            org_rows = []
-            if len(organizations) < 2:
-                org_rows.append(
+            # 5. Leave-one-group-out (§38: group_field is user-configurable,
+            # not hardcoded to "organization"; works for any CorpusDocument
+            # facet field or custom metadata_json key).
+            group_field = params["group_field"]
+            group_values = [
+                documents_by_id[g].get_field_value(group_field) if g in documents_by_id else None
+                for g in groups
+            ]
+            group_splits = leave_one_group_out(group_values, max_groups=params.get("max_groups"))
+            group_rows: list[dict[str, Any]] = []
+            if not group_splits:
+                group_rows.append(
                     {
-                        "held_out_organization": None,
+                        "held_out_value": None,
                         "status": "not_evaluable",
-                        "reason": "Need at least two organizations",
+                        "reason": f"Need at least two distinct values for group_field={group_field!r}",
                         "macro_f1": None,
                     }
                 )
             else:
-                for held_out_org in organizations:
-                    train_idx = [i for i, g in enumerate(groups) if org_by_doc.get(g, "unspecified") != held_out_org]
-                    test_idx = [i for i, g in enumerate(groups) if org_by_doc.get(g, "unspecified") == held_out_org]
-                    if not train_idx or not test_idx:
-                        org_rows.append(
+                for split in group_splits:
+                    if not split.train_index or not split.test_index:
+                        group_rows.append(
                             {
-                                "held_out_organization": held_out_org,
-                                "test_size": len(test_idx),
+                                "held_out_value": split.held_out_value,
+                                "test_size": len(split.test_index),
                                 "status": "not_evaluable",
-                                "reason": "Empty train or test data for organization holdout",
+                                "reason": f"Empty train or test data for {group_field}={split.held_out_value!r}",
                                 "macro_f1": None,
                             }
                         )
                         continue
                     outcome = _safe_fit(
-                        [texts[i] for i in train_idx],
-                        [y[i] for i in train_idx],
-                        [texts[i] for i in test_idx],
-                        [y[i] for i in test_idx],
+                        [texts[i] for i in split.train_index],
+                        [y[i] for i in split.train_index],
+                        [texts[i] for i in split.test_index],
+                        [y[i] for i in split.test_index],
                         label_names=label_names,
                         config=base_config,
                         algorithm=params["algorithm"],
@@ -339,70 +373,150 @@ class RobustnessService(ResearchAccessMixin):
                         regularization_c=1.0,
                         random_seed=42,
                     )
-                    org_rows.append(
+                    group_rows.append(
                         {
-                            "held_out_organization": held_out_org,
-                            "test_size": len(test_idx),
+                            "held_out_value": split.held_out_value,
+                            "train_size": len(split.train_index),
+                            "test_size": len(split.test_index),
+                            "class_prevalence_test": class_prevalence([y[i] for i in split.test_index]),
                             **outcome,
                         }
                     )
-            results["leave_one_organization_out"] = org_rows
+            results["leave_one_group_out"] = {"group_field": group_field, "runs": group_rows}
 
-            # 6. Temporal holdout
-            year_by_doc = {doc_id: doc.publication_year for doc_id, doc in documents_by_id.items()}
-            years = sorted({year_by_doc.get(g) for g in groups if year_by_doc.get(g) is not None})
-            temporal_rows = []
-            if len(years) < 2:
-                temporal_rows.append(
+            # 5b. Generic transfer test (§38): train where field ∈ A, test
+            # where field ∈ B, both user-defined value sets.
+            transfer_field = params.get("transfer_field")
+            transfer_result: dict[str, Any] | None = None
+            if transfer_field:
+                transfer_values = [
+                    documents_by_id[g].get_field_value(transfer_field) if g in documents_by_id else None
+                    for g in groups
+                ]
+                try:
+                    split = transfer_split(
+                        transfer_values,
+                        train_values=params.get("transfer_train_values") or [],
+                        test_values=params.get("transfer_test_values") or [],
+                    )
+                except ValueError as exc:
+                    transfer_result = {"field": transfer_field, "status": "not_evaluable", "reason": str(exc)}
+                else:
+                    if not split.train_index or not split.test_index:
+                        transfer_result = {
+                            "field": transfer_field,
+                            "train_values": split.train_values,
+                            "test_values": split.test_values,
+                            "status": "not_evaluable",
+                            "reason": "Empty train or test data for the requested transfer filters",
+                        }
+                    else:
+                        outcome = _safe_fit(
+                            [texts[i] for i in split.train_index],
+                            [y[i] for i in split.train_index],
+                            [texts[i] for i in split.test_index],
+                            [y[i] for i in split.test_index],
+                            label_names=label_names,
+                            config=base_config,
+                            algorithm=params["algorithm"],
+                            class_weight=None,
+                            regularization_c=1.0,
+                            random_seed=42,
+                        )
+                        transfer_result = {
+                            "field": transfer_field,
+                            "train_values": split.train_values,
+                            "test_values": split.test_values,
+                            "train_size": len(split.train_index),
+                            "test_size": len(split.test_index),
+                            "class_prevalence_test": class_prevalence([y[i] for i in split.test_index]),
+                            **outcome,
+                        }
+            results["transfer_test"] = transfer_result
+
+            # 6. Temporal holdout (§39: temporal_field is user-selected, not
+            # hardcoded to publication_year) plus optional expanding-window
+            # validation when the field has enough distinct periods.
+            temporal_field = params["temporal_field"]
+            temporal_values = [
+                documents_by_id[g].get_field_value(temporal_field) if g in documents_by_id else None
+                for g in groups
+            ]
+            holdout = temporal_holdout_split(temporal_values)
+            if not holdout.train_index or not holdout.test_index:
+                temporal_rows = [
                     {
+                        "field": temporal_field,
                         "status": "not_evaluable",
-                        "reason": "Need publication years spanning at least two periods",
+                        "reason": f"Need temporal_field={temporal_field!r} spanning at least two periods",
                         "macro_f1": None,
                     }
-                )
+                ]
             else:
-                split_year = years[len(years) // 2]
-                train_idx = [
-                    i for i, g in enumerate(groups)
-                    if year_by_doc.get(g) is not None and year_by_doc[g] <= split_year
+                outcome = _safe_fit(
+                    [texts[i] for i in holdout.train_index],
+                    [y[i] for i in holdout.train_index],
+                    [texts[i] for i in holdout.test_index],
+                    [y[i] for i in holdout.test_index],
+                    label_names=label_names,
+                    config=base_config,
+                    algorithm=params["algorithm"],
+                    class_weight=None,
+                    regularization_c=1.0,
+                    random_seed=42,
+                )
+                temporal_rows = [
+                    {
+                        "field": temporal_field,
+                        "train_period": holdout.train_period,
+                        "test_period": holdout.test_period,
+                        "train_size": len(holdout.train_index),
+                        "test_size": len(holdout.test_index),
+                        "class_prevalence_test": class_prevalence([y[i] for i in holdout.test_index]),
+                        **outcome,
+                    }
                 ]
-                test_idx = [
-                    i for i, g in enumerate(groups)
-                    if year_by_doc.get(g) is not None and year_by_doc[g] > split_year
-                ]
-                if not train_idx or not test_idx:
-                    temporal_rows.append(
+            results["temporal_holdout"] = {"field": temporal_field, "runs": temporal_rows}
+
+            expanding_rows: list[dict[str, Any]] = []
+            if params.get("temporal_windows"):
+                windows = expanding_window_splits(temporal_values)
+                if not windows:
+                    expanding_rows.append(
                         {
-                            "split_year": split_year,
-                            "train_size": len(train_idx),
-                            "test_size": len(test_idx),
                             "status": "not_evaluable",
-                            "reason": "Empty train or test period",
-                            "macro_f1": None,
+                            "reason": f"temporal_field={temporal_field!r} needs >=3 distinct periods "
+                            "for expanding-window validation",
                         }
                     )
                 else:
-                    outcome = _safe_fit(
-                        [texts[i] for i in train_idx],
-                        [y[i] for i in train_idx],
-                        [texts[i] for i in test_idx],
-                        [y[i] for i in test_idx],
-                        label_names=label_names,
-                        config=base_config,
-                        algorithm=params["algorithm"],
-                        class_weight=None,
-                        regularization_c=1.0,
-                        random_seed=42,
-                    )
-                    temporal_rows.append(
-                        {
-                            "split_year": split_year,
-                            "train_size": len(train_idx),
-                            "test_size": len(test_idx),
-                            **outcome,
-                        }
-                    )
-            results["temporal_holdout"] = temporal_rows
+                    for window in windows:
+                        outcome = _safe_fit(
+                            [texts[i] for i in window.train_index],
+                            [y[i] for i in window.train_index],
+                            [texts[i] for i in window.test_index],
+                            [y[i] for i in window.test_index],
+                            label_names=label_names,
+                            config=base_config,
+                            algorithm=params["algorithm"],
+                            class_weight=None,
+                            regularization_c=1.0,
+                            random_seed=42,
+                        )
+                        expanding_rows.append(
+                            {
+                                "train_period": window.train_period,
+                                "test_period": window.test_period,
+                                "train_size": len(window.train_index),
+                                "test_size": len(window.test_index),
+                                **outcome,
+                            }
+                        )
+            results["temporal_expanding_window"] = {
+                "field": temporal_field,
+                "enabled": bool(params.get("temporal_windows")),
+                "runs": expanding_rows,
+            }
 
             await self.repo.update_run(
                 run,

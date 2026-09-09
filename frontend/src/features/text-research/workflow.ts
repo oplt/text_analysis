@@ -24,7 +24,7 @@ export type WorkflowStageDefinition = {
     description: string;
 };
 
-/** Ordered research workflow — primary navigation for Policy Text Lab. */
+/** Ordered research workflow — primary navigation for text research. */
 export const RESEARCH_WORKFLOW_STAGES: WorkflowStageDefinition[] = [
     {
         id: "corpus",

@@ -107,7 +107,6 @@ export default function CodebookView() {
     const [createOpen, setCreateOpen] = useState(false);
     const [newName, setNewName] = useState("");
     const [newDescription, setNewDescription] = useState("");
-    const [seedDemo, setSeedDemo] = useState(true);
     const [versionOpen, setVersionOpen] = useState(false);
     const [newVersion, setNewVersion] = useState("");
     const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
@@ -156,7 +155,7 @@ export default function CodebookView() {
             createCodebook(ctx.projectId, {
                 name: newName.trim(),
                 description: newDescription.trim() || undefined,
-                seed_demo_labels: seedDemo,
+                seed_demo_labels: false,
             }),
         onSuccess: (codebook) => {
             invalidateCodebooks(codebook.id);
@@ -164,7 +163,7 @@ export default function CodebookView() {
             setCreateOpen(false);
             setNewName("");
             setNewDescription("");
-            showToast({ message: "Codebook created.", severity: "success" });
+            showToast({ message: "Codebook created. Add your own labels next.", severity: "success" });
         },
         onError: (error) =>
             showToast({
@@ -522,13 +521,8 @@ export default function CodebookView() {
                             fullWidth
                             multiline
                             minRows={2}
+                            helperText="Codebooks start empty. Add labels that match your research design."
                         />
-                        <Button
-                            variant={seedDemo ? "contained" : "outlined"}
-                            onClick={() => setSeedDemo((value) => !value)}
-                        >
-                            {seedDemo ? "Seed demo labels: on" : "Seed demo labels: off"}
-                        </Button>
                     </Stack>
                 </DialogContent>
                 <DialogActions>

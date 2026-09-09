@@ -12,8 +12,10 @@ from backend.modules.text_research.infrastructure.reliability import (
     coder_pair_agreement_matrix,
     cohens_kappa,
     disagreement_units,
+    fleiss_kappa,
     krippendorff_alpha_nominal,
     raw_agreement,
+    reliability_metadata,
 )
 
 
@@ -62,6 +64,8 @@ class ReliabilityService(ResearchAccessMixin):
 
             raw: dict[str, Any] | None = None
             kappa: dict[str, Any] | None = None
+            fleiss: dict[str, Any] | None = None
+            statistics_used: list[str] = []
             if len(coders) == 2:
                 shared = sorted(set(values_by_coder[coders[0]]) & set(values_by_coder[coders[1]]))
                 if shared:
@@ -69,6 +73,7 @@ class ReliabilityService(ResearchAccessMixin):
                     values_b = [values_by_coder[coders[1]][unit] for unit in shared]
                     raw = raw_agreement(values_a, values_b)
                     kappa = cohens_kappa(values_a, values_b)
+                    statistics_used.extend(["raw_agreement", "cohens_kappa"])
                 else:
                     evaluation_messages.append(
                         "Cohen's κ is not evaluable because the two coders have no overlapping annotated units."
@@ -78,28 +83,49 @@ class ReliabilityService(ResearchAccessMixin):
                     "Reliability is not evaluable because fewer than two coders contributed annotations."
                 )
             else:
+                # 3+ coders on a nominal label: Cohen's kappa does not apply (it is
+                # defined for exactly two raters). Fleiss' kappa is the nominal-scale
+                # generalization for a fixed number of raters per unit; Krippendorff's
+                # alpha below additionally tolerates missing/ragged ratings.
                 evaluation_messages.append(
-                    "Cohen's κ is not reported because this label has more than two coders; use Krippendorff's α."
+                    "Cohen's κ is not reported because this label has more than two coders; "
+                    "see Fleiss' κ and Krippendorff's α instead."
                 )
+                fleiss = fleiss_kappa(value_matrix)
+                if fleiss.get("kappa") is not None:
+                    statistics_used.append("fleiss_kappa")
+                else:
+                    reason = fleiss.get("reason", "Fleiss' κ is not evaluable for this label.")
+                    evaluation_messages.append(f"Fleiss' κ is not evaluable: {reason}")
 
             alpha = krippendorff_alpha_nominal(value_matrix)
             if pairable_unit_count == 0:
                 evaluation_messages.append(
                     "Krippendorff's α is not evaluable because no unit has annotations from at least two coders."
                 )
+            elif alpha.get("alpha") is not None:
+                statistics_used.append("krippendorff_alpha")
+
             pair_agreement = coder_pair_agreement_matrix(values_by_coder)
             disagreements = disagreement_units(values_by_coder)
+            metadata = reliability_metadata(
+                value_matrix,
+                scale="nominal",
+                statistics_used=statistics_used,
+            )
 
             results_by_label[label.name] = {
                 "label_id": label.id,
                 "n_coders": len(coders),
                 "raw_agreement": raw,
                 "cohens_kappa": kappa,
+                "fleiss_kappa": fleiss,
                 "krippendorff_alpha": alpha,
                 "coder_pair_agreement": pair_agreement,
                 "disagreement_count": len(disagreements),
                 "disagreements": disagreements,
                 "evaluation_messages": evaluation_messages,
+                "metadata": metadata,
             }
 
         alphas = [
@@ -112,10 +138,17 @@ class ReliabilityService(ResearchAccessMixin):
             for row in results_by_label.values()
             if row["cohens_kappa"] and row["cohens_kappa"]["kappa"] is not None
         ]
+        fleiss_kappas = [
+            row["fleiss_kappa"]["kappa"]
+            for row in results_by_label.values()
+            if row["fleiss_kappa"] and row["fleiss_kappa"]["kappa"] is not None
+        ]
         summary = {
             "mean_krippendorff_alpha": sum(alphas) / len(alphas) if alphas else None,
             "mean_cohens_kappa": sum(kappas) / len(kappas) if kappas else None,
+            "mean_fleiss_kappa": sum(fleiss_kappas) / len(fleiss_kappas) if fleiss_kappas else None,
             "labels_evaluated": len(results_by_label),
+            "scale": "nominal",
         }
 
         run = await self.repo.create_run(

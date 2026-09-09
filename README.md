@@ -1,4 +1,4 @@
-# Policy Text Lab
+# Text Analysis
 
 Full-stack platform for computational text research: corpus management, human annotation, inter-coder reliability, quantitative analysis, supervised classification, topic modeling, and reproducible export.
 
@@ -13,7 +13,7 @@ Built as a modular FastAPI backend with a React frontend, PostgreSQL (pgvector),
 | **Identity** | Sign-up / sign-in, sessions, optional MFA, admin controls |
 | **Projects** | Multi-project workspace with membership |
 | **RAG** | Document upload (PDF/DOCX), chunking, pgvector retrieval |
-| **Policy Text Lab** | Research corpora, segmentation, annotation, reliability (κ / α), classifiers, topics, comparative explorer, exports |
+| **Text Research** | Research corpora, segmentation, annotation, reliability (κ / α), classifiers, topics, comparative explorer, exports |
 | **Platform** | Billing hooks, API keys, webhooks, feature flags, email templates |
 | **Observability** | Structured logging, Prometheus metrics, optional OpenTelemetry |
 
@@ -184,10 +184,10 @@ E2E_TEST_EMAIL=... E2E_TEST_PASSWORD=... npm run test:e2e
 
 ---
 
-## Policy Text Lab (research UI)
+## Text Research (research UI)
 
 1. Sign in and open or create a **project**.
-2. On the project detail page, choose **Open Policy Text Lab**.
+2. On the project detail page, choose **Open Text Research**.
 3. Work through the flow: corpus → segmentation → annotation → reliability → analysis / classification / topics → export.
 
 API prefix: `/api/v1/research`  
@@ -210,7 +210,7 @@ See [docs/text-research.md](docs/text-research.md) for methods, Celery tasks, an
 
 | Document | Topic |
 |----------|--------|
-| [docs/text-research.md](docs/text-research.md) | Policy Text Lab module |
+| [docs/text-research.md](docs/text-research.md) | Text Research module |
 | [DESIGN.md](DESIGN.md) | System design |
 | [docs/adr/](docs/adr/) | Architecture decision records |
 | [docs/logging.md](docs/logging.md) | Logging |

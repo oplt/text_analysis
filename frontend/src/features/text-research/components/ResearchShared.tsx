@@ -116,8 +116,8 @@ export function NoCorpusEmptyState() {
                 name: "Research corpus",
                 description:
                     intent === "upload"
-                        ? "Created to upload documents from the Policy Text Lab empty state."
-                        : "Created from the Policy Text Lab empty state.",
+                        ? "Created to upload documents from the Text Research empty state."
+                        : "Created from the Text Research empty state.",
             }),
         onSuccess: (corpus, intent) => {
             void client.invalidateQueries({ queryKey: queryKeys.textResearch.corpora(ctx.projectId) });

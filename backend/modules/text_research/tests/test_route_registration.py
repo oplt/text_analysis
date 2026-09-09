@@ -13,6 +13,11 @@ class ResearchRouteRegistrationTest(unittest.TestCase):
         for fragment in (
             '/projects/{project_id}/corpora"',
             '/corpora/{corpus_id}/segment"',
+            '/corpora/{corpus_id}/ingestion-qa"',
+            '/documents/{document_id}/ingestion-qa"',
+            '/projects/{project_id}/cleaning-profiles"',
+            '/cleaning/preview"',
+            '/corpora/{corpus_id}/clean"',
             '/classifiers/train"',
             '/classifiers/dataset-preview"',
             '/corpora/{corpus_id}/dashboard"',

@@ -1,1137 +1,2609 @@
-You are a senior frontend architect, product designer, UX engineer, and Material UI specialist working directly on this repository.
-Your objective is to **systematically clean up and modernize the existing frontend UI without changing application functionality or rewriting the product**.
 
-The application already uses React, TypeScript, Material UI, MUI X, TanStack Query, React Router, Vitest, and Playwright. Preserve that stack.
+Your task is to upgrade the backend into a robust, reusable, research-grade computational text-analysis platform.
 
-Do NOT introduce Tailwind, shadcn/ui, Bootstrap, Chakra, Ant Design, or another competing design system.
+The application must NOT be specialized for any specific research project, discipline, theoretical framework, label set, dictionary, ontology, organization type, geographic grouping, or classification problem.
 
-Use the existing MUI design system much more consistently and turn the application into a restrained, minimalist, professional research/data-analysis application.
+Everything project-specific must be defined by users.
 
-The visual target should feel closer to a modern professional analytical product such as Linear, Notion, Vercel, modern GitHub, Stripe Dashboard, or a high-quality scientific SaaS application — but do not blindly imitate any of them.
+Examples include:
 
-The final UI should be:
+* labels
+* constructs
+* codebooks
+* dictionaries
+* categories
+* metadata fields
+* grouping variables
+* annotation schemes
+* classification targets
+* comparison groups
+* sampling strata
+* preprocessing profiles
+* model configurations
+* validation strategies
+* topic labels
+* domain definitions
 
-* minimalist
-* calm
-* information-dense without feeling crowded
-* consistent
-* responsive
-* accessible
-* easy to scan
-* visually balanced
-* appropriate for researchers and technical users
+The backend should provide generic analytical capabilities and reusable research infrastructure.
 
-Do not make the UI decorative or flashy.
+The desired architecture is:
 
----
+`source documents`
+→ `canonical corpus`
+→ `quality control`
+→ `research units`
+→ `preprocessing`
+→ `feature extraction`
+→ `exploratory analysis`
+→ `annotation`
+→ `reliability`
+→ `gold dataset`
+→ `statistical / machine-learning analysis`
+→ `validation`
+→ `prediction / inference`
+→ `comparative analysis`
+→ `reproducible export`
 
-# 1. UNDERSTAND THE FRONTEND BEFORE MODIFYING IT
+Do NOT rewrite the application from scratch.
 
-First inspect the complete frontend.
+Preserve the existing modular-monolith architecture and improve the existing `backend/modules/text_research` bounded context.
 
-Pay particular attention to:
+Scientific validity, reproducibility, flexibility, and extensibility are more important than adding fashionable AI features.
 
-`frontend/src/app/theme.ts`
+# 1. INSPECT THE CURRENT IMPLEMENTATION FIRST [x]
 
-`frontend/src/app/designTokens.ts`
+Before changing code, inspect at least:
 
-`frontend/src/components/ui/PageShell.tsx`
+## Architecture
 
-`frontend/src/components/ui/SectionCard.tsx`
+* `README.md`
+* `DESIGN.md`
+* `docs/text-research.md`
+* `backend/pyproject.toml`
 
-`frontend/src/components/ui/StatCard.tsx`
+## Corpus and ingestion
 
-`frontend/src/components/layout/AppLayout.tsx`
+* `backend/modules/text_research/application/corpus_service.py`
 
-`frontend/src/components/layout/SettingsTabs.tsx`
+* `backend/modules/text_research/application/segmentation_service.py`
 
-and all files under:
+* `backend/modules/text_research/infrastructure/segmentation.py`
 
-`frontend/src/pages/`
+* `backend/modules/rag/README.md`
 
-`frontend/src/features/*/views/`
+* `backend/modules/rag/infrastructure/langchain_document_loaders.py`
 
-`frontend/src/features/*/components/`
+* `backend/modules/rag/infrastructure/langchain_text_splitters.py`
 
-Create an internal inventory of every major page and determine:
+## Domain models
 
-1. its purpose
-2. its important user actions
-3. number of major sections
-4. approximate vertical length
-5. whether information is logically grouped
-6. whether the page needs tabs
-7. whether it has oversized or undersized containers
-8. whether cards have unequal or awkward heights
-9. whether whitespace is excessive or insufficient
-10. whether controls are scattered
-11. whether important information has appropriate visual priority
-12. whether its desktop layout collapses correctly on tablet/mobile
+* `backend/modules/text_research/domain/models.py`
+* `backend/modules/text_research/domain/enums.py`
 
-Do not start by globally changing colors or border radii.
+## Preprocessing
 
-First identify the structural problems.
+* `backend/modules/text_research/infrastructure/preprocessing.py`
+* `backend/modules/text_research/application/preprocessing_service.py`
 
----
+## Quantitative analysis
 
-# 2. PRIORITY PAGES
+* `backend/modules/text_research/infrastructure/quantitative.py`
+* `backend/modules/text_research/application/quantitative_analysis_service.py`
+* `backend/modules/text_research/application/dictionary_service.py`
 
-Pay especially close attention to the large research views, including:
+## Annotation
 
-`ClassificationView.tsx`
-
-`ReliabilityView.tsx`
-
-`AnalysisView.tsx`
-
-`TopicsView.tsx`
-
-`AnnotationView.tsx`
-
-`CodebookView.tsx`
-
-`ContextualView.tsx`
-
-`CorpusView.tsx`
-
-`ExplorerView.tsx`
-
-`PrepareView.tsx`
-
-`RunsView.tsx`
-
-`RobustnessView.tsx`
-
-`ExportsView.tsx`
-
-Also review:
-
-`DashboardPage.tsx`
-
-`ProjectsPage.tsx`
-
-`NotificationsPage.tsx`
-
-`AdminUsersPage.tsx`
-
-`AuthHomePage.tsx`
-
-`CalendarPage.tsx`
-
-AI Studio pages
-
-Profile/settings pages
-
-Platform/admin pages
-
-Do not assume that every large source file requires tabs. Judge the UI based on actual user tasks and information architecture.
-
----
-
-# 3. REDUCE VERY LONG PAGES WITH TABS
-
-The application currently has several pages containing many conceptually separate workflows stacked vertically.
-
-Where content consists of distinct peer workflows, introduce page-level or section-level MUI `Tabs`.
-
-Tabs should reduce cognitive load and vertical scrolling.
-
-Do NOT put everything behind tabs automatically.
-
-Use tabs when:
-
-* a page contains multiple distinct workflows
-* users normally focus on only one workflow at a time
-* sections have significant vertical content
-* sections represent stages, modes, result categories, or related tools
-* moving content behind a tab does not hide information users need simultaneously
-
-Do NOT use tabs when:
-
-* users need to compare sections simultaneously
-* the content is naturally sequential
-* there are only two tiny sections
-* an Accordion, inline section, Drawer, or progressive disclosure pattern is more appropriate
-
-As a practical guideline, investigate pages that contain more than roughly 4–5 substantial sections or require several viewport heights of scrolling.
-
----
-
-# 4. SPECIFIC TAB CANDIDATES
-
-Use these as hypotheses, then validate them against the actual code.
+* `backend/modules/text_research/application/annotation_service.py`
+* `backend/modules/text_research/application/assignment_planning.py`
+* `backend/modules/text_research/application/reliability_service.py`
+* `backend/modules/text_research/application/adjudication_service.py`
+* `backend/modules/text_research/application/dataset_builder_service.py`
+* `backend/modules/text_research/application/codebook_service.py`
 
 ## Classification
 
-`ClassificationView.tsx` is currently one of the strongest candidates for restructuring.
+* `backend/modules/text_research/infrastructure/classifiers.py`
+* `backend/modules/text_research/application/classification_service.py`
+* `backend/modules/text_research/application/prediction_service.py`
+* `backend/modules/text_research/application/active_learning_service.py`
+* `backend/modules/text_research/application/robustness_service.py`
 
-Investigate grouping it approximately into:
+## Topic modeling
 
-**Dataset**
+* `backend/modules/text_research/infrastructure/topic_models.py`
+* `backend/modules/text_research/application/topic_model_service.py`
 
-* dataset preview
-* annotation source
-* class distribution
-* freeze/select training snapshots
+## Comparative analysis / export
 
-**Train**
+* `backend/modules/text_research/application/comparative_analysis_service.py`
+* `backend/modules/text_research/application/contextual_dataset_service.py`
+* `backend/modules/text_research/application/export_service.py`
 
-* model configuration
-* preprocessing
-* algorithm parameters
-* training controls
-* training status
+## Workers
 
-**Evaluate**
+* `backend/modules/text_research/workers.py`
+* `backend/workers/tasks.py`
 
-* metrics
-* confusion matrix
-* per-label metrics
-* evaluation charts
+## Tests
 
-**Models**
+Inspect all files under:
 
-* trained models
-* model selection
-* coefficients / feature importance
+`backend/modules/text_research/tests/`
 
-**Active Learning**
+Do not assume the documentation reflects actual behavior.
 
-* predictions
-* uncertain cases
-* send to annotation
-* active-learning workflow
-
-Keep the high-level active-learning status/progress visible above the tabs if it provides useful global context.
-
-Do not duplicate state or API calls when splitting the UI.
+Verify implementation directly from source code.
 
 ---
 
-# 5. RELIABILITY PAGE
+# 2. CORE DESIGN PRINCIPLE — NO HARDCODED RESEARCH CONCEPTS [x]
 
-`ReliabilityView.tsx` currently mixes different jobs.
+Remove or avoid hardcoded domain-specific concepts.
 
-Investigate a structure such as:
+Do NOT hardcode things such as:
 
-**Agreement**
+* liberalism
+* universalism
+* multiculturalism
+* sentiment categories
+* political categories
+* industries
+* organizations
+* geographic categories
+* cultural categories
+* research hypotheses
 
-* compute reliability
-* Cohen's kappa
-* Krippendorff's alpha
-* label comparison
-* reliability charts
+Labels must come from user-defined codebooks.
 
-**Adjudication**
+Dictionaries must come from user-defined dictionaries.
 
-* disagreements
-* source passage
-* coder decisions
-* codebook definition
-* final decision
+Metadata dimensions must come from user/project data.
 
-**History**
+Comparison groups must be selected by the user.
 
-* adjudication provenance
-* saved decisions
-
-If there are no results yet, ensure the empty state guides users clearly toward Annotation or Codebook.
-
-The adjudication workspace should receive more usable horizontal space than its supporting list.
-
-Use a responsive master-detail layout rather than forcing equal-width columns.
-
----
-
-# 6. TOPIC MODELING PAGE
-
-`TopicsView.tsx` also contains many conceptually different result types.
-
-Investigate separating:
-
-**Setup**
-
-* model configuration
-* metadata filters
-* train action
-
-**Topics**
-
-* selected topic
-* top terms
-* topic table
-* human-readable topic names
-
-**Distribution**
-
-* dominant topic counts
-* topic prevalence
-
-**Metadata**
-
-* topic prevalence by organization/year/region/etc.
-* heatmaps
-* trend charts
-
-**Documents**
-
-* representative text units/documents
-
-Keep global model metrics in a compact summary that remains visible where useful.
-
-Do not show every visualization in one extremely long vertical column.
-
----
-
-# 7. ANALYSIS PAGE
-
-`AnalysisView.tsx` already uses tabs for different analysis methods.
-
-Preserve this architecture.
-
-Improve it rather than replacing it.
-
-Review:
-
-* tab styling
-* horizontal overflow behavior
-* active-tab visibility
-* spacing around tabs
-* configuration controls
-* relationship between configuration and output
-* mobile responsiveness
-* repeated controls across tabs
-
-Consider making the analysis navigation visually quieter and more compact.
-
-Do not nest another unnecessary tab layer inside it.
-
----
-
-# 8. OTHER LARGE PAGES
-
-Review Annotation, Codebook, Corpus, Contextual Analysis, Explorer, Runs, Prepare, Robustness and Exports.
-
-For each one decide between:
-
-1. simple page sections
-2. tabs
-3. segmented controls
-4. accordion/progressive disclosure
-5. master-detail layout
-6. split-pane layout
-7. drawers/dialogs for secondary tasks
-
-Choose based on user workflow rather than component fashion.
-
----
-
-# 9. BUILD A CONSISTENT PAGE ANATOMY
-
-Major application screens should follow a predictable hierarchy:
-
-Page header
-
-→ optional concise description/context
-
-→ primary actions
-
-→ optional tabs/navigation
-
-→ key metrics or status
-
-→ primary work area
-
-→ secondary/supporting information
-
-Avoid pages where every block competes equally for attention.
-
-Standardize page headers rather than having every page invent its own spacing.
-
-Consider creating or extending shared primitives such as:
-
-`PageHeader`
-
-`PageTabs`
-
-`ContentSection`
-
-`Toolbar`
-
-`ResponsiveGrid`
-
-only if they remove genuine duplication.
-
-Do not create abstractions for one-off visual details.
-
----
-
-# 10. BALANCE WIDTHS
-
-Audit every Grid, Stack, flexbox and CSS grid.
-
-Eliminate awkward layouts such as:
-
-50/50 columns where one side contains very little information
-
-tiny controls stretched across an entire card
-
-charts constrained into narrow columns
-
-tables placed in unnecessarily small containers
-
-sidebars occupying too much width
-
-large empty right or left areas
-
-cards whose content naturally needs different widths but receives equal fractions
-
-Use responsive ratios based on content.
-
-Examples:
-
-primary / secondary:
-
-`minmax(0, 1.6fr) minmax(280px, 0.8fr)`
-
-workbench / inspector:
-
-`minmax(0, 2fr) minmax(300px, 1fr)`
-
-master / detail:
-
-`minmax(240px, 0.7fr) minmax(0, 2fr)`
-
-Do not mechanically use these exact values.
-
-Choose ratios according to the actual content.
-
-Use `minmax(0, ...)` to prevent overflow where appropriate.
-
----
-
-# 11. BALANCE HEIGHTS
-
-Do NOT give cards arbitrary fixed heights merely to make a grid symmetrical.
-
-Instead:
-
-* group cards with similar semantic weight
-* use CSS Grid where equal-height rows genuinely improve scanning
-* allow dense content to determine natural height
-* keep empty/simple cards compact
-* set sensible max-heights on scrollable lists
-* give data tables and long result lists bounded work areas where appropriate
-* avoid giant blank card bottoms
-* avoid a short card sitting beside an extremely tall unrelated card when another composition would be better
-
-For dashboard-style card rows, use consistent stretch behavior where cards belong to the same group.
-
-For mixed-content pages, optimize visual balance rather than mathematical equality.
-
----
-
-# 12. REVISIT THE RESEARCH THREE-COLUMN LAYOUT
-
-Inspect:
-
-`ResearchLayout.tsx`
-
-The current desktop workspace contains:
-
-workflow navigation | main view | context sidebar
-
-This is useful, but on some pages the center workspace can become too narrow for tables, configuration forms and charts.
-
-Improve responsiveness intelligently.
-
-Consider:
-
-* preserving all three columns on genuinely wide displays
-* reducing side-column width
-* changing column ratios
-* collapsing the context panel into a Drawer/Popover at intermediate widths
-* allowing the workflow navigator to become compact
-* switching to a single main content column earlier
-* ensuring tables and charts receive sufficient width
-
-Do not remove useful persistent context without providing an equivalent accessible interaction.
-
-Do not allow the workspace sidebars to consume more space than the actual research task.
-
----
-
-# 13. DASHBOARD BALANCE
-
-Review `DashboardPage.tsx`.
-
-The dashboard should communicate hierarchy, not simply place cards wherever they fit.
-
-Inspect the relationship between:
-
-* KPI/stat cards
-* recent activity
-* account health
-* calendar
-* project snapshot
-
-Determine which information is primary.
-
-Avoid a very tall secondary column next to a relatively short primary column.
-
-Possible solutions include:
-
-* reordering sections
-* using a more balanced grid
-* moving the calendar into a wider row
-* placing account/project summaries side by side
-* limiting activity height with intentional scrolling when appropriate
-* reducing nested cards
-
-Do not force all dashboard widgets to equal height.
-
-The goal is compositional balance.
-
----
-
-# 14. MINIMALIST VISUAL LANGUAGE
-
-Refine the existing theme rather than redesigning the brand from scratch.
-
-Apply a minimalist visual system:
-
-* restrained use of surfaces
-* fewer unnecessary containers
-* fewer nested cards
-* minimal shadows
-* subtle borders/dividers only when they communicate structure
-* one dominant accent color
-* neutral backgrounds
-* clear typography hierarchy
-* generous but controlled whitespace
-* compact analytical controls
-* restrained icon usage
-* consistent corner radii
-* consistent control heights
-* consistent focus states
-* subtle motion only where functional
-
-Do not turn every section into a card.
-
-Sometimes a simple heading + divider + content is better.
-
-Prefer visual hierarchy produced by:
-
-spacing
-
-typography
-
-alignment
-
-grouping
-
-background contrast
-
-rather than borders around everything.
-
----
-
-# 15. REDUCE "CARD INSIDE CARD" DESIGN
-
-Audit uses of `SectionCard`, `Paper`, `Card`, and boxed inner surfaces.
-
-Avoid structures such as:
-
-Card
-→ Card
-→ Box with another background
-→ bordered Box
-
-unless there is a real semantic hierarchy.
-
-A professional analytical interface usually benefits from fewer surface layers.
-
-Use one primary surface and separate its internal groups with spacing, headings, dividers, or subtle background changes.
-
----
-
-# 16. IMPROVE `SectionCard`
-
-Review whether `SectionCard.tsx` needs small improvements to support the new system.
-
-Potentially support a restrained set of variants such as:
-
-default
-
-subtle
-
-outlined
-
-flat
-
-Do this only if it eliminates repetitive custom styling.
-
-Avoid adding dozens of props.
-
-Its header should consistently support:
-
-title
-
-description
-
-action
-
-optional compact mode
-
-Ensure long descriptions and actions wrap gracefully on smaller screens.
-
----
-
-# 17. IMPROVE PAGE WIDTH STRATEGY
-
-`PageShell` currently defaults to a broad XL container.
-
-Do not assume every page needs the same maximum width.
-
-Use content-aware widths.
-
-Examples:
-
-forms/settings:
-narrower readable content width
-
-dashboards:
-wide
-
-data tables/charts:
-wide or full available workspace
-
-authentication:
-compact
-
-text-heavy information:
-readable line length
-
-Allow pages to explicitly select an appropriate width while maintaining consistent outer gutters.
-
-Avoid giant forms stretching across a 1400px screen.
-
-Avoid complex data tables squeezed into unnecessarily narrow reading columns.
-
----
-
-# 18. FORMS
-
-Group related form controls into logical sections.
-
-Avoid a long horizontal row of unrelated inputs.
-
-Use responsive CSS Grid for forms when it gives cleaner alignment.
+Models should operate generically on configured targets.
 
 For example:
 
-desktop:
-2–4 logical columns depending on control type
+`Codebook`
+→ user creates labels
 
-tablet:
-2 columns
+`DictionaryDefinition`
+→ user creates dictionary categories and terms
 
-mobile:
-1 column
+`Corpus metadata`
+→ user imports or defines fields
 
-Do not make a 120px numeric input occupy the same width as a descriptive text field.
+`Classification`
+→ user chooses labels/targets
 
-Keep labels concise.
+`Comparative analysis`
+→ user chooses grouping variables
 
-Place advanced or infrequently changed parameters behind an "Advanced settings" progressive-disclosure area where appropriate.
-
-Classification model hyperparameters are a particularly good candidate.
-
-Primary actions should be visually obvious without being oversized.
+The backend supplies analysis machinery, not substantive interpretations.
 
 ---
 
-# 19. TABLES
+# 3. P0 — CREATE A CANONICAL RESEARCH SOURCE REPRESENTATION [x]
 
-Review every table.
+This is the highest-priority backend issue.
 
-For large structured datasets, use the existing MUI ecosystem appropriately.
+Current research source text may be reconstructed from retrieval-oriented RAG chunks.
 
-Keep standard `Table` when the data is simple.
+Relevant file:
 
-Consider MUI X DataGrid only when features such as the following actually add value:
+`backend/modules/text_research/application/corpus_service.py`
 
-* sorting
-* pagination
-* filtering
-* column management
-* larger result sets
+RAG chunks may overlap.
 
-Do not migrate every small table to DataGrid.
+Joining them can duplicate content and corrupt:
 
-Tables should:
+* frequencies
+* DFM matrices
+* n-grams
+* co-occurrence
+* dictionary scores
+* topic models
+* annotations
+* classifiers
+* embeddings
+* downstream statistical analysis
 
-* fit their available space
-* scroll intentionally on small screens
-* have sensible column priorities
-* truncate/expand long text intelligently
-* avoid tiny unreadable columns
-* keep actions predictable
+Research analysis must NEVER rely on reconstructing overlapping retrieval chunks.
 
----
+Implement a canonical immutable source representation.
 
-# 20. CHARTS
+Suggested new file:
 
-The application already uses MUI X Charts.
+`backend/modules/text_research/infrastructure/canonical_text.py`
 
-Keep chart design restrained.
+Modify:
 
-Standardize:
+* `backend/modules/text_research/domain/models.py`
+* `backend/modules/text_research/application/corpus_service.py`
+* `backend/modules/text_research/application/segmentation_service.py`
+* relevant migrations
+* export/provenance code
 
-* chart heights
-* title placement
-* axis formatting
-* tooltip behavior
-* empty states
-* loading states
-* legend positioning
-* margins
+Store enough information to identify the exact analyzed source:
 
-Do not make every chart the same height.
+* document ID
+* canonical text
+* original file checksum
+* canonical text checksum
+* parser name/version
+* extraction timestamp
+* source document/file reference
+* page/section provenance
+* optional language metadata
+* transformation metadata
 
-A compact KPI chart should remain compact.
+Keep these representations separate:
 
-A detailed analytical chart should have sufficient room.
+`canonical research document`
 
-Avoid decorative visualizations.
+and
 
----
+`retrieval/RAG chunks`
 
-# 21. TAB DESIGN
+RAG can be generated from canonical documents, but research analysis must start from the canonical document.
 
-Create a shared visual pattern for page-level tabs where useful.
-
-Tabs should:
-
-* be keyboard accessible
-* use MUI `Tabs` / `Tab`
-* support horizontal scrolling on narrow screens
-* visibly indicate the active state
-* avoid oversized pill styling
-* avoid excessive borders
-* have compact but accessible hit targets
-* preserve relevant local state when users switch tabs
-
-For major workflow tabs, strongly consider making the active tab URL-addressable using query parameters or nested routes where this improves:
-
-* refresh behavior
-* browser back/forward
-* deep linking
-* bookmarking
-
-Example:
-
-`?tab=evaluation`
-
-Do not unnecessarily change existing routes where local tab state is sufficient.
+Add tests demonstrating that retrieval overlap cannot duplicate research text.
 
 ---
 
-# 22. RESPONSIVE DESIGN
+# 4. SOURCE PROVENANCE [x]
 
-Explicitly verify layouts at approximately:
+Every analysis unit should remain traceable to the original source.
 
-390px mobile
+Relevant files:
 
-768px tablet
+* `backend/modules/rag/infrastructure/langchain_document_loaders.py`
+* `backend/modules/text_research/domain/models.py`
+* `backend/modules/text_research/infrastructure/segmentation.py`
+* `backend/modules/text_research/application/segmentation_service.py`
 
-1024px compact laptop
+Preserve when available:
 
-1280px laptop
+* document ID
+* page number
+* section heading
+* paragraph number
+* sentence number
+* unit position
+* character start offset
+* character end offset
+* source text hash
 
-1440px desktop
+Consider extending `TextUnit` with:
 
-1920px wide desktop
+* `char_start`
+* `char_end`
+* `section_heading`
 
-At each width inspect:
+Do not invent page numbers when unavailable.
 
-* navigation
-* tabs
-* forms
-* cards
-* tables
-* charts
-* sidebars
-* dialogs
-* action toolbars
-* whitespace
-
-Avoid simply stacking everything vertically at the first breakpoint.
-
-Use responsive re-composition.
-
-A mobile interface should still preserve information hierarchy.
+Segmentation must remain reproducible.
 
 ---
 
-# 23. MODERN CSS/MUI LAYOUT TOOLS
+# 5. DOCUMENT INGESTION QUALITY CONTROL [x]
 
-Use current, stable capabilities supported by the existing project and browser target.
+Add generic document-quality diagnostics.
 
-Prefer:
+Suggested file:
 
-* CSS Grid
-* flexbox
-* `minmax()`
-* `clamp()` where appropriate
-* responsive MUI `sx`
-* MUI theme spacing
-* MUI breakpoints
-* `Stack`
-* `Box`
-* current MUI Grid APIs where appropriate
+`backend/modules/text_research/application/ingestion_qa_service.py`
 
-Consider container-aware behavior where it provides a genuine benefit and is compatible with the project's supported browsers.
+Detect at least:
 
-Avoid large amounts of custom CSS.
+* empty documents
+* extraction failures
+* suspiciously short documents
+* suspiciously large documents
+* exact duplicates
+* likely near duplicates
+* excessive Unicode replacement characters
+* likely image-only/scanned PDF
+* unusual whitespace
+* repeated headers
+* repeated footers
+* line-break hyphenation
+* malformed extraction
+* language mismatch where language metadata exists
+* extreme token-count outliers
 
-Avoid magic pixel values scattered throughout components.
-
-Move recurring design values into theme/design tokens.
-
----
-
-# 24. TYPOGRAPHY
-
-Make the hierarchy obvious but restrained.
-
-A typical screen should not need many giant headings.
-
-Use:
-
-page title
-→ section title
-→ subsection title
-→ body
-→ supporting metadata
-
-Keep analytical UI typography relatively compact.
-
-Do not make card headings too large.
-
-Do not use bold text everywhere.
-
-Use muted secondary text only for genuinely secondary information.
-
-Maintain sufficient contrast.
-
----
-
-# 25. BUTTON HIERARCHY
-
-Reduce excessive button competition.
-
-Within a page or section:
-
-one clear primary action where possible
-
-secondary actions → outlined/text
-
-tertiary actions → text/icon/menu
-
-Avoid multiple adjacent contained buttons unless both genuinely have equal importance.
-
-Move rare actions into menus when appropriate.
-
-Do not hide frequently used operations solely for visual minimalism.
-
----
-
-# 26. EMPTY / LOADING / ERROR STATES
-
-Standardize existing states.
+Do not silently alter original text.
 
 Keep:
 
-* useful EmptyState
-* QueryBoundary
-* skeleton/progress behavior
-* retry affordances
-* concise errors
+1. raw extracted representation
+2. cleaned canonical representation
+3. cleaning/transformation metadata
 
-Avoid giant empty-state blocks inside already small cards.
-
-Scale empty states according to context.
-
-A whole empty page can use a larger state.
-
-An empty subsection should remain compact.
+Allow users to inspect QA results.
 
 ---
 
-# 27. ACCESSIBILITY
+# 6. FLEXIBLE DOCUMENT CLEANING PIPELINE [x]
 
-Maintain or improve WCAG 2.2 AA-quality interaction.
+Add configurable document-cleaning transformations.
 
-Verify:
+Examples:
 
-* keyboard navigation
-* tabs
-* focus-visible states
-* form labels
-* dialog focus
-* semantic headings
-* icon-button labels
-* contrast
-* table semantics
-* responsive zoom
-* reduced motion where appropriate
+* whitespace normalization
+* Unicode normalization
+* dehyphenation across line breaks
+* header removal
+* footer removal
+* page-number removal
+* optional bibliography/reference exclusion
+* optional table exclusion
+* custom regex transformations
 
-Do not sacrifice accessibility for minimalist aesthetics.
+Every cleaning transformation must be:
 
----
+* configurable
+* recorded
+* reproducible
+* optional
 
-# 28. PRESERVE FUNCTIONALITY
+Never silently discard information.
 
-This task is primarily frontend architecture and presentation.
-
-Do NOT:
-
-* modify backend behavior unnecessarily
-* change API contracts
-* remove analytical functionality
-* remove useful fields
-* remove charts simply because a page is crowded
-* alter scientific calculations
-* alter query semantics
-* change authentication behavior
-* rewrite state management unnecessarily
-
-Instead reorganize and present existing functionality more effectively.
+Prefer a versioned `CleaningProfile` or integrate this clearly into `PreprocessingProfile`.
 
 ---
 
-# 29. REFACTOR GIANT VIEWS WHERE NEEDED
+# 7. UPGRADE TOKENIZATION AND PREPROCESSING [x]
 
-Several view files are very large.
+Relevant files:
 
-When introducing tabs or major sections, extract coherent UI sections into components.
+* `backend/modules/text_research/infrastructure/preprocessing.py`
+* `backend/modules/text_research/application/preprocessing_service.py`
+* `backend/pyproject.toml`
 
-For example, Classification could potentially become conceptually similar to:
+The current processing should be upgraded to robust Unicode-aware behavior.
 
-`ClassificationView.tsx`
+Recommended libraries where justified:
 
-`ClassificationDatasetTab.tsx`
+* `spacy`
+* `spacy-lookups-data`
+* `regex`
+* optionally `ftfy`
 
-`ClassificationTrainTab.tsx`
+Support:
 
-`ClassificationEvaluationTab.tsx`
+* Unicode normalization
+* Unicode-aware tokenization
+* lowercase
+* punctuation removal
+* number removal
+* stopword removal
+* negation preservation
+* custom stopword sets
+* stemming
+* lemmatization
+* n-grams
+* min_df
+* max_df
+* max_features
 
-`ClassificationModelsTab.tsx`
+Do not silently claim lemmatization/stemming occurred if required resources are unavailable.
 
-`ClassificationActiveLearningTab.tsx`
+Record:
 
-This is only an example.
+* preprocessing implementation
+* language
+* tokenizer
+* lemmatizer/stemmer
+* model name
+* model version
+* package version
 
-Do not blindly create these exact files.
-
-Extract components where doing so improves:
-
-* readability
-* maintainability
-* testability
-* rendering boundaries
-
-Keep API/query ownership at the appropriate level.
-
-Avoid prop-drilling huge state objects if the current parent view naturally owns the workflow.
-
----
-
-# 30. VISUAL QA WITH PLAYWRIGHT
-
-The repository already has Playwright.
-
-Use it where practical to inspect major pages at multiple viewport sizes.
-
-Capture representative screenshots before and after changes.
-
-Visually inspect:
-
-* overflow
-* unexpected blank areas
-* mismatched card heights
-* awkward grids
-* tab overflow
-* clipped tables
-* oversized inputs
-* large empty cards
-* excessive vertical scrolling
-* broken mobile composition
-
-If authenticated routes require fixtures or setup, reuse the project's existing test infrastructure.
-
-Do not bypass authentication insecurely merely to make screenshots easier.
+Original text must never be mutated.
 
 ---
 
-# 31. IMPLEMENT IN INCREMENTS
+# 8. MULTILINGUAL / LANGUAGE-AWARE ARCHITECTURE [x]
 
-Proceed approximately in this order:
+Suggested new file:
 
-Phase 1 — audit/layout system
+`backend/modules/text_research/infrastructure/language_processing.py`
 
-Understand the pages and establish shared spacing/layout principles.
+The architecture should support multiple languages.
 
-Phase 2 — shared primitives
+At minimum:
 
-Improve PageShell, SectionCard, tab treatment, page headers, and any genuinely reusable layout helpers.
+* robust Unicode behavior
+* configurable language
+* language-specific tokenization
+* language-specific sentence segmentation
+* language-specific stopwords
+* language-specific stemming
+* language-specific lemmatization when available
 
-Phase 3 — worst long pages
+Do not hardcode English assumptions into generic APIs.
 
-Refactor Classification, Reliability, Topics and other confirmed long pages.
+Add tests using characters such as:
 
-Phase 4 — research workspace
+`é ü ç ñ ø ğ ş ą č å æ`
 
-Tune ResearchLayout/sidebar/main-content proportions.
-
-Phase 5 — dashboards and ordinary pages
-
-Balance Dashboard, Projects, Notifications, Admin, Profile, etc.
-
-Phase 6 — responsive polish
-
-Fix tablet/mobile/wide-screen issues.
-
-Phase 7 — verification
-
-Tests, lint, build and visual QA.
-
-Do not perform a giant rewrite in one uncontrolled pass.
+Unknown languages should degrade gracefully rather than producing falsely precise output.
 
 ---
 
-# 32. TESTING
+# 9. IMPROVE SENTENCE SEGMENTATION [x]
 
-After modifications run:
+Relevant file:
 
-`npm run lint`
+`backend/modules/text_research/infrastructure/segmentation.py`
 
-`npm run test`
+Improve sentence segmentation beyond a simple punctuation regex.
 
-`npm run build`
+Handle common cases:
 
-and relevant:
+* abbreviations
+* initials
+* decimals
+* URLs
+* quotations
+* acronyms
+* numbered lists
 
-`npm run test:e2e`
+Examples:
 
-Add or update tests for important tab/navigation interactions when necessary.
+* `e.g.`
+* `i.e.`
+* `Dr. Smith`
+* `3.14`
+* `U.S.`
+* `Fig. 2`
 
-Verify that moving content between tabs does not accidentally:
+Prefer language-aware configurable sentence segmentation.
 
-* retrigger expensive requests unnecessarily
-* lose unsaved form state
-* reset selections
-* duplicate requests
-* change mutation behavior
+Keep deterministic behavior.
 
----
-
-# 33. DEFINITION OF DONE
-
-The redesign is successful when:
-
-1. Very long pages are divided into understandable task-oriented views where appropriate.
-2. Users no longer need to scroll through unrelated workflows to reach the operation they want.
-3. Cards/divs have intentional proportions instead of arbitrary equal sizing.
-4. Dashboard compositions feel visually balanced.
-5. Forms have coherent widths.
-6. Tables and charts have enough horizontal space.
-7. The research workspace remains usable at laptop widths.
-8. Mobile and tablet layouts are intentionally recomposed.
-9. Nested-card visual clutter is substantially reduced.
-10. Typography and spacing establish hierarchy without decoration.
-11. MUI styling is consistent.
-12. Existing functionality remains available.
-13. Dark and light themes remain coherent.
-14. Accessibility is maintained or improved.
-15. Tests/lint/build pass.
-16. The interface feels like one coherent product rather than individually designed pages.
+Add regression tests.
 
 ---
 
-# IMPORTANT DESIGN PRINCIPLE
+# 10. STANDARDIZED TEXT ANALYSIS PIPELINE [x]
 
-Do not interpret "minimalist" as "remove information."
+Provide a Python-native standardized workflow comparable to common R text-analysis frameworks such as `quanteda`.
 
-This is an analytical/research application.
+General workflow:
 
-The objective is:
+`Corpus`
+→ `Tokens`
+→ `Preprocessing`
+→ `Document-feature matrix`
+→ `Feature trimming`
+→ `Feature transformation`
+→ `Statistical analysis / modeling`
 
-**reduce visual noise while preserving information density.**
+Relevant files:
 
-Achieve minimalism through:
+* `backend/modules/text_research/infrastructure/quantitative.py`
+* `backend/modules/text_research/application/quantitative_analysis_service.py`
 
-better information architecture
+Implement or strengthen the following.
 
-progressive disclosure
+## Corpus statistics
 
-tabs where justified
+* documents
+* text units
+* tokens
+* vocabulary
+* mean/median/min/max length
+* lexical diversity measures where appropriate
 
-clear hierarchy
+Potential additions:
 
-better alignment
+* type-token ratio
+* standardized TTR
+* moving-average TTR
 
-balanced proportions
-
-consistent spacing
-
-fewer unnecessary surfaces
-
-responsive composition
-
-not by deleting valuable functionality.
+Do not rely only on raw TTR for corpora with strongly different document lengths.
 
 ---
 
-# FINAL DELIVERABLE
+# 11. TERM AND FEATURE FREQUENCIES [x]
 
-Implement the improvements directly.
+Support:
 
-At the end provide a concise report containing:
+* raw term frequency
+* relative frequency
+* per-N-token rate
+* document frequency
+* document prevalence
+* rank
+* cumulative share
 
-### Pages redesigned
+Allow configurable normalization:
 
-State which pages changed and why.
+* per 100
+* per 1,000
+* per 10,000
+* arbitrary denominator
 
-### Tabs introduced
+Return enough metadata for grouping and downstream analysis.
 
-Explain which pages received tabs and the information architecture used.
+---
 
-### Layout improvements
+# 12. N-GRAM ANALYSIS [x]
 
-Explain major width/height/grid changes.
+Support:
 
-### Shared UI improvements
+* unigram
+* bigram
+* trigram
+* arbitrary configurable N within safe bounds
 
-List PageShell, SectionCard, theme, tabs, or other shared primitives modified.
+Expose:
 
-### Responsive improvements
+* raw frequency
+* document frequency
+* normalized frequency
+* prevalence
 
-Summarize desktop/tablet/mobile changes.
+Optionally support skip-grams later if architecture permits.
 
-### Files changed
+---
 
-Group them by shared UI and feature/page.
+# 13. DOCUMENT-FEATURE MATRIX [x]
 
-### Verification
+Provide a general sparse DFM implementation.
 
-Report lint, tests, build, Playwright/e2e results.
+Support:
 
-### Remaining opportunities
+* count
+* binary
+* term frequency
+* TF-IDF
+* sublinear TF where useful
 
-Only list meaningful UI issues that should be handled separately.
+Expose:
 
-Do not report cosmetic changes as major accomplishments.
+* sparse matrix
+* dimensions
+* density
+* feature names
+* unit IDs
+* preprocessing configuration
 
-The final goal is to make the existing interface feel **cleaner, calmer, shorter, more intentional and professionally designed while retaining the full power of the application.**
+Avoid dense conversion for large matrices.
+
+---
+
+# 14. DFM TRIMMING [x]
+
+Implement an explicit DFM trimming abstraction.
+
+Support:
+
+* minimum term frequency
+* maximum term frequency
+* minimum document frequency
+* maximum document frequency
+* absolute thresholds
+* proportional thresholds
+* feature rank
+* quantile threshold
+
+Make the API conceptually similar to `dfm_trim()` but Python-native.
+
+The exact quanteda API does not need to be copied.
+
+---
+
+# 15. WEIGHTING SCHEMES [x]
+
+Create a clean abstraction for feature weighting.
+
+Support at minimum:
+
+* count
+* binary
+* TF
+* TF-IDF
+
+Consider optionally:
+
+* BM25 weighting
+* log-count weighting
+
+Keep weighting separate from tokenization.
+
+This improves reproducibility and avoids tightly coupling preprocessing and modeling.
+
+---
+
+# 16. KWIC AND CONCORDANCE [x]
+
+Improve generic KWIC functionality.
+
+Support:
+
+* single words
+* phrases
+* regex
+* case-sensitive
+* case-insensitive
+* configurable context width
+* token-based context
+* source metadata
+* document/page/unit provenance
+
+Optional improvement:
+
+support query patterns such as:
+
+* exact phrase
+* wildcard
+* lemma
+* token attribute
+
+when supported by the tokenizer.
+
+---
+
+# 17. DICTIONARY ANALYSIS [x]
+
+Dictionaries must always be USER-DEFINED.
+
+Relevant files:
+
+* `backend/modules/text_research/application/dictionary_service.py`
+* `backend/modules/text_research/domain/models.py`
+
+Suggested new file:
+
+`backend/modules/text_research/infrastructure/dictionary_matcher.py`
+
+Do not ship substantive research dictionaries as defaults except trivial demo/test fixtures clearly marked as synthetic.
+
+Allow users to define hierarchical dictionaries such as:
+
+```yaml
+category_a:
+  subcategory_1:
+    - phrase one
+    - phrase two
+
+  subcategory_2:
+    - token_a
+    - token_b
+
+category_b:
+  subcategory_3:
+    - another phrase
+```
+
+Support:
+
+* hierarchy
+* category
+* subcategory
+* exact token
+* exact phrase
+* multiword expression
+* optional wildcard
+* optional regex
+* exclusions
+* optional language
+* description
+* version
+
+Return:
+
+* total hits
+* normalized hits
+* document prevalence
+* per-unit matches
+* matched expression
+* category
+* subcategory
+* source provenance
+
+Keep dictionaries completely project/user controlled.
+
+---
+
+# 18. KEYNESS AND GROUP COMPARISON [x]
+
+Relevant file:
+
+`backend/modules/text_research/infrastructure/quantitative.py`
+
+Extend generic group comparison.
+
+Support:
+
+* log likelihood / G²
+* chi-square where applicable
+* Fisher's exact test where appropriate
+* effect direction
+* effect size
+* p-value
+* multiple-testing correction
+
+Use Benjamini-Hochberg FDR correction where appropriate.
+
+Consider adding:
+
+* log ratio
+* odds ratio
+
+because statistical significance alone is insufficient for large corpora.
+
+Users must choose comparison groups from available metadata.
+
+Do not hardcode any comparison categories.
+
+---
+
+# 19. COLLOCATION AND CO-OCCURRENCE [x]
+
+Improve co-occurrence analysis.
+
+Support:
+
+* configurable window
+* directional/non-directional mode where appropriate
+* raw co-occurrence counts
+* PMI
+* NPMI
+* minimum frequency threshold
+* minimum co-occurrence threshold
+
+Consider additional association statistics:
+
+* logDice
+* Dice coefficient
+* t-score
+
+Expose association method in the API rather than hardcoding one method.
+
+---
+
+# 20. WORD / FEATURE ASSOCIATION NETWORKS [x]
+
+Add optional graph-ready output from co-occurrence results.
+
+No need for complex graph rendering in backend.
+
+Return:
+
+* nodes
+* edges
+* weights
+* association statistics
+
+This can support downstream visualization.
+
+Avoid hardcoded semantic interpretations.
+
+---
+
+# 21. TEXT SIMILARITY [x]
+
+Add reusable similarity analysis.
+
+Potential approaches:
+
+## Lexical
+
+* cosine similarity on TF-IDF
+* Jaccard similarity
+
+## Semantic
+
+Optional embedding-based similarity.
+
+If embeddings already exist through the platform, reuse them through an abstraction.
+
+Support:
+
+* document-to-document
+* unit-to-unit
+* query-to-document
+* group centroid similarity
+
+Do not force embeddings into the standard quantitative analysis path.
+
+Keep them an optional analysis family.
+
+---
+
+# 22. DUPLICATE / NEAR-DUPLICATE DETECTION [x]
+
+Provide reusable duplicate detection.
+
+Support:
+
+* exact checksum
+* normalized-text checksum
+* lexical similarity
+* optional MinHash/LSH for large corpora
+
+This should be usable both during ingestion QA and as an explicit analysis.
+
+---
+
+# 23. ANNOTATION SYSTEM MUST REMAIN GENERIC [x]
+
+Labels are always user-defined.
+
+Relevant files:
+
+* `backend/modules/text_research/application/codebook_service.py`
+* `backend/modules/text_research/application/annotation_service.py`
+* `backend/modules/text_research/application/adjudication_service.py`
+
+Codebooks should support:
+
+* label name
+* description
+* inclusion criteria
+* exclusion criteria
+* positive examples
+* negative examples
+* parent label if hierarchical labels are supported
+* version
+* frozen state
+
+Consider supporting label types:
+
+* binary
+* multiclass
+* multilabel
+* ordinal
+* continuous score
+
+Only implement new types if they can be handled correctly end-to-end.
+
+Do not fake support with incomplete downstream semantics.
+
+---
+
+# 24. STRATIFIED ANNOTATION SAMPLING [x]
+
+Relevant file:
+
+`backend/modules/text_research/application/assignment_planning.py`
+
+Suggested new file:
+
+`backend/modules/text_research/application/sampling_service.py`
+
+Replace simple first-N sampling as the default research strategy.
+
+Support:
+
+* random sampling
+* seeded/reproducible sampling
+* stratified sampling
+* proportional stratification
+* equal-per-stratum sampling
+* document-level sampling
+* unit-level sampling
+* maximum units per source document
+* configurable annotation overlap
+
+Stratification must be generic.
+
+Users should be able to choose any supported metadata fields.
+
+Example:
+
+`field_1 × field_2`
+
+not hardcoded geographic or organizational dimensions.
+
+Persist:
+
+* sampling configuration
+* random seed
+* selected units
+* strata counts
+
+---
+
+# 25. INTER-CODER RELIABILITY [x]
+
+Preserve current functionality:
+
+* raw agreement
+* Cohen's kappa
+* Krippendorff's alpha
+* disagreement inspection
+* adjudication
+
+Extended:
+
+* Fleiss' kappa (3+ coders, nominal labels, fixed-n-raters design derived from
+  the modal rater count; ragged units excluded and reported) —
+  `backend/modules/text_research/infrastructure/reliability.py::fleiss_kappa`
+* weighted kappa for ordinal labels: intentionally NOT implemented. There is
+  no ordinal label scale anywhere in the annotation pipeline end-to-end
+  (`AnnotationLabel`/`Annotation.value` are unordered nominal categories), so
+  applying an ordinal-weighted statistic would misreport disagreement
+  severity. Documented in `reliability.py`'s module docstring.
+
+Only nominal-scale metrics are implemented, matching the actual annotation
+scale used throughout the pipeline.
+
+Added clear metadata describing (per label, via `reliability_metadata`):
+
+* scale
+* number of coders
+* pairable units
+* missing values
+* statistic used (`statistics_used`)
+
+Wired into `reliability_service.py::compute_reliability` (per-label
+`"fleiss_kappa"` and `"metadata"` keys, plus a run-level `mean_fleiss_kappa`).
+Tests: `backend/modules/text_research/tests/test_infrastructure.py`
+(`test_fleiss_kappa_*`, `test_reliability_metadata_*`).
+
+---
+
+# 26. DATASET FREEZING [x]
+
+Preserve immutable training snapshots.
+
+This is important.
+
+Models must never train directly against mutable annotations.
+
+Relevant file:
+
+`backend/modules/text_research/application/dataset_builder_service.py`
+
+Frozen datasets capture, all inside the existing `class_distribution_json`
+payload (no new Alembic migration needed):
+
+* unit IDs — `unit_ids_json` column (pre-existing)
+* source document IDs — `document_ids_json` column (pre-existing)
+* text hashes — new `text_hashes` key: `{unit_id: TextUnit.text_hash}`
+* labels — `labels_json` column (pre-existing) + `distribution` key
+* codebook version — `codebook_version` column (pre-existing) + mirrored in
+  new `metadata` key
+* annotation resolution strategy — `annotation_source` column (pre-existing)
+  + mirrored in new `metadata.annotation_resolution_strategy`
+* class distribution — `distribution` key (pre-existing)
+* creation timestamp — `created_at` column (pre-existing) + new
+  `metadata.frozen_at`
+* relevant corpus version/checksum — new `corpus_checksums` key
+  (`{corpus_document_id: CanonicalResearchSource.canonical_text_checksum}`)
+  plus `corpus_checksum_aggregate`, a single deterministic sha256 over the
+  sorted checksums (`aggregate_checksum()`), so any change to a contributing
+  document's canonical text is detectable from the frozen snapshot alone.
+
+New static accessors on `DatasetBuilderService`: `text_hashes()`,
+`corpus_checksums()`, `corpus_checksum_aggregate()`, `snapshot_metadata()`
+(alongside pre-existing `unit_labels()`/`label_names()`).
+
+Tests: `backend/modules/text_research/tests/test_dataset_builder_snapshot.py`.
+
+---
+
+# 27. CLASSIFICATION — GENERALIZE TASK TYPES [x]
+
+Relevant files:
+
+* `backend/modules/text_research/infrastructure/classifiers.py`
+* `backend/modules/text_research/application/classification_service.py`
+
+Support generic:
+
+* binary
+* multiclass
+* multilabel
+
+The current architecture already exposes these concepts but verify that the application service does not force multilabel unnecessarily.
+
+If it currently forces:
+
+`task_type="multilabel"`
+
+make task type user/configuration driven.
+
+Do not infer task type incorrectly.
+
+---
+
+# 28. CLASSIFICATION BASELINES [x]
+
+Keep interpretable classical models as first-class methods.
+
+Recommended:
+
+* Logistic Regression
+* Linear SVM
+* Multinomial Naive Bayes where appropriate
+* Complement Naive Bayes for imbalanced text classification
+
+Consider adding:
+
+* SGDClassifier
+
+because it scales well for large sparse corpora.
+
+Do not remove existing logistic regression and SVM.
+
+Do not make transformer models the default.
+
+---
+
+# 29. FEATURE REPRESENTATIONS FOR CLASSIFICATION [x]
+
+Support configurable feature families.
+
+At minimum:
+
+* count vectors
+* TF-IDF
+* word n-grams
+
+Recommended extension:
+
+* character n-grams
+
+Character n-grams are particularly useful for:
+
+* noisy text
+* morphology
+* multilingual text
+* spelling variation
+
+Allow combinations through `FeatureConfig`.
+
+Potential future optional support:
+
+* sentence/document embeddings
+
+Keep embedding classifiers separate from sparse interpretable baselines.
+
+---
+
+# 30. TRAIN / VALIDATION / TEST [x]
+
+Improve the evaluation architecture.
+
+Never tune models using final test results.
+
+Support:
+
+`train`
+→ `validation`
+→ `test`
+
+with grouping preserved.
+
+Prefer also:
+
+`nested grouped cross-validation`
+
+where:
+
+* outer folds estimate generalization
+* inner folds tune hyperparameters
+
+Relevant tools:
+
+* `GroupKFold`
+* `StratifiedGroupKFold` where statistically appropriate
+* custom/documented multilabel group split
+
+Do not assume ordinary stratification solves multilabel grouping.
+
+Warn when folds lose classes.
+
+---
+
+# 31. HYPERPARAMETER TUNING [x]
+
+Support configurable hyperparameter searches.
+
+Potential parameters:
+
+## Vectorizer
+
+* ngram range
+* min_df
+* max_df
+* max_features
+* sublinear TF
+
+## Logistic regression / SVM
+
+* C
+* class_weight
+
+## Naive Bayes
+
+* alpha
+
+Use:
+
+* grid search
+* randomized search
+
+Avoid excessive search spaces by default.
+
+Persist the complete search configuration and results.
+
+---
+
+# 32. CLASS IMBALANCE [x]
+
+Provide explicit support for imbalanced datasets.
+
+Options:
+
+* `class_weight="balanced"`
+* threshold tuning
+* appropriate metrics
+
+Do NOT automatically oversample sparse text features unless explicitly configured and methodologically appropriate.
+
+For text classification, class weighting is usually preferable as an initial approach.
+
+---
+
+# 33. PER-CLASS / PER-LABEL THRESHOLD TUNING [x]
+
+For classifiers with meaningful probabilities/scores, support threshold optimization.
+
+Thresholds must be selected using validation data only.
+
+Possible objectives:
+
+* maximize F1
+* maximize F-beta
+* minimum recall target
+* minimum precision target
+
+Persist:
+
+* threshold
+* objective
+* validation metrics
+
+Do not tune using final test labels.
+
+---
+
+# 34. CLASSIFICATION METRICS [x]
+
+Support:
+
+* accuracy
+* balanced accuracy
+* precision
+* recall
+* F1
+* macro average
+* micro average
+* weighted average
+* per-class metrics
+* confusion matrix
+
+Where appropriate:
+
+* ROC-AUC
+* PR-AUC / average precision
+* Matthews correlation coefficient
+* log loss
+* Brier score
+
+For multilabel:
+
+* Hamming loss
+* subset accuracy
+* label ranking metrics where appropriate
+
+Do not blindly return metrics that are undefined for the current task.
+
+---
+
+# 35. CONFIDENCE INTERVALS [x]
+
+Add optional bootstrap confidence intervals for important metrics.
+
+Bootstrap at the source-document/group level where observations from the same document are dependent.
+
+Avoid sentence-level independent bootstrap when text units share the same document.
+
+Expose:
+
+* estimate
+* lower bound
+* upper bound
+* confidence level
+* bootstrap seed
+* iterations
+
+---
+
+# 36. MODEL CALIBRATION [x]
+
+For probabilistic use cases, support calibration diagnostics.
+
+Potential methods:
+
+* reliability curve
+* Brier score
+* Expected Calibration Error if implemented carefully
+
+Optional model calibration:
+
+* Platt scaling
+* isotonic regression
+
+Calibration must use validation data / cross-validation, not final test data.
+
+---
+
+# 37. MODEL EXPLAINABILITY [x]
+
+Preserve linear coefficients.
+
+Expand model interpretation where useful.
+
+For linear models return:
+
+* strongest positive features
+* strongest negative features
+* coefficient
+* rank
+
+Optional:
+
+* per-document feature contribution for linear models
+
+Avoid expensive generic SHAP integration unless there is a strong reason.
+
+Sparse linear models are already highly interpretable.
+
+---
+
+# 38. ROBUSTNESS AND DOMAIN SHIFT [x]
+
+Relevant file:
+
+`backend/modules/text_research/application/robustness_service.py`
+
+Keep existing checks and generalize them.
+
+Support:
+
+* repeated random seeds
+* grouped cross-validation
+* preprocessing sensitivity
+* class-weight sensitivity
+* temporal holdout
+* leave-one-group-out
+
+Most importantly, make group holdouts USER CONFIGURABLE.
+
+Do not hardcode:
+
+* organization
+* region
+* country
+* cultural sphere
+
+Instead expose something like:
+
+`group_field = "organization"`
+
+or:
+
+`group_field = "region"`
+
+The platform should be able to run:
+
+`leave-one-value-out(group_field)`
+
+for any eligible metadata field.
+
+Also support generic transfer tests:
+
+`train where field ∈ A`
+→
+`test where field ∈ B`
+
+where A and B are user-defined filters.
+
+Return:
+
+* held-out value
+* train size
+* test size
+* class prevalence
+* metrics
+
+---
+
+# 39. TEMPORAL VALIDATION [x]
+
+When a suitable temporal metadata field exists, allow:
+
+* train-before-test
+* rolling validation
+* expanding-window validation
+
+Do not assume the field name is `publication_year`.
+
+Allow users to select a date/year metadata field.
+
+This makes the system suitable for many longitudinal projects.
+
+---
+
+# 40. TOPIC MODELING [x]
+
+Relevant files:
+
+* `backend/modules/text_research/infrastructure/topic_models.py`
+* `backend/modules/text_research/application/topic_model_service.py`
+
+Preserve:
+
+* LDA
+* NMF
+
+Improve diagnostics.
+
+Support:
+
+* configurable number of topics
+* K sweeps
+* multiple seeds
+* preprocessing profile
+* representative documents/units
+* document-topic distributions
+* top terms
+* human topic labels
+
+Add where feasible:
+
+* topic coherence
+* diversity
+* overlap
+* seed stability
+* topic matching across runs
+
+Never automatically claim that an unsupervised topic corresponds to a real-world construct.
+
+Topic naming must remain user-controlled.
+
+---
+
+# 41. BETTER TOPIC-MODELING APPROACHES [x]
+
+Keep classical LDA/NMF as stable, interpretable baselines.
+
+Optionally add a plug-in architecture for more advanced models.
+
+Recommended future-compatible interface:
+
+`TopicModelEngine`
+
+Implementations could include:
+
+* LDA
+* NMF
+* optional BERTopic later
+
+Do not require BERTopic, transformers, or PyTorch for core application functionality.
+
+If BERTopic is added, make it explicitly optional.
+
+Classical methods should remain usable without heavy dependencies.
+
+---
+
+# 42. TOPIC MODEL SELECTION [x]
+
+Support systematic model comparison.
+
+For each K/seed configuration store:
+
+* coherence
+* topic diversity
+* top-term overlap
+* stability
+* representative units
+* model configuration
+
+Allow users to compare models rather than automatically selecting a "best" topic count based on one statistic.
+
+---
+
+# 43. CLUSTERING [x]
+
+Add optional unsupervised document clustering.
+
+Useful approaches:
+
+## Sparse lexical features
+
+* KMeans / MiniBatchKMeans on TF-IDF
+
+## Semantic embeddings
+
+* KMeans
+* HDBSCAN if dependency is justified
+
+Return:
+
+* cluster assignment
+* representative documents
+* characteristic terms
+* cluster size
+
+Keep cluster labels user-defined.
+
+Do not interpret cluster meaning automatically.
+
+---
+
+# 44. DIMENSIONALITY REDUCTION [x]
+
+Provide backend data for visual exploration.
+
+Potential approaches:
+
+* TruncatedSVD for sparse TF-IDF
+* PCA where dense features are appropriate
+
+Optional embedding visualization methods:
+
+* UMAP
+* t-SNE
+
+Do not make t-SNE/UMAP coordinates part of inferential statistical claims.
+
+Treat them as exploratory visualization aids.
+
+---
+
+# 45. SEMANTIC EMBEDDINGS [x]
+
+The platform already has embedding infrastructure for RAG.
+
+Consider exposing embeddings as a generic research feature representation through a clean abstraction rather than tying research analysis directly to RAG internals.
+
+Possible uses:
+
+* semantic similarity
+* clustering
+* nearest neighbors
+* exploratory visualization
+* optional classifier input
+
+Record:
+
+* embedding provider
+* model
+* dimensions
+* version
+* normalization
+
+Keep embedding features distinct from RAG retrieval chunks.
+
+---
+
+# 46. NAMED ENTITY RECOGNITION [x]
+
+Consider adding optional NER analysis.
+
+Useful generic outputs:
+
+* PERSON
+* ORG
+* GPE/location
+* DATE
+* user-defined entity models if available
+
+Return entities with:
+
+* text
+* label
+* offsets
+* source provenance
+
+Do not require NER for core analysis.
+
+Make it a separate analysis module.
+
+---
+
+# 47. PART-OF-SPEECH AND LINGUISTIC FEATURES [x]
+
+Optionally expose language-model features such as:
+
+* POS distribution
+* lemma frequency
+* dependency relation frequency
+* sentence length
+* lexical diversity
+
+These can support linguistic research.
+
+Keep them optional because they depend on language models and may introduce language-specific limitations.
+
+---
+
+# 48. READABILITY / STYLE FEATURES [x]
+
+Add generic optional text-style measures where feasible:
+
+* sentence length
+* word length
+* lexical diversity
+* readability metrics
+
+Only expose language-specific readability formulas for languages where they are valid.
+
+Avoid pretending English readability scores are universally meaningful.
+
+---
+
+# 49. COMPARATIVE ANALYSIS ENGINE [x]
+
+Relevant file:
+
+`backend/modules/text_research/application/comparative_analysis_service.py`
+
+Generalize comparative analysis around metadata fields.
+
+Users should choose:
+
+* outcome/measure
+* grouping field(s)
+* filters
+* normalization
+* aggregation
+
+Examples could include:
+
+`dictionary_score by metadata_field`
+
+`predicted_label prevalence by metadata_field`
+
+`topic prevalence by metadata_field`
+
+`term frequency by metadata_field`
+
+Do not encode domain-specific group names.
+
+---
+
+# 50. STATISTICAL MODELING LAYER [x]
+
+Consider adding:
+
+`statsmodels`
+
+for generic statistical analysis.
+
+Potential models:
+
+* OLS
+* logistic regression
+* Poisson
+* Negative Binomial where appropriate
+
+Potential use:
+
+`outcome ~ metadata variables`
+
+Do not automatically infer causal relationships.
+
+Expose:
+
+* coefficient
+* standard error
+* confidence interval
+* p-value
+* model specification
+* sample size
+
+Users should explicitly configure dependent and independent variables.
+
+Do not generate arbitrary regressions automatically.
+
+---
+
+# 51. MEASUREMENT TRIANGULATION [x]
+
+Suggested new file:
+
+`backend/modules/text_research/application/measurement_validation_service.py`
+
+Provide generic comparison across measurement approaches.
+
+Possible sources:
+
+* human annotation
+* dictionary score
+* classifier prediction
+* topic score
+* continuous model score
+
+Support appropriate comparisons such as:
+
+* agreement
+* correlation
+* confusion matrix
+* prevalence comparison
+* subgroup comparison
+
+The user determines which measurements are conceptually comparable.
+
+Do not automatically equate an unsupervised topic with a supervised label.
+
+---
+
+# 52. QUANTEDA COMPATIBILITY / PARITY TESTS [x]
+
+Create:
+
+`backend/modules/text_research/tests/quanteda_parity/`
+
+The production application should remain Python-native.
+
+Do not require R in production.
+
+Use small stored fixtures containing known outputs generated by R `quanteda`.
+
+Compare relevant operations:
+
+* tokenization where configuration is equivalent
+* lowercase
+* stopword removal
+* stemming where algorithms match
+* n-grams
+* DFM
+* DFM dimensions
+* feature trimming
+* TF-IDF with documented weighting configuration
+* dictionary lookup
+* KWIC
+* keyness where formulas match
+
+Possible structure:
+
+`backend/modules/text_research/tests/quanteda_parity/fixtures/`
+
+containing:
+
+* input corpus
+* metadata
+* quanteda output JSON/CSV
+* configuration
+* known differences
+
+Produce useful comparisons such as:
+
+* token agreement
+* vocabulary agreement
+* DFM agreement
+* dictionary-match agreement
+
+Floating-point operations should use tolerances.
+
+Document intentional differences.
+
+---
+
+# 53. GENERIC ANALYSIS PIPELINE OBJECT [x]
+
+Consider introducing a versioned analysis specification.
+
+Example concept:
+
+`AnalysisSpecification`
+
+Potential structure:
+
+```json
+{
+  "corpus_id": "...",
+  "unit_type": "paragraph",
+
+  "filters": {},
+
+  "preprocessing_profile_id": "...",
+
+  "feature_extraction": {
+    "type": "tfidf",
+    "ngram_range": [1, 2],
+    "min_df": 5
+  },
+
+  "analysis": {
+    "type": "classification"
+  },
+
+  "validation": {
+    "strategy": "grouped_cv",
+    "group_field": "source_document"
+  },
+
+  "random_seed": 42
+}
+```
+
+Do not necessarily implement this exact schema.
+
+The purpose is to avoid each endpoint inventing slightly different configuration semantics.
+
+Where possible, create reusable configuration objects for:
+
+* corpus selection
+* preprocessing
+* feature extraction
+* model
+* validation
+* output
+
+---
+
+# 54. FEATURE PIPELINE ARCHITECTURE [x]
+
+Prefer explicit reusable feature pipelines.
+
+Conceptually:
+
+`RawText`
+
+→ `CleaningProfile`
+
+→ `Tokenizer`
+
+→ `PreprocessingProfile`
+
+→ `FeatureExtractor`
+
+Possible feature extractors:
+
+* CountFeatures
+* BinaryFeatures
+* TFIDFFeatures
+* CharacterNgrams
+* Embeddings
+* LinguisticFeatures
+
+Then:
+
+`FeatureMatrix`
+
+can feed:
+
+* descriptive analysis
+* clustering
+* classification
+* dimensionality reduction
+
+Avoid duplicating preprocessing logic across classifiers, topic models, DFM endpoints, and statistical analyses.
+
+---
+
+# 55. DATA LEAKAGE ARCHITECTURE [x]
+
+Centralize train/validation/test leakage rules.
+
+Create reusable trainable pipeline behavior.
+
+Anything learned from data must be fit ONLY using training data, including:
+
+* vocabulary
+* IDF
+* feature selection
+* scaling
+* dimensionality reduction
+* threshold selection
+* hyperparameters
+* calibration
+
+Use scikit-learn `Pipeline` where appropriate.
+
+This is preferable to manually coordinating each transformation separately.
+
+For example:
+
+`Pipeline([vectorizer, classifier])`
+
+while preserving inspectability and model artifact persistence.
+
+---
+
+# 56. MODEL REGISTRY / EXPERIMENT TRACKING [x]
+
+The existing `TrainedModel` / `AnalysisRun` system should be extended rather than replaced.
+
+Track:
+
+* model version
+* dataset snapshot
+* feature config
+* preprocessing config
+* validation config
+* metrics
+* thresholds
+* artifacts
+* random seed
+* creation timestamp
+
+Consider adding:
+
+* parent experiment/run
+* best-model marker
+* tags
+* notes
+
+Do not introduce MLflow unless clearly justified.
+
+The current database-based experiment tracking may be sufficient.
+
+---
+
+# 57. REPRODUCIBILITY MANIFEST [x]
+
+Relevant file:
+
+`backend/modules/text_research/application/export_service.py`
+
+Every analysis should be able to export a reproducibility manifest containing applicable fields such as:
+
+* corpus ID
+* corpus/document hashes
+* document IDs
+* unit IDs
+* unit hashes
+* cleaning profile
+* preprocessing profile
+* tokenizer
+* tokenizer version
+* language model
+* library versions
+* dictionary ID/version
+* codebook ID/version
+* dataset snapshot
+* feature configuration
+* analysis type
+* algorithm
+* model parameters
+* validation strategy
+* train groups
+* validation groups
+* test groups
+* thresholds
+* random seeds
+* artifact hashes
+* timestamp
+* Git commit SHA where available
+
+---
+
+# 58. EXPORT FORMATS [x]
+
+Support reproducible export of research data.
+
+Useful formats:
+
+* CSV
+* JSON
+* JSONL
+* sparse matrix representation
+* Matrix Market if useful
+* metadata tables
+* predictions
+* topic distributions
+* annotation data
+* reliability reports
+* model metrics
+* reproducibility manifest
+
+Keep raw source text export access controlled.
+
+---
+
+# 59. LARGE CORPUS PROCESSING [x]
+
+Avoid loading very large corpora fully into memory unnecessarily.
+
+Review:
+
+* matrix construction
+* topic modeling
+* predictions
+* export
+* dictionary matching
+* bootstrap analysis
+
+Prefer:
+
+* sparse matrices
+* pagination
+* batched predictions
+* streamed exports
+* background jobs
+
+For very large datasets consider incremental methods such as:
+
+* `HashingVectorizer`
+* `SGDClassifier`
+* `MiniBatchKMeans`
+
+Expose them as optional scalable approaches rather than replacing standard methods.
+
+---
+
+# 60. BACKGROUND JOBS [x]
+
+Potentially expensive tasks should remain compatible with Celery.
+
+Relevant files:
+
+* `backend/modules/text_research/workers.py`
+* `backend/workers/tasks.py`
+
+Candidates:
+
+* large segmentation
+* ingestion QA
+* topic sweeps
+* nested CV
+* large predictions
+* bootstrap confidence intervals
+* clustering
+* similarity matrices
+* large exports
+
+Do not block FastAPI request handlers with large CPU operations.
+
+---
+
+# 61. CACHING [x]
+
+The project already contains:
+
+`backend/modules/text_research/infrastructure/feature_cache.py`
+
+Review and improve cache semantics.
+
+Cache keys should include everything that changes results, such as:
+
+* corpus/source version
+* unit type
+* document filters
+* preprocessing profile/version
+* feature settings
+* dictionary version
+
+Never return cached analysis results for stale source text.
+
+---
+
+# 62. USER-DEFINED METADATA [x]
+
+The current domain has several fixed metadata fields.
+
+Preserve useful existing fields for backward compatibility, but strengthen support for arbitrary metadata through `metadata_json` or a better structured mechanism.
+
+Users should be able to import custom columns such as:
+
+* source_type
+* author
+* department
+* category
+* wave
+* experiment_condition
+* custom numeric variables
+* custom categorical variables
+
+Do not require source-code changes to analyze a new metadata variable.
+
+Validate types.
+
+Consider supporting metadata schema definitions.
+
+---
+
+# 63. METADATA TYPES [x]
+
+Generic statistical analysis requires typed metadata.
+
+Consider a schema such as:
+
+* string
+* categorical
+* integer
+* float
+* boolean
+* date
+* datetime
+
+Do not treat everything as a string.
+
+Metadata import should validate and report errors.
+
+---
+
+# 64. FILTERING [x]
+
+Create consistent corpus filtering across analysis services.
+
+Users should be able to filter by:
+
+* metadata field
+* values
+* ranges
+* dates
+* text unit type
+
+Avoid each service implementing different filtering behavior.
+
+Consider a reusable `CorpusSelection` / `AnalysisSelection` object.
+
+---
+
+# 65. RANDOMNESS AND REPRODUCIBILITY [x]
+
+Every stochastic operation must support explicit random seeds.
+
+Examples:
+
+* annotation sampling
+* train/test split
+* CV where randomized
+* topic models
+* clustering
+* bootstrap
+* dimensionality reduction
+
+Persist seeds in `AnalysisRun`.
+
+No hidden randomness.
+
+---
+
+# 66. SCIENTIFIC GUARDRAILS [x]
+
+Do not automatically claim:
+
+* topic = concept
+* cluster = real category
+* dictionary hit = ground truth
+* classifier prediction = truth
+* correlation = causation
+* statistical significance = substantive importance
+* high cross-validation performance = external validity
+
+Expose methods, assumptions, diagnostics, uncertainty, and provenance.
+
+Let users make substantive interpretations.
+
+---
+
+# 67. RECOMMENDED BACKEND MODULE STRUCTURE [x]
+
+Do not force this exact structure if the current architecture suggests a better fit, but aim for something conceptually close:
+
+```text
+backend/modules/text_research/
+│
+├── infrastructure/
+│   ├── canonical_text.py
+│   ├── document_cleaning.py
+│   ├── language_processing.py
+│   ├── segmentation.py
+│   ├── preprocessing.py
+│   ├── feature_extraction.py
+│   ├── dictionary_matcher.py
+│   ├── quantitative.py
+│   ├── similarity.py
+│   ├── classifiers.py
+│   ├── topic_models.py
+│   ├── clustering.py
+│   └── reliability.py
+│
+├── application/
+│   ├── ingestion_qa_service.py
+│   ├── corpus_service.py
+│   ├── segmentation_service.py
+│   ├── preprocessing_service.py
+│   ├── quantitative_analysis_service.py
+│   ├── dictionary_service.py
+│   ├── sampling_service.py
+│   ├── annotation_service.py
+│   ├── reliability_service.py
+│   ├── adjudication_service.py
+│   ├── dataset_builder_service.py
+│   ├── classification_service.py
+│   ├── validation_service.py
+│   ├── prediction_service.py
+│   ├── topic_model_service.py
+│   ├── clustering_service.py
+│   ├── robustness_service.py
+│   ├── comparative_analysis_service.py
+│   ├── measurement_validation_service.py
+│   └── export_service.py
+│
+└── tests/
+    └── quanteda_parity/
+```
+
+Follow existing project architecture and naming conventions where they are better.
+
+---
+
+# 68. DEPENDENCIES [x]
+
+Current relevant libraries include:
+
+* NumPy
+* pandas
+* SciPy
+* scikit-learn
+* joblib
+* snowballstemmer
+
+Recommended additions where justified:
+
+* `spacy`
+* `spacy-lookups-data`
+* `regex`
+* `statsmodels`
+
+Optional:
+
+* `ftfy`
+
+Consider but do NOT add automatically unless implementation needs them:
+
+* `datasketch` for MinHash/LSH
+* `umap-learn`
+* `hdbscan`
+
+Avoid making these core dependencies without justification:
+
+* transformers
+* PyTorch
+* BERTopic
+* large LLM frameworks
+
+The platform should remain capable of running conventional text analysis without GPU infrastructure.
+
+---
+
+# 69. BETTER ANALYTICAL APPROACHES TO PRIORITIZE [x]
+
+Where the current implementation can be improved, prioritize these approaches.
+
+## Prefer scikit-learn Pipelines
+
+Instead of manually coordinating vectorizer + classifier.
+
+Benefits:
+
+* leakage prevention
+* reproducibility
+* cross-validation
+* simpler tuning
+
+## Prefer grouped evaluation
+
+When multiple units come from one document.
+
+## Prefer nested CV
+
+When model selection and unbiased performance estimation are both required.
+
+## Prefer PR-AUC for strongly imbalanced labels
+
+Alongside F1.
+
+## Prefer character n-grams as an optional baseline
+
+Especially for noisy or multilingual text.
+
+## Prefer NMF alongside LDA
+
+NMF often gives more interpretable topics for TF-IDF corpora.
+
+## Evaluate topic stability
+
+Do not select models using perplexity alone.
+
+## Prefer effect sizes alongside p-values
+
+For keyness/group comparisons.
+
+## Prefer document-level bootstrap
+
+For dependent text units.
+
+## Prefer user-defined stratification
+
+For annotation sampling.
+
+## Prefer canonical source storage
+
+Never analyze reconstructed retrieval chunks.
+
+## Prefer sparse operations
+
+For feature matrices.
+
+## Prefer explicit metadata typing
+
+For comparative/statistical analysis.
+
+---
+
+# 70. OPTIONAL ADVANCED ANALYSIS LAYER [x]
+
+Architect for future optional analysis modules without making them required.
+
+Possible future plugins:
+
+* BERTopic
+* sentence-transformer embeddings
+* zero-shot classification
+* transformer fine-tuning
+* semantic search
+* LLM-assisted annotation
+* active-learning strategies
+* named-entity linking
+
+Core analysis must not depend on these.
+
+Use interfaces/adapters so advanced methods can be added later.
+
+---
+
+# 71. TESTING REQUIREMENTS [x]
+
+Do not consider the work complete without tests.
+
+Add or improve tests for:
+
+## Canonical source text
+
+* no RAG overlap duplication
+* source hash stability
+* cleaning provenance
+
+## Segmentation
+
+* deterministic behavior
+* abbreviations
+* Unicode
+* page provenance
+* offsets
+
+## Preprocessing
+
+* Unicode
+* stopwords
+* custom stopwords
+* negation
+* stemming
+* lemmatization
+* n-grams
+* language handling
+
+## DFM
+
+* count
+* binary
+* TF-IDF
+* trimming
+* sparse output
+
+## Dictionary
+
+* hierarchy
+* phrase matching
+* overlapping phrases
+* wildcard/regex if supported
+* provenance
+
+## Keyness
+
+* expected statistics
+* correction
+* effect direction
+
+## Sampling
+
+* deterministic seed
+* random sample
+* stratified sample
+* overlap
+
+## Reliability
+
+* two coders
+* multiple coders
+* missing ratings
+* disagreement detection
+
+## Dataset freezing
+
+* immutability
+* stable hashes
+* labels preserved after later annotation changes
+
+## Classification
+
+* train-only vectorizer fit
+* group isolation
+* validation isolation
+* test isolation
+* nested CV
+* threshold isolation
+* class imbalance
+
+## Robustness
+
+* generic leave-one-group-out
+* temporal holdout
+* transfer filters
+
+## Topic models
+
+* deterministic seeds
+* K sweeps
+* stability
+* diagnostics
+
+## Quanteda parity
+
+* stored reference fixture comparison
+
+Run the repository's existing checks.
+
+At minimum:
+
+`PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 backend/.venv/bin/python -m pytest backend/modules/text_research/tests/ -q`
+
+and:
+
+`make check`
+
+where supported.
+
+---
+
+# 72. DATABASE MIGRATIONS [x]
+
+If schema changes are required:
+
+create new migrations under:
+
+`backend/alembic/versions/`
+
+Do not rewrite historical migrations.
+
+Maintain backward compatibility where practical.
+
+---
+
+# 73. API COMPATIBILITY [x]
+
+Avoid unnecessary breaking changes.
+
+Prefer additive request/response fields.
+
+If APIs must change:
+
+* update schemas
+* update frontend types
+* update documentation
+* update tests
+
+Existing functionality should continue working.
+
+---
+
+# 74. IMPLEMENTATION PRIORITY [x]
+
+Implement in this order.
+
+## Phase 1 — Data integrity
+
+1. canonical source document
+2. remove dependence on overlapping RAG reconstruction
+3. source/page/offset provenance
+4. ingestion QA
+5. tests
+
+## Phase 2 — Reusable preprocessing
+
+6. Unicode tokenizer
+7. language-aware architecture
+8. sentence segmentation
+9. cleaning profiles
+10. lemmatization
+11. preprocessing provenance
+
+## Phase 3 — Standard analysis
+
+12. DFM improvements
+13. DFM trim
+14. weighting strategies
+15. KWIC
+16. dictionary matcher
+17. keyness/effect sizes
+18. co-occurrence/collocation
+
+## Phase 4 — Generic annotation
+
+19. user-defined codebooks only
+20. reusable sampling
+21. reliability improvements
+22. frozen datasets
+
+## Phase 5 — Machine learning
+
+23. generalized task type
+24. scikit-learn pipelines
+25. train/validation/test
+26. nested grouped CV
+27. hyperparameter tuning
+28. threshold tuning
+29. expanded metrics
+30. confidence intervals
+31. model calibration
+
+## Phase 6 — Unsupervised analysis
+
+32. topic K/seed sweeps
+33. topic stability
+34. clustering
+35. similarity
+36. dimensionality-reduction outputs
+
+## Phase 7 — Generic comparative analysis
+
+37. arbitrary metadata grouping
+38. temporal validation
+39. leave-one-group-out
+40. user-defined transfer tests
+41. optional statistical models
+
+## Phase 8 — Reproducibility
+
+42. quanteda parity suite
+43. reproducibility manifest
+44. experiment/model metadata
+45. documentation
+
+---
+
+# 75. IMPORTANT IMPLEMENTATION RULES [x]
+
+Do not merely add TODOs.
+
+Implement working code.
+
+Do not build project-specific labels.
+
+Do not build project-specific dictionaries.
+
+Do not hardcode substantive metadata groups.
+
+Do not assume one domain.
+
+Do not assume one language.
+
+Do not weaken leakage prevention.
+
+Do not remove frozen dataset snapshots.
+
+Do not make R a production dependency.
+
+Do not make transformers or LLMs required.
+
+Do not sacrifice reproducibility for convenience.
+
+When a requested capability is too large for one implementation cycle, implement the scientifically correct core and clearly document the remaining limitation.
+
+---
+
+# 76. FINAL DELIVERABLE [x]
+
+After implementation provide an engineering report.
+
+**Report location:** `docs/text-research-engineering-report.md`
+
+Include:
+
+## Changed files
+
+Every created/modified file.
+
+## Architecture changes
+
+Explain important abstractions.
+
+## Database changes
+
+List migrations and schema changes.
+
+## Implemented analyses
+
+Group under:
+
+* corpus integrity
+* preprocessing
+* corpus statistics
+* frequencies
+* DFM
+* KWIC
+* dictionaries
+* keyness
+* co-occurrence
+* similarity
+* annotation
+* reliability
+* classification
+* validation
+* topic modeling
+* clustering
+* comparative analysis
+* reproducibility
+
+## Tests
+
+Report:
+
+* command
+* passed
+* failed
+* skipped
+
+## Remaining limitations
+
+Be explicit.
+
+## Generic example workflow
+
+Show a fully generic flow:
+
+`upload documents`
+→ `create corpus`
+→ `canonicalize`
+→ `run QA`
+→ `add/import metadata`
+→ `choose research unit`
+→ `segment`
+→ `create preprocessing profile`
+→ `inspect preprocessing`
+→ `build DFM`
+→ `run frequencies / KWIC / keyness / dictionary / co-occurrence`
+→ `create user-defined codebook`
+→ `sample units`
+→ `annotate`
+→ `calculate reliability`
+→ `adjudicate`
+→ `freeze dataset`
+→ `select classification task`
+→ `train baseline models`
+→ `perform grouped/nested validation`
+→ `evaluate`
+→ `predict remaining corpus`
+→ `run topic modeling`
+→ `run similarity/clustering if desired`
+→ `compare results using user-selected metadata`
+→ `export reproducibility manifest`
+
+The final platform should function as a general-purpose computational text-analysis environment suitable for many research projects without requiring source-code changes when substantive concepts, metadata, labels, or dictionaries change.

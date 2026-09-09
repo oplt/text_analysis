@@ -1,4 +1,10 @@
-"""Topic modeling (LDA/NMF) training, persistence, and human topic naming."""
+"""Topic modeling (LDA/NMF) training, persistence, and human topic naming.
+
+Also exposes K-sweep (§42, systematic model-size comparison) and multi-seed
+stability (§40) as persisted, auditable ``AnalysisRun`` records — same
+auditability guarantee as full training runs, without requiring a training
+run per comparison point to be individually inspected.
+"""
 
 from __future__ import annotations
 
@@ -16,7 +22,11 @@ from backend.modules.text_research.domain.enums import AnalysisRunStatus, Analys
 from backend.modules.text_research.domain.models import AnalysisRun, TopicLabel, dumps, loads
 from backend.modules.text_research.infrastructure import model_storage
 from backend.modules.text_research.infrastructure.preprocessing import PreprocessingConfig
-from backend.modules.text_research.infrastructure.topic_models import train_topic_model
+from backend.modules.text_research.infrastructure.topic_models import (
+    k_sweep,
+    seed_stability,
+    train_topic_model,
+)
 
 
 def _utcnow() -> datetime:
@@ -219,6 +229,144 @@ class TopicModelService(ResearchAccessMixin):
         refreshed = await self.repo.get_run(run_id)
         assert refreshed is not None
         return refreshed
+
+    async def _resolve_training_texts_and_config(
+        self,
+        corpus_id: str,
+        *,
+        user_id: str,
+        unit_type: str,
+        preprocessing_profile_id: str | None,
+        filters: dict[str, Any] | None,
+    ) -> tuple[Any, list[str], dict[str, Any]]:
+        corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        units = await self._select_texts(corpus_id, unit_type=unit_type, filters=filters)
+        if not units:
+            raise HTTPException(
+                status_code=422,
+                detail="No text units match the requested corpus/unit_type/filters",
+            )
+        config = PreprocessingConfig().to_dict()
+        if preprocessing_profile_id:
+            profile = await self.repo.get_preprocessing_profile(preprocessing_profile_id)
+            if profile is not None:
+                config.update(loads(profile.config_json, {}))
+        return corpus, [u.text for u in units], config
+
+    async def run_k_sweep(
+        self,
+        corpus_id: str,
+        *,
+        user_id: str,
+        unit_type: str,
+        k_values: list[int],
+        algorithm: str = "lda",
+        preprocessing_profile_id: str | None = None,
+        max_iterations: int = 25,
+        random_seed: int = 42,
+        **filters: Any,
+    ) -> AnalysisRun:
+        """Fit multiple ``n_topics`` values and persist a comparison table (§42)."""
+        corpus, texts, config = await self._resolve_training_texts_and_config(
+            corpus_id,
+            user_id=user_id,
+            unit_type=unit_type,
+            preprocessing_profile_id=preprocessing_profile_id,
+            filters=filters,
+        )
+        rows = k_sweep(
+            texts,
+            k_values,
+            algorithm=algorithm,
+            config=config,
+            random_seed=random_seed,
+            max_iter=max_iterations,
+        )
+        run = await self.repo.create_run(
+            AnalysisRun(
+                project_id=corpus.project_id,
+                corpus_id=corpus_id,
+                run_type=AnalysisRunType.TOPIC_MODEL.value,
+                status=AnalysisRunStatus.COMPLETED.value,
+                parameters_json=dumps(
+                    {
+                        "mode": "k_sweep",
+                        "unit_type": unit_type,
+                        "algorithm": algorithm,
+                        "k_values": k_values,
+                        "preprocessing_profile_id": preprocessing_profile_id,
+                        "random_seed": random_seed,
+                        "filters": filters,
+                    }
+                ),
+                random_seed=random_seed,
+                metrics_json=dumps({"unit_count": len(texts), "k_values": k_values}),
+                results_json=dumps({"rows": rows}),
+                created_by=user_id,
+                started_at=_utcnow(),
+                completed_at=_utcnow(),
+            )
+        )
+        await self.db.commit()
+        return run
+
+    async def run_seed_stability(
+        self,
+        corpus_id: str,
+        *,
+        user_id: str,
+        unit_type: str,
+        seeds: list[int],
+        algorithm: str = "lda",
+        n_topics: int = 5,
+        preprocessing_profile_id: str | None = None,
+        max_iterations: int = 25,
+        **filters: Any,
+    ) -> AnalysisRun:
+        """Fit the same K across multiple seeds and persist pairwise stability (§40)."""
+        corpus, texts, config = await self._resolve_training_texts_and_config(
+            corpus_id,
+            user_id=user_id,
+            unit_type=unit_type,
+            preprocessing_profile_id=preprocessing_profile_id,
+            filters=filters,
+        )
+        stability = seed_stability(
+            texts,
+            seeds,
+            algorithm=algorithm,
+            n_topics=n_topics,
+            config=config,
+            max_iter=max_iterations,
+        )
+        run = await self.repo.create_run(
+            AnalysisRun(
+                project_id=corpus.project_id,
+                corpus_id=corpus_id,
+                run_type=AnalysisRunType.TOPIC_MODEL.value,
+                status=AnalysisRunStatus.COMPLETED.value,
+                parameters_json=dumps(
+                    {
+                        "mode": "seed_stability",
+                        "unit_type": unit_type,
+                        "algorithm": algorithm,
+                        "n_topics": n_topics,
+                        "seeds": seeds,
+                        "preprocessing_profile_id": preprocessing_profile_id,
+                        "filters": filters,
+                    }
+                ),
+                metrics_json=dumps(
+                    {"unit_count": len(texts), "mean_stability_jaccard": stability["mean_stability_jaccard"]}
+                ),
+                results_json=dumps(stability),
+                created_by=user_id,
+                started_at=_utcnow(),
+                completed_at=_utcnow(),
+            )
+        )
+        await self.db.commit()
+        return run
 
     async def name_topic(
         self, run_id: str, *, user_id: str, topic_id: int, human_name: str

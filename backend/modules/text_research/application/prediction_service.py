@@ -91,10 +91,25 @@ class PredictionService(ResearchAccessMixin):
             label_names = loads(model.label_ids_json, [])
             texts = [u.text for u in units]
 
+            # §33: apply the same validation-tuned decision threshold(s)
+            # used when scoring TEST at training time, rather than the
+            # classifier's raw 0.5 default. Persisted additively under
+            # `metrics["thresholds"]`; absent/no-op entries (multiclass, no
+            # validation set, no predict_proba) are ignored here too.
+            training_metrics = loads(model.metrics_json, {})
+            thresholds = training_metrics.get("thresholds")
+
             await self.repo.update_run(run, progress_stage="vectorizing")
             await self.db.commit()
             predictions = (
-                predict_with_uncertainty(classifier, vectorizer, texts, task_type=model.task_type)
+                predict_with_uncertainty(
+                    classifier,
+                    vectorizer,
+                    texts,
+                    task_type=model.task_type,
+                    label_names=label_names,
+                    thresholds=thresholds,
+                )
                 if texts
                 else []
             )
@@ -114,8 +129,28 @@ class PredictionService(ResearchAccessMixin):
                         else {}
                     )
                 else:
-                    predicted_labels = [str(prediction["prediction"])]
-                    scores = {}
+                    # Binary/multiclass models predict label-encoder integer
+                    # indices; decode via the persisted `label_ids` (fitted
+                    # `LabelEncoder.classes_`, in index order) rather than
+                    # stringifying the raw integer.
+                    predicted_index = int(prediction["prediction"])
+                    predicted_label = (
+                        label_names[predicted_index]
+                        if label_names and 0 <= predicted_index < len(label_names)
+                        else str(predicted_index)
+                    )
+                    predicted_labels = [predicted_label]
+                    probabilities = prediction.get("probabilities")
+                    probability = prediction.get("probability")
+                    if model.task_type == "multiclass" and probabilities is not None:
+                        scores = {
+                            label_names[i]: float(probabilities[i])
+                            for i in range(min(len(label_names), len(probabilities)))
+                        }
+                    elif model.task_type == "binary" and probability is not None and len(label_names) > 1:
+                        scores = {label_names[1]: float(probability)}
+                    else:
+                        scores = {}
                 uncertainty = prediction.get("uncertainty")
                 rows.append({"trained_model_id": model.id, "text_unit_id": unit.id, "predicted_labels_json": dumps(predicted_labels), "scores_json": dumps(scores), "uncertainty": uncertainty})
 

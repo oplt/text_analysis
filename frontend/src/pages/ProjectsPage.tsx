@@ -24,6 +24,7 @@ import { createProject, listProjects } from "../api/projects";
 import { queryKeys } from "../config/queryKeys";
 import { useSnackbar } from "../app/snackbarContext";
 import { EmptyState } from "../components/ui/EmptyState";
+import { PageHeader } from "../components/ui/PageHeader";
 import { PageShell } from "../components/ui/PageShell";
 import { QueryBoundary } from "../components/ui/QueryBoundary";
 import { SectionCard } from "../components/ui/SectionCard";
@@ -67,12 +68,16 @@ export default function ProjectsPage() {
     const coreDomainPlural = platformMetadata?.core_domain_plural ?? "Projects";
 
     return (
-        <PageShell maxWidth="xl">
+        <PageShell width="wide">
+            <PageHeader
+                title={coreDomainPlural}
+                description={`Create and open ${coreDomainPlural.toLowerCase()} for research workspaces.`}
+            />
             <Box
                 sx={{
                     display: "grid",
                     gap: 2,
-                    gridTemplateColumns: { xs: "1fr", lg: "minmax(320px, 400px) minmax(0, 1fr)" },
+                    gridTemplateColumns: { xs: "1fr", lg: "minmax(280px, 360px) minmax(0, 1fr)" },
                     alignItems: "start",
                 }}
             >

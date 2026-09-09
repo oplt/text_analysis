@@ -1,21 +1,17 @@
-"""SYNTHETIC demo-data seeding for the Policy Text Lab.
+"""SYNTHETIC demo-data seeding for the text research workspace.
 
-Every document, organization, and passage of text created here is
-**fabricated for demonstration purposes only** — none of it represents a
-real government, intergovernmental organization, NGO, or policy document.
-Every seeded row is tagged so it can never be mistaken for real research
-data:
+Every document created here is **fabricated for demonstration purposes only**.
+Content is deliberately topic-neutral so the platform does not prescribe a
+research framework, discipline, or substantive label set.
 
-* Organization names are explicitly fictional (e.g. "Fictional Global
-  Council for Learning") and never reuse a real IO/NGO/government name or
-  acronym.
+* Organization / source names are explicitly fictional.
 * `CorpusDocument.research_notes` and the corpus description are prefixed
   with "SYNTHETIC DEMO DATA".
 * The backing `RagDocument.metadata_json` carries `synthetic_demo: true`.
 
-This lets a new user explore the full corpus -> segmentation -> annotation ->
-classification workflow immediately, without needing to source real policy
-documents first.
+This lets a new user explore corpus → segmentation → annotation →
+classification without importing real documents first. Users still define
+their own codebook labels and dictionaries.
 """
 
 from __future__ import annotations
@@ -24,84 +20,81 @@ from typing import Any
 
 from backend.modules.rag.infrastructure.repositories import RagRepository
 from backend.modules.text_research.application.access import ResearchAccessMixin
-from backend.modules.text_research.domain.models import CorpusDocument, ResearchCorpus, dumps
+from backend.modules.text_research.domain.models import (
+    CanonicalResearchSource,
+    CorpusDocument,
+    ResearchCorpus,
+    dumps,
+)
+from backend.modules.text_research.infrastructure.canonical_text import build_canonical_from_full_text
 
 SYNTHETIC_TAG = "SYNTHETIC DEMO DATA"
 
+# Neutral synthetic passages — no theoretical constructs, policy frameworks,
+# sentiment taxonomies, or geographic/cultural category systems.
 _SYNTHETIC_DOCUMENTS: tuple[dict[str, Any], ...] = (
     {
-        "organization": "Fictional Global Council for Learning (FGCL)",
-        "organization_type": "intergovernmental_fictional",
-        "region": "Global (fictional)",
-        "cultural_sphere": "Composite/Fictional",
+        "organization": "Fictional Source Alpha",
+        "organization_type": "publisher_fictional",
+        "region": "Region A (fictional)",
+        "cultural_sphere": None,
         "country": None,
         "language": "en",
         "publication_year": 2019,
-        "publication_type": "policy_brief",
-        "title": "Framework for Universal Learning Rights (SYNTHETIC)",
+        "publication_type": "article",
+        "title": "Synthetic sample document A",
         "text": (
-            "This fictional policy brief affirms that every learner, regardless of "
-            "nationality or background, holds an inherent right to quality education. "
-            "The Council calls on member states to guarantee free and compulsory primary "
-            "and secondary education as an individual entitlement, while fostering "
-            "personal choice in curriculum pathways and school selection. Education "
-            "systems should be designed around universal standards that apply equally "
-            "to all learners everywhere, independent of local context."
+            "This fictional article discusses how teams coordinate shared work across "
+            "time zones. Clear agendas, written summaries, and predictable handoffs "
+            "reduce duplicated effort. The text is synthetic demo data only."
         ),
     },
     {
-        "organization": "Alliance of Southern Community Schools (ASCS)",
-        "organization_type": "ngo_fictional",
-        "region": "Fictional Southern Region",
-        "cultural_sphere": "Communal/Fictional",
+        "organization": "Fictional Source Beta",
+        "organization_type": "archive_fictional",
+        "region": "Region B (fictional)",
+        "cultural_sphere": None,
         "country": None,
         "language": "en",
         "publication_year": 2021,
-        "publication_type": "position_paper",
-        "title": "Community-Rooted Curricula for Shared Futures (SYNTHETIC)",
+        "publication_type": "report",
+        "title": "Synthetic sample document B",
         "text": (
-            "Our alliance holds that education is best understood as a collective, "
-            "community-held responsibility rather than an individual entitlement. "
-            "Curricula should reflect the shared cultural heritage of the community, "
-            "strengthening group identity and mutual obligation over individual "
-            "achievement. Multiple cultural traditions coexisting within a single "
-            "school should be actively celebrated and represented in daily practice."
+            "This fictional report describes a laboratory notebook workflow. "
+            "Observations are timestamped, materials are listed before results, and "
+            "negative findings are retained. The text is synthetic demo data only."
         ),
     },
     {
-        "organization": "Ministry of Education, Republic of Vestland (fictional state)",
-        "organization_type": "national_ministry_fictional",
-        "region": "Fictional Northern Region",
-        "cultural_sphere": "State-centered/Fictional",
-        "country": "Vestland (fictional)",
+        "organization": "Fictional Source Gamma",
+        "organization_type": "institute_fictional",
+        "region": "Region C (fictional)",
+        "cultural_sphere": None,
+        "country": "Fictionalia",
         "language": "en",
         "publication_year": 2018,
-        "publication_type": "national_strategy",
-        "title": "National Strategy for Standardized Assessment (SYNTHETIC)",
+        "publication_type": "memo",
+        "title": "Synthetic sample document C",
         "text": (
-            "The Ministry establishes a single national standard of assessment "
-            "applicable uniformly across all schools, prioritizing measurable, "
-            "comparable outcomes. This strategy emphasizes the state's role as sole "
-            "guarantor of educational quality, favoring centralized oversight over "
-            "individual school autonomy or locally negotiated curricula."
+            "This fictional memo compares two scheduling options for a conference. "
+            "Option one favors fewer parallel tracks; option two favors shorter talks. "
+            "The text is synthetic demo data only."
         ),
     },
     {
-        "organization": "Pacific Rim Indigenous Education Network (fictional)",
+        "organization": "Fictional Source Delta",
         "organization_type": "network_fictional",
-        "region": "Fictional Pacific Region",
-        "cultural_sphere": "Indigenous/Fictional",
+        "region": "Region D (fictional)",
+        "cultural_sphere": None,
         "country": None,
         "language": "en",
         "publication_year": 2022,
-        "publication_type": "advocacy_statement",
-        "title": "Reclaiming Pluralism in Curriculum Design (SYNTHETIC)",
+        "publication_type": "brief",
+        "title": "Synthetic sample document D",
         "text": (
-            "Our network advocates for curricula that recognize and actively integrate "
-            "the many distinct cultural traditions of the communities we serve. "
-            "Multicultural representation, language preservation, and pluralistic "
-            "values must sit at the center of any legitimate education policy, rather "
-            "than being treated as optional additions to a universal template."
+            "This fictional brief outlines a document-review checklist: verify citations, "
+            "confirm figure captions match the body text, and archive the final PDF. "
+            "The text is synthetic demo data only."
         ),
     },
 )
@@ -113,7 +106,7 @@ class DemoSeedService(ResearchAccessMixin):
         *,
         project_id: str,
         user_id: str,
-        corpus_name: str = "Policy Text Lab — Synthetic Demo Corpus",
+        corpus_name: str = "Synthetic demo corpus",
     ) -> ResearchCorpus:
         await self.ensure_project_access(user_id=user_id, project_id=project_id)
         rag_repo = RagRepository(self.db)
@@ -122,9 +115,9 @@ class DemoSeedService(ResearchAccessMixin):
             project_id=project_id,
             name=corpus_name,
             description=(
-                f"{SYNTHETIC_TAG}: fabricated fictional-organization policy texts used to "
-                "demonstrate the Policy Text Lab workflow end to end. Not real "
-                "research data — do not cite."
+                f"{SYNTHETIC_TAG}: topic-neutral fabricated texts used to demonstrate "
+                "the research workflow end to end. Not real research data — do not cite. "
+                "Define your own codebook labels and dictionaries separately."
             ),
             created_by=user_id,
         )
@@ -170,6 +163,40 @@ class DemoSeedService(ResearchAccessMixin):
                     "real organization or document."
                 ),
                 metadata_json=dumps({"synthetic_demo": True}),
+            )
+            build = build_canonical_from_full_text(
+                spec["text"],
+                language=spec["language"],
+                source_file_reference=None,
+                extra_transformation={
+                    "source": "synthetic_demo_full_text",
+                    "synthetic_demo": True,
+                },
+            )
+            await self.repo.create_canonical_source(
+                CanonicalResearchSource(
+                    corpus_document_id=document.id,
+                    canonical_text=build.text,
+                    canonical_text_checksum=build.text_checksum,
+                    raw_extracted_text=build.text,
+                    raw_extracted_checksum=build.text_checksum,
+                    original_file_checksum=build.original_file_checksum,
+                    parser_name=build.parser_name,
+                    parser_version=build.parser_version,
+                    extracted_at=build.extracted_at,
+                    source_rag_document_id=rag_document.id,
+                    source_storage_path=None,
+                    source_filename=f"{spec['title']}.txt",
+                    language=build.language,
+                    page_provenance_json=dumps(build.page_provenance),
+                    transformation_metadata_json=dumps(
+                        {
+                            **(build.transformation_metadata or {}),
+                            "raw_equals_canonical": True,
+                            "cleaning_applied": False,
+                        }
+                    ),
+                )
             )
             created_documents.append(document)
 

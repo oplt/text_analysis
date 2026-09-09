@@ -5,17 +5,74 @@ against a frozen snapshot whose exact unit IDs, document IDs, and per-unit
 gold labels are persisted at freeze time (inside `class_distribution_json`,
 alongside the aggregate class distribution), so retraining against the same
 snapshot is always reproducible even if annotations change afterward.
+
+`class_distribution_json` additionally captures, so the snapshot is fully
+self-describing without joining back to mutable tables:
+
+* ``text_hashes`` — ``{unit_id: TextUnit.text_hash}`` at freeze time.
+* ``corpus_checksums`` — ``{corpus_document_id: canonical_text_checksum}``
+  for every source document contributing a unit, plus
+  ``corpus_checksum_aggregate``, a single deterministic hash of those
+  checksums that changes if any contributing document's canonical text
+  changes (only available for corpora ingested through the canonical-source
+  pipeline; ``None`` when no canonical sources exist).
+* ``metadata`` — codebook version, annotation resolution strategy, and the
+  freeze timestamp (mirroring the equivalent model columns, for consumers
+  that only have the JSON payload).
 """
 
 from __future__ import annotations
 
+import hashlib
 from collections import Counter
+from collections.abc import Iterable
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import HTTPException
 
 from backend.modules.text_research.application.access import ResearchAccessMixin
-from backend.modules.text_research.domain.models import TextUnit, TrainingDatasetSnapshot, dumps, loads
+from backend.modules.text_research.domain.models import (
+    TextUnit,
+    TrainingDatasetSnapshot,
+    dumps,
+    loads,
+)
+
+
+def _utcnow() -> datetime:
+    return datetime.now(UTC)
+
+
+def aggregate_checksum(checksums: Iterable[str | None]) -> str | None:
+    """Deterministic combined checksum for a set of document checksums.
+
+    Sorting before hashing makes the result independent of document
+    ordering; ``None``/empty values are dropped. Returns ``None`` if no
+    non-empty checksums are provided (e.g. no canonical sources exist yet).
+    """
+    present = sorted(c for c in checksums if c)
+    if not present:
+        return None
+    return hashlib.sha256("|".join(present).encode("utf-8")).hexdigest()
+
+
+def build_snapshot_metadata(
+    *,
+    codebook_version: str,
+    annotation_source: str,
+    selected_annotator_id: str | None,
+    minimum_agreement: float | None,
+    frozen_at: datetime | None = None,
+) -> dict[str, Any]:
+    """Pure builder for the ``metadata`` block stored in a frozen snapshot."""
+    return {
+        "codebook_version": codebook_version,
+        "annotation_resolution_strategy": annotation_source,
+        "selected_annotator_id": selected_annotator_id,
+        "minimum_agreement": minimum_agreement,
+        "frozen_at": (frozen_at or _utcnow()).isoformat(),
+    }
 
 
 class DatasetBuilderService(ResearchAccessMixin):
@@ -116,6 +173,15 @@ class DatasetBuilderService(ResearchAccessMixin):
         candidate_units = [u for u in candidate_units if u.unit_type == unit_type]
         unit_ids = sorted(u.id for u in candidate_units)
         document_ids = sorted({u.corpus_document_id for u in candidate_units})
+        text_hashes = {u.id: u.text_hash for u in candidate_units}
+
+        canonical_sources = await self.repo.list_canonical_sources_for_corpus(corpus_id)
+        corpus_checksums = {
+            source.corpus_document_id: source.canonical_text_checksum
+            for source in canonical_sources
+            if source.corpus_document_id in document_ids
+        }
+        corpus_checksum_aggregate = aggregate_checksum(corpus_checksums.values())
 
         labels = {label_id: await self.repo.get_label(label_id) for label_id in label_ids}
         class_distribution: dict[str, dict[str, int]] = {}
@@ -157,6 +223,9 @@ class DatasetBuilderService(ResearchAccessMixin):
             "excluded_disagreements": excluded,
             "annotator_coverage": sorted(annotator_ids),
             "warnings": warnings,
+            "text_hashes": text_hashes,
+            "corpus_checksums": corpus_checksums,
+            "corpus_checksum_aggregate": corpus_checksum_aggregate,
         }
 
     async def freeze(
@@ -207,6 +276,15 @@ class DatasetBuilderService(ResearchAccessMixin):
                     {
                         "distribution": preview["class_distribution"],
                         "unit_labels": preview["unit_labels"],
+                        "text_hashes": preview["text_hashes"],
+                        "corpus_checksums": preview["corpus_checksums"],
+                        "corpus_checksum_aggregate": preview["corpus_checksum_aggregate"],
+                        "metadata": build_snapshot_metadata(
+                            codebook_version=codebook.version,
+                            annotation_source=annotation_source,
+                            selected_annotator_id=selected_annotator_id,
+                            minimum_agreement=minimum_agreement,
+                        ),
                     }
                 ),
                 created_by=user_id,
@@ -232,3 +310,27 @@ class DatasetBuilderService(ResearchAccessMixin):
     def label_names(snapshot: TrainingDatasetSnapshot) -> list[str]:
         data = loads(snapshot.class_distribution_json, {})
         return sorted(data.get("distribution", {}).keys())
+
+    @staticmethod
+    def text_hashes(snapshot: TrainingDatasetSnapshot) -> dict[str, str]:
+        """Frozen ``{unit_id: text_hash}`` exactly as computed at freeze time."""
+        data = loads(snapshot.class_distribution_json, {})
+        return data.get("text_hashes", {})
+
+    @staticmethod
+    def corpus_checksums(snapshot: TrainingDatasetSnapshot) -> dict[str, str | None]:
+        """Frozen ``{corpus_document_id: canonical_text_checksum}``."""
+        data = loads(snapshot.class_distribution_json, {})
+        return data.get("corpus_checksums", {})
+
+    @staticmethod
+    def corpus_checksum_aggregate(snapshot: TrainingDatasetSnapshot) -> str | None:
+        """Single deterministic hash summarizing all contributing document checksums."""
+        data = loads(snapshot.class_distribution_json, {})
+        return data.get("corpus_checksum_aggregate")
+
+    @staticmethod
+    def snapshot_metadata(snapshot: TrainingDatasetSnapshot) -> dict[str, Any]:
+        """Codebook version, resolution strategy, and freeze timestamp."""
+        data = loads(snapshot.class_distribution_json, {})
+        return data.get("metadata", {})

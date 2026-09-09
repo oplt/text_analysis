@@ -217,7 +217,7 @@ export function AppLayout() {
             { label: "Dashboard", icon: <DashboardIcon />, path: "/dashboard", group: "workspace" },
             { label: coreDomainPlural, icon: <ProjectsIcon />, path: "/projects", group: "workspace" },
             {
-                label: "Policy Text Lab",
+                label: "Text Research",
                 icon: <ResearchIcon />,
                 path: researchNavPath,
                 group: "workspace",
@@ -250,8 +250,8 @@ export function AppLayout() {
         getSettingsHubLabel(location.pathname, settingsTabs) ??
         (location.pathname.startsWith("/research")
             ? researchProjectName
-                ? `Policy Text Lab · ${researchProjectName}`
-                : "Policy Text Lab"
+                ? `Text Research · ${researchProjectName}`
+                : "Text Research"
             : undefined) ??
         currentItem?.label ??
         (location.pathname.startsWith("/calendar") ? "Calendar" : undefined) ??

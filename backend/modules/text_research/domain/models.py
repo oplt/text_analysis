@@ -72,6 +72,36 @@ class CorpusDocument(Base):
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
 
+    # Fixed columns that are eligible as user-selected grouping / temporal
+    # fields (see §38/§39: robustness group_field, temporal_field). Kept as a
+    # class attribute (not infrastructure) so any layer can validate a
+    # requested field name without importing the ORM's SQLAlchemy internals.
+    KNOWN_FACET_FIELDS: tuple[str, ...] = (
+        "organization",
+        "organization_type",
+        "publication_year",
+        "publication_type",
+        "country",
+        "region",
+        "cultural_sphere",
+        "language",
+        "education_level",
+    )
+
+    def get_field_value(self, field_name: str) -> Any:
+        """Resolve any user-selected facet/group field, generic across projects.
+
+        Checks known fixed columns first (organization, region, country,
+        publication_year, ...); anything else is looked up in the free-form
+        ``metadata_json`` blob so custom project-specific fields work without
+        schema changes. Returns ``None`` when the field is unknown/absent —
+        callers must not assume it exists.
+        """
+        if field_name in self.KNOWN_FACET_FIELDS:
+            return getattr(self, field_name, None)
+        metadata = loads(self.metadata_json, {}) or {}
+        return metadata.get(field_name)
+
 
 class TextUnit(Base):
     __tablename__ = "research_text_units"
@@ -93,9 +123,77 @@ class TextUnit(Base):
     page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     paragraph_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     sentence_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    char_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    char_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    section_heading: Mapped[str | None] = mapped_column(String(512), nullable=True)
     text: Mapped[str] = mapped_column(Text)
     text_hash: Mapped[str] = mapped_column(String(64), index=True)
+    source_text_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class CanonicalResearchSource(Base):
+    """Immutable full-document text used for research analysis.
+
+    Kept separate from RAG retrieval chunks so overlapping chunk joins can never
+    corrupt frequencies, DFM, annotation, or classifiers.
+    """
+
+    __tablename__ = "research_canonical_sources"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    corpus_document_id: Mapped[str] = mapped_column(
+        ForeignKey("research_corpus_documents.id", ondelete="CASCADE"),
+        unique=True,
+        index=True,
+    )
+    canonical_text: Mapped[str] = mapped_column(Text)
+    canonical_text_checksum: Mapped[str] = mapped_column(String(64), index=True)
+    original_file_checksum: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    parser_name: Mapped[str] = mapped_column(String(128))
+    parser_version: Mapped[str] = mapped_column(String(64))
+    extracted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    source_rag_document_id: Mapped[str | None] = mapped_column(
+        ForeignKey("rag_documents.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    source_storage_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    source_filename: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    language: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    page_provenance_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Raw extract is immutable; cleaning may rewrite canonical_text only.
+    raw_extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    raw_extracted_checksum: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    cleaning_profile_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_cleaning_profiles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    transformation_metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class CleaningProfile(Base):
+    """Versioned document-cleaning config (raw extract → cleaned canonical).
+
+    Distinct from PreprocessingProfile, which operates on research units for
+    tokenization / vectorization after segmentation.
+    """
+
+    __tablename__ = "research_cleaning_profiles"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    version: Mapped[str] = mapped_column(String(64), default="1.0")
+    config_json: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
 
 
 class PreprocessingProfile(Base):

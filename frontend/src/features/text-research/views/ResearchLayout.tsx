@@ -127,7 +127,7 @@ function ResearchLayoutInner() {
             <PageHeader
                 dense
                 icon={<LabIcon />}
-                title="Policy Text Lab"
+                title="Text Research"
                 description={`${projectQuery.data?.name ?? "Research workspace"} — corpus, annotation, analysis, and exports.`}
             />
 
@@ -137,9 +137,9 @@ function ResearchLayoutInner() {
                     gridTemplateColumns: {
                         xs: "minmax(0, 1fr)",
                         lg: showInlineContext
-                            ? "minmax(180px, 200px) minmax(0, 1fr) minmax(240px, 280px)"
-                            : "minmax(180px, 200px) minmax(0, 1fr)",
-                        xl: "minmax(180px, 220px) minmax(0, 1fr) minmax(260px, 300px)",
+                            ? "minmax(160px, 180px) minmax(0, 1fr) minmax(220px, 260px)"
+                            : "minmax(160px, 180px) minmax(0, 1fr)",
+                        xl: "minmax(170px, 200px) minmax(0, 1fr) minmax(240px, 280px)",
                     },
                     gap: { xs: 1.5, lg: 2 },
                     alignItems: "start",

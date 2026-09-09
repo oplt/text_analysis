@@ -30,9 +30,11 @@ import {
     segmentCorpus,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { PageTabs } from "../../../components/ui/PageTabs";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
+import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { NoCorpusEmptyState, RunStatusChip } from "../components/ResearchShared";
 import { PreprocessingPanel } from "../components/PreprocessingPanel";
@@ -45,11 +47,20 @@ import {
 } from "../segmentationProgress";
 import { UNIT_TYPE_OPTIONS, type UnitType } from "../types";
 
+const PREPARE_TABS = ["segment", "preprocessing"] as const;
+type PrepareTab = (typeof PREPARE_TABS)[number];
+
+const PREPARE_TAB_ITEMS: Array<{ value: PrepareTab; label: string }> = [
+    { value: "segment", label: "Segment" },
+    { value: "preprocessing", label: "Preprocessing" },
+];
+
 export default function PrepareView() {
     const ctx = useResearchContext();
     const navigate = useNavigate();
     const client = useQueryClient();
     const { showToast } = useSnackbar();
+    const [tab, setTab] = useTabQueryParam(PREPARE_TABS, "segment");
     const [runId, setRunId] = useState<string | null>(null);
     const [localUnitType, setLocalUnitType] = useState<UnitType>(ctx.unitType);
     const lastRefreshedStatus = useRef<string | null>(null);
@@ -163,8 +174,13 @@ export default function PrepareView() {
     if (!ctx.corporaLoading && ctx.corpora.length === 0) {
         return (
             <Stack spacing={2}>
-                <NoCorpusEmptyState />
-                <PreprocessingPanel />
+                <PageTabs
+                    value={tab}
+                    onChange={setTab}
+                    tabs={PREPARE_TAB_ITEMS}
+                    ariaLabel="Prepare workflow"
+                />
+                {tab === "segment" ? <NoCorpusEmptyState /> : <PreprocessingPanel />}
             </Stack>
         );
     }
@@ -172,19 +188,31 @@ export default function PrepareView() {
     if (!ctx.selectedCorpusId) {
         return (
             <Stack spacing={2}>
-                <SectionCard title="Prepare corpus">
-                    <EmptyState
-                        icon={<PrepareIcon fontSize="large" />}
-                        title="Select a corpus"
-                        description="Choose a corpus in the workspace context bar, then segment documents into research units."
-                        action={
-                            <Button variant="contained" onClick={() => navigate(`/research/${ctx.projectId}/corpus`)}>
-                                Go to corpus
-                            </Button>
-                        }
-                    />
-                </SectionCard>
-                <PreprocessingPanel />
+                <PageTabs
+                    value={tab}
+                    onChange={setTab}
+                    tabs={PREPARE_TAB_ITEMS}
+                    ariaLabel="Prepare workflow"
+                />
+                {tab === "segment" ? (
+                    <SectionCard title="Prepare corpus">
+                        <EmptyState
+                            icon={<PrepareIcon fontSize="large" />}
+                            title="Select a corpus"
+                            description="Choose a corpus in the workspace context bar, then segment documents into research units."
+                            action={
+                                <Button
+                                    variant="contained"
+                                    onClick={() => navigate(`/research/${ctx.projectId}/corpus`)}
+                                >
+                                    Go to corpus
+                                </Button>
+                            }
+                        />
+                    </SectionCard>
+                ) : (
+                    <PreprocessingPanel />
+                )}
             </Stack>
         );
     }
@@ -201,6 +229,15 @@ export default function PrepareView() {
 
     return (
         <Stack spacing={2}>
+            <PageTabs
+                value={tab}
+                onChange={setTab}
+                tabs={PREPARE_TAB_ITEMS}
+                ariaLabel="Prepare workflow"
+            />
+
+            {tab === "segment" ? (
+            <>
             <SectionCard
                 title="Preparation workspace"
                 description="Segment corpus documents into reproducible research text units. Long jobs are queued and polled automatically."
@@ -364,8 +401,10 @@ export default function PrepareView() {
                     )}
                 </QueryBoundary>
             </SectionCard>
+            </>
+            ) : null}
 
-            <PreprocessingPanel />
+            {tab === "preprocessing" ? <PreprocessingPanel /> : null}
         </Stack>
     );
 }

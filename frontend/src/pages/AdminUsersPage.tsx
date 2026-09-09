@@ -25,6 +25,7 @@ import { useTheme } from "@mui/material/styles";
 import { listAdminUsers, updateUserStatus, type AdminUserListResponse } from "../api/admin";
 import { AdminSettingsTabs } from "../components/layout/AdminSettingsTabs";
 import { EmptyState } from "../components/ui/EmptyState";
+import { PageHeader } from "../components/ui/PageHeader";
 import { PageShell } from "../components/ui/PageShell";
 import { QueryBoundary } from "../components/ui/QueryBoundary";
 import { SectionCard } from "../components/ui/SectionCard";
@@ -86,28 +87,32 @@ export default function AdminUsersPage() {
     const verifiedCount = users.filter((user) => user.is_verified).length;
 
     return (
-        <PageShell maxWidth="xl">
+        <PageShell width="wide">
             <AdminSettingsTabs />
 
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-                <TextField
-                    size="small"
-                    placeholder="Search users..."
-                    value={search}
-                    onChange={(event) => {
-                        setSearch(event.target.value);
-                        setPage(0);
-                    }}
-                    InputProps={{
-                        startAdornment: (
-                            <InputAdornment position="start">
-                                <SearchIcon fontSize="small" />
-                            </InputAdornment>
-                        ),
-                    }}
-                    sx={{ width: { xs: "100%", sm: 320 } }}
-                />
-            </Box>
+            <PageHeader
+                title="Users"
+                description="Search accounts and manage activation status."
+                actions={
+                    <TextField
+                        size="small"
+                        placeholder="Search users..."
+                        value={search}
+                        onChange={(event) => {
+                            setSearch(event.target.value);
+                            setPage(0);
+                        }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon fontSize="small" />
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ width: { xs: "100%", sm: 280 } }}
+                    />
+                }
+            />
 
             <Box
                 sx={{

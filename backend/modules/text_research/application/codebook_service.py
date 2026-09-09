@@ -3,6 +3,9 @@
 Codebooks are versioned. A frozen codebook version can never be mutated —
 researchers must create a new version (optionally cloned from a frozen one)
 to change label definitions after annotation has started against it.
+
+Labels are always user-defined. The backend does not ship substantive
+research constructs, theories, or default label sets.
 """
 
 from __future__ import annotations
@@ -15,39 +18,6 @@ from backend.modules.text_research.application.access import ResearchAccessMixin
 from backend.modules.text_research.domain.exceptions import CodebookFrozenError
 from backend.modules.text_research.domain.models import AnnotationLabel, Codebook
 
-#: Seeded demo labels. Illustrative placeholders for the demo workflow — not
-#: authoritative operational definitions. Every seeded label uses `is_placeholder=True`.
-PLACEHOLDER_LABEL_DEFINITIONS: tuple[dict[str, str], ...] = (
-    {
-        "name": "Liberalism",
-        "description": (
-            "PLACEHOLDER definition for demo purposes: discourse emphasizing individual "
-            "rights, free choice, and limited state intervention in education policy."
-        ),
-    },
-    {
-        "name": "Universalism",
-        "description": (
-            "PLACEHOLDER definition for demo purposes: discourse framing education as a "
-            "universal right or good applicable to all, regardless of context."
-        ),
-    },
-    {
-        "name": "Individualism",
-        "description": (
-            "PLACEHOLDER definition for demo purposes: discourse foregrounding individual "
-            "achievement, responsibility, or development over collective/group framing."
-        ),
-    },
-    {
-        "name": "Multiculturalism",
-        "description": (
-            "PLACEHOLDER definition for demo purposes: discourse recognizing or promoting "
-            "cultural diversity and pluralism within education policy."
-        ),
-    },
-)
-
 
 class CodebookService(ResearchAccessMixin):
     async def create_codebook(
@@ -58,8 +28,14 @@ class CodebookService(ResearchAccessMixin):
         name: str,
         description: str | None = None,
         version: str = "1.0",
-        seed_placeholder_labels: bool = True,
+        seed_placeholder_labels: bool = False,
     ) -> Codebook:
+        """Create an empty codebook.
+
+        ``seed_placeholder_labels`` is accepted for API compatibility but ignored.
+        Callers must add their own labels via ``add_label``.
+        """
+        del seed_placeholder_labels  # no hardcoded research constructs
         await self.ensure_project_access(user_id=user_id, project_id=project_id)
         codebook = await self.repo.create_codebook(
             project_id=project_id,
@@ -68,14 +44,6 @@ class CodebookService(ResearchAccessMixin):
             version=version,
             created_by=user_id,
         )
-        if seed_placeholder_labels:
-            for definition in PLACEHOLDER_LABEL_DEFINITIONS:
-                await self.repo.create_label(
-                    codebook_id=codebook.id,
-                    name=definition["name"],
-                    description=definition["description"],
-                    is_placeholder=True,
-                )
         await self.db.commit()
         return codebook
 
@@ -174,4 +142,4 @@ class CodebookService(ResearchAccessMixin):
         return await self.repo.list_labels(codebook_id)
 
 
-__all__ = ["CodebookService", "CodebookFrozenError", "PLACEHOLDER_LABEL_DEFINITIONS"]
+__all__ = ["CodebookService", "CodebookFrozenError"]

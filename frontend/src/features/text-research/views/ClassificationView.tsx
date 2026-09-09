@@ -560,33 +560,6 @@ export default function ClassificationView() {
 
     return (
         <Stack spacing={2}>
-            <SectionCard
-                title="Active learning loop"
-                description="Train a model, score unannotated units, review uncertain cases, send them for human coding, then freeze and retrain."
-                compact
-            >
-                <Stepper activeStep={workflowStep} alternativeLabel sx={{ mb: 2 }}>
-                    {ACTIVE_LEARNING_STEPS.map((label) => (
-                        <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
-                        </Step>
-                    ))}
-                </Stepper>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} flexWrap="wrap">
-                    <Button
-                        variant="outlined"
-                        startIcon={<AnnotateIcon />}
-                        onClick={() => navigate(`/research/${ctx.projectId}/annotation`)}
-                    >
-                        Open annotation
-                    </Button>
-                    <Typography variant="body2" color="text.secondary" sx={{ alignSelf: "center" }}>
-                        Model scores stay separate from human coding. Predictions are labeled as
-                        model output until a coder confirms them.
-                    </Typography>
-                </Stack>
-            </SectionCard>
-
             <PageTabs
                 value={tab}
                 onChange={setTab}
@@ -1253,6 +1226,34 @@ export default function ClassificationView() {
             ) : null}
 
             {tab === "active" ? (
+            <>
+            <SectionCard
+                title="Active learning loop"
+                description="Train a model, score unannotated units, review uncertain cases, send them for human coding, then freeze and retrain."
+                compact
+            >
+                <Stepper activeStep={workflowStep} alternativeLabel sx={{ mb: 2 }}>
+                    {ACTIVE_LEARNING_STEPS.map((label) => (
+                        <Step key={label}>
+                            <StepLabel>{label}</StepLabel>
+                        </Step>
+                    ))}
+                </Stepper>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} flexWrap="wrap">
+                    <Button
+                        variant="outlined"
+                        startIcon={<AnnotateIcon />}
+                        onClick={() => navigate(`/research/${ctx.projectId}/annotation`)}
+                    >
+                        Open annotation
+                    </Button>
+                    <Typography variant="body2" color="text.secondary" sx={{ alignSelf: "center" }}>
+                        Model scores stay separate from human coding. Predictions are labeled as
+                        model output until a coder confirms them.
+                    </Typography>
+                </Stack>
+            </SectionCard>
+
             <SectionCard
                 title="Apply model & uncertain cases"
                 description="Predictions stay separate from human coding. Send difficult cases to annotation deliberately."
@@ -1429,6 +1430,7 @@ export default function ClassificationView() {
                     </Stack>
                 )}
             </SectionCard>
+            </>
             ) : null}
         </Stack>
     );

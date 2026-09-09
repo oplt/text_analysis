@@ -1,8 +1,13 @@
-# Policy Text Lab — Text Research Module
+# Text Research Module
 
-Computational analysis workflow for global education policy discourse research:
+Generic computational text analysis workflow:
 corpus creation through annotation, reliability, supervised classification,
 topic modeling, and reproducible export.
+
+Project-specific labels, dictionaries, and comparison groups are always
+user-defined — the platform does not ship substantive research constructs.
+
+Engineering report for the research-grade upgrade: [`text-research-engineering-report.md`](text-research-engineering-report.md).
 
 ## Architecture
 
@@ -28,6 +33,11 @@ The module is a **bounded context**. It does not duplicate RAG ingestion.
 
 **RAG chunks ≠ research text units.** Segmentation builds `document` / `paragraph` /
 `sentence` units with stable positions and `text_hash` for reproducibility.
+
+Research analysis starts from an immutable **canonical research source**
+(`research_canonical_sources`), built by re-parsing the original file or from
+an explicit full-text extract. Overlapping retrieval chunks are never joined
+to reconstruct analysis text.
 
 ## Workflow
 
@@ -71,7 +81,7 @@ Routes under `/research/:projectId/`:
 - `explorer` — comparative discourse prevalence
 - `exports` — CSV + reproducibility manifest
 
-Open from a project detail page via **Open Policy Text Lab**.
+Open from a project detail page via **Open Text Research**.
 
 ## Statistical methods
 
@@ -80,8 +90,14 @@ Implemented in `infrastructure/` (scikit-learn, scipy, numpy):
 - Term frequencies, n-grams, DFM (count/binary/TF-IDF), KWIC, dictionary hits, keyness, co-occurrence
 - Cohen's kappa, Krippendorff's alpha (nominal), agreement matrices
 - LDA, NMF with diagnostics (perplexity, topic diversity, overlap)
-- TF-IDF + Logistic Regression / Linear SVM (OneVsRest for multilabel)
-- Grouped train/test split by source document (leakage prevention)
+- Classifiers: Logistic Regression, Linear SVM, Multinomial NB, Complement NB, SGDClassifier
+  (log_loss/hinge); OneVsRest wrapping for multilabel
+- Task type (binary/multiclass/multilabel) is user/config-driven — inferred from
+  label shape only when not explicitly requested, never silently forced to multilabel
+- Configurable `FeatureConfig`: count or TF-IDF vectors, word n-grams and/or
+  character n-grams (combined via `FeatureUnion`)
+- Grouped train/validation/test split by source document (leakage prevention);
+  validation is skipped with a note (not an error) when too few groups remain
 
 ## Preprocessing
 
@@ -100,7 +116,7 @@ Profiles stored in `research_preprocessing_profiles`. Default preserves negation
 `POST /research/projects/{id}/demo-seed` creates a synthetic corpus (clearly labeled)
 via existing RAG ingestion — four fictional policy documents with metadata.
 
-Placeholder codebook labels (Liberalism, Universalism, Individualism, Multiculturalism)
+Codebook labels are user-defined (no default theoretical constructs)
 are marked `is_placeholder=True`.
 
 ## Background jobs
@@ -150,7 +166,7 @@ npm run test:e2e -- e2e/research-flow.spec.ts
 ```
 
 `e2e/research-flow.spec.ts` exercises the full pipeline via API (demo seed → segment →
-annotate → reliability → train → predict) and verifies the Policy Text Lab UI shows
+annotate → reliability → train → predict) and verifies the Text Research UI shows
 documents, trained models, and exports.
 
 ## Limitations (MVP)

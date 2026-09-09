@@ -1,0 +1,63 @@
+{
+  "config": {
+    "lowercase": true,
+    "remove_punctuation": true,
+    "remove_stopwords": false,
+    "stemming": false,
+    "ngram_min": 1,
+    "ngram_max": 1
+  },
+  "corpus": [
+    "Education policy shapes schools and learning.",
+    "Schools need learning resources and policy support."
+  ],
+  "tokens": [
+    [
+      "education",
+      "policy",
+      "shapes",
+      "schools",
+      "and",
+      "learning"
+    ],
+    [
+      "schools",
+      "need",
+      "learning",
+      "resources",
+      "and",
+      "policy",
+      "support"
+    ]
+  ],
+  "dfm": {
+    "dimensions": {
+      "units": 2,
+      "features": 9
+    },
+    "n_features": 9,
+    "feature_names": [
+      "and",
+      "education",
+      "learning",
+      "need",
+      "policy",
+      "resources",
+      "schools",
+      "shapes",
+      "support"
+    ],
+    "vocabulary_sorted": [
+      "and",
+      "education",
+      "learning",
+      "need",
+      "policy",
+      "resources",
+      "schools",
+      "shapes",
+      "support"
+    ],
+    "nnz": 13
+  }
+}

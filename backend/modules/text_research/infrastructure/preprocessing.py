@@ -1,30 +1,46 @@
-"""Deterministic text preprocessing for Policy Text Lab.
+"""Deterministic Unicode-aware text preprocessing for text research.
 
-Implements whitespace normalization, tokenization, stopword removal,
-Snowball English stemming, and negation preservation, plus factory
-functions that build scikit-learn ``CountVectorizer`` /
-``TfidfVectorizer`` instances that route through the same tokenizer.
+Pipeline stages (all optional via config): encoding fix (ftfy) → Unicode
+normalization → whitespace normalize → lowercase → tokenization → number /
+stopword filters → stemming or lemmatization.
 
-Original text is never mutated; all transformations operate on copies /
-derived token lists.
-
-Lemmatization is not implemented. Configurations that request it are
-rejected so profiles never claim lemmatization occurred when it did not.
+Original text is never mutated. Stemming / lemmatization are never claimed
+unless the required language resources are actually available; requesting an
+unavailable transform raises ``ValueError``.
 """
 
 from __future__ import annotations
 
-import re
+import unicodedata
 from collections import Counter
 from dataclasses import asdict, dataclass, field
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
+import ftfy
+import regex
+import simplemma
 import snowballstemmer
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
-#: Default preprocessing configuration, matching the PreprocessingProfile
-#: example in the Policy Text Lab specification.
+from backend.modules.text_research.infrastructure import language_processing as lang
+from backend.modules.text_research.infrastructure.language_processing import (
+    UNICODE_TOKEN_RE as _UNICODE_TOKEN_RE,
+    lemmatization_available,
+    negation_words_for,
+    resolve_language,
+    snowball_algorithm_for_language,
+    stemming_available,
+    stopwords_for,
+)
+
+PREPROCESSING_IMPLEMENTATION = "text_research.preprocessing"
+PREPROCESSING_IMPLEMENTATION_VERSION = "2"
+
 DEFAULT_PREPROCESSING_CONFIG: dict[str, Any] = {
+    "language": "en",
+    "unicode_normalization": "NFC",  # None | NFC | NFKC | NFD | NFKD
+    "fix_encoding": False,
     "lowercase": True,
     "remove_punctuation": True,
     "remove_numbers": False,
@@ -37,20 +53,43 @@ DEFAULT_PREPROCESSING_CONFIG: dict[str, Any] = {
     "min_df": 1,
     "max_df": 1.0,
     "max_features": None,
+    "custom_stopwords": [],
 }
 
-LEMMATIZATION_UNSUPPORTED_MESSAGE = (
-    "Lemmatization is not implemented. Set lemmatization to false "
-    "(or omit it) until a real lemmatizer is available."
-)
+_VALID_UNICODE_FORMS = frozenset({"NFC", "NFKC", "NFD", "NFKD"})
 
-_ENGLISH_STEMMER = snowballstemmer.stemmer("english")
+_WHITESPACE_RE = regex.compile(r"\s+")
+_NUMBER_RE = regex.compile(r"^[\p{N}]+([.,][\p{N}]+)*$", regex.VERSION1)
+
+# Backward-compatible English defaults (language-aware helpers prefer stopwords_for).
+NEGATION_WORDS: frozenset[str] = negation_words_for("en")
+STOPWORDS: frozenset[str] = stopwords_for("en")
+
+assert STOPWORDS.isdisjoint(NEGATION_WORDS)
+
+_stemmer_cache: dict[str, Any] = {}
+
+
+def _pkg_version(name: str) -> str | None:
+    try:
+        return version(name)
+    except PackageNotFoundError:
+        return None
+
+
+def normalize_language_code(language: str | None) -> str:
+    """Normalize to a primary subtag; blank/missing defaults to ``en`` for profiles."""
+    code = lang.normalize_language_code(language)
+    return code or "en"
 
 
 @dataclass
 class PreprocessingConfig:
     """Serializable preprocessing profile used by analysis services."""
 
+    language: str = "en"
+    unicode_normalization: str | None = "NFC"
+    fix_encoding: bool = False
     lowercase: bool = True
     remove_punctuation: bool = True
     remove_numbers: bool = False
@@ -70,129 +109,76 @@ class PreprocessingConfig:
         merged = dict(DEFAULT_PREPROCESSING_CONFIG)
         if data:
             merged.update(data)
-        if merged.get("lemmatization"):
-            raise ValueError(LEMMATIZATION_UNSUPPORTED_MESSAGE)
-        merged["lemmatization"] = False
+        form = merged.get("unicode_normalization")
+        if form is not None:
+            form = str(form).strip().upper()
+            if form not in _VALID_UNICODE_FORMS:
+                raise ValueError(
+                    f"unicode_normalization must be one of "
+                    f"{sorted(_VALID_UNICODE_FORMS)} or null, got {form!r}"
+                )
+            merged["unicode_normalization"] = form
+        merged["language"] = normalize_language_code(merged.get("language") or "en")
+        merged["custom_stopwords"] = list(merged.get("custom_stopwords") or [])
+        if merged.get("stemming") and merged.get("lemmatization"):
+            raise ValueError("Enable either stemming or lemmatization, not both.")
+        if merged.get("stemming") and not stemming_available(merged["language"]):
+            raise ValueError(
+                f"Stemming requested but no Snowball stemmer is available for "
+                f"language={merged['language']!r}."
+            )
+        if merged.get("lemmatization") and not lemmatization_available(merged["language"]):
+            raise ValueError(
+                f"Lemmatization requested but no lemmatizer resources are available for "
+                f"language={merged['language']!r}."
+            )
         field_names = {item.name for item in cls.__dataclass_fields__.values()}
         return cls(**{key: merged[key] for key in field_names if key in merged})
 
     def to_dict(self) -> dict[str, Any]:
-        payload = asdict(self)
-        payload["lemmatization"] = False
-        return payload
+        return asdict(self)
 
 
-#: Negation words that must never be silently dropped when preserve_negation
-#: is enabled (the default). These are deliberately excluded from
-#: STOPWORDS below.
-NEGATION_WORDS: frozenset[str] = frozenset({"not", "no", "never"})
-
-#: Minimal English stopword list (~50 common function words), excluding
-#: negation words on purpose. This is not meant to be exhaustive (e.g.
-#: NLTK's list); it is a small, auditable, dependency-free set suitable for
-#: a research demo.
-STOPWORDS: frozenset[str] = frozenset(
-    {
-        "a",
-        "an",
-        "the",
-        "and",
-        "or",
-        "but",
-        "if",
-        "then",
-        "of",
-        "to",
-        "in",
-        "on",
-        "at",
-        "for",
-        "with",
-        "as",
-        "by",
-        "from",
-        "is",
-        "are",
-        "was",
-        "were",
-        "be",
-        "been",
-        "being",
-        "this",
-        "that",
-        "these",
-        "those",
-        "it",
-        "its",
-        "he",
-        "she",
-        "they",
-        "them",
-        "his",
-        "her",
-        "their",
-        "we",
-        "our",
-        "you",
-        "your",
-        "i",
-        "my",
-        "me",
-        "do",
-        "does",
-        "did",
-        "have",
-        "has",
-        "had",
-        "will",
-        "would",
-        "can",
-        "could",
-        "should",
-        "shall",
-        "may",
-        "might",
-        "must",
-        "so",
-        "than",
-        "too",
-        "very",
-        "just",
-        "about",
-        "into",
-        "over",
-        "under",
-        "again",
-        "further",
-        "once",
-        "here",
-        "there",
-        "when",
-        "where",
-        "why",
-        "how",
-        "all",
-        "any",
-        "both",
-        "each",
-        "few",
-        "more",
-        "most",
-        "other",
-        "some",
-        "such",
-        "only",
-        "own",
-        "same",
+def describe_implementation(config: PreprocessingConfig | dict[str, Any] | None = None) -> dict[str, Any]:
+    """Recordable preprocessing provenance (never claims unused transforms)."""
+    cfg = (
+        config
+        if isinstance(config, PreprocessingConfig)
+        else PreprocessingConfig.from_dict(config)
+    )
+    lang_code = normalize_language_code(cfg.language)
+    profile = resolve_language(lang_code)
+    stem_algo = snowball_algorithm_for_language(lang_code) if cfg.stemming else None
+    lemma_name = "simplemma" if cfg.lemmatization else None
+    return {
+        "preprocessing_implementation": PREPROCESSING_IMPLEMENTATION,
+        "preprocessing_implementation_version": PREPROCESSING_IMPLEMENTATION_VERSION,
+        "language": lang_code,
+        "language_profile": profile.to_dict(),
+        "tokenizer": "unicode_regex",
+        "tokenizer_pattern": _UNICODE_TOKEN_RE.pattern,
+        "unicode_normalization": cfg.unicode_normalization,
+        "fix_encoding": bool(cfg.fix_encoding),
+        "stemmer": f"snowball_{stem_algo}" if stem_algo else None,
+        "stemmer_package": "snowballstemmer" if cfg.stemming else None,
+        "stemmer_package_version": _pkg_version("snowballstemmer") if cfg.stemming else None,
+        "lemmatizer": lemma_name,
+        "lemmatizer_package": "simplemma" if cfg.lemmatization else None,
+        "lemmatizer_package_version": _pkg_version("simplemma") if cfg.lemmatization else None,
+        "model_name": None,
+        "model_version": None,
+        "package_versions": {
+            "regex": _pkg_version("regex"),
+            "ftfy": _pkg_version("ftfy"),
+            "snowballstemmer": _pkg_version("snowballstemmer"),
+            "simplemma": _pkg_version("simplemma"),
+        },
+        "stemming_available": stemming_available(lang_code),
+        "lemmatization_available": lemmatization_available(lang_code),
+        "stemming_requested": bool(cfg.stemming),
+        "lemmatization_requested": bool(cfg.lemmatization),
+        "degraded": profile.degraded,
     }
-)
-
-assert STOPWORDS.isdisjoint(NEGATION_WORDS)
-
-# Word tokens: letters/digits with optional internal apostrophe (contractions).
-_TOKEN_RE = re.compile(r"[A-Za-z0-9]+(?:'[A-Za-z]+)?")
-_WHITESPACE_RE = re.compile(r"\s+")
-_NUMBER_RE = re.compile(r"^[0-9]+([.,][0-9]+)*$")
 
 
 def normalize_whitespace(text: str) -> str:
@@ -200,64 +186,85 @@ def normalize_whitespace(text: str) -> str:
     return _WHITESPACE_RE.sub(" ", text).strip()
 
 
+def apply_unicode_normalization(text: str, form: str | None) -> str:
+    if not form:
+        return text
+    return unicodedata.normalize(form, text)
+
+
 def _is_number_token(token: str) -> bool:
     return bool(_NUMBER_RE.match(token))
 
 
-def snowball_stem(token: str) -> str:
-    """Stem ``token`` with the Snowball English stemmer."""
-    return _ENGLISH_STEMMER.stemWord(token)
+def _get_snowball_stemmer(language: str | None):
+    algo = snowball_algorithm_for_language(language)
+    if algo is None:
+        raise ValueError(f"No Snowball stemmer for language={language!r}")
+    if algo not in _stemmer_cache:
+        _stemmer_cache[algo] = snowballstemmer.stemmer(algo)
+    return _stemmer_cache[algo]
+
+
+def snowball_stem(token: str, language: str | None = "en") -> str:
+    """Stem ``token`` with the Snowball stemmer for ``language``."""
+    return _get_snowball_stemmer(language).stemWord(token)
 
 
 def simple_stem(token: str) -> str:
-    """Compatibility alias for :func:`snowball_stem`."""
-    return snowball_stem(token)
+    """Compatibility alias for English Snowball stemming."""
+    return snowball_stem(token, "en")
+
+
+def lemmatize_token(token: str, language: str | None = "en") -> str:
+    lang = normalize_language_code(language)
+    if not lemmatization_available(lang):
+        raise ValueError(f"Lemmatization unavailable for language={lang!r}")
+    return simplemma.lemmatize(token, lang=lang)
 
 
 def _merge_config(config: dict[str, Any] | None) -> dict[str, Any]:
-    merged = dict(DEFAULT_PREPROCESSING_CONFIG)
-    if config:
-        merged.update(config)
-    if merged.get("lemmatization"):
-        raise ValueError(LEMMATIZATION_UNSUPPORTED_MESSAGE)
-    merged["lemmatization"] = False
-    return merged
+    return PreprocessingConfig.from_dict(config).to_dict()
 
 
 def _stopword_set(config: dict[str, Any]) -> frozenset[str]:
     """Build the effective stopword set for the given config.
 
-    ``preserve_negation`` acts as a hard guard: even if custom stopwords or
-    future stopword-list extensions include "not"/"no"/"never", they are
-    never removed while preserve_negation is True.
+    Uses language-specific stopwords. Unknown languages get an empty lexicon
+    (never silently fall back to English). ``preserve_negation`` protects
+    language-specific negation tokens even if listed in custom_stopwords.
     """
-    stopwords = set(STOPWORDS)
+    language = config.get("language")
+    stopwords = set(stopwords_for(language))
     stopwords.update(config.get("custom_stopwords") or [])
     if config.get("preserve_negation", True):
-        stopwords -= NEGATION_WORDS
+        stopwords -= negation_words_for(language)
     return frozenset(stopwords)
 
 
 def tokenize(text: str, config: dict[str, Any] | None = None) -> list[str]:
     """Tokenize ``text`` according to ``config``.
 
-    Pipeline: whitespace normalization -> optional lowercasing -> word
-    extraction (optionally punctuation-preserving) -> optional number
-    removal -> optional stopword removal (negation-safe) -> optional
-    Snowball stemming (negation-safe).
+    Original ``text`` is never mutated.
     """
     cfg = _merge_config(config)
-    negation_words = NEGATION_WORDS if cfg.get("preserve_negation", True) else frozenset()
+    language = cfg.get("language") or "en"
+    negation_words = (
+        negation_words_for(language) if cfg.get("preserve_negation", True) else frozenset()
+    )
 
-    working = normalize_whitespace(text)
+    working = text
+    if cfg.get("fix_encoding"):
+        working = ftfy.fix_text(working)
+    working = apply_unicode_normalization(working, cfg.get("unicode_normalization"))
+    working = normalize_whitespace(working)
     if cfg.get("lowercase", True):
+        # Use lower() (not casefold) for stable research reproducibility across profiles.
         working = working.lower()
 
     if cfg.get("remove_punctuation", True):
-        tokens = _TOKEN_RE.findall(working)
+        tokens = _UNICODE_TOKEN_RE.findall(working)
     else:
-        tokens = working.split(" ")
-        tokens = [t for t in tokens if t]
+        tokens = [t for t in working.split(" ") if t]
 
     if cfg.get("remove_numbers", False):
         tokens = [t for t in tokens if t in negation_words or not _is_number_token(t)]
@@ -266,8 +273,14 @@ def tokenize(text: str, config: dict[str, Any] | None = None) -> list[str]:
         stop_set = _stopword_set(cfg)
         tokens = [t for t in tokens if t in negation_words or t not in stop_set]
 
-    if cfg.get("stemming", False):
-        tokens = [t if t in negation_words else snowball_stem(t) for t in tokens]
+    if cfg.get("lemmatization"):
+        tokens = [
+            t if t in negation_words else lemmatize_token(t, language) for t in tokens
+        ]
+    elif cfg.get("stemming"):
+        tokens = [
+            t if t in negation_words else snowball_stem(t, language) for t in tokens
+        ]
 
     return tokens
 
@@ -281,7 +294,7 @@ def preprocess_text(text: str, config: dict[str, Any] | None = None) -> str:
 
 
 def _baseline_tokens(text: str, config: dict[str, Any]) -> list[str]:
-    """Tokens before stopword/number removal and stemming (for preview diffs)."""
+    """Tokens before stopword/number removal and stem/lemma (for preview diffs)."""
     baseline = {
         **config,
         "remove_numbers": False,
@@ -299,12 +312,9 @@ def preview_preprocessing(
     *,
     removed_top_n: int = 20,
 ) -> dict[str, Any]:
-    """Build a live preprocessing preview for sample texts.
-
-    Returns original/processed pairs, token counts before/after, vocabulary
-    size after processing, and the most frequently removed baseline terms.
-    """
+    """Build a live preprocessing preview for sample texts."""
     cfg = _merge_config(config)
+    impl = describe_implementation(cfg)
     rows: list[dict[str, Any]] = []
     removed: Counter[str] = Counter()
     before_total = 0
@@ -336,8 +346,9 @@ def preview_preprocessing(
             {"term": term, "count": count} for term, count in removed.most_common(removed_top_n)
         ],
         "config": cfg,
-        "stemmer": "snowball_english",
-        "lemmatization_supported": False,
+        "stemmer": impl["stemmer"] or ("snowball_english" if stemming_available("en") else None),
+        "lemmatization_supported": impl["lemmatization_available"],
+        "implementation": impl,
     }
 
 
@@ -358,11 +369,7 @@ def _vectorizer_kwargs(config: dict[str, Any] | None) -> dict[str, Any]:
 def build_count_vectorizer(
     config: dict[str, Any] | None = None, **overrides: Any
 ) -> CountVectorizer:
-    """Build a ``CountVectorizer`` whose tokenizer is :func:`tokenize`.
-
-    ``ngram_range``/``min_df``/``max_df``/``max_features`` come from
-    ``config`` (falling back to :data:`DEFAULT_PREPROCESSING_CONFIG`).
-    """
+    """Build a ``CountVectorizer`` whose tokenizer is :func:`tokenize`."""
     kwargs = _vectorizer_kwargs(config)
     kwargs.update(overrides)
     return CountVectorizer(**kwargs)
@@ -371,11 +378,87 @@ def build_count_vectorizer(
 def build_tfidf_vectorizer(
     config: dict[str, Any] | None = None, **overrides: Any
 ) -> TfidfVectorizer:
-    """Build a ``TfidfVectorizer`` whose tokenizer is :func:`tokenize`.
-
-    ``ngram_range``/``min_df``/``max_df``/``max_features`` come from
-    ``config`` (falling back to :data:`DEFAULT_PREPROCESSING_CONFIG`).
-    """
+    """Build a ``TfidfVectorizer`` whose tokenizer is :func:`tokenize`."""
     kwargs = _vectorizer_kwargs(config)
+    kwargs.update(overrides)
+    return TfidfVectorizer(**kwargs)
+
+
+def _char_vectorizer_kwargs(
+    config: dict[str, Any] | None,
+    *,
+    ngram_min: int,
+    ngram_max: int,
+    min_df: float | int,
+    max_df: float | int,
+    max_features: int | None,
+) -> dict[str, Any]:
+    """Build kwargs for a character-n-gram vectorizer.
+
+    Character n-grams bypass word tokenization (``analyzer="char_wb"``), but
+    still benefit from the same normalization pipeline (encoding fix, Unicode
+    normalization, whitespace normalization, lowercasing) applied by
+    :func:`tokenize`. Word boundaries are preserved by re-joining tokens with
+    a single space before character n-grams are sliced, so ``char_wb`` pads
+    n-grams at word edges rather than spanning arbitrary whitespace runs.
+    """
+    cfg = _merge_config(config)
+
+    def _normalize(doc: str) -> str:
+        return " ".join(tokenize(doc, cfg))
+
+    return {
+        "preprocessor": _normalize,
+        "lowercase": False,
+        "analyzer": "char_wb",
+        "ngram_range": (int(ngram_min), int(ngram_max)),
+        "min_df": min_df,
+        "max_df": max_df,
+        "max_features": max_features,
+    }
+
+
+def build_char_count_vectorizer(
+    config: dict[str, Any] | None = None,
+    *,
+    ngram_min: int = 3,
+    ngram_max: int = 5,
+    min_df: float | int = 1,
+    max_df: float | int = 1.0,
+    max_features: int | None = None,
+    **overrides: Any,
+) -> CountVectorizer:
+    """Build a character-n-gram ``CountVectorizer`` (word-boundary aware)."""
+    kwargs = _char_vectorizer_kwargs(
+        config,
+        ngram_min=ngram_min,
+        ngram_max=ngram_max,
+        min_df=min_df,
+        max_df=max_df,
+        max_features=max_features,
+    )
+    kwargs.update(overrides)
+    return CountVectorizer(**kwargs)
+
+
+def build_char_tfidf_vectorizer(
+    config: dict[str, Any] | None = None,
+    *,
+    ngram_min: int = 3,
+    ngram_max: int = 5,
+    min_df: float | int = 1,
+    max_df: float | int = 1.0,
+    max_features: int | None = None,
+    **overrides: Any,
+) -> TfidfVectorizer:
+    """Build a character-n-gram ``TfidfVectorizer`` (word-boundary aware)."""
+    kwargs = _char_vectorizer_kwargs(
+        config,
+        ngram_min=ngram_min,
+        ngram_max=ngram_max,
+        min_df=min_df,
+        max_df=max_df,
+        max_features=max_features,
+    )
     kwargs.update(overrides)
     return TfidfVectorizer(**kwargs)

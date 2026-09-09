@@ -94,6 +94,8 @@ class RunService(ResearchAccessMixin):
                 unit_type=params["unit_type"],
                 preprocessing_profile_id=params.get("preprocessing_profile_id"),
                 top_n=params.get("top_n", 50),
+                rate_per=params.get("rate_per", 1000),
+                group_by=params.get("group_by"),
                 **inner_filters,
             )
 
@@ -109,6 +111,8 @@ class RunService(ResearchAccessMixin):
                 n=params.get("n", 2),
                 preprocessing_profile_id=params.get("preprocessing_profile_id"),
                 top_n=params.get("top_n", 50),
+                rate_per=params.get("rate_per", 1000),
+                skip=params.get("skip", 0),
                 **inner_filters,
             )
 
@@ -122,7 +126,12 @@ class RunService(ResearchAccessMixin):
                 user_id=user_id,
                 unit_type=params["unit_type"],
                 weighting=params.get("weighting", "count"),
+                k1=params.get("k1"),
+                b=params.get("b"),
+                smooth_idf=params.get("smooth_idf"),
                 preprocessing_profile_id=params.get("preprocessing_profile_id"),
+                force_sparse_only=params.get("force_sparse_only", False),
+                trim=params.get("trim"),
                 **inner_filters,
             )
 
@@ -138,6 +147,10 @@ class RunService(ResearchAccessMixin):
                 keyword=params["keyword"],
                 window_size=params.get("window_size", 5),
                 case_sensitive=params.get("case_sensitive", False),
+                query_mode=params.get("query_mode", "auto"),
+                language=params.get("language"),
+                token_attribute=params.get("token_attribute"),
+                max_matches=params.get("max_matches"),
                 **inner_filters,
             )
 
@@ -150,8 +163,13 @@ class RunService(ResearchAccessMixin):
                 run.corpus_id,
                 user_id=user_id,
                 unit_type=params["unit_type"],
-                dictionary_terms=params["dictionary_terms"],
+                dictionary_terms=params.get("dictionary_terms"),
                 dictionary_id=params.get("dictionary_id"),
+                hierarchy=params.get("hierarchy"),
+                exclusions=params.get("exclusions"),
+                dictionary_language=params.get("dictionary_language"),
+                case_sensitive=params.get("case_sensitive", False),
+                rate_per=params.get("rate_per", 1000.0),
                 group_by=params.get("group_by"),
                 preprocessing_profile_id=params.get("preprocessing_profile_id"),
                 **inner_filters,
@@ -168,6 +186,10 @@ class RunService(ResearchAccessMixin):
                 unit_type=params["unit_type"],
                 filters_a=params["filters_a"],
                 filters_b=params["filters_b"],
+                group_field=params.get("group_field"),
+                method=params.get("method", "log_likelihood"),
+                correction=params.get("correction", "bh"),
+                min_frequency=params.get("min_frequency", 1),
                 preprocessing_profile_id=params.get("preprocessing_profile_id"),
                 top_n=params.get("top_n", 50),
             )
@@ -183,7 +205,53 @@ class RunService(ResearchAccessMixin):
                 unit_type=params["unit_type"],
                 window_size=params.get("window_size", 5),
                 top_n=params.get("top_n", 50),
+                association_method=params.get("association_method", "pmi"),
+                directional=params.get("directional", False),
+                min_frequency=params.get("min_frequency", 1),
+                min_count=params.get("min_count", 1),
+                include_network=params.get("include_network", True),
                 preprocessing_profile_id=params.get("preprocessing_profile_id"),
+                **inner_filters,
+            )
+
+        if run.run_type == AnalysisRunType.SIMILARITY.value:
+            from backend.modules.text_research.application.quantitative_analysis_service import (
+                QuantitativeAnalysisService,
+            )
+
+            return await QuantitativeAnalysisService(self.db).similarity(
+                run.corpus_id,
+                user_id=user_id,
+                unit_type=params["unit_type"],
+                method=params.get("method", "tfidf_cosine"),
+                mode=params.get("mode", "pairwise"),
+                top_k=params.get("top_k", 20),
+                min_score=params.get("min_score"),
+                group_by=params.get("group_by"),
+                centroid_target=params.get("centroid_target", "between_groups"),
+                query_text=params.get("query_text"),
+                query_unit_id=params.get("query_unit_id"),
+                preprocessing_profile_id=params.get("preprocessing_profile_id"),
+                **inner_filters,
+            )
+
+        if run.run_type == AnalysisRunType.DUPLICATE_DETECTION.value:
+            from backend.modules.text_research.application.quantitative_analysis_service import (
+                QuantitativeAnalysisService,
+            )
+
+            return await QuantitativeAnalysisService(self.db).duplicate_detection(
+                run.corpus_id,
+                user_id=user_id,
+                unit_type=params["unit_type"],
+                methods=params.get("methods"),
+                lexical_threshold=params.get("lexical_threshold", 0.85),
+                char_ngram_size=params.get("char_ngram_size", 5),
+                use_minhash=params.get("use_minhash", False),
+                minhash_num_perm=params.get("minhash_num_perm", 64),
+                minhash_shingle_size=params.get("minhash_shingle_size", 3),
+                minhash_threshold=params.get("minhash_threshold", 0.8),
+                max_pairs=params.get("max_pairs", 1000),
                 **inner_filters,
             )
 
@@ -214,14 +282,23 @@ class RunService(ResearchAccessMixin):
                 user_id=user_id,
                 snapshot_id=params["snapshot_id"],
                 algorithm=params.get("algorithm", "logistic_regression"),
+                task_type=params.get("task_type"),
                 preprocessing_profile_id=params.get("preprocessing_profile_id"),
+                vectorizer=params.get("vectorizer", "tfidf"),
+                use_word_ngrams=params.get("use_word_ngrams", True),
+                ngram_min=params.get("ngram_min", 1),
                 ngram_max=params.get("ngram_max", 1),
+                use_char_ngrams=params.get("use_char_ngrams", False),
+                char_ngram_min=params.get("char_ngram_min", 3),
+                char_ngram_max=params.get("char_ngram_max", 5),
                 min_df=params.get("min_df", 1),
                 max_df=params.get("max_df", 1.0),
                 max_features=params.get("max_features"),
                 class_weight=params.get("class_weight"),
                 regularization_c=params.get("regularization_c", 1.0),
-                test_size=params.get("test_size", 0.25),
+                sgd_loss=params.get("sgd_loss", "log_loss"),
+                test_size=params.get("test_size", 0.2),
+                val_size=params.get("val_size", 0.2),
                 random_seed=params.get("random_seed", 42),
                 name=params.get("name"),
                 run_async=run_async,

@@ -1,4 +1,4 @@
-"""Tests for the pure-Python/scikit-learn Policy Text Lab infrastructure engines.
+"""Tests for the pure-Python/scikit-learn text research infrastructure engines.
 
 These are plain ``unittest.TestCase`` tests (no DB/FastAPI/app settings
 dependency) so they can run in isolation via ``pytest`` against the
@@ -42,9 +42,9 @@ class SegmentationTests(unittest.TestCase):
 
     def test_paragraph_segmentation_deterministic_positions_and_hash(self):
         text = (
-            "First paragraph about liberalism.\n\n"
-            "Second paragraph about universalism.\n\n\n"
-            "Third paragraph about individualism."
+            "First paragraph about topic alpha.\n\n"
+            "Second paragraph about topic beta.\n\n\n"
+            "Third paragraph about topic gamma."
         )
         units_1 = segmentation.segment_document(text, "paragraph")
         units_2 = segmentation.segment_document(text, "paragraph")
@@ -54,7 +54,7 @@ class SegmentationTests(unittest.TestCase):
         self.assertEqual([u["position"] for u in units_1], [0, 1, 2])
         self.assertEqual([u["paragraph_number"] for u in units_1], [1, 2, 3])
         self.assertTrue(all(u["sentence_number"] is None for u in units_1))
-        self.assertEqual(units_1[0]["text"], "First paragraph about liberalism.")
+        self.assertEqual(units_1[0]["text"], "First paragraph about topic alpha.")
 
         # Hash stability: same text -> same hash; changed text -> different hash.
         h_before = segmentation.hash_text(units_1[0]["text"])
@@ -83,6 +83,45 @@ class SegmentationTests(unittest.TestCase):
     def test_unsupported_unit_type_raises(self):
         with self.assertRaises(ValueError):
             segmentation.segment_document("text", "page")
+
+    def test_char_offsets_slice_back_to_unit_text(self):
+        text = "Alpha one.\n\nBeta two.\n\nGamma three."
+        units = segmentation.segment_document(text, "paragraph")
+        self.assertEqual(len(units), 3)
+        for unit in units:
+            self.assertEqual(text[unit["char_start"] : unit["char_end"]], unit["text"])
+            self.assertEqual(unit["text_hash"], segmentation.hash_text(unit["text"]))
+            self.assertEqual(unit["source_text_hash"], segmentation.hash_text(text))
+            self.assertIsNone(unit["page_number"])
+            self.assertIsNone(unit["section_heading"])
+
+    def test_sentence_offsets_are_reproducible(self):
+        text = "Hello world. This is great! Is it? Yes."
+        units = segmentation.segment_document(text, "sentence")
+        self.assertEqual(
+            [text[u["char_start"] : u["char_end"]] for u in units],
+            [u["text"] for u in units],
+        )
+        again = segmentation.segment_document(text, "sentence")
+        self.assertEqual(units, again)
+
+    def test_page_provenance_attached_without_invention(self):
+        text = "Page one body.\n\nPage two body."
+        # Mimic canonical double-newline join provenance.
+        page_provenance = [
+            {"index": 0, "page_number": 1, "section_heading": "Intro", "char_start": 0, "char_end": 14},
+            {"index": 1, "page_number": 2, "section_heading": None, "char_start": 16, "char_end": 29},
+        ]
+        units = segmentation.segment_document(text, "paragraph", page_provenance=page_provenance)
+        self.assertEqual(units[0]["page_number"], 1)
+        self.assertEqual(units[0]["section_heading"], "Intro")
+        self.assertEqual(units[1]["page_number"], 2)
+        self.assertIsNone(units[1]["section_heading"])
+
+    def test_no_page_provenance_leaves_page_null(self):
+        units = segmentation.segment_document("Only text.", "document")
+        self.assertIsNone(units[0]["page_number"])
+        self.assertIsNone(units[0]["section_heading"])
 
 
 class PreprocessingTests(unittest.TestCase):
@@ -151,12 +190,49 @@ class PreprocessingTests(unittest.TestCase):
         self.assertIn("never", tokens)  # unstemmed despite matching no strip rule anyway
         self.assertIn("govern", tokens)  # "governing" -> "govern"
 
-    def test_lemmatization_true_is_rejected(self):
-        config = {**preprocessing.DEFAULT_PREPROCESSING_CONFIG, "lemmatization": True}
+    def test_lemmatization_unavailable_language_rejected(self):
+        config = {
+            **preprocessing.DEFAULT_PREPROCESSING_CONFIG,
+            "language": "zz",
+            "lemmatization": True,
+        }
         with self.assertRaises(ValueError):
             preprocessing.tokenize("Policies matter.", config)
         with self.assertRaises(ValueError):
             preprocessing.PreprocessingConfig.from_dict(config)
+
+    def test_lemmatization_english_available(self):
+        config = {
+            **preprocessing.DEFAULT_PREPROCESSING_CONFIG,
+            "language": "en",
+            "lemmatization": True,
+            "stemming": False,
+        }
+        tokens = preprocessing.tokenize("Policies matter.", config)
+        self.assertIn("policy", tokens)  # policies -> policy
+        self.assertTrue(preprocessing.lemmatization_available("en"))
+        impl = preprocessing.describe_implementation(config)
+        self.assertEqual(impl["lemmatizer"], "simplemma")
+        self.assertTrue(impl["lemmatization_requested"])
+
+    def test_stemming_and_lemmatization_mutually_exclusive(self):
+        with self.assertRaises(ValueError):
+            preprocessing.PreprocessingConfig.from_dict(
+                {**preprocessing.DEFAULT_PREPROCESSING_CONFIG, "stemming": True, "lemmatization": True}
+            )
+
+    def test_unicode_aware_tokenization(self):
+        tokens = preprocessing.tokenize("café naïve façade ğüşıöç")
+        self.assertEqual(tokens, ["café", "naïve", "façade", "ğüşıöç"])
+
+    def test_unicode_normalization_nfc(self):
+        # "é" as e + combining acute vs precomposed
+        decomposed = "cafe\u0301"
+        tokens = preprocessing.tokenize(
+            decomposed,
+            {**preprocessing.DEFAULT_PREPROCESSING_CONFIG, "unicode_normalization": "NFC"},
+        )
+        self.assertEqual(tokens, ["café"])
 
     def test_preview_preprocessing_reports_removed_terms(self):
         preview = preprocessing.preview_preprocessing(
@@ -170,8 +246,9 @@ class PreprocessingTests(unittest.TestCase):
         self.assertEqual(len(preview["rows"]), 1)
         self.assertIn("not", preview["rows"][0]["processed"])
         self.assertGreater(preview["token_count_before"], preview["token_count_after"])
-        self.assertFalse(preview["lemmatization_supported"])
-        self.assertEqual(preview["stemmer"], "snowball_english")
+        self.assertTrue(preview["lemmatization_supported"])
+        self.assertIn("snowball", preview["stemmer"] or "")
+        self.assertEqual(preview["implementation"]["tokenizer"], "unicode_regex")
         removed_terms = {row["term"] for row in preview["most_frequently_removed_terms"]}
         self.assertTrue({"should", "be", "from", "the"} & removed_terms)
 
@@ -302,13 +379,72 @@ class ReliabilityTests(unittest.TestCase):
 
     def test_reliability_by_label_two_coder_design(self):
         label_data = {
-            "Universalism": [["yes", "yes"], ["no", "no"], ["yes", "no"]],
+            "LabelA": [["yes", "yes"], ["no", "no"], ["yes", "no"]],
         }
         result = reliability.reliability_by_label(label_data)
-        self.assertIn("Universalism", result)
-        self.assertIn("alpha", result["Universalism"])
-        self.assertIn("cohens_kappa", result["Universalism"])
-        self.assertAlmostEqual(result["Universalism"]["raw_agreement"], 2 / 3)
+        self.assertIn("LabelA", result)
+        self.assertIn("alpha", result["LabelA"])
+        self.assertIn("cohens_kappa", result["LabelA"])
+        self.assertAlmostEqual(result["LabelA"]["raw_agreement"], 2 / 3)
+
+    def test_fleiss_kappa_perfect_agreement_is_one(self):
+        reliability_data = [
+            ["a", "a", "a"],
+            ["b", "b", "b"],
+            ["a", "a", "a"],
+        ]
+        result = reliability.fleiss_kappa(reliability_data)
+        self.assertAlmostEqual(result["kappa"], 1.0)
+        self.assertEqual(result["n_raters"], 3)
+        self.assertEqual(result["n_units_included"], 3)
+        self.assertEqual(result["n_units_excluded"], 0)
+
+    def test_fleiss_kappa_hand_computed_example(self):
+        # 4 units, 3 raters each, categories a/b:
+        # hand-derived kappa: P_bar = 2/3, P_e_bar = 1/2 -> kappa = 1/3.
+        reliability_data = [
+            ["a", "a", "a"],
+            ["b", "b", "b"],
+            ["a", "a", "b"],
+            ["b", "b", "a"],
+        ]
+        result = reliability.fleiss_kappa(reliability_data)
+        self.assertAlmostEqual(result["kappa"], 1 / 3, places=9)
+        self.assertEqual(result["n_categories"], 2)
+
+    def test_fleiss_kappa_excludes_units_with_uneven_rater_counts(self):
+        reliability_data = [
+            ["a", "a", "a"],
+            ["b", "b", "b"],
+            ["a", "a", "b"],
+            ["b", "b", "a"],
+            ["a", "b"],  # only 2 raters: excluded from the fixed-3-rater design
+        ]
+        result = reliability.fleiss_kappa(reliability_data)
+        self.assertEqual(result["n_raters"], 3)
+        self.assertEqual(result["n_units_included"], 4)
+        self.assertEqual(result["n_units_excluded"], 1)
+
+    def test_fleiss_kappa_not_evaluable_with_fewer_than_three_raters(self):
+        result = reliability.fleiss_kappa([["a", "a"], ["b", "b"]])
+        self.assertIsNone(result["kappa"])
+        self.assertIn("reason", result)
+
+    def test_reliability_metadata_reports_scale_coders_and_missingness(self):
+        reliability_data = [
+            ["a", "a", "a"],
+            ["b", None, "b"],
+            [None, None, "a"],
+        ]
+        metadata = reliability.reliability_metadata(
+            reliability_data, statistics_used=["fleiss_kappa"]
+        )
+        self.assertEqual(metadata["scale"], "nominal")
+        self.assertEqual(metadata["n_coders"], 3)
+        self.assertEqual(metadata["n_units"], 3)
+        self.assertEqual(metadata["pairable_units"], 2)
+        self.assertEqual(metadata["missing_values"], 3)
+        self.assertEqual(metadata["statistics_used"], ["fleiss_kappa"])
 
 
 class QuantitativeTests(unittest.TestCase):
@@ -323,10 +459,70 @@ class QuantitativeTests(unittest.TestCase):
     def test_corpus_statistics_basic_shape(self):
         stats = quantitative.corpus_statistics(self.texts, self.tokenized)
         self.assertEqual(stats["document_count"], 3)
+        self.assertEqual(stats["text_unit_count"], 3)
         self.assertEqual(stats["token_count"], sum(len(t) for t in self.tokenized))
         self.assertGreater(stats["vocabulary_size"], 0)
         self.assertEqual(stats["min_length"], min(len(t) for t in self.tokenized))
         self.assertEqual(stats["max_length"], max(len(t) for t in self.tokenized))
+        self.assertIn("ttr", stats)
+        self.assertIn("lexical_diversity", stats)
+        self.assertIn("length_caution", stats["lexical_diversity"])
+
+    def test_corpus_statistics_unique_documents(self):
+        stats = quantitative.corpus_statistics(
+            self.texts,
+            self.tokenized,
+            document_ids=["d1", "d1", "d2"],
+        )
+        self.assertEqual(stats["text_unit_count"], 3)
+        self.assertEqual(stats["documents_unique"], 2)
+
+    def test_lexical_diversity_mattr_unavailable_on_short_text(self):
+        short = [["a", "b", "a"]]
+        diversity = quantitative.lexical_diversity(short, mattr_window=50)
+        self.assertIsNone(diversity["mattr"])
+        self.assertFalse(diversity["mattr_available"])
+        self.assertGreater(diversity["ttr"], 0)
+        self.assertIsNotNone(diversity["mattr_note"])
+
+    def test_mattr_and_msttr_on_long_tokens(self):
+        tokens = [f"w{i % 17}" for i in range(200)]
+        mattr = quantitative.moving_average_ttr(tokens, window=50)
+        msttr = quantitative.mean_segmental_ttr(tokens, window=100)
+        self.assertIsNotNone(mattr)
+        self.assertIsNotNone(msttr)
+        self.assertGreater(mattr, 0)
+        self.assertGreater(msttr, 0)
+
+    def test_standardized_pipeline_stages(self):
+        result = quantitative.run_standardized_pipeline(
+            self.texts,
+            preprocessing.DEFAULT_PREPROCESSING_CONFIG,
+            document_ids=["a", "b", "c"],
+            unit_ids=["u1", "u2", "u3"],
+            trim={"min_term_frequency": 1, "min_document_frequency": 1},
+            dfm_mode="count",
+        )
+        payload = result.to_dict()
+        self.assertEqual(payload["workflow"], list(quantitative.PIPELINE_STAGES))
+        self.assertEqual(result.stages["corpus"]["status"], "completed")
+        self.assertEqual(result.stages["tokens"]["status"], "completed")
+        self.assertEqual(result.stages["preprocessing"]["status"], "completed")
+        self.assertEqual(result.stages["feature_trimming"]["status"], "completed")
+        self.assertEqual(result.stages["dfm"]["status"], "completed")
+        self.assertEqual(result.stages["statistical_analysis"]["status"], "completed")
+        self.assertIsNotNone(result.dfm)
+        self.assertEqual(result.dfm["unit_ids"], ["u1", "u2", "u3"])
+        self.assertIn("preprocessing_config", result.dfm)
+        self.assertGreater(result.statistics["vocabulary_size"], 0)
+
+    def test_trim_token_vocabulary_removes_rare_terms(self):
+        tokenized = [["alpha", "beta"], ["alpha", "gamma"], ["alpha"]]
+        trimmed, meta = quantitative.trim_token_vocabulary(
+            tokenized, min_document_frequency=2
+        )
+        self.assertEqual(meta["features_after"], 1)
+        self.assertTrue(all(tok == "alpha" for row in trimmed for tok in row))
 
     def test_term_frequencies_sum_and_prevalence(self):
         results = quantitative.term_frequencies(self.tokenized)
@@ -336,11 +532,69 @@ class QuantitativeTests(unittest.TestCase):
         self.assertAlmostEqual(total_raw, sum(len(t) for t in self.tokenized))
         self.assertAlmostEqual(sum(row["relative_frequency"] for row in results), 1.0, places=6)
         self.assertLessEqual(term_lookup["universal"]["document_prevalence"], 1.0)
+        self.assertEqual(results[0]["rank"], 1)
+        self.assertAlmostEqual(results[-1]["cumulative_share"], 1.0, places=6)
+        self.assertIn("document_frequency", term_lookup["universal"])
+        self.assertEqual(term_lookup["universal"]["raw_frequency"], term_lookup["universal"]["raw_count"])
+
+    def test_term_frequencies_configurable_rate(self):
+        per_100 = quantitative.term_frequencies(self.tokenized, rate_per=100)
+        per_10k = quantitative.term_frequencies(self.tokenized, rate_per=10000)
+        self.assertAlmostEqual(per_100[0]["rate"], per_100[0]["relative_frequency"] * 100)
+        self.assertAlmostEqual(per_10k[0]["rate"], per_10k[0]["relative_frequency"] * 10000)
+        self.assertAlmostEqual(per_100[0]["per_1000"], per_10k[0]["per_1000"])
+        with self.assertRaises(ValueError):
+            quantitative.term_frequencies(self.tokenized, rate_per=0)
+
+    def test_term_frequency_report_metadata(self):
+        report = quantitative.term_frequency_report(
+            self.tokenized,
+            rate_per=1000,
+            top_n=5,
+            unit_ids=["u1", "u2", "u3"],
+            document_ids=["d1", "d1", "d2"],
+            group_keys=["A", "A", "B"],
+        )
+        self.assertEqual(len(report["frequencies"]), 5)
+        self.assertEqual(report["metadata"]["terms_returned"], 5)
+        self.assertEqual(report["metadata"]["documents_unique"], 2)
+        self.assertEqual(report["metadata"]["group_token_totals"]["A"]["units"], 2)
+        self.assertIn("fields", report["metadata"])
 
     def test_ngram_frequencies_bigrams(self):
         results = quantitative.ngram_frequencies(self.tokenized, n=2)
         self.assertTrue(all(row["ngram"].count(" ") == 1 for row in results))
         self.assertTrue(all(row["raw_count"] >= 1 for row in results))
+        self.assertTrue(all("document_frequency" in row for row in results))
+        self.assertTrue(all(row["prevalence"] == row["document_prevalence"] for row in results))
+        self.assertEqual(results[0]["rank"], 1)
+
+    def test_ngram_orders_uni_bi_tri_and_bounds(self):
+        uni = quantitative.ngram_frequencies(self.tokenized, n=1)
+        bi = quantitative.ngram_frequencies(self.tokenized, n=2)
+        tri = quantitative.ngram_frequencies(self.tokenized, n=3)
+        self.assertTrue(all(row["n"] == 1 and " " not in row["ngram"] for row in uni))
+        self.assertTrue(all(row["n"] == 2 for row in bi))
+        self.assertTrue(all(row["n"] == 3 and row["ngram"].count(" ") == 2 for row in tri))
+        with self.assertRaises(ValueError):
+            quantitative.validate_ngram_order(0)
+        with self.assertRaises(ValueError):
+            quantitative.validate_ngram_order(11)
+        with self.assertRaises(ValueError):
+            quantitative.ngram_frequencies(self.tokenized, n=2, skip=1)
+
+    def test_ngram_frequency_report(self):
+        report = quantitative.ngram_frequency_report(
+            self.tokenized, n=2, top_n=3, rate_per=1000, unit_ids=["u1", "u2", "u3"]
+        )
+        self.assertEqual(report["metadata"]["n_label"], "bigram")
+        self.assertEqual(len(report["ngrams"]), 3)
+        self.assertFalse(report["metadata"]["skip_grams_supported"])
+        self.assertAlmostEqual(
+            sum(r["relative_frequency"] for r in quantitative.ngram_frequencies(self.tokenized, n=2)),
+            1.0,
+            places=6,
+        )
 
     def test_kwic_returns_context_and_metadata(self):
         metadata = [{"document": f"doc-{i}", "year": 2020 + i} for i in range(len(self.texts))]
@@ -376,10 +630,15 @@ class QuantitativeTests(unittest.TestCase):
         self.assertIn(("education", "universal"), pairs)  # sorted alphabetically
 
     def test_build_dfm_count_mode_dimensions_and_preview(self):
-        result = quantitative.build_dfm_matrix(self.tokenized, mode="count")
+        result = quantitative.build_dfm_matrix(
+            self.tokenized, mode="count", unit_ids=["u1", "u2", "u3"]
+        )
         self.assertEqual(result["dimensions"]["units"], 3)
         self.assertGreater(result["dimensions"]["features"], 0)
-        self.assertIn("dense_matrix", result)
+        self.assertIn("sparse", result)
+        self.assertEqual(result["sparse"]["format"], "coo")
+        self.assertEqual(result["unit_ids"], ["u1", "u2", "u3"])
+        self.assertIn("dense_matrix", result)  # small matrix still may densify
         self.assertEqual(len(result["dense_matrix"]), 3)
         self.assertGreaterEqual(result["density"], 0.0)
 
@@ -390,8 +649,77 @@ class QuantitativeTests(unittest.TestCase):
 
     def test_build_dfm_tfidf_mode_has_float_weights(self):
         result = quantitative.build_dfm_matrix(self.tokenized, mode="tfidf")
-        flat = [v for row in result["dense_matrix"] for v in row]
-        self.assertTrue(any(0 < v < 1 for v in flat))
+        self.assertEqual(result["mode"], "tfidf")
+        self.assertTrue(any(isinstance(v, float) and v not in (0.0, 1.0) for row in result["dense_matrix"] for v in row) or result["nnz"] > 0)
+
+    def test_build_dfm_tf_and_sublinear(self):
+        tf = quantitative.build_dfm_matrix(self.tokenized, mode="tf")
+        self.assertEqual(tf["weighting"], "tf")
+        # Each non-empty row should sum ~1.0
+        for row in tf["dense_matrix"]:
+            if sum(row) > 0:
+                self.assertAlmostEqual(sum(row), 1.0, places=5)
+        sub = quantitative.build_dfm_matrix(self.tokenized, mode="sublinear_tf")
+        self.assertEqual(sub["mode"], "sublinear_tf")
+        self.assertTrue(sub["sublinear_tf"])
+        self.assertIn("sparse", sub)
+
+    def test_build_dfm_force_sparse_only_skips_dense(self):
+        result = quantitative.build_dfm_matrix(
+            self.tokenized, mode="count", force_sparse_only=True
+        )
+        self.assertEqual(result["storage"], "sparse")
+        self.assertNotIn("dense_matrix", result)
+        self.assertEqual(result["sparse"]["shape"][0], 3)
+
+    def test_build_dfm_from_texts_attaches_preprocessing_config(self):
+        result = quantitative.build_dfm(
+            self.texts,
+            ["a", "b", "c"],
+            preprocessing.DEFAULT_PREPROCESSING_CONFIG,
+            weighting="count",
+        )
+        self.assertIsNotNone(result["preprocessing_config"])
+        self.assertEqual(result["unit_ids"], ["a", "b", "c"])
+        self.assertTrue(result["feature_names"])
+        self.assertIn("sparse", result)
+
+    def test_dfm_trim_min_df_and_top_n(self):
+        base = quantitative.build_dfm_matrix(self.tokenized, mode="count", force_sparse_only=True)
+        before = base["dimensions"]["features"]
+        trimmed = quantitative.dfm_trim(base, min_document_frequency=2)
+        self.assertLessEqual(trimmed["dimensions"]["features"], before)
+        self.assertEqual(trimmed["trim"]["features_before"], before)
+        self.assertTrue(all(name in base["feature_names"] for name in trimmed["feature_names"]))
+
+        top = quantitative.dfm_trim(base, top_n=3)
+        self.assertEqual(top["dimensions"]["features"], 3)
+        self.assertEqual(top["trim"]["term_frequency"]["type"], "rank")
+
+    def test_dfm_trim_prop_and_quantile(self):
+        base = quantitative.build_dfm_matrix(self.tokenized, mode="count", force_sparse_only=True)
+        prop = quantitative.dfm_trim(
+            base,
+            min_document_frequency=0.5,
+            document_frequency_type="prop",
+        )
+        self.assertLessEqual(prop["dimensions"]["features"], base["dimensions"]["features"])
+        quant = quantitative.dfm_trim(
+            base,
+            min_term_frequency=0.5,
+            term_frequency_type="quantile",
+        )
+        self.assertGreaterEqual(quant["dimensions"]["features"], 1)
+
+    def test_build_dfm_accepts_trim_config(self):
+        result = quantitative.build_dfm_matrix(
+            self.tokenized,
+            mode="count",
+            trim={"top_n": 5},
+            force_sparse_only=True,
+        )
+        self.assertEqual(result["dimensions"]["features"], 5)
+        self.assertIn("trim", result)
 
 
 class ClassifierTests(unittest.TestCase):
@@ -412,8 +740,8 @@ class ClassifierTests(unittest.TestCase):
 
     def test_tfidf_vectorizer_fitted_only_on_train_vocabulary(self):
         groups = [f"doc-{i}" for i in range(12)]
-        texts = ["universalism liberty market freedom" for _ in range(6)] + [
-            "individualism equality solidarity cohesion" for _ in range(6)
+        texts = ["alpha beta gamma delta" for _ in range(6)] + [
+            "epsilon zeta eta theta" for _ in range(6)
         ]
         y = ["a"] * 6 + ["b"] * 6
 
@@ -462,20 +790,20 @@ class ClassifierTests(unittest.TestCase):
     def test_fit_tfidf_classifier_multilabel_with_ovr(self):
         groups = [f"doc-{i}" for i in range(12)]
         texts = [
-            "liberty market universal access",
-            "individual freedom",
-            "universal equality cohesion",
-            "solidarity multicultural diversity",
+            "alpha beta gamma delta",
+            "alpha epsilon",
+            "beta gamma zeta",
+            "delta epsilon zeta",
         ] * 3
         y = [
-            ["liberalism"],
-            ["individualism"],
-            ["universalism"],
-            ["multiculturalism"],
+            ["label_a"],
+            ["label_b"],
+            ["label_c"],
+            ["label_d"],
         ] * 3
 
         split = classifiers.grouped_train_test_split(texts, y, groups, test_size=0.3, random_seed=5)
-        label_names = ["liberalism", "individualism", "universalism", "multiculturalism"]
+        label_names = ["label_a", "label_b", "label_c", "label_d"]
         result = classifiers.fit_tfidf_classifier(
             split["X_train"],
             split["y_train"],

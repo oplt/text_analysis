@@ -1,3 +1,1 @@
-"""Policy Text Lab — computational text research bounded context."""
-
-__all__ = ["models"]
+"""Text research — computational text analysis bounded context."""

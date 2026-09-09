@@ -1,4 +1,4 @@
-"""Pure-Python/scikit-learn computational engines for Policy Text Lab.
+"""Pure-Python/scikit-learn computational engines for text research.
 
 These modules contain no database or FastAPI dependencies. They implement the
 statistical and machine-learning primitives used by the application/service
@@ -17,4 +17,25 @@ __all__ = [
     "classifiers",
     "topic_models",
     "model_storage",
+    "canonical_text",
+    "ingestion_qa",
+    "document_cleaning",
+    "language_processing",
+    "weighting",
+    "kwic",
+    "dictionary_matcher",
+    "keyness",
+    "collocation",
+    "association_network",
+    "similarity",
+    "duplicate_detection",
+    "clustering",
+    "dimensionality",
+    "readability",
+    "embeddings",
+    "ner",
+    "linguistic_features",
+    "statistical_modeling",
+    "measurement_validation",
+    "sampling",
 ]

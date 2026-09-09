@@ -18,6 +18,8 @@ from backend.modules.text_research.domain.models import (
     AnnotationLabel,
     AnnotationTask,
     AnalysisRun,
+    CanonicalResearchSource,
+    CleaningProfile,
     Codebook,
     ContextualDataset,
     ContextualObservation,
@@ -138,6 +140,97 @@ class ResearchRepository:
         self.db.add(row)
         await self.db.flush()
         return row
+
+    async def get_canonical_source(
+        self, corpus_document_id: str
+    ) -> CanonicalResearchSource | None:
+        result = await self.db.execute(
+            select(CanonicalResearchSource).where(
+                CanonicalResearchSource.corpus_document_id == corpus_document_id
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def create_canonical_source(
+        self, source: CanonicalResearchSource
+    ) -> CanonicalResearchSource:
+        self.db.add(source)
+        await self.db.flush()
+        return source
+
+    async def update_canonical_source(
+        self, source: CanonicalResearchSource, **fields: Any
+    ) -> CanonicalResearchSource:
+        for key, value in fields.items():
+            setattr(source, key, value)
+        await self.db.flush()
+        return source
+
+    async def list_canonical_sources_for_corpus(
+        self, corpus_id: str
+    ) -> list[CanonicalResearchSource]:
+        result = await self.db.execute(
+            select(CanonicalResearchSource)
+            .join(
+                CorpusDocument,
+                CorpusDocument.id == CanonicalResearchSource.corpus_document_id,
+            )
+            .where(CorpusDocument.corpus_id == corpus_id)
+        )
+        return list(result.scalars().all())
+
+    # ------------------------------------------------------------------
+    # CleaningProfile
+    # ------------------------------------------------------------------
+
+    async def create_cleaning_profile(
+        self,
+        *,
+        project_id: str,
+        name: str,
+        description: str | None,
+        version: str,
+        config_json: str,
+        created_by: str,
+    ) -> CleaningProfile:
+        row = CleaningProfile(
+            project_id=project_id,
+            name=name,
+            description=description,
+            version=version,
+            config_json=config_json,
+            created_by=created_by,
+        )
+        self.db.add(row)
+        await self.db.flush()
+        return row
+
+    async def get_cleaning_profile(self, profile_id: str) -> CleaningProfile | None:
+        result = await self.db.execute(
+            select(CleaningProfile).where(CleaningProfile.id == profile_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def list_cleaning_profiles(self, project_id: str) -> list[CleaningProfile]:
+        result = await self.db.execute(
+            select(CleaningProfile)
+            .where(CleaningProfile.project_id == project_id)
+            .order_by(CleaningProfile.created_at.desc())
+        )
+        return list(result.scalars().all())
+
+    async def update_cleaning_profile(
+        self, profile: CleaningProfile, **fields: Any
+    ) -> CleaningProfile:
+        for key, value in fields.items():
+            setattr(profile, key, value)
+        profile.updated_at = _utcnow()
+        await self.db.flush()
+        return profile
+
+    async def delete_cleaning_profile(self, profile: CleaningProfile) -> None:
+        await self.db.delete(profile)
+        await self.db.flush()
 
     async def get_document(self, document_id: str) -> CorpusDocument | None:
         result = await self.db.execute(

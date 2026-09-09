@@ -18,6 +18,7 @@ import { BarChart as AnalysisIcon, PlayArrow as RunIcon } from "@mui/icons-mater
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSnackbar } from "../../../app/snackbarContext";
 import {
+    getCorpusMetadataFacets,
     getRun,
     listDictionaries,
     listPreprocessingProfiles,
@@ -74,7 +75,6 @@ const ANALYSIS_TAB_VALUES = [
 ] as const satisfies readonly AnalysisTab[];
 
 type DfmWeighting = "count" | "binary" | "tfidf";
-type KeynessFilterField = "organization" | "cultural_sphere";
 
 const TABS: Array<{ value: AnalysisTab; label: string }> = [
     { value: "overview", label: "Overview" },
@@ -562,6 +562,9 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                         { id: "a", label: "Group A", value: (row) => pickNumber(row, ["freq_a", "count_a"]), align: "right" },
                         { id: "b", label: "Group B", value: (row) => pickNumber(row, ["freq_b", "count_b"]), align: "right" },
                         { id: "keyness", label: "Keyness", value: (row) => pickNumber(row, ["keyness_statistic", "keyness", "g2"]), align: "right" },
+                        { id: "p", label: "p", value: (row) => pickNumber(row, ["p_value", "p"]), align: "right" },
+                        { id: "padj", label: "p (BH)", value: (row) => pickNumber(row, ["p_adjusted"]), align: "right" },
+                        { id: "log_ratio", label: "Log ratio", value: (row) => pickNumber(row, ["log_ratio", "effect_size"]), align: "right" },
                         { id: "direction", label: "Direction", value: (row) => pickString(row, ["effect_direction", "direction"]) },
                     ]}
                 />
@@ -648,19 +651,41 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
         );
     }
 
-    const networkEdges = asArray(results?.cooccurrence ?? payload)
+    const networkPayload = asRecord(results?.network) ?? asRecord(asRecord(results?.report)?.network);
+    const networkEdges = (
+        asArray(networkPayload?.edges).length
+            ? asArray(networkPayload?.edges)
+            : asArray(results?.cooccurrence ?? payload)
+    )
         .map((entry) => asRecord(entry))
         .filter((row): row is Record<string, unknown> => row != null)
         .map((row) => ({
-            termA: pickString(row, ["term_a", "termA", "a"]) ?? "",
-            termB: pickString(row, ["term_b", "termB", "b"]) ?? "",
+            termA: pickString(row, ["term_a", "termA", "a", "source"]) ?? "",
+            termB: pickString(row, ["term_b", "termB", "b", "target"]) ?? "",
             count: pickNumber(row, ["count", "frequency"]) ?? 0,
-            association: pickNumber(row, ["association_score", "pmi", "score"]) ?? 0,
+            association: pickNumber(row, ["weight", "association_score", "pmi", "score"]) ?? 0,
         }))
         .filter((edge) => edge.termA && edge.termB && edge.count >= minimumEdgeStrength)
         .slice(0, networkLimit);
     return (
         <Stack spacing={2}>
+            <MetricCards
+                items={[
+                    {
+                        label: "Nodes",
+                        value: formatMetric(
+                            pickNumber(networkPayload ?? {}, ["node_count"]) ??
+                                new Set(networkEdges.flatMap((e) => [e.termA, e.termB])).size
+                        ),
+                    },
+                    {
+                        label: "Edges",
+                        value: formatMetric(
+                            pickNumber(networkPayload ?? {}, ["edge_count"]) ?? networkEdges.length
+                        ),
+                    },
+                ]}
+            />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                 <Button size="small" variant={networkLimit === 20 ? "contained" : "outlined"} onClick={() => setNetworkLimit(20)}>Top 20</Button>
                 <Button size="small" variant={networkLimit === 50 ? "contained" : "outlined"} onClick={() => setNetworkLimit(50)}>Top 50</Button>
@@ -672,8 +697,12 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                 columns={[
                     { id: "termA", label: "Term A", value: (row) => pickString(row, ["term_a", "termA", "a"]) },
                     { id: "termB", label: "Term B", value: (row) => pickString(row, ["term_b", "termB", "b"]) },
-                    { id: "count", label: "Co-occurrence count", value: (row) => pickNumber(row, ["count", "frequency"]), align: "right" },
+                    { id: "count", label: "Count", value: (row) => pickNumber(row, ["count", "frequency"]), align: "right" },
                     { id: "association", label: "Association", value: (row) => pickNumber(row, ["association_score", "pmi", "score"]), align: "right" },
+                    { id: "pmi", label: "PMI", value: (row) => pickNumber(row, ["pmi"]), align: "right" },
+                    { id: "npmi", label: "NPMI", value: (row) => pickNumber(row, ["npmi"]), align: "right" },
+                    { id: "dice", label: "Dice", value: (row) => pickNumber(row, ["dice", "log_dice"]), align: "right" },
+                    { id: "method", label: "Method", value: (row) => pickString(row, ["association_method", "method"]) },
                 ]}
             />
             <ResultsInspector data={payload} />
@@ -694,14 +723,21 @@ export default function AnalysisView() {
     const [kwicKeyword, setKwicKeyword] = useState("");
     const [kwicWindow, setKwicWindow] = useState(5);
     const [kwicCaseSensitive, setKwicCaseSensitive] = useState(false);
+    const [kwicQueryMode, setKwicQueryMode] = useState("auto");
     const [dfmWeighting, setDfmWeighting] = useState<DfmWeighting>("count");
-    const [keynessField, setKeynessField] = useState<KeynessFilterField>("organization");
+    const [keynessField, setKeynessField] = useState("organization");
     const [keynessA, setKeynessA] = useState("");
     const [keynessB, setKeynessB] = useState("");
+    const [keynessMethod, setKeynessMethod] = useState("log_likelihood");
+    const [keynessCorrection, setKeynessCorrection] = useState("bh");
     const [dictionaryId, setDictionaryId] = useState("");
     const [dictionaryTerms, setDictionaryTerms] = useState("");
     const [groupBy, setGroupBy] = useState("");
     const [coocWindow, setCoocWindow] = useState(5);
+    const [coocMethod, setCoocMethod] = useState("pmi");
+    const [coocDirectional, setCoocDirectional] = useState(false);
+    const [coocMinFreq, setCoocMinFreq] = useState(1);
+    const [coocMinCount, setCoocMinCount] = useState(1);
     const [metadataFilters, setMetadataFilters] = useState<Record<string, string>>({});
 
     const profilesQuery = useQuery({
@@ -715,6 +751,13 @@ export default function AnalysisView() {
         queryKey: queryKeys.textResearch.dictionaries(ctx.projectId),
         queryFn: () => listDictionaries(ctx.projectId),
         enabled: Boolean(ctx.projectId),
+        staleTime: QUERY_STALE_TIMES.researchReference,
+    });
+
+    const facetsQuery = useQuery({
+        queryKey: ["text-research", "metadata-facets", ctx.selectedCorpusId],
+        queryFn: () => getCorpusMetadataFacets(ctx.selectedCorpusId),
+        enabled: Boolean(ctx.selectedCorpusId),
         staleTime: QUERY_STALE_TIMES.researchReference,
     });
 
@@ -775,6 +818,7 @@ export default function AnalysisView() {
                 keyword: kwicKeyword.trim(),
                 window_size: kwicWindow,
                 case_sensitive: kwicCaseSensitive,
+                query_mode: kwicQueryMode,
             }),
         onSuccess: (run) => onRunSuccess(run, "KWIC search started."),
         onError: (error) => onRunError(error, "Failed to run KWIC."),
@@ -797,6 +841,9 @@ export default function AnalysisView() {
                 ...(profileId ? { preprocessing_profile_id: profileId } : {}),
                 filters_a: { [keynessField]: keynessA.trim() },
                 filters_b: { [keynessField]: keynessB.trim() },
+                group_field: keynessField,
+                method: keynessMethod,
+                correction: keynessCorrection,
                 top_n: topN,
             }),
         onSuccess: (run) => onRunSuccess(run, "Keyness comparison started."),
@@ -825,6 +872,10 @@ export default function AnalysisView() {
                 ...basePayload,
                 window_size: coocWindow,
                 top_n: topN,
+                association_method: coocMethod,
+                directional: coocDirectional,
+                min_frequency: coocMinFreq,
+                min_count: coocMinCount,
             }),
         onSuccess: (run) => onRunSuccess(run, "Co-occurrence analysis started."),
         onError: (error) => onRunError(error, "Failed to run co-occurrence."),
@@ -871,17 +922,17 @@ export default function AnalysisView() {
 
     return (
         <Stack spacing={2}>
+            <PageTabs
+                value={tab}
+                onChange={setTab}
+                tabs={TABS}
+                ariaLabel="Analysis methods"
+            />
+
             <SectionCard
                 title="Quantitative analysis"
                 description="Expose corpus statistics, frequencies, n-grams, KWIC, DFM, keyness, dictionaries, and co-occurrence with charts and inspectable raw results."
             >
-                <PageTabs
-                    value={tab}
-                    onChange={setTab}
-                    tabs={TABS}
-                    ariaLabel="Analysis methods"
-                />
-
                 <Stack spacing={2}>
                     <MetadataFilterBar corpusId={ctx.selectedCorpusId} value={metadataFilters} onChange={setMetadataFilters} />
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
@@ -935,20 +986,36 @@ export default function AnalysisView() {
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
                             <TextField
                                 size="small"
-                                label="Keyword"
+                                label="Query"
                                 value={kwicKeyword}
                                 onChange={(event) => setKwicKeyword(event.target.value)}
                                 sx={{ minWidth: 220 }}
                             />
+                            <TextField
+                                select
+                                size="small"
+                                label="Query mode"
+                                value={kwicQueryMode}
+                                onChange={(event) => setKwicQueryMode(event.target.value)}
+                                sx={{ width: 160 }}
+                            >
+                                <MenuItem value="auto">Auto</MenuItem>
+                                <MenuItem value="word">Word</MenuItem>
+                                <MenuItem value="phrase">Phrase</MenuItem>
+                                <MenuItem value="exact_phrase">Exact phrase</MenuItem>
+                                <MenuItem value="regex">Regex</MenuItem>
+                                <MenuItem value="wildcard">Wildcard</MenuItem>
+                                <MenuItem value="lemma">Lemma</MenuItem>
+                            </TextField>
                             <TextField
                                 size="small"
                                 type="number"
                                 label="Window size"
                                 value={kwicWindow}
                                 onChange={(event) =>
-                                    setKwicWindow(Math.max(1, Number(event.target.value) || 1))
+                                    setKwicWindow(Math.max(0, Number(event.target.value) || 0))
                                 }
-                                inputProps={{ min: 1, max: 20 }}
+                                inputProps={{ min: 0, max: 50 }}
                                 sx={{ width: 140 }}
                             />
                             <FormControlLabel
@@ -979,34 +1046,76 @@ export default function AnalysisView() {
                     ) : null}
 
                     {tab === "keyness" ? (
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
                             <TextField
                                 select
                                 size="small"
-                                label="Compare by"
+                                label="Compare by metadata"
                                 value={keynessField}
-                                onChange={(event) =>
-                                    setKeynessField(event.target.value as KeynessFilterField)
-                                }
-                                sx={{ minWidth: 180 }}
+                                onChange={(event) => {
+                                    setKeynessField(event.target.value);
+                                    setKeynessA("");
+                                    setKeynessB("");
+                                }}
+                                sx={{ minWidth: 200 }}
                             >
-                                <MenuItem value="organization">organization</MenuItem>
-                                <MenuItem value="cultural_sphere">cultural_sphere</MenuItem>
+                                {Object.keys(facetsQuery.data ?? {}).map((field) => (
+                                    <MenuItem key={field} value={field}>
+                                        {field.replace(/_/g, " ")}
+                                    </MenuItem>
+                                ))}
                             </TextField>
                             <TextField
+                                select
                                 size="small"
-                                label="Group A value"
+                                label="Group A"
                                 value={keynessA}
                                 onChange={(event) => setKeynessA(event.target.value)}
                                 sx={{ minWidth: 180 }}
-                            />
+                            >
+                                {(facetsQuery.data?.[keynessField] ?? []).map((item) => (
+                                    <MenuItem key={`a-${item.value}`} value={item.value}>
+                                        {item.value} ({item.count})
+                                    </MenuItem>
+                                ))}
+                            </TextField>
                             <TextField
+                                select
                                 size="small"
-                                label="Group B value"
+                                label="Group B"
                                 value={keynessB}
                                 onChange={(event) => setKeynessB(event.target.value)}
                                 sx={{ minWidth: 180 }}
-                            />
+                            >
+                                {(facetsQuery.data?.[keynessField] ?? []).map((item) => (
+                                    <MenuItem key={`b-${item.value}`} value={item.value}>
+                                        {item.value} ({item.count})
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                            <TextField
+                                select
+                                size="small"
+                                label="Method"
+                                value={keynessMethod}
+                                onChange={(event) => setKeynessMethod(event.target.value)}
+                                sx={{ minWidth: 160 }}
+                            >
+                                <MenuItem value="log_likelihood">Log-likelihood (G²)</MenuItem>
+                                <MenuItem value="chi_square">Chi-square</MenuItem>
+                                <MenuItem value="fisher">Fisher exact</MenuItem>
+                            </TextField>
+                            <TextField
+                                select
+                                size="small"
+                                label="Correction"
+                                value={keynessCorrection}
+                                onChange={(event) => setKeynessCorrection(event.target.value)}
+                                sx={{ minWidth: 140 }}
+                            >
+                                <MenuItem value="bh">BH FDR</MenuItem>
+                                <MenuItem value="none">None</MenuItem>
+                            </TextField>
                         </Stack>
                     ) : null}
 
@@ -1060,17 +1169,65 @@ export default function AnalysisView() {
                     ) : null}
 
                     {tab === "cooccurrence" ? (
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="Window size"
-                            value={coocWindow}
-                            onChange={(event) =>
-                                setCoocWindow(Math.max(1, Number(event.target.value) || 1))
-                            }
-                            inputProps={{ min: 1, max: 20 }}
-                            sx={{ width: 140 }}
-                        />
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Window size"
+                                value={coocWindow}
+                                onChange={(event) =>
+                                    setCoocWindow(Math.max(1, Number(event.target.value) || 1))
+                                }
+                                inputProps={{ min: 1, max: 50 }}
+                                sx={{ width: 140 }}
+                            />
+                            <TextField
+                                select
+                                size="small"
+                                label="Association"
+                                value={coocMethod}
+                                onChange={(event) => setCoocMethod(event.target.value)}
+                                sx={{ width: 150 }}
+                            >
+                                <MenuItem value="count">count</MenuItem>
+                                <MenuItem value="pmi">PMI</MenuItem>
+                                <MenuItem value="npmi">NPMI</MenuItem>
+                                <MenuItem value="dice">Dice</MenuItem>
+                                <MenuItem value="log_dice">logDice</MenuItem>
+                                <MenuItem value="t_score">t-score</MenuItem>
+                            </TextField>
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Min frequency"
+                                value={coocMinFreq}
+                                onChange={(event) =>
+                                    setCoocMinFreq(Math.max(0, Number(event.target.value) || 0))
+                                }
+                                inputProps={{ min: 0 }}
+                                sx={{ width: 140 }}
+                            />
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Min co-occurrence"
+                                value={coocMinCount}
+                                onChange={(event) =>
+                                    setCoocMinCount(Math.max(0, Number(event.target.value) || 0))
+                                }
+                                inputProps={{ min: 0 }}
+                                sx={{ width: 160 }}
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={coocDirectional}
+                                        onChange={(event) => setCoocDirectional(event.target.checked)}
+                                    />
+                                }
+                                label="Directional"
+                            />
+                        </Stack>
                     ) : null}
 
                     <Button

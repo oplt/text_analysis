@@ -1,10 +1,13 @@
-"""Cross-organization / cross-region prevalence comparison ("Western bias
-explorer" support), with explicit provenance tracking: results can be
-computed from human annotations only, model predictions only, or a
+"""Cross-group prevalence comparison over user-selected metadata dimensions.
+
+Results can be computed from human annotations only, model predictions only, or a
 human-preferred blend (human value used when present, model value as
 fallback) — the provenance mode and per-unit source counts are always
 persisted alongside the numbers so findings are never mistaken for ground
 truth when they are actually model output.
+
+Grouping fields are taken from corpus document metadata; the user chooses
+which dimension to compare. The backend does not interpret groups.
 """
 
 from __future__ import annotations
@@ -26,16 +29,17 @@ from backend.modules.text_research.domain.models import AnalysisRun, dumps, load
 def _utcnow() -> datetime:
     return datetime.now(UTC)
 
-_ALLOWED_GROUP_BY = {
-    "organization",
-    "organization_type",
-    "region",
-    "cultural_sphere",
-    "language",
-    "publication_year",
-    "publication_type",
-    "country",
-}
+def _resolve_group_value(doc: Any, group_by: str) -> str:
+    """Read a grouping field from built-in columns or custom metadata_json."""
+    if doc is None:
+        return "unspecified"
+    if hasattr(doc, "get_field_value"):
+        value = doc.get_field_value(group_by)
+    else:
+        value = getattr(doc, group_by, None)
+    if value is None or value == "":
+        return "unspecified"
+    return str(value)
 
 
 class ComparativeAnalysisService(ResearchAccessMixin):
@@ -52,8 +56,11 @@ class ComparativeAnalysisService(ResearchAccessMixin):
         model_id: str | None = None,
         **filters: Any,
     ) -> AnalysisRun:
-        if group_by not in _ALLOWED_GROUP_BY:
-            raise HTTPException(status_code=400, detail=f"Unsupported group_by: {group_by}")
+        # Accept any non-empty metadata field name (built-in or custom). The
+        # previous hard allowlist blocked legitimate user-defined facets (§49).
+        group_by = str(group_by or "").strip()
+        if not group_by:
+            raise HTTPException(status_code=400, detail="group_by is required")
 
         corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
         codebook = await self.get_codebook_or_404(codebook_id, user_id=user_id)
@@ -151,7 +158,7 @@ class ComparativeAnalysisService(ResearchAccessMixin):
             group_examples: dict[str, list[dict[str, Any]]] = {}
             for unit in units:
                 doc = doc_lookup.get(unit.corpus_document_id)
-                key = str(getattr(doc, group_by, None) or "unspecified") if doc else "unspecified"
+                key = _resolve_group_value(doc, group_by)
                 value, source = resolve(label_id, unit.id)
                 provenance_counts[source] += 1
                 bucket = group_tally.setdefault(

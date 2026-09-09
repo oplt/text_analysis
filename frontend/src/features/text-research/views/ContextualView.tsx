@@ -30,18 +30,29 @@ import {
     type ContextualLinkResult,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { PageTabs } from "../../../components/ui/PageTabs";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
+import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { MetricCards, ResultsInspector, ScientificLineChart, ScientificScatterPlot } from "../components/ResearchCharts";
 import { NoCorpusEmptyState } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 
+const CONTEXTUAL_TABS = ["datasets", "link"] as const;
+type ContextualTab = (typeof CONTEXTUAL_TABS)[number];
+
+const CONTEXTUAL_TAB_ITEMS: Array<{ value: ContextualTab; label: string }> = [
+    { value: "datasets", label: "Datasets" },
+    { value: "link", label: "Link" },
+];
+
 export default function ContextualView() {
     const ctx = useResearchContext();
     const client = useQueryClient();
     const { showToast } = useSnackbar();
+    const [tab, setTab] = useTabQueryParam(CONTEXTUAL_TABS, "datasets");
 
     const [selectedDatasetId, setSelectedDatasetId] = useState("");
     const [name, setName] = useState("Country-year indicators");
@@ -181,10 +192,19 @@ export default function ContextualView() {
         <Stack spacing={2}>
             <Alert severity="info">
                 Contextual joins are exploratory. Associations between discourse prevalence and
-                indicators (trust, well-being, polarization, etc.) are descriptive only and are not
+                indicators you import are descriptive only and are not
                 causal estimates.
             </Alert>
 
+            <PageTabs
+                value={tab}
+                onChange={setTab}
+                tabs={CONTEXTUAL_TAB_ITEMS}
+                ariaLabel="Contextual analysis workflow"
+            />
+
+            {tab === "datasets" ? (
+            <>
             <SectionCard
                 title="Contextual datasets"
                 description="Import country/year indicator tables, then join them to discourse prevalence."
@@ -363,7 +383,10 @@ export default function ContextualView() {
                     </QueryBoundary>
                 </SectionCard>
             ) : null}
+            </>
+            ) : null}
 
+            {tab === "link" ? (
             <SectionCard
                 title="Link discourse prevalence"
                 description="Join codebook label prevalence by country or year with a contextual indicator."
@@ -504,6 +527,7 @@ export default function ContextualView() {
                     ) : null}
                 </Stack>
             </SectionCard>
+            ) : null}
         </Stack>
     );
 }

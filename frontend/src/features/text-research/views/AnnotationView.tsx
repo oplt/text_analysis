@@ -35,15 +35,25 @@ import {
     saveAnnotations,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { PageTabs } from "../../../components/ui/PageTabs";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
+import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { AnnotationSetupPanel } from "../components/AnnotationSetupPanel";
 import { useResearchContext } from "../hooks/useResearchContext";
 import type { AnnotationLabel, AnnotationQueueItem } from "../types";
 
 type LabelDecision = "yes" | "no" | "uncertain";
+
+const ANNOTATION_TABS = ["setup", "workspace"] as const;
+type AnnotationTab = (typeof ANNOTATION_TABS)[number];
+
+const ANNOTATION_TAB_ITEMS: Array<{ value: AnnotationTab; label: string }> = [
+    { value: "setup", label: "Setup" },
+    { value: "workspace", label: "Workspace" },
+];
 
 function LabelGuide({ label }: { label: AnnotationLabel }) {
     return (
@@ -84,6 +94,7 @@ export default function AnnotationView() {
     const navigate = useNavigate();
     const client = useQueryClient();
     const { showToast } = useSnackbar();
+    const [tab, setTab] = useTabQueryParam(ANNOTATION_TABS, "workspace");
 
     const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
     const [labelValues, setLabelValues] = useState<Record<string, LabelDecision>>({});
@@ -222,6 +233,14 @@ export default function AnnotationView() {
 
     return (
         <Stack spacing={2}>
+            <PageTabs
+                value={tab}
+                onChange={setTab}
+                tabs={ANNOTATION_TAB_ITEMS}
+                ariaLabel="Annotation workflow"
+            />
+
+            {tab === "setup" ? (
             <Box id="annotation-setup">
                 <SectionCard
                     title="Annotation setup"
@@ -230,7 +249,9 @@ export default function AnnotationView() {
                     <AnnotationSetupPanel />
                 </SectionCard>
             </Box>
+            ) : null}
 
+            {tab === "workspace" ? (
             <SectionCard
                 title="Annotation workspace"
                 description="Code queue units with codebook guidance. Model predictions stay visually separate and are never auto-applied."
@@ -291,15 +312,11 @@ export default function AnnotationView() {
                         <EmptyState
                             icon={<TaskIcon fontSize="large" />}
                             title="No tasks in this queue"
-                            description="Use Annotation setup above to assign units, then return here to code."
+                            description="Use Annotation setup to assign units, then return here to code."
                             action={
                                 <Button
                                     variant="contained"
-                                    onClick={() =>
-                                        document
-                                            .getElementById("annotation-setup")
-                                            ?.scrollIntoView({ behavior: "smooth", block: "start" })
-                                    }
+                                    onClick={() => setTab("setup")}
                                 >
                                     Create annotation tasks
                                 </Button>
@@ -545,6 +562,7 @@ export default function AnnotationView() {
                     )}
                 </QueryBoundary>
             </SectionCard>
+            ) : null}
         </Stack>
     );
 }

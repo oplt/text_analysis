@@ -121,7 +121,21 @@ export async function createCodebook(
 ): Promise<{ id: string; version: string }> {
     const response = await api.request.post(`${researchBase}/projects/${projectId}/codebooks`, {
         headers: headers(api.csrfToken),
-        data: { name, seed_demo_labels: true },
+        data: { name, seed_demo_labels: false },
+    });
+    expect(response.ok(), await response.text()).toBeTruthy();
+    return response.json();
+}
+
+export async function createLabel(
+    api: ApiContext,
+    codebookId: string,
+    name: string,
+    description?: string
+): Promise<{ id: string; name: string }> {
+    const response = await api.request.post(`${researchBase}/codebooks/${codebookId}/labels`, {
+        headers: headers(api.csrfToken),
+        data: { name, description: description ?? `Synthetic fixture label ${name}` },
     });
     expect(response.ok(), await response.text()).toBeTruthy();
     return response.json();

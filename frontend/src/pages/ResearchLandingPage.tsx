@@ -51,7 +51,7 @@ export default function ResearchLandingPage() {
             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
                 <LabIcon color="primary" />
                 <Box>
-                    <Typography variant="h4">Policy Text Lab</Typography>
+                    <Typography variant="h4">Text Research</Typography>
                     <Typography variant="body2" color="text.secondary">
                         Choose a project to open the research workspace.
                     </Typography>
@@ -68,7 +68,7 @@ export default function ResearchLandingPage() {
                     <EmptyState
                         icon={<ProjectIcon fontSize="large" />}
                         title="No projects yet"
-                        description="Create a project first, then open Policy Text Lab to build corpora, annotate, and analyze."
+                        description="Create a project first, then open Text Research to build corpora, annotate, and analyze."
                         action={
                             <Button variant="contained" onClick={() => navigate("/projects")}>
                                 Go to projects
@@ -113,7 +113,7 @@ export default function ResearchLandingPage() {
                                     >
                                         <ListItemText
                                             primary={project.name}
-                                            secondary={project.description || "Open Policy Text Lab"}
+                                            secondary={project.description || "Open Text Research"}
                                         />
                                     </ListItemButton>
                                 ))}

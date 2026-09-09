@@ -1,19 +1,36 @@
 """Research corpus lifecycle: creation, RAG document linking, metadata, and
-reconstruction of source text from RAG chunks."""
+immutable canonical source text for research analysis.
+
+Research text is NEVER reconstructed by joining overlapping RAG retrieval
+chunks. Analysis starts from a persisted ``CanonicalResearchSource``.
+"""
 
 from __future__ import annotations
 
 import csv
 import io
 import json
+import logging
 from typing import Any
 
 from fastapi import HTTPException
 
-from backend.core.pagination import MAX_PAGE_LIMIT
 from backend.modules.rag.infrastructure.repositories import RagRepository
 from backend.modules.text_research.application.access import ResearchAccessMixin
-from backend.modules.text_research.domain.models import CorpusDocument, ResearchCorpus
+from backend.modules.text_research.domain.models import (
+    CanonicalResearchSource,
+    CorpusDocument,
+    ResearchCorpus,
+    dumps,
+)
+from backend.modules.text_research.infrastructure.canonical_text import (
+    CanonicalBuildResult,
+    build_canonical_from_full_text,
+    build_canonical_from_pages,
+    sha256_bytes,
+)
+
+logger = logging.getLogger(__name__)
 
 _CSV_METADATA_COLUMNS = (
     "title",
@@ -94,6 +111,7 @@ class CorpusService(ResearchAccessMixin):
         source_url: str | None = None,
         research_notes: str | None = None,
         extra_metadata: dict[str, Any] | None = None,
+        canonical_full_text: str | None = None,
     ) -> CorpusDocument:
         corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
 
@@ -130,6 +148,12 @@ class CorpusService(ResearchAccessMixin):
             source_url=source_url,
             research_notes=research_notes,
             metadata_json=json.dumps(extra_metadata or {}, ensure_ascii=True),
+        )
+        await self._ensure_canonical_for_document(
+            document,
+            rag_document=rag_document,
+            language=language,
+            full_text=canonical_full_text,
         )
         await self.db.commit()
         return document
@@ -277,27 +301,159 @@ class CorpusService(ResearchAccessMixin):
         await self.db.commit()
 
     # ------------------------------------------------------------------
-    # Source text reconstruction (RAG chunks -> research source text)
+    # Canonical research source (immutable; never from overlapping RAG chunks)
     # ------------------------------------------------------------------
 
-    async def get_source_text(self, document_id: str, *, user_id: str) -> str:
-        """Reconstruct the source text of a corpus document from its RAG
-        chunks, ordered by `chunk_index`, joined with newlines.
+    async def get_canonical_source(
+        self, document_id: str, *, user_id: str
+    ) -> CanonicalResearchSource:
+        return await self.ensure_canonical_source(document_id, user_id=user_id)
 
-        RAG chunks are retrieval-optimized, not research units — this raw
-        reconstruction is only an intermediate step before segmentation.
-        """
+    async def get_source_text(self, document_id: str, *, user_id: str) -> str:
+        """Return immutable canonical research text for analysis/segmentation."""
+        source = await self.ensure_canonical_source(document_id, user_id=user_id)
+        return source.canonical_text
+
+    async def ensure_canonical_source(
+        self,
+        document_id: str,
+        *,
+        user_id: str,
+        full_text: str | None = None,
+    ) -> CanonicalResearchSource:
         document, _ = await self.get_document_or_404(document_id, user_id=user_id)
+        existing = await self.repo.get_canonical_source(document.id)
+        if existing is not None:
+            return existing
+
         rag_repo = RagRepository(self.db)
-        chunks = []
-        offset = 0
-        while True:
-            page, total = await rag_repo.list_chunks_for_document(
-                document.rag_document_id, limit=MAX_PAGE_LIMIT, offset=offset
+        rag_document = await rag_repo.get_document(document.rag_document_id)
+        if rag_document is None:
+            raise HTTPException(
+                status_code=422,
+                detail="Linked RAG document missing; cannot build canonical research source.",
             )
-            chunks.extend(page)
-            offset += len(page)
-            if not page or offset >= total:
-                break
-        chunks.sort(key=lambda c: c.chunk_index)
-        return "\n".join(chunk.content for chunk in chunks)
+        return await self._ensure_canonical_for_document(
+            document,
+            rag_document=rag_document,
+            language=document.language,
+            full_text=full_text,
+        )
+
+    async def _ensure_canonical_for_document(
+        self,
+        document: CorpusDocument,
+        *,
+        rag_document: Any,
+        language: str | None,
+        full_text: str | None = None,
+    ) -> CanonicalResearchSource:
+        existing = await self.repo.get_canonical_source(document.id)
+        if existing is not None:
+            return existing
+
+        build = await self._build_canonical_result(
+            rag_document,
+            language=language or document.language,
+            full_text=full_text,
+        )
+        source = CanonicalResearchSource(
+            corpus_document_id=document.id,
+            canonical_text=build.text,
+            canonical_text_checksum=build.text_checksum,
+            raw_extracted_text=build.text,
+            raw_extracted_checksum=build.text_checksum,
+            original_file_checksum=build.original_file_checksum,
+            parser_name=build.parser_name,
+            parser_version=build.parser_version,
+            extracted_at=build.extracted_at,
+            source_rag_document_id=rag_document.id,
+            source_storage_path=getattr(rag_document, "storage_path", None),
+            source_filename=getattr(rag_document, "original_filename", None),
+            language=build.language,
+            page_provenance_json=dumps(build.page_provenance),
+            transformation_metadata_json=dumps(
+                {
+                    **(build.transformation_metadata or {}),
+                    "raw_equals_canonical": True,
+                    "cleaning_applied": False,
+                }
+            ),
+        )
+        return await self.repo.create_canonical_source(source)
+
+    async def _build_canonical_result(
+        self,
+        rag_document: Any,
+        *,
+        language: str | None,
+        full_text: str | None = None,
+    ) -> CanonicalBuildResult:
+        if full_text is not None:
+            return build_canonical_from_full_text(
+                full_text,
+                language=language,
+                source_file_reference=getattr(rag_document, "storage_path", None),
+                extra_transformation={"source": "explicit_full_text"},
+            )
+
+        storage_path = getattr(rag_document, "storage_path", None)
+        if storage_path:
+            try:
+                from backend.modules.rag.application.document_parser_service import (
+                    DocumentParserService,
+                )
+                from backend.modules.rag.infrastructure.file_storage_adapter import (
+                    FileStorageAdapter,
+                )
+
+                content = await FileStorageAdapter().download_document(storage_path)
+                parsed = await DocumentParserService().parse_bytes(
+                    content=content,
+                    filename=getattr(rag_document, "original_filename", "document"),
+                    content_type=getattr(rag_document, "content_type", "application/octet-stream"),
+                    metadata={"document_id": rag_document.id},
+                )
+                if not parsed:
+                    raise HTTPException(
+                        status_code=422,
+                        detail="Parser returned no text for canonical research source.",
+                    )
+                pages = [
+                    {
+                        "content": page.content,
+                        "page_number": page.page_number,
+                        "section_heading": (page.metadata or {}).get("section_heading"),
+                    }
+                    for page in parsed
+                ]
+                return build_canonical_from_pages(
+                    pages,
+                    language=language,
+                    original_file_checksum=sha256_bytes(content),
+                    source_file_reference=storage_path,
+                    extra_transformation={"source": "storage_reparse"},
+                )
+            except HTTPException:
+                raise
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "Canonical reparse from storage failed for rag_document=%s: %s",
+                    rag_document.id,
+                    exc,
+                )
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        "Unable to build canonical research source from original file. "
+                        "Research analysis does not reconstruct overlapping RAG chunks."
+                    ),
+                ) from exc
+
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "No canonical research source available. Provide the original file "
+                "(storage) or explicit full text. Joining RAG retrieval chunks is forbidden."
+            ),
+        )

@@ -136,6 +136,4 @@ class PreprocessingProfileService(ResearchAccessMixin):
         if profile is None:
             return PreprocessingConfig()
         data = json.loads(profile.config_json)
-        # Never honor a stored lemmatization=true flag; lemmatization is unsupported.
-        data["lemmatization"] = False
         return PreprocessingConfig.from_dict(data)

@@ -1,4 +1,5 @@
-"""HTTP routes for the Policy Text Lab research workflow."""
+"""HTTP routes for the text research workflow."""
+
 
 from __future__ import annotations
 
@@ -34,6 +35,12 @@ from backend.modules.text_research.api.schemas import (
     ClassifierTrainRequest,
     CodebookCreate,
     CodebookResponse,
+    CleaningPreviewRequest,
+    CleaningPreviewResponse,
+    CleaningProfileCreate,
+    CleaningProfileResponse,
+    CleaningProfileUpdate,
+    ApplyCleaningRequest,
     ComparativeAnalysisRequest,
     ContextualDatasetCreate,
     ContextualDatasetDetail,
@@ -41,6 +48,7 @@ from backend.modules.text_research.api.schemas import (
     ContextualObservationPage,
     ContextualImportResponse,
     ContextualLinkRequest,
+    ClusteringRequest,
     CooccurrenceRequest,
     CorpusAnnotationAssignRequest,
     CorpusAnnotationAssignResponse,
@@ -55,10 +63,13 @@ from backend.modules.text_research.api.schemas import (
     DictionaryAnalysisRequest,
     DictionaryCreate,
     DictionaryResponse,
+    DimensionalityReductionRequest,
     DictionaryUpdate,
+    DuplicateDetectionRequest,
     ExportManifestResponse,
     FrequencyRequest,
     KeynessRequest,
+    MeasurementComparisonRequest,
     KwicRequest,
     NgramRequest,
     PreprocessingPreviewRequest,
@@ -67,15 +78,20 @@ from backend.modules.text_research.api.schemas import (
     PreprocessingProfileResponse,
     PreprocessingProfileUpdate,
     QuantedaScriptResponse,
+    ReadabilityRequest,
     ReliabilityRequest,
     ResearchCorpusCreate,
     ResearchCorpusResponse,
     ResearchCorpusUpdate,
     RobustnessRequest,
     SegmentRequest,
+    SimilarityRequest,
+    StatisticalModelRequest,
     SourceTextResponse,
     TextUnitContextResponse,
+    TopicKSweepRequest,
     TopicLabelRequest,
+    TopicSeedStabilityRequest,
     TopicTrainRequest,
     TrainedModelResponse,
     TrainingDatasetSnapshotResponse,
@@ -88,6 +104,12 @@ from backend.modules.text_research.application.codebook_service import CodebookS
 from backend.modules.text_research.application.comparative_analysis_service import (
     ComparativeAnalysisService,
 )
+from backend.modules.text_research.application.statistical_modeling_service import (
+    StatisticalModelingService,
+)
+from backend.modules.text_research.application.measurement_validation_service import (
+    MeasurementValidationService,
+)
 from backend.modules.text_research.application.contextual_dataset_service import (
     ContextualDatasetService,
 )
@@ -97,6 +119,8 @@ from backend.modules.text_research.application.dataset_builder_service import Da
 from backend.modules.text_research.application.demo_seed_service import DemoSeedService
 from backend.modules.text_research.application.dictionary_service import DictionaryService
 from backend.modules.text_research.application.export_service import ExportService
+from backend.modules.text_research.application.ingestion_qa_service import IngestionQaService
+from backend.modules.text_research.application.cleaning_service import CleaningProfileService
 from backend.modules.text_research.application.prediction_service import PredictionService
 from backend.modules.text_research.application.preprocessing_service import (
     PreprocessingProfileService,
@@ -112,6 +136,7 @@ from backend.modules.text_research.application.topic_model_service import TopicM
 from backend.modules.text_research.domain.models import (
     AnalysisRun,
     AnnotationLabel,
+    CleaningProfile,
     CorpusDocument,
     DictionaryDefinition,
     PreprocessingProfile,
@@ -189,6 +214,20 @@ def _profile_response(profile: PreprocessingProfile) -> PreprocessingProfileResp
     )
 
 
+def _cleaning_profile_response(profile: CleaningProfile) -> CleaningProfileResponse:
+    return CleaningProfileResponse(
+        id=profile.id,
+        project_id=profile.project_id,
+        name=profile.name,
+        description=profile.description,
+        version=profile.version,
+        config=_loads(profile.config_json, {}),
+        created_by=profile.created_by,
+        created_at=profile.created_at,
+        updated_at=profile.updated_at,
+    )
+
+
 def _label_response(label: AnnotationLabel) -> AnnotationLabelResponse:
     return AnnotationLabelResponse(
         id=label.id,
@@ -205,13 +244,20 @@ def _label_response(label: AnnotationLabel) -> AnnotationLabelResponse:
 
 
 def _dictionary_response(dictionary: DictionaryDefinition) -> DictionaryResponse:
+    from backend.modules.text_research.application.dictionary_service import DictionaryService
+
+    spec = DictionaryService.get_spec(dictionary)
     return DictionaryResponse(
         id=dictionary.id,
         project_id=dictionary.project_id,
         name=dictionary.name,
         version=dictionary.version,
         description=dictionary.description,
-        terms=_loads(dictionary.terms_json, []),
+        language=spec.language,
+        terms=spec.flattened_terms(),
+        hierarchy=DictionaryService.get_hierarchy(dictionary),
+        exclusions=[e.to_dict() for e in spec.exclusions],
+        format=spec.format,
         created_by=dictionary.created_by,
         created_at=dictionary.created_at,
     )
@@ -503,8 +549,152 @@ async def get_source_text(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    text = await CorpusService(db).get_source_text(document_id, user_id=current_user.id)
-    return SourceTextResponse(document_id=document_id, text=text)
+    service = CorpusService(db)
+    source = await service.get_canonical_source(document_id, user_id=current_user.id)
+    return SourceTextResponse(
+        document_id=document_id,
+        text=source.canonical_text,
+        canonical_text_checksum=source.canonical_text_checksum,
+        parser_name=source.parser_name,
+        parser_version=source.parser_version,
+        source="canonical",
+    )
+
+
+@router.post("/corpora/{corpus_id}/ingestion-qa", response_model=AnalysisRunResponse)
+async def run_ingestion_qa(
+    corpus_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Scan corpus documents for extraction/quality issues without mutating text."""
+    run = await IngestionQaService(db).run_corpus_qa(corpus_id, user_id=current_user.id)
+    return _run_response(run)
+
+
+@router.get("/documents/{document_id}/ingestion-qa")
+async def get_document_ingestion_qa(
+    document_id: str,
+    run_id: str | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Inspect QA findings for one document from a (latest) ingestion QA run."""
+    return await IngestionQaService(db).get_document_qa_slice(
+        document_id, user_id=current_user.id, run_id=run_id
+    )
+
+
+# ------------------------------------------------------------------
+# Document cleaning profiles
+# ------------------------------------------------------------------
+
+
+@router.post(
+    "/projects/{project_id}/cleaning-profiles",
+    response_model=CleaningProfileResponse,
+    status_code=201,
+)
+async def create_cleaning_profile(
+    project_id: str,
+    body: CleaningProfileCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    profile = await CleaningProfileService(db).create_profile(
+        project_id=project_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+        version=body.version,
+        config=body.config,
+    )
+    return _cleaning_profile_response(profile)
+
+
+@router.get(
+    "/projects/{project_id}/cleaning-profiles",
+    response_model=list[CleaningProfileResponse],
+)
+async def list_cleaning_profiles(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    profiles = await CleaningProfileService(db).list_profiles(
+        project_id=project_id, user_id=current_user.id
+    )
+    return [_cleaning_profile_response(p) for p in profiles]
+
+
+@router.get("/cleaning-profiles/{profile_id}", response_model=CleaningProfileResponse)
+async def get_cleaning_profile(
+    profile_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    profile = await CleaningProfileService(db).get_profile(profile_id, user_id=current_user.id)
+    return _cleaning_profile_response(profile)
+
+
+@router.patch("/cleaning-profiles/{profile_id}", response_model=CleaningProfileResponse)
+async def update_cleaning_profile(
+    profile_id: str,
+    body: CleaningProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    profile = await CleaningProfileService(db).update_profile(
+        profile_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+        version=body.version,
+        config=body.config,
+    )
+    return _cleaning_profile_response(profile)
+
+
+@router.delete("/cleaning-profiles/{profile_id}", status_code=204)
+async def delete_cleaning_profile(
+    profile_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await CleaningProfileService(db).delete_profile(profile_id, user_id=current_user.id)
+
+
+@router.post("/cleaning/preview", response_model=CleaningPreviewResponse)
+async def preview_cleaning_config(
+    body: CleaningPreviewRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await CleaningProfileService(db).preview(
+        user_id=current_user.id,
+        project_id=body.project_id,
+        texts=body.texts,
+        document_id=body.document_id,
+        config=body.config,
+        cleaning_profile_id=body.cleaning_profile_id,
+    )
+
+
+@router.post("/corpora/{corpus_id}/clean", response_model=AnalysisRunResponse)
+async def apply_document_cleaning(
+    corpus_id: str,
+    body: ApplyCleaningRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Apply a cleaning profile to corpus documents. Raw extracts stay intact."""
+    run = await CleaningProfileService(db).apply_to_corpus(
+        corpus_id,
+        user_id=current_user.id,
+        cleaning_profile_id=body.cleaning_profile_id,
+        document_ids=body.document_ids,
+    )
+    return _run_response(run)
 
 
 # ------------------------------------------------------------------
@@ -771,6 +961,11 @@ async def assign_corpus_annotation_tasks(
         strategy=body.strategy,
         overlap_count=body.overlap_count,
         overlap_percent=body.overlap_percent,
+        random_seed=body.random_seed,
+        stratify_by=body.stratify_by,
+        stratum_mode=body.stratum_mode,
+        sampling_level=body.sampling_level,
+        max_units_per_document=body.max_units_per_document,
     )
 
 
@@ -905,11 +1100,63 @@ async def list_adjudications(
 
 
 def _analysis_filters(body: AnalysisRequest) -> dict[str, Any]:
+    excluded = {
+        "unit_type",
+        "preprocessing_profile_id",
+        "top_n",
+        "n",
+        "weighting",
+        "k1",
+        "b",
+        "smooth_idf",
+        "rate_per",
+        "skip",
+        "group_by",
+        "force_sparse_only",
+        "trim",
+        "run_async",
+        "keyword",
+        "window_size",
+        "case_sensitive",
+        "query_mode",
+        "language",
+        "token_attribute",
+        "max_matches",
+        "dictionary_id",
+        "dictionary_terms",
+        "hierarchy",
+        "exclusions",
+        "dictionary_language",
+        "case_sensitive",
+        "rate_per",
+        "group_by",
+        "association_method",
+        "directional",
+        "min_frequency",
+        "min_count",
+        "include_network",
+        "method",
+        "mode",
+        "top_k",
+        "min_score",
+        "centroid_target",
+        "query_text",
+        "query_unit_id",
+        "embeddings",
+        "query_embedding",
+        "methods",
+        "lexical_threshold",
+        "char_ngram_size",
+        "use_minhash",
+        "minhash_num_perm",
+        "minhash_shingle_size",
+        "minhash_threshold",
+        "max_pairs",
+    }
     return {
         k: v
         for k, v in body.model_dump().items()
-        if k not in {"unit_type", "preprocessing_profile_id", "top_n", "n", "weighting"}
-        and v is not None
+        if k not in excluded and v is not None
     }
 
 
@@ -943,6 +1190,8 @@ async def frequencies(
         unit_type=body.unit_type,
         preprocessing_profile_id=body.preprocessing_profile_id,
         top_n=body.top_n,
+        rate_per=body.rate_per,
+        group_by=body.group_by,
         **_analysis_filters(body),
     )
     return _run_response(run)
@@ -962,6 +1211,8 @@ async def ngrams(
         n=body.n,
         preprocessing_profile_id=body.preprocessing_profile_id,
         top_n=body.top_n,
+        rate_per=body.rate_per,
+        skip=body.skip,
         **_analysis_filters(body),
     )
     return _run_response(run)
@@ -979,7 +1230,12 @@ async def dfm(
         user_id=current_user.id,
         unit_type=body.unit_type,
         weighting=body.weighting,
+        k1=body.k1,
+        b=body.b,
+        smooth_idf=body.smooth_idf,
         preprocessing_profile_id=body.preprocessing_profile_id,
+        force_sparse_only=body.force_sparse_only,
+        trim=body.trim.model_dump(exclude_none=True) if body.trim else None,
         **_analysis_filters(body),
     )
     return _run_response(run)
@@ -999,6 +1255,10 @@ async def kwic(
         keyword=body.keyword,
         window_size=body.window_size,
         case_sensitive=body.case_sensitive,
+        query_mode=body.query_mode,
+        language=body.language,
+        token_attribute=body.token_attribute,
+        max_matches=body.max_matches,
         **_analysis_filters(body),
     )
     return _run_response(run)
@@ -1011,14 +1271,22 @@ async def dictionary_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if not body.dictionary_id and not body.dictionary_terms:
-        raise HTTPException(status_code=400, detail="dictionary_id or dictionary_terms required")
+    if not body.dictionary_id and not body.dictionary_terms and not body.hierarchy:
+        raise HTTPException(
+            status_code=400,
+            detail="dictionary_id, dictionary_terms, or hierarchy required (user-defined only)",
+        )
     run = await QuantitativeAnalysisService(db).dictionary(
         corpus_id,
         user_id=current_user.id,
         unit_type=body.unit_type,
         dictionary_terms=body.dictionary_terms or [],
         dictionary_id=body.dictionary_id,
+        hierarchy=body.hierarchy,
+        exclusions=body.exclusions,
+        dictionary_language=body.dictionary_language,
+        case_sensitive=body.case_sensitive,
+        rate_per=body.rate_per,
         group_by=body.group_by,
         preprocessing_profile_id=body.preprocessing_profile_id,
         **_analysis_filters(body),
@@ -1039,6 +1307,10 @@ async def keyness(
         unit_type=body.unit_type,
         filters_a=body.filters_a,
         filters_b=body.filters_b,
+        group_field=body.group_field,
+        method=body.method,
+        correction=body.correction,
+        min_frequency=body.min_frequency,
         preprocessing_profile_id=body.preprocessing_profile_id,
         top_n=body.top_n,
     )
@@ -1058,7 +1330,131 @@ async def cooccurrence(
         unit_type=body.unit_type,
         window_size=body.window_size,
         top_n=body.top_n,
+        association_method=body.association_method,
+        directional=body.directional,
+        min_frequency=body.min_frequency,
+        min_count=body.min_count,
+        include_network=body.include_network,
         preprocessing_profile_id=body.preprocessing_profile_id,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/analysis/similarity", response_model=AnalysisRunResponse)
+async def similarity(
+    corpus_id: str,
+    body: SimilarityRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Document-to-document / unit-to-unit / query-to-document / group-centroid
+    similarity (cosine-on-TFIDF, Jaccard, or caller-supplied embeddings)."""
+    run = await QuantitativeAnalysisService(db).similarity(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        method=body.method,
+        mode=body.mode,
+        top_k=body.top_k,
+        min_score=body.min_score,
+        group_by=body.group_by,
+        centroid_target=body.centroid_target,
+        query_text=body.query_text,
+        query_unit_id=body.query_unit_id,
+        embeddings=body.embeddings,
+        query_embedding=body.query_embedding,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post(
+    "/corpora/{corpus_id}/analysis/duplicate-detection", response_model=AnalysisRunResponse
+)
+async def duplicate_detection(
+    corpus_id: str,
+    body: DuplicateDetectionRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Exact / normalized checksum, lexical near-dup, and optional MinHash
+    duplicate detection — the same engine ingestion QA uses, run explicitly."""
+    run = await QuantitativeAnalysisService(db).duplicate_detection(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        methods=body.methods,
+        lexical_threshold=body.lexical_threshold,
+        char_ngram_size=body.char_ngram_size,
+        use_minhash=body.use_minhash,
+        minhash_num_perm=body.minhash_num_perm,
+        minhash_shingle_size=body.minhash_shingle_size,
+        minhash_threshold=body.minhash_threshold,
+        max_pairs=body.max_pairs,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/analysis/clustering", response_model=AnalysisRunResponse)
+async def clustering(
+    corpus_id: str,
+    body: ClusteringRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await QuantitativeAnalysisService(db).clustering(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        n_clusters=body.n_clusters,
+        algorithm=body.algorithm,
+        use_svd=body.use_svd,
+        n_svd_components=body.n_svd_components,
+        top_terms=body.top_terms,
+        random_seed=body.random_seed,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post(
+    "/corpora/{corpus_id}/analysis/dimensionality-reduction",
+    response_model=AnalysisRunResponse,
+)
+async def dimensionality_reduction(
+    corpus_id: str,
+    body: DimensionalityReductionRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await QuantitativeAnalysisService(db).dimensionality_reduction(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        method=body.method,
+        n_components=body.n_components,
+        random_seed=body.random_seed,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/analysis/readability", response_model=AnalysisRunResponse)
+async def readability(
+    corpus_id: str,
+    body: ReadabilityRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await QuantitativeAnalysisService(db).readability(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
         **_analysis_filters(body),
     )
     return _run_response(run)
@@ -1078,12 +1474,21 @@ async def create_dictionary(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if body.terms is None and body.hierarchy is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Provide terms or hierarchy (dictionaries are user-defined only)",
+        )
     dictionary = await DictionaryService(db).create_dictionary(
         project_id=project_id,
         user_id=current_user.id,
         name=body.name,
         description=body.description,
+        version=body.version,
+        language=body.language,
         terms=body.terms,
+        hierarchy=body.hierarchy,
+        exclusions=body.exclusions,
     )
     return _dictionary_response(dictionary)
 
@@ -1122,7 +1527,11 @@ async def update_dictionary(
         user_id=current_user.id,
         name=body.name,
         description=body.description,
+        version=body.version,
+        language=body.language,
         terms=body.terms,
+        hierarchy=body.hierarchy,
+        exclusions=body.exclusions,
     )
     return _dictionary_response(dictionary)
 
@@ -1132,10 +1541,13 @@ async def update_dictionary(
 )
 async def create_dictionary_version(
     dictionary_id: str,
+    new_version: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    dictionary = await DictionaryService(db).create_version(dictionary_id, user_id=current_user.id)
+    dictionary = await DictionaryService(db).create_version(
+        dictionary_id, user_id=current_user.id, new_version=new_version
+    )
     return _dictionary_response(dictionary)
 
 
@@ -1221,15 +1633,34 @@ async def train_classifier(
         user_id=current_user.id,
         snapshot_id=body.snapshot_id,
         algorithm=body.algorithm,
+        task_type=body.task_type,
         preprocessing_profile_id=body.preprocessing_profile_id,
+        vectorizer=body.vectorizer,
+        use_word_ngrams=body.use_word_ngrams,
+        ngram_min=body.ngram_min,
         ngram_max=body.ngram_max,
+        use_char_ngrams=body.use_char_ngrams,
+        char_ngram_min=body.char_ngram_min,
+        char_ngram_max=body.char_ngram_max,
         min_df=body.min_df,
         max_df=body.max_df,
         max_features=body.max_features,
         class_weight=body.class_weight,
         regularization_c=body.regularization_c,
+        nb_alpha=body.nb_alpha,
+        sgd_loss=body.sgd_loss,
         test_size=body.test_size,
+        val_size=body.val_size,
         random_seed=body.random_seed,
+        tune_hyperparameters=body.tune_hyperparameters,
+        hyperparameter_search_type=body.hyperparameter_search_type,
+        hyperparameter_param_grid=body.hyperparameter_param_grid,
+        hyperparameter_n_iter=body.hyperparameter_n_iter,
+        hyperparameter_scoring=body.hyperparameter_scoring,
+        tune_thresholds=body.tune_thresholds,
+        n_bootstrap=body.n_bootstrap,
+        ci_confidence_level=body.ci_confidence_level,
+        calibration_method=body.calibration_method,
         name=body.name,
         run_async=body.run_async,
     )
@@ -1419,6 +1850,70 @@ async def train_topic_model(
     return _run_response(run)
 
 
+def _topic_ksweep_filters(body: TopicKSweepRequest) -> dict[str, Any]:
+    return {
+        k: v
+        for k, v in body.model_dump().items()
+        if k not in {"unit_type", "algorithm", "k_values", "preprocessing_profile_id", "max_iterations", "random_seed"}
+        and v is not None
+    }
+
+
+@router.post(
+    "/corpora/{corpus_id}/topics/k-sweep", response_model=AnalysisRunResponse, status_code=201
+)
+async def topic_k_sweep(
+    corpus_id: str,
+    body: TopicKSweepRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await TopicModelService(db).run_k_sweep(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        algorithm=body.algorithm,
+        k_values=body.k_values,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        max_iterations=body.max_iterations,
+        random_seed=body.random_seed,
+        **_topic_ksweep_filters(body),
+    )
+    return _run_response(run)
+
+
+def _topic_seed_stability_filters(body: TopicSeedStabilityRequest) -> dict[str, Any]:
+    return {
+        k: v
+        for k, v in body.model_dump().items()
+        if k not in {"unit_type", "algorithm", "n_topics", "seeds", "preprocessing_profile_id", "max_iterations"}
+        and v is not None
+    }
+
+
+@router.post(
+    "/corpora/{corpus_id}/topics/seed-stability", response_model=AnalysisRunResponse, status_code=201
+)
+async def topic_seed_stability(
+    corpus_id: str,
+    body: TopicSeedStabilityRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await TopicModelService(db).run_seed_stability(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        algorithm=body.algorithm,
+        n_topics=body.n_topics,
+        seeds=body.seeds,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        max_iterations=body.max_iterations,
+        **_topic_seed_stability_filters(body),
+    )
+    return _run_response(run)
+
+
 @router.post("/topics/{run_id}/labels", status_code=201)
 async def name_topic(
     run_id: str,
@@ -1472,10 +1967,61 @@ async def run_robustness_sweep(
         cv_folds=body.cv_folds,
         class_weights=body.class_weights,
         test_size=body.test_size,
+        group_field=body.group_field,
+        max_groups=body.max_groups,
+        temporal_field=body.temporal_field,
+        temporal_windows=body.temporal_windows,
+        transfer_field=body.transfer_field,
+        transfer_train_values=body.transfer_train_values,
+        transfer_test_values=body.transfer_test_values,
         run_async=body.run_async,
     )
     return _run_response(run)
 
+
+
+
+@router.post("/corpora/{corpus_id}/analysis/statistical-model", response_model=AnalysisRunResponse)
+async def statistical_model(
+    corpus_id: str,
+    body: StatisticalModelRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await StatisticalModelingService(db).fit(
+        corpus_id,
+        user_id=current_user.id,
+        model=body.model,
+        dependent_var=body.dependent_var,
+        independent_vars=body.independent_vars,
+        rows=body.rows,
+        add_intercept=body.add_intercept,
+    )
+    return _run_response(run)
+
+
+@router.post(
+    "/corpora/{corpus_id}/analysis/measurement-comparison",
+    response_model=AnalysisRunResponse,
+)
+async def measurement_comparison(
+    corpus_id: str,
+    body: MeasurementComparisonRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await MeasurementValidationService(db).compare(
+        corpus_id,
+        user_id=current_user.id,
+        source_a=body.source_a,
+        values_a=body.values_a,
+        source_b=body.source_b,
+        values_b=body.values_b,
+        ids=body.ids,
+        value_kind=body.value_kind,
+        subgroup=body.subgroup,
+    )
+    return _run_response(run)
 
 @router.post("/corpora/{corpus_id}/comparative/prevalence", response_model=AnalysisRunResponse)
 async def comparative_prevalence(

@@ -3,11 +3,11 @@ import {
     computeReliability,
     createAuthenticatedApiContext,
     createCodebook,
+    createLabel,
     createProject,
     freezeDataset,
     getDashboard,
     listClassifiers,
-    listLabels,
     listPredictions,
     listTextUnitIdsFromExport,
     predictWithModel,
@@ -35,8 +35,11 @@ async function seedResearchWorkspace(browser: import("@playwright/test").Browser
         expect(unitIds.length).toBeGreaterThan(0);
 
         const codebook = await createCodebook(api, project.id, `E2E Codebook ${Date.now()}`);
-        const labels = await listLabels(api, codebook.id);
-        expect(labels.length).toBeGreaterThanOrEqual(4);
+        const labels = [];
+        for (const name of ["Label A", "Label B", "Label C", "Label D"]) {
+            labels.push(await createLabel(api, codebook.id, name));
+        }
+        expect(labels.length).toBe(4);
 
         for (let index = 0; index < unitIds.length; index += 1) {
             const unitId = unitIds[index];
@@ -96,7 +99,7 @@ async function seedResearchWorkspace(browser: import("@playwright/test").Browser
     }
 }
 
-test.describe("Policy Text Lab research workflow", () => {
+test.describe("Text Research workflow", () => {
     test.skip(!email || !password, "Set E2E_TEST_EMAIL and E2E_TEST_PASSWORD");
 
     test("full API pipeline: corpus → annotate → train → predict", async ({ browser }) => {
@@ -126,10 +129,10 @@ test.describe("Policy Text Lab research workflow", () => {
         const page = await context.newPage();
 
         await page.goto(`/projects/${project.id}`);
-        await expect(page.getByRole("button", { name: /Open Policy Text Lab/i })).toBeVisible();
-        await page.getByRole("button", { name: /Open Policy Text Lab/i }).click();
+        await expect(page.getByRole("button", { name: /Open Text Research/i })).toBeVisible();
+        await page.getByRole("button", { name: /Open Text Research/i }).click();
         await expect(page).toHaveURL(new RegExp(`/research/${project.id}/dashboard`));
-        await expect(page.getByRole("heading", { name: /Policy Text Lab/i })).toBeVisible();
+        await expect(page.getByRole("heading", { name: /Text Research/i })).toBeVisible();
         await expect(page.getByText("Documents").first()).toBeVisible();
         await expect(page.getByText("4").first()).toBeVisible();
 

@@ -1,12 +1,22 @@
-"""Inter-coder reliability statistics for Policy Text Lab.
+"""Inter-coder reliability statistics for text research.
 
-Implements raw agreement, Cohen's kappa (two coders), and Krippendorff's
-alpha (nominal, arbitrary number of coders, missing data supported) via the
-standard coincidence-matrix formulation. No fabricated numbers: every value
-returned is computed from the input labels.
+Implements raw agreement, Cohen's kappa (two coders), Fleiss' kappa (three
+or more coders, fixed-n design), and Krippendorff's alpha (nominal,
+arbitrary number of coders, missing data supported) via the standard
+coincidence-matrix formulation. No fabricated numbers: every value returned
+is computed from the input labels.
+
+Only the nominal measurement level is supported end-to-end (annotation
+values in this module are unordered category labels such as "yes"/"no").
+Ordinal weighted kappa is intentionally not implemented: there is no
+ordinal label scale anywhere in the annotation pipeline, and applying a
+weighted/ordinal statistic to nominal categories would silently misreport
+disagreement severity.
 
 References:
     - Cohen, J. (1960). A coefficient of agreement for nominal scales.
+    - Fleiss, J. L. (1971). Measuring nominal scale agreement among many
+      raters. Psychological Bulletin, 76(5), 378-382.
     - Krippendorff, K. (2004/2011). Computing Krippendorff's Alpha-Reliability.
       (coincidence-matrix formulation used here)
 """
@@ -161,6 +171,151 @@ def krippendorffs_alpha(
         "n_units": n_units,
         "n_coders": n_coders,
         "missingness": missingness,
+    }
+
+
+def fleiss_kappa(reliability_data: list[list[Label]]) -> dict[str, Any]:
+    """Fleiss' kappa for three or more coders rating nominal categories.
+
+    Fleiss' original (1971) formula assumes every included unit was rated
+    by the same fixed number of coders ``n``. To support the ragged
+    assignment matrices produced by real annotation workflows (some units
+    have missing ratings), this function:
+
+    1. Drops ``None`` (missing) values from each unit's row.
+    2. Determines ``n`` as the modal (most common) number of non-missing
+       ratings among units with at least 2 ratings.
+    3. Restricts the design to only the units that have exactly ``n``
+       ratings, which is the standard fixed-raters-per-subject design
+       Fleiss' kappa requires. Units with a different rater count are
+       excluded and reported via ``n_units_excluded`` for transparency.
+
+    Returns a dict with ``kappa`` (``None`` if not evaluable), ``n_raters``,
+    ``n_units_included``, ``n_units_excluded``, ``n_categories``, and
+    ``categories``.
+    """
+    non_missing = [[v for v in row if v is not None] for row in reliability_data]
+    rater_counts = Counter(len(row) for row in non_missing if len(row) >= 2)
+
+    if not rater_counts:
+        return {
+            "kappa": None,
+            "n_raters": 0,
+            "n_units_included": 0,
+            "n_units_excluded": len(reliability_data),
+            "n_categories": 0,
+            "categories": [],
+            "reason": "No unit has ratings from at least 2 coders.",
+        }
+
+    n_raters = rater_counts.most_common(1)[0][0]
+
+    if n_raters < 3:
+        return {
+            "kappa": None,
+            "n_raters": n_raters,
+            "n_units_included": 0,
+            "n_units_excluded": len(reliability_data),
+            "n_categories": 0,
+            "categories": [],
+            "reason": (
+                "Fleiss' kappa requires 3+ coders per unit in the fixed-n design; "
+                f"the modal design here has only {n_raters} coder(s) per unit. "
+                "Use Cohen's kappa for a two-coder design."
+            ),
+        }
+
+    included_rows = [row for row in non_missing if len(row) == n_raters]
+    n_units_included = len(included_rows)
+    n_units_excluded = len(reliability_data) - n_units_included
+
+    if n_units_included < 2:
+        return {
+            "kappa": None,
+            "n_raters": n_raters,
+            "n_units_included": n_units_included,
+            "n_units_excluded": n_units_excluded,
+            "n_categories": 0,
+            "categories": [],
+            "reason": f"Only {n_units_included} unit(s) have the fixed {n_raters}-coder design.",
+        }
+
+    categories = sorted({v for row in included_rows for v in row}, key=str)
+    k = len(categories)
+    index_of = {category: i for i, category in enumerate(categories)}
+
+    table = [[0] * k for _ in range(n_units_included)]
+    for i, row in enumerate(included_rows):
+        for value in row:
+            table[i][index_of[value]] += 1
+
+    n = n_raters
+    big_n = n_units_included
+
+    category_totals = [sum(table[i][j] for i in range(big_n)) for j in range(k)]
+    p_j = [total / (big_n * n) for total in category_totals]
+
+    p_i = [
+        (sum(count * count for count in table[i]) - n) / (n * (n - 1)) for i in range(big_n)
+    ]
+    p_bar = sum(p_i) / big_n
+    p_e_bar = sum(p * p for p in p_j)
+
+    if math.isclose(p_e_bar, 1.0, abs_tol=1e-12):
+        kappa = 1.0 if math.isclose(p_bar, 1.0, abs_tol=1e-12) else 0.0
+    else:
+        kappa = (p_bar - p_e_bar) / (1 - p_e_bar)
+
+    return {
+        "kappa": kappa,
+        "n_raters": n_raters,
+        "n_units_included": n_units_included,
+        "n_units_excluded": n_units_excluded,
+        "n_categories": k,
+        "categories": categories,
+    }
+
+
+def reliability_metadata(
+    reliability_data: list[list[Label]],
+    *,
+    scale: str = "nominal",
+    statistics_used: Sequence[str] = (),
+) -> dict[str, Any]:
+    """Descriptive metadata for a reliability computation.
+
+    Args:
+        reliability_data: units x coders matrix (``None`` = missing), same
+            convention as :func:`krippendorffs_alpha`.
+        scale: measurement scale of the underlying annotation values.
+            Only ``"nominal"`` is supported end-to-end by this module;
+            ordinal/weighted statistics are not implemented anywhere in the
+            pipeline, so this is recorded for transparency rather than to
+            select a different code path.
+        statistics_used: names of the statistics actually reported for this
+            computation (e.g. ``["raw_agreement", "cohens_kappa"]``).
+
+    Returns:
+        Dict with ``scale``, ``n_coders`` (max coders assigned to the
+        label), ``n_units``, ``pairable_units`` (units with >= 2
+        non-missing ratings), ``missing_values`` (count of missing
+        unit/coder cells), and ``statistics_used``.
+    """
+    n_units = len(reliability_data)
+    n_coders = max((len(row) for row in reliability_data), default=0)
+    non_missing = [[v for v in row if v is not None] for row in reliability_data]
+    pairable_units = sum(1 for row in non_missing if len(row) >= 2)
+    total_possible = n_units * n_coders
+    present = sum(len(row) for row in non_missing)
+    missing_values = total_possible - present
+
+    return {
+        "scale": scale,
+        "n_coders": n_coders,
+        "n_units": n_units,
+        "pairable_units": pairable_units,
+        "missing_values": missing_values,
+        "statistics_used": list(statistics_used),
     }
 
 

@@ -17,12 +17,53 @@ from backend.modules.text_research.application.quantitative_analysis_service imp
 )
 from backend.modules.text_research.domain.models import dumps, loads
 
-APP_NAME = "Policy Text Lab"
-APP_SUBTITLE = "Computational Analysis of Global Education Policy Discourses"
+APP_NAME = "Text Research"
+
+APP_SUBTITLE = "Generic computational text analysis workspace"
 
 
 def _utcnow() -> datetime:
     return datetime.now(UTC)
+
+
+def _library_versions() -> dict[str, str | None]:
+    versions: dict[str, str | None] = {}
+    for name in (
+        "numpy",
+        "scipy",
+        "sklearn",
+        "pandas",
+        "ftfy",
+        "regex",
+        "snowballstemmer",
+        "simplemma",
+        "statsmodels",
+        "spacy",
+    ):
+        try:
+            mod = __import__(name if name != "sklearn" else "sklearn")
+            versions[name] = getattr(mod, "__version__", None)
+        except Exception:  # noqa: BLE001
+            versions[name] = None
+    return versions
+
+
+def _git_commit_sha() -> str | None:
+    try:
+        import subprocess
+
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=2,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip() or None
+    except Exception:  # noqa: BLE001
+        return None
+    return None
 
 
 class ExportService(ResearchAccessMixin):
@@ -55,6 +96,14 @@ class ExportService(ResearchAccessMixin):
                 "publication_type",
                 "unit_type",
                 "position",
+                "page_number",
+                "paragraph_number",
+                "sentence_number",
+                "char_start",
+                "char_end",
+                "section_heading",
+                "text_hash",
+                "source_text_hash",
                 "text",
             ]
         )
@@ -75,6 +124,14 @@ class ExportService(ResearchAccessMixin):
                     doc.publication_type if doc else "",
                     unit.unit_type,
                     unit.position,
+                    unit.page_number if unit.page_number is not None else "",
+                    unit.paragraph_number if unit.paragraph_number is not None else "",
+                    unit.sentence_number if unit.sentence_number is not None else "",
+                    unit.char_start if unit.char_start is not None else "",
+                    unit.char_end if unit.char_end is not None else "",
+                    unit.section_heading or "",
+                    unit.text_hash,
+                    unit.source_text_hash or "",
                     unit.text,
                 ]
             )
@@ -166,11 +223,17 @@ class ExportService(ResearchAccessMixin):
         runs, total_runs = await self.repo.list_runs(
             corpus.project_id, corpus_id=corpus_id, limit=200, offset=0
         )
+        canonical_sources = await self.repo.list_canonical_sources_for_corpus(corpus_id)
+        canonical_by_doc = {row.corpus_document_id: row for row in canonical_sources}
 
         return {
             "app": APP_NAME,
             "subtitle": APP_SUBTITLE,
             "generated_at": _utcnow().isoformat(),
+            "reproducibility": {
+                "library_versions": _library_versions(),
+                "git_commit": _git_commit_sha(),
+            },
             "corpus": {
                 "id": corpus.id,
                 "name": corpus.name,
@@ -188,6 +251,17 @@ class ExportService(ResearchAccessMixin):
                     "language": d.language,
                     "publication_year": d.publication_year,
                     "publication_type": d.publication_type,
+                    "canonical_source": (
+                        {
+                            "checksum": canonical_by_doc[d.id].canonical_text_checksum,
+                            "parser_name": canonical_by_doc[d.id].parser_name,
+                            "parser_version": canonical_by_doc[d.id].parser_version,
+                            "extracted_at": canonical_by_doc[d.id].extracted_at.isoformat(),
+                            "original_file_checksum": canonical_by_doc[d.id].original_file_checksum,
+                        }
+                        if d.id in canonical_by_doc
+                        else None
+                    ),
                 }
                 for d in documents
             ],
