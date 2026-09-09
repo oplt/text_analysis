@@ -66,7 +66,9 @@ def segmentation_sync(*, run_id: str, user_id: str) -> None:
 
 
 def classifier_training_sync(*, run_id: str, user_id: str) -> None:
-    from backend.modules.text_research.application.classification_service import ClassificationService
+    from backend.modules.text_research.application.classification_service import (
+        ClassificationService,
+    )
 
     async def _execute(db):
         service = ClassificationService(db)

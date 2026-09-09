@@ -1,10 +1,14 @@
 """Safe research feature cache for repeated quantitative preprocessing.
 
+L1: in-process LRU (optionally spills large token lists via out_of_core).
+
 Cache identity: corpus snapshot hash + unit type + filters + preprocessing
 config + vectorization mode.
 
-Do NOT use this cache for supervised classifier TF-IDF fits — those must
-remain fitted on training partitions only to prevent leakage.
+Do NOT use this cache for supervised classifier TF-IDF fits or supervised
+feature selectors — those must remain fitted on training partitions only to
+prevent leakage. Prefer :mod:`stage_cache` for shared multi-worker stage
+artifacts (prepared corpora, unsupervised matrices, topic artifacts).
 """
 
 from __future__ import annotations
@@ -12,8 +16,8 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import threading
 import sys
+import threading
 from collections import OrderedDict
 from typing import Any
 
@@ -38,7 +42,7 @@ def _estimate_size(value: Any) -> int:
     size = sys.getsizeof(value)
     if isinstance(value, dict):
         return size + sum(_estimate_size(key) + _estimate_size(item) for key, item in value.items())
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         return size + sum(_estimate_size(item) for item in value)
     return size
 
@@ -155,7 +159,13 @@ def invalidate_cache(key: str | None = None) -> None:
 
 def cache_metrics() -> dict[str, int]:
     with _LOCK:
-        return {"entries": len(_CACHE), "bytes": _CACHE_BYTES, "hits": _HITS, "misses": _MISSES, "evictions": _EVICTIONS}
+        return {
+            "entries": len(_CACHE),
+            "bytes": _CACHE_BYTES,
+            "hits": _HITS,
+            "misses": _MISSES,
+            "evictions": _EVICTIONS,
+        }
 
 
 def get_or_tokenize(

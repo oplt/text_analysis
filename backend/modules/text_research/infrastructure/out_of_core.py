@@ -55,7 +55,9 @@ def resolve_batch_size(n_units: int, batch_size: int | None = None) -> int:
     return DEFAULT_BATCH_SIZE
 
 
-def iter_item_batches(items: Sequence[T], batch_size: int = DEFAULT_BATCH_SIZE) -> Iterator[Sequence[T]]:
+def iter_item_batches(
+    items: Sequence[T], batch_size: int = DEFAULT_BATCH_SIZE
+) -> Iterator[Sequence[T]]:
     """Yield fixed-size slices of any sequence (DB bulk, tokenization, etc.)."""
     if batch_size < 1:
         raise ValueError("batch_size must be >= 1")

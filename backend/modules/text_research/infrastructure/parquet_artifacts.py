@@ -60,7 +60,9 @@ def load_unit_table(path: str | Path) -> list[dict[str, Any]]:
     if resolved.suffix == ".parquet" or resolved.with_suffix(".parquet").is_file():
         import pandas as pd
 
-        parquet_path = resolved if resolved.suffix == ".parquet" else resolved.with_suffix(".parquet")
+        parquet_path = (
+            resolved if resolved.suffix == ".parquet" else resolved.with_suffix(".parquet")
+        )
         frame = pd.read_parquet(parquet_path)
         return frame.to_dict(orient="records")
 

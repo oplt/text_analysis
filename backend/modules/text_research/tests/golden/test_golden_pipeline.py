@@ -86,8 +86,7 @@ class GoldenPipelineTests(unittest.TestCase):
         gold_copy = copy.deepcopy(gold_labels)
         prediction_sets = {
             "model-a": {
-                doc_id: {"prediction": "neg", "probability": 0.91}
-                for doc_id in gold_labels
+                doc_id: {"prediction": "neg", "probability": 0.91} for doc_id in gold_labels
             }
         }
 

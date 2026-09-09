@@ -67,7 +67,9 @@ class PreprocessingProfileService(ResearchAccessMixin):
         if description is not None:
             fields["description"] = description
         if config is not None:
-            fields["config_json"] = json.dumps(self._resolved_config_dict(config), ensure_ascii=True)
+            fields["config_json"] = json.dumps(
+                self._resolved_config_dict(config), ensure_ascii=True
+            )
         updated = await self.repo.update_preprocessing_profile(profile, **fields)
         await self.db.commit()
         return updated

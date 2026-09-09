@@ -50,14 +50,23 @@ def reduce_dimensions(
     """
     algo = method.lower()
     if algo not in METHODS:
-        raise ValueError(f"Unsupported dimensionality reduction method {method!r}; expected one of {METHODS}")
+        raise ValueError(
+            f"Unsupported dimensionality reduction method {method!r}; expected one of {METHODS}"
+        )
     if matrix.shape[0] != len(unit_ids):
         raise ValueError("matrix row count must match len(unit_ids)")
     if n_components not in (2, 3):
         raise ValueError("n_components must be 2 or 3 for visual exploration")
 
     n_samples, n_features = matrix.shape
-    effective_components = max(1, min(n_components, n_features - 1 if algo == "svd" else n_features, n_samples - 1 if n_samples > 1 else 1))
+    effective_components = max(
+        1,
+        min(
+            n_components,
+            n_features - 1 if algo == "svd" else n_features,
+            n_samples - 1 if n_samples > 1 else 1,
+        ),
+    )
 
     if algo == "svd":
         model = TruncatedSVD(n_components=effective_components, random_state=random_seed)
@@ -78,7 +87,10 @@ def reduce_dimensions(
 
     axis_names = [f"axis_{i + 1}" for i in range(n_components)]
     points = [
-        {"unit_id": unit_ids[i], **{axis_names[j]: float(coords[i, j]) for j in range(n_components)}}
+        {
+            "unit_id": unit_ids[i],
+            **{axis_names[j]: float(coords[i, j]) for j in range(n_components)},
+        }
         for i in range(n_samples)
     ]
 

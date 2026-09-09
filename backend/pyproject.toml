@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "app-backend"
 version = "0.1.0"
@@ -47,12 +51,37 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# pip install -e ".[dev]" (CI / local). Keep in sync with [dependency-groups].dev.
+dev = [
+    "honcho>=2.0.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.11.2",
+]
 nlp = ["spacy>=3.7"]
 bertopic = ["bertopic", "umap-learn", "hdbscan"]
 transformers = ["torch", "transformers"]
 
 [project.scripts]
 text-research = "backend.modules.text_research.cli:main"
+
+# Editable install lives in backend/, but import root is the repo package `backend.*`
+# (not sibling top-level api/core/db/...). Discover from parent so semantics stay clear.
+[tool.setuptools.package-dir]
+"" = ".."
+
+[tool.setuptools.packages.find]
+where = [".."]
+include = ["backend*"]
+exclude = [
+    "backend.alembic*",
+    "backend.tests*",
+    "backend.logs*",
+    "backend.scripts*",
+    "backend.*.tests*",
+    "backend.modules.*.tests*",
+    "backend.modules.*.*.tests*",
+]
 
 [tool.ruff]
 line-length = 100
@@ -70,7 +99,12 @@ dev = [
     "honcho>=2.0.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
+    "ruff>=0.11.2",
 ]
+
+# Deterministic installs: commit uv.lock; CI uses `uv sync --frozen --extra dev`.
+[tool.uv]
+package = true
 
 [tool.pytest.ini_options]
 faulthandler_timeout = 30

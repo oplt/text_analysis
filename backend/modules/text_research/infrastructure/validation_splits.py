@@ -90,7 +90,9 @@ def leave_one_group_out(values: list[Any], *, max_groups: int | None = None) -> 
     for held_out in distinct:
         train_index = [i for i, k in enumerate(keys) if k is not None and k != held_out]
         test_index = [i for i, k in enumerate(keys) if k == held_out]
-        splits.append(GroupSplit(held_out_value=held_out, train_index=train_index, test_index=test_index))
+        splits.append(
+            GroupSplit(held_out_value=held_out, train_index=train_index, test_index=test_index)
+        )
     return splits
 
 
@@ -115,7 +117,9 @@ def transfer_split(
         raise ValueError("transfer_split requires at least one non-empty test_values entry")
     overlap = train_set & test_set
     if overlap:
-        raise ValueError(f"train_values and test_values must be disjoint; overlap: {sorted(overlap)}")
+        raise ValueError(
+            f"train_values and test_values must be disjoint; overlap: {sorted(overlap)}"
+        )
 
     keys = [_clean_key(v) for v in values]
     train_index = [i for i, k in enumerate(keys) if k in train_set]

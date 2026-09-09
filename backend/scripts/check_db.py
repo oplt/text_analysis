@@ -32,8 +32,14 @@ async def main() -> int:
         print(f"  Target: {host}", file=sys.stderr)
         print(f"  Error:  {exc}", file=sys.stderr)
         print(file=sys.stderr)
-        print("Update DATABASE_URL in backend/.env to match your Postgres credentials.", file=sys.stderr)
-        print("To create the default local user/database, run as the postgres superuser:", file=sys.stderr)
+        print(
+            "Update DATABASE_URL in backend/.env to match your Postgres credentials.",
+            file=sys.stderr,
+        )
+        print(
+            "To create the default local user/database, run as the postgres superuser:",
+            file=sys.stderr,
+        )
         print("  sudo -u postgres psql -f backend/scripts/setup-local-db.sql", file=sys.stderr)
         return 1
 

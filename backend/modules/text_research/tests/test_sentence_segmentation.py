@@ -27,10 +27,7 @@ class SentenceSegmentationRegressionTests(unittest.TestCase):
         )
 
     def test_abbreviations_eg_ie_dr_fig(self):
-        text = (
-            "See e.g. the sample. Also i.e. this case. "
-            "Dr. Smith arrived. Fig. 2 shows results."
-        )
+        text = "See e.g. the sample. Also i.e. this case. Dr. Smith arrived. Fig. 2 shows results."
         units = segmentation.segment_document(text, "sentence", language="en")
         texts = _texts(units)
         self.assertEqual(len(texts), 4)

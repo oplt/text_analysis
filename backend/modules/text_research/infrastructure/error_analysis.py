@@ -46,7 +46,9 @@ def _performance_dict(y_true: np.ndarray, y_pred: np.ndarray, task_type: str) ->
             "subset_accuracy": float(skmetrics.accuracy_score(y_true, y_pred)),
             "hamming_loss": float(skmetrics.hamming_loss(y_true, y_pred)),
             "f1_macro": float(skmetrics.f1_score(y_true, y_pred, average="macro", **zd)),
-            "precision_macro": float(skmetrics.precision_score(y_true, y_pred, average="macro", **zd)),
+            "precision_macro": float(
+                skmetrics.precision_score(y_true, y_pred, average="macro", **zd)
+            ),
             "recall_macro": float(skmetrics.recall_score(y_true, y_pred, average="macro", **zd)),
         }
     return {
@@ -67,7 +69,7 @@ def _false_positives_negatives(
     label_names: list[Any] | None,
 ) -> dict[str, Any]:
     if task_type == "multilabel":
-        labels = [str(l) for l in (label_names or range(y_true.shape[1]))]
+        labels = [str(label) for label in (label_names or range(y_true.shape[1]))]
         out: dict[str, Any] = {}
         for i, label in enumerate(labels):
             fp_ids = [
@@ -113,15 +115,16 @@ def _performance_by_label(
     label_names: list[Any] | None,
     task_type: str,
 ) -> dict[str, Any]:
-    zd = {"zero_division": 0}
     if task_type == "multilabel":
-        labels = [str(l) for l in (label_names or range(y_true.shape[1]))]
+        labels = [str(label) for label in (label_names or range(y_true.shape[1]))]
         return {
             label: {
                 "precision": float(
                     skmetrics.precision_score(y_true[:, i], y_pred[:, i], zero_division=0)
                 ),
-                "recall": float(skmetrics.recall_score(y_true[:, i], y_pred[:, i], zero_division=0)),
+                "recall": float(
+                    skmetrics.recall_score(y_true[:, i], y_pred[:, i], zero_division=0)
+                ),
                 "f1": float(skmetrics.f1_score(y_true[:, i], y_pred[:, i], zero_division=0)),
                 "support": int(y_true[:, i].sum()),
             }
@@ -129,7 +132,7 @@ def _performance_by_label(
         }
 
     labels = list(range(len(label_names or np.unique(y_true))))
-    target_names = [str(l) for l in (label_names or labels)]
+    target_names = [str(label) for label in (label_names or labels)]
     report = skmetrics.classification_report(
         y_true,
         y_pred,
@@ -232,7 +235,7 @@ def classifier_error_report(
         labels = list(range(len(label_names or np.unique(y_true_eval))))
         cm = skmetrics.confusion_matrix(y_true_eval, y_pred_eval, labels=labels)
         report["confusion_matrix"] = cm.tolist()
-        report["confusion_matrix_labels"] = [str(l) for l in (label_names or labels)]
+        report["confusion_matrix_labels"] = [str(label) for label in (label_names or labels)]
     elif task_type == "multilabel":
         report["confusion_matrix"] = skmetrics.multilabel_confusion_matrix(
             y_true_eval, y_pred_eval

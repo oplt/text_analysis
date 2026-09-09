@@ -7,7 +7,6 @@ import unittest
 from backend.modules.text_research.infrastructure import language_processing as lang
 from backend.modules.text_research.infrastructure import preprocessing, segmentation
 
-
 UNICODE_SAMPLE = "é ü ç ñ ø ğ ş ą č å æ"
 
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import inspect
-import io
 import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -28,7 +27,12 @@ class StreamingCsvTests(unittest.IsolatedAsyncioTestCase):
             return_value=[SimpleNamespace(id="unit-1", corpus_document_id="doc-1", text="Hello")]
         )
 
-        rows = [row async for row in service.iter_units_csv("corpus-1", user_id="user-1", unit_type="paragraph")]
+        rows = [
+            row
+            async for row in service.iter_units_csv(
+                "corpus-1", user_id="user-1", unit_type="paragraph"
+            )
+        ]
 
         self.assertEqual(rows[0], "text_unit_id,corpus_document_id,document_title,text\r\n")
         self.assertEqual(rows[1], "unit-1,doc-1,Document,Hello\r\n")

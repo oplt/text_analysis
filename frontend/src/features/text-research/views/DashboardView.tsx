@@ -202,7 +202,19 @@ function StackContent({
             </Box>
 
             {summary.latest_model ? (
-                <SectionCard title="Latest model" description="Most recently trained classifier.">
+                <SectionCard
+                    title="Latest model"
+                    description="Most recently trained classifier."
+                    action={
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => navigate(`/research/${projectId}/models`)}
+                        >
+                            Model Registry
+                        </Button>
+                    }
+                >
                     <Typography variant="body2">
                         {summary.latest_model.name ?? summary.latest_model.id} (v
                         {summary.latest_model.version})

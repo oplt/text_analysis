@@ -22,6 +22,25 @@ class AnnotationSource(StrEnum):
     SELECTED_ANNOTATOR = "selected_annotator"
 
 
+class AnnotationCampaignStatus(StrEnum):
+    DRAFT = "draft"
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    ARCHIVED = "archived"
+
+
+class AnnotationMode(StrEnum):
+    """Study design for an annotation campaign.
+
+    ``blind_reliability`` hides peer codes, adjudications, model/LLM suggestions,
+    and reliability results from annotators until their own coding is complete.
+    ``ai_assisted`` may surface model suggestions.
+    """
+
+    BLIND_RELIABILITY = "blind_reliability"
+    AI_ASSISTED = "ai_assisted"
+
+
 class AnalysisRunType(StrEnum):
     PREPROCESSING = "preprocessing"
     FREQUENCY_ANALYSIS = "frequency_analysis"

@@ -145,11 +145,11 @@ class CliTests(unittest.TestCase):
         import tempfile
         from pathlib import Path
 
-        handle = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
-        with handle:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as handle:
             json.dump(payload, handle)
-        self.addCleanup(lambda: Path(handle.name).unlink(missing_ok=True))
-        return handle.name
+            name = handle.name
+        self.addCleanup(lambda: Path(name).unlink(missing_ok=True))
+        return name
 
 
 class ModelLifecycleServiceTests(unittest.IsolatedAsyncioTestCase):

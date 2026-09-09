@@ -133,7 +133,7 @@ def get_default_embedding_provider() -> EmbeddingProvider:
 
 
 def _cache_key(text: str, provider_name: str, *, model_name: str | None = None) -> str:
-    payload = f"{provider_name}|{model_name or ''}|{text}".encode("utf-8")
+    payload = f"{provider_name}|{model_name or ''}|{text}".encode()
     digest = hashlib.sha256(payload).hexdigest()
     return f"{provider_name}:{digest}"
 

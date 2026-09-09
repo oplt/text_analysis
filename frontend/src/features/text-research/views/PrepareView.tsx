@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
     Alert,
     Box,
@@ -59,28 +59,95 @@ const PREPARE_TAB_ITEMS: Array<{ value: PrepareTab; label: string }> = [
     { value: "preprocessing", label: "Preprocessing" },
 ];
 
+function readStoredSegmentationRunId(corpusId: string | null): string | null {
+    if (!corpusId) return null;
+    return localStorage.getItem(segmentationRunStorageKey(corpusId));
+}
+
+function SegmentUnitControls({
+    unitType,
+    documentCount,
+    active,
+    onSegment,
+    onManageDocuments,
+}: {
+    unitType: UnitType;
+    documentCount: number;
+    active: boolean;
+    onSegment: (unitType: UnitType) => void;
+    onManageDocuments: () => void;
+}) {
+    const [localUnitType, setLocalUnitType] = useState(unitType);
+
+    return (
+        <>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }}>
+                <FormControl size="small" sx={{ minWidth: 180 }}>
+                    <InputLabel id="prepare-unit-type-label">Unit type</InputLabel>
+                    <Select
+                        labelId="prepare-unit-type-label"
+                        label="Unit type"
+                        value={localUnitType}
+                        onChange={(e) => setLocalUnitType(e.target.value as UnitType)}
+                        disabled={active}
+                    >
+                        {UNIT_TYPE_OPTIONS.map((option) => (
+                            <MenuItem key={option.value} value={option.value}>
+                                {option.label}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <Button
+                    variant="contained"
+                    startIcon={<StartIcon />}
+                    onClick={() => onSegment(localUnitType)}
+                    disabled={documentCount === 0 || active}
+                >
+                    {active ? "Segmentation in progress…" : "Start segmentation"}
+                </Button>
+                <Button variant="outlined" onClick={onManageDocuments}>
+                    Manage documents
+                </Button>
+            </Stack>
+
+            {documentCount === 0 ? (
+                <Alert severity="info">
+                    Upload or link documents in the Corpus stage before preparing text units.
+                </Alert>
+            ) : null}
+        </>
+    );
+}
+
 export default function PrepareView() {
     const ctx = useResearchContext();
     const navigate = useNavigate();
     const client = useQueryClient();
     const { showToast } = useSnackbar();
     const [tab, setTab] = useTabQueryParam(PREPARE_TABS, "segment");
-    const [runId, setRunId] = useState<string | null>(null);
-    const [localUnitType, setLocalUnitType] = useState<UnitType>(ctx.unitType);
+    const [runSelection, setRunSelection] = useState<{ corpusId: string; runId: string | null } | null>(
+        null
+    );
     const lastRefreshedStatus = useRef<string | null>(null);
 
-    useEffect(() => {
-        setLocalUnitType(ctx.unitType);
-    }, [ctx.unitType]);
-
-    useEffect(() => {
-        if (!ctx.selectedCorpusId) {
-            setRunId(null);
-            return;
+    const runId = useMemo(() => {
+        if (!ctx.selectedCorpusId) return null;
+        if (runSelection?.corpusId === ctx.selectedCorpusId) {
+            return runSelection.runId;
         }
-        const stored = localStorage.getItem(segmentationRunStorageKey(ctx.selectedCorpusId));
-        setRunId(stored);
-    }, [ctx.selectedCorpusId]);
+        return readStoredSegmentationRunId(ctx.selectedCorpusId);
+    }, [ctx.selectedCorpusId, runSelection]);
+
+    const setRunId = (nextRunId: string | null) => {
+        if (!ctx.selectedCorpusId) return;
+        setRunSelection({ corpusId: ctx.selectedCorpusId, runId: nextRunId });
+        if (nextRunId) {
+            localStorage.setItem(segmentationRunStorageKey(ctx.selectedCorpusId), nextRunId);
+        } else {
+            localStorage.removeItem(segmentationRunStorageKey(ctx.selectedCorpusId));
+        }
+    };
 
     const dashboardQuery = useQuery({
         queryKey: queryKeys.textResearch.dashboard(ctx.selectedCorpusId),
@@ -139,15 +206,12 @@ export default function PrepareView() {
     }, [runQuery.data, ctx.selectedCorpusId, ctx.projectId, client]);
 
     const segmentMutation = useMutation({
-        mutationFn: () => {
-            ctx.setUnitType(localUnitType);
-            return segmentCorpus(ctx.selectedCorpusId, localUnitType);
+        mutationFn: (unitType: UnitType) => {
+            ctx.setUnitType(unitType);
+            return segmentCorpus(ctx.selectedCorpusId, unitType);
         },
         onSuccess: (run) => {
             setRunId(run.id);
-            if (ctx.selectedCorpusId) {
-                localStorage.setItem(segmentationRunStorageKey(ctx.selectedCorpusId), run.id);
-            }
             void client.invalidateQueries({
                 queryKey: queryKeys.textResearch.runs(
                     ctx.projectId,
@@ -220,7 +284,7 @@ export default function PrepareView() {
     }
 
     const documentCount = dashboardQuery.data?.document_count ?? 0;
-    const unitCount = dashboardQuery.data?.text_unit_counts?.[localUnitType] ?? 0;
+    const unitCount = dashboardQuery.data?.text_unit_counts?.[ctx.unitType] ?? 0;
     const active = isSegmentationRunActive(runQuery.data) || segmentMutation.isPending;
     const progressLines = segmentationProgressLines(runQuery.data);
     const metrics = (runQuery.data?.metrics ?? {}) as Record<string, unknown>;
@@ -250,48 +314,18 @@ export default function PrepareView() {
                         {" · "}
                         {documentCount.toLocaleString()} document{documentCount === 1 ? "" : "s"}
                         {" · "}
-                        {unitCount.toLocaleString()} existing {localUnitType} unit
+                        {unitCount.toLocaleString()} existing {ctx.unitType} unit
                         {unitCount === 1 ? "" : "s"}
                     </Typography>
 
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }}>
-                        <FormControl size="small" sx={{ minWidth: 180 }}>
-                            <InputLabel id="prepare-unit-type-label">Unit type</InputLabel>
-                            <Select
-                                labelId="prepare-unit-type-label"
-                                label="Unit type"
-                                value={localUnitType}
-                                onChange={(e) => setLocalUnitType(e.target.value as UnitType)}
-                                disabled={active}
-                            >
-                                {UNIT_TYPE_OPTIONS.map((option) => (
-                                    <MenuItem key={option.value} value={option.value}>
-                                        {option.label}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                        <Button
-                            variant="contained"
-                            startIcon={<StartIcon />}
-                            onClick={() => segmentMutation.mutate()}
-                            disabled={documentCount === 0 || active}
-                        >
-                            {active ? "Segmentation in progress…" : "Start segmentation"}
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            onClick={() => navigate(`/research/${ctx.projectId}/corpus`)}
-                        >
-                            Manage documents
-                        </Button>
-                    </Stack>
-
-                    {documentCount === 0 ? (
-                        <Alert severity="info">
-                            Upload or link documents in the Corpus stage before preparing text units.
-                        </Alert>
-                    ) : null}
+                    <SegmentUnitControls
+                        key={`${ctx.selectedCorpusId}:${ctx.unitType}`}
+                        unitType={ctx.unitType}
+                        documentCount={documentCount}
+                        active={active}
+                        onSegment={(unitType) => segmentMutation.mutate(unitType)}
+                        onManageDocuments={() => navigate(`/research/${ctx.projectId}/corpus`)}
+                    />
                 </Stack>
             </SectionCard>
 
@@ -376,17 +410,7 @@ export default function PrepareView() {
                                             <TableCell align="right">
                                                 <Button
                                                     size="small"
-                                                    onClick={() => {
-                                                        setRunId(run.id);
-                                                        if (ctx.selectedCorpusId) {
-                                                            localStorage.setItem(
-                                                                segmentationRunStorageKey(
-                                                                    ctx.selectedCorpusId
-                                                                ),
-                                                                run.id
-                                                            );
-                                                        }
-                                                    }}
+                                                    onClick={() => setRunId(run.id)}
                                                 >
                                                     Inspect
                                                 </Button>

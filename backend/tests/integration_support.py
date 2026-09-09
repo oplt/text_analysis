@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import uuid
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import Any
 
 # Test-friendly defaults must be set before backend settings are imported.
@@ -71,16 +71,12 @@ async def prepare_integration_runtime() -> None:
     from backend.core import cache
     from backend.db import session as db_session
 
-    try:
+    with suppress(Exception):
         await cache.redis_client.aclose()
-    except Exception:
-        pass
     cache.redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
 
-    try:
+    with suppress(Exception):
         await db_session.engine.dispose()
-    except Exception:
-        pass
 
     db_session.engine = create_async_engine(
         settings.DATABASE_URL,

@@ -248,13 +248,19 @@ class RobustnessService(ResearchAccessMixin):
             return run
         params = loads(run.parameters_json, {})
 
-        await self.repo.update_run(run, status=AnalysisRunStatus.RUNNING.value, started_at=_utcnow())
+        await self.repo.update_run(
+            run, status=AnalysisRunStatus.RUNNING.value, started_at=_utcnow()
+        )
         await self.db.commit()
 
         try:
-            _snapshot, label_names, unit_labels, units, documents_by_id = await self._load_snapshot_data(
-                params["snapshot_id"], user_id=run.created_by
-            )
+            (
+                _snapshot,
+                label_names,
+                unit_labels,
+                units,
+                documents_by_id,
+            ) = await self._load_snapshot_data(params["snapshot_id"], user_id=run.created_by)
             texts = [u.text for u in units]
             y = [unit_labels.get(u.id, []) for u in units]
             groups = [u.corpus_document_id for u in units]
@@ -266,12 +272,23 @@ class RobustnessService(ResearchAccessMixin):
             seed_runs = []
             for seed in params["seeds"]:
                 outcome = _safe_train_eval(
-                    texts, y, groups,
-                    label_names=label_names, config=base_config, algorithm=params["algorithm"],
-                    class_weight=None, regularization_c=1.0, random_seed=seed, test_size=params["test_size"],
+                    texts,
+                    y,
+                    groups,
+                    label_names=label_names,
+                    config=base_config,
+                    algorithm=params["algorithm"],
+                    class_weight=None,
+                    regularization_c=1.0,
+                    random_seed=seed,
+                    test_size=params["test_size"],
                 )
                 seed_runs.append({"seed": seed, **outcome})
-            seed_f1s = [r["macro_f1"] for r in seed_runs if r.get("status") == "ok" and r.get("macro_f1") is not None]
+            seed_f1s = [
+                r["macro_f1"]
+                for r in seed_runs
+                if r.get("status") == "ok" and r.get("macro_f1") is not None
+            ]
             results["seed_stability"] = {
                 "runs": seed_runs,
                 "mean_macro_f1": float(np.mean(seed_f1s)) if seed_f1s else None,
@@ -311,7 +328,11 @@ class RobustnessService(ResearchAccessMixin):
                         random_seed=42,
                     )
                     fold_results.append({"fold": fold_idx, **outcome})
-            fold_f1s = [r["macro_f1"] for r in fold_results if r.get("status") == "ok" and r.get("macro_f1") is not None]
+            fold_f1s = [
+                r["macro_f1"]
+                for r in fold_results
+                if r.get("status") == "ok" and r.get("macro_f1") is not None
+            ]
             results["group_cross_validation"] = {
                 "folds": fold_results,
                 "mean_macro_f1": float(np.mean(fold_f1s)) if fold_f1s else None,
@@ -328,9 +349,16 @@ class RobustnessService(ResearchAccessMixin):
             for variant in preprocessing_variants:
                 config = {**base_config, **variant["overrides"]}
                 outcome = _safe_train_eval(
-                    texts, y, groups,
-                    label_names=label_names, config=config, algorithm=params["algorithm"],
-                    class_weight=None, regularization_c=1.0, random_seed=42, test_size=params["test_size"],
+                    texts,
+                    y,
+                    groups,
+                    label_names=label_names,
+                    config=config,
+                    algorithm=params["algorithm"],
+                    class_weight=None,
+                    regularization_c=1.0,
+                    random_seed=42,
+                    test_size=params["test_size"],
                 )
                 preprocessing_rows.append({"variant": variant["label"], **outcome})
             results["preprocessing_sensitivity"] = preprocessing_rows
@@ -339,9 +367,16 @@ class RobustnessService(ResearchAccessMixin):
             class_weight_rows = []
             for class_weight in params["class_weights"]:
                 outcome = _safe_train_eval(
-                    texts, y, groups,
-                    label_names=label_names, config=base_config, algorithm=params["algorithm"],
-                    class_weight=class_weight, regularization_c=1.0, random_seed=42, test_size=params["test_size"],
+                    texts,
+                    y,
+                    groups,
+                    label_names=label_names,
+                    config=base_config,
+                    algorithm=params["algorithm"],
+                    class_weight=class_weight,
+                    regularization_c=1.0,
+                    random_seed=42,
+                    test_size=params["test_size"],
                 )
                 class_weight_rows.append({"class_weight": class_weight or "none", **outcome})
             results["class_weight_sensitivity"] = class_weight_rows
@@ -361,7 +396,9 @@ class RobustnessService(ResearchAccessMixin):
                     {
                         "held_out_value": None,
                         "status": "not_evaluable",
-                        "reason": f"Need at least two distinct values for group_field={group_field!r}",
+                        "reason": (
+                            f"Need at least two distinct values for group_field={group_field!r}"
+                        ),
                         "macro_f1": None,
                     }
                 )
@@ -373,7 +410,10 @@ class RobustnessService(ResearchAccessMixin):
                                 "held_out_value": split.held_out_value,
                                 "test_size": len(split.test_index),
                                 "status": "not_evaluable",
-                                "reason": f"Empty train or test data for {group_field}={split.held_out_value!r}",
+                                "reason": (
+                                    f"Empty train or test data for "
+                                    f"{group_field}={split.held_out_value!r}"
+                                ),
                                 "macro_f1": None,
                             }
                         )
@@ -395,7 +435,9 @@ class RobustnessService(ResearchAccessMixin):
                             "held_out_value": split.held_out_value,
                             "train_size": len(split.train_index),
                             "test_size": len(split.test_index),
-                            "class_prevalence_test": class_prevalence([y[i] for i in split.test_index]),
+                            "class_prevalence_test": class_prevalence(
+                                [y[i] for i in split.test_index]
+                            ),
                             **outcome,
                         }
                     )
@@ -407,7 +449,9 @@ class RobustnessService(ResearchAccessMixin):
             transfer_result: dict[str, Any] | None = None
             if transfer_field:
                 transfer_values = [
-                    documents_by_id[g].get_field_value(transfer_field) if g in documents_by_id else None
+                    documents_by_id[g].get_field_value(transfer_field)
+                    if g in documents_by_id
+                    else None
                     for g in groups
                 ]
                 try:
@@ -417,7 +461,11 @@ class RobustnessService(ResearchAccessMixin):
                         test_values=params.get("transfer_test_values") or [],
                     )
                 except ValueError as exc:
-                    transfer_result = {"field": transfer_field, "status": "not_evaluable", "reason": str(exc)}
+                    transfer_result = {
+                        "field": transfer_field,
+                        "status": "not_evaluable",
+                        "reason": str(exc),
+                    }
                 else:
                     if not split.train_index or not split.test_index:
                         transfer_result = {
@@ -446,7 +494,9 @@ class RobustnessService(ResearchAccessMixin):
                             "test_values": split.test_values,
                             "train_size": len(split.train_index),
                             "test_size": len(split.test_index),
-                            "class_prevalence_test": class_prevalence([y[i] for i in split.test_index]),
+                            "class_prevalence_test": class_prevalence(
+                                [y[i] for i in split.test_index]
+                            ),
                             **outcome,
                         }
             results["transfer_test"] = transfer_result
@@ -465,7 +515,9 @@ class RobustnessService(ResearchAccessMixin):
                     {
                         "field": temporal_field,
                         "status": "not_evaluable",
-                        "reason": f"Need temporal_field={temporal_field!r} spanning at least two periods",
+                        "reason": (
+                            f"Need temporal_field={temporal_field!r} spanning at least two periods"
+                        ),
                         "macro_f1": None,
                     }
                 ]
@@ -489,7 +541,9 @@ class RobustnessService(ResearchAccessMixin):
                         "test_period": holdout.test_period,
                         "train_size": len(holdout.train_index),
                         "test_size": len(holdout.test_index),
-                        "class_prevalence_test": class_prevalence([y[i] for i in holdout.test_index]),
+                        "class_prevalence_test": class_prevalence(
+                            [y[i] for i in holdout.test_index]
+                        ),
                         **outcome,
                     }
                 ]
@@ -502,8 +556,10 @@ class RobustnessService(ResearchAccessMixin):
                     expanding_rows.append(
                         {
                             "status": "not_evaluable",
-                            "reason": f"temporal_field={temporal_field!r} needs >=3 distinct periods "
-                            "for expanding-window validation",
+                            "reason": (
+                                f"temporal_field={temporal_field!r} needs "
+                                ">=3 distinct periods for expanding-window validation"
+                            ),
                         }
                     )
                 else:
@@ -550,7 +606,10 @@ class RobustnessService(ResearchAccessMixin):
             await self.db.commit()
         except Exception as exc:  # noqa: BLE001
             await self.repo.update_run(
-                run, status=AnalysisRunStatus.FAILED.value, completed_at=_utcnow(), error_message=str(exc)
+                run,
+                status=AnalysisRunStatus.FAILED.value,
+                completed_at=_utcnow(),
+                error_message=str(exc),
             )
             await self.db.commit()
             raise

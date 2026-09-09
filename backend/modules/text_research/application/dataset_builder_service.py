@@ -90,7 +90,9 @@ class DatasetBuilderService(ResearchAccessMixin):
         codebook = await self.get_codebook_or_404(codebook_id, user_id=user_id)
         annotations = await self.repo.list_annotations_for_corpus(corpus_id)
         annotations = [
-            a for a in annotations if a.codebook_version == codebook.version and a.label_id in label_ids
+            a
+            for a in annotations
+            if a.codebook_version == codebook.version and a.label_id in label_ids
         ]
         adjudications = await self.repo.list_adjudications_for_corpus(corpus_id)
         adjudication_lookup = {(a.text_unit_id, a.label_id): a.final_value for a in adjudications}
@@ -118,22 +120,30 @@ class DatasetBuilderService(ResearchAccessMixin):
                     if len(distinct) == 1:
                         resolved.setdefault(label_id, {})[unit_id] = next(iter(distinct))
                     else:
-                        excluded_disagreements.append({"text_unit_id": unit_id, "label_id": label_id})
+                        excluded_disagreements.append(
+                            {"text_unit_id": unit_id, "label_id": label_id}
+                        )
                 elif annotation_source == "majority_vote":
                     votes = Counter(coder_values.values())
                     top_value, top_count = votes.most_common(1)[0]
                     agreement = top_count / sum(votes.values())
                     if minimum_agreement is not None and agreement < minimum_agreement:
-                        excluded_disagreements.append({"text_unit_id": unit_id, "label_id": label_id})
+                        excluded_disagreements.append(
+                            {"text_unit_id": unit_id, "label_id": label_id}
+                        )
                         continue
                     resolved.setdefault(label_id, {})[unit_id] = top_value
                 elif annotation_source == "selected_annotator":
                     if selected_annotator_id in coder_values:
-                        resolved.setdefault(label_id, {})[unit_id] = coder_values[selected_annotator_id]
+                        resolved.setdefault(label_id, {})[unit_id] = coder_values[
+                            selected_annotator_id
+                        ]
                     else:
                         missing.append({"text_unit_id": unit_id, "label_id": label_id})
                 else:
-                    raise HTTPException(status_code=400, detail=f"Unknown annotation_source: {annotation_source}")
+                    raise HTTPException(
+                        status_code=400, detail=f"Unknown annotation_source: {annotation_source}"
+                    )
 
         return resolved, excluded_disagreements, missing
 
@@ -163,9 +173,11 @@ class DatasetBuilderService(ResearchAccessMixin):
             minimum_agreement=minimum_agreement,
         )
 
-        fully_labeled_unit_ids = set.intersection(
-            *(set(resolved.get(label_id, {})) for label_id in label_ids)
-        ) if label_ids else set()
+        fully_labeled_unit_ids = (
+            set.intersection(*(set(resolved.get(label_id, {})) for label_id in label_ids))
+            if label_ids
+            else set()
+        )
 
         candidate_units: list[TextUnit] = await self.repo.list_text_units_by_ids(
             list(fully_labeled_unit_ids)
@@ -207,9 +219,7 @@ class DatasetBuilderService(ResearchAccessMixin):
                 warnings.append(f"Label '{label_name}' has very few positive ('yes') examples.")
 
         annotator_ids: set[str] = set()
-        for per_unit in (
-            await self.repo.list_annotations_for_units(unit_ids) if unit_ids else []
-        ):
+        for per_unit in await self.repo.list_annotations_for_units(unit_ids) if unit_ids else []:
             annotator_ids.add(per_unit.annotator_id)
 
         return {

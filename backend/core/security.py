@@ -28,9 +28,7 @@ async def verify_password_async(password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(subject: str, session_id: str) -> str:
-    expire = datetime.now(UTC) + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    )
+    expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": subject,
         "sid": session_id,

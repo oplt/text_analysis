@@ -7,8 +7,8 @@ from backend.core.security import hash_password_async, verify_password_async
 from backend.lib.resource_cache import (
     get_cached_model_list,
     invalidate_user_directory_cache,
-    user_directory_cache_key,
     set_cached_model_list,
+    user_directory_cache_key,
 )
 from backend.modules.identity_access.models import RefreshSession, User
 from backend.modules.identity_access.repository import IdentityRepository
@@ -29,9 +29,7 @@ class UsersService:
         await invalidate_user_directory_cache()
         return updated
 
-    async def change_password(
-        self, user: User, current_password: str, new_password: str
-    ) -> None:
+    async def change_password(self, user: User, current_password: str, new_password: str) -> None:
         if not await verify_password_async(current_password, user.password_hash):
             raise HTTPException(status_code=400, detail="Current password is incorrect")
         user.password_hash = await hash_password_async(new_password)

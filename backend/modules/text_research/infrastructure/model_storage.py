@@ -8,6 +8,7 @@ artifacts remain on the local filesystem under RESEARCH_ARTIFACT_ROOT.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import logging
 import os
@@ -134,10 +135,8 @@ def save_artifact_with_metadata(obj: Any, *, category: str) -> tuple[str, dict[s
             "created_at": datetime.now(UTC).isoformat(),
         }
     finally:
-        try:
+        with contextlib.suppress(Exception):
             tmp_path.unlink(missing_ok=True)
-        except Exception:
-            pass
 
 
 def save_artifact(obj: Any, *, category: str) -> str:

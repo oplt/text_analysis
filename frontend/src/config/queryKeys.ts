@@ -79,6 +79,19 @@ export const queryKeys = {
         runProvenance: (runId: string) => ["text-research", "run", runId, "provenance"] as const,
         classifiers: (projectId: string, corpusId?: string) =>
             ["text-research", projectId, "classifiers", corpusId ?? "all"] as const,
+        models: (projectId: string, corpusId?: string, lifecycleStatus?: string) =>
+            [
+                "text-research",
+                projectId,
+                "models",
+                corpusId ?? "all",
+                lifecycleStatus ?? "all",
+            ] as const,
+        model: (modelId: string) => ["text-research", "model", modelId] as const,
+        predictionSets: (corpusId: string) =>
+            ["text-research", "corpus", corpusId, "prediction-sets"] as const,
+        predictionSet: (predictionSetId: string) =>
+            ["text-research", "prediction-set", predictionSetId] as const,
         datasetSnapshots: (projectId: string, corpusId?: string) =>
             ["text-research", projectId, "snapshots", corpusId ?? "all"] as const,
         exportManifest: (corpusId: string) =>

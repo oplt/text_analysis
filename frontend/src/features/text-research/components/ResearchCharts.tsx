@@ -108,14 +108,52 @@ export function SimpleLineLikeBars({
     );
 }
 
+export type ReliabilityChartItem = {
+    label: string;
+    kappa?: number | null;
+    fleiss?: number | null;
+    alpha?: number | null;
+};
+
 export function ReliabilityComparisonChart({
     items,
     onSelect,
 }: {
-    items: Array<{ label: string; kappa: number | null; alpha: number | null }>;
+    items: ReliabilityChartItem[];
     onSelect?: (label: string) => void;
 }) {
-    if (!items.length) return <Typography color="text.secondary">No evaluable reliability metrics to plot.</Typography>;
+    if (!items.length) {
+        return (
+            <Typography color="text.secondary">
+                No evaluable reliability metrics to plot.
+            </Typography>
+        );
+    }
+
+    const showCohen = items.some((item) => item.kappa != null);
+    const showFleiss = items.some((item) => item.fleiss != null);
+    const showAlpha = items.some((item) => item.alpha != null);
+
+    const series = [
+        ...(showCohen
+            ? [{ data: items.map((item) => item.kappa ?? null), label: "Cohen's κ" }]
+            : []),
+        ...(showFleiss
+            ? [{ data: items.map((item) => item.fleiss ?? null), label: "Fleiss' κ" }]
+            : []),
+        ...(showAlpha
+            ? [{ data: items.map((item) => item.alpha ?? null), label: "Krippendorff's α" }]
+            : []),
+    ];
+
+    if (!series.length) {
+        return (
+            <Typography color="text.secondary">
+                No evaluable reliability metrics to plot.
+            </Typography>
+        );
+    }
+
     return (
         <Box sx={{ width: "100%" }}>
             <BarChart
@@ -123,10 +161,7 @@ export function ReliabilityComparisonChart({
                 layout="horizontal"
                 yAxis={[{ data: items.map((item) => item.label), scaleType: "band", width: 140 }]}
                 xAxis={[{ min: -1, max: 1 }]}
-                series={[
-                    { data: items.map((item) => item.kappa), label: "Cohen's κ" },
-                    { data: items.map((item) => item.alpha), label: "Krippendorff's α" },
-                ]}
+                series={series}
                 onAxisClick={(_, detail) => {
                     const label = items[detail?.dataIndex ?? -1]?.label;
                     if (label) onSelect?.(label);

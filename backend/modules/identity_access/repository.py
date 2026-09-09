@@ -38,7 +38,7 @@ class IdentityRepository:
         return user
 
     async def create_refresh_session(
-            self, user_id: str, token_hash: str, expires_at: datetime
+        self, user_id: str, token_hash: str, expires_at: datetime
     ) -> RefreshSession:
         session = RefreshSession(
             user_id=user_id,

@@ -53,9 +53,7 @@ class KeynessReportTests(unittest.TestCase):
         chi = keyness.keyness_report(
             self.tokenized_a, self.tokenized_b, method="chi_square", top_n=10
         )
-        fish = keyness.keyness_report(
-            self.tokenized_a, self.tokenized_b, method="fisher", top_n=10
-        )
+        fish = keyness.keyness_report(self.tokenized_a, self.tokenized_b, method="fisher", top_n=10)
         self.assertEqual(chi["method"], "chi_square")
         self.assertEqual(fish["method"], "fisher")
         self.assertTrue(chi["features"])

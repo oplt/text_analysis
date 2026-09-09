@@ -30,9 +30,7 @@ class WorkflowRecipe(BaseModel):
         for step in self.steps:
             for dependency in step.depends_on:
                 if dependency not in names:
-                    raise ValueError(
-                        f"unknown dependency {dependency!r} for step {step.name!r}"
-                    )
+                    raise ValueError(f"unknown dependency {dependency!r} for step {step.name!r}")
 
         indegree: dict[str, int] = {step.name: 0 for step in self.steps}
         adjacency: dict[str, list[str]] = {step.name: [] for step in self.steps}

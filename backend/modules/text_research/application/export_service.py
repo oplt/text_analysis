@@ -40,11 +40,9 @@ def _utcnow() -> datetime:
 
 
 class ExportService(ResearchAccessMixin):
-    async def iter_units_csv(
-        self, corpus_id: str, *, user_id: str, unit_type: str, **filters: Any
-    ):
+    async def iter_units_csv(self, corpus_id: str, *, user_id: str, unit_type: str, **filters: Any):
         """Yield unit CSV rows incrementally for HTTP streaming exports."""
-        corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        await self.get_corpus_or_404(corpus_id, user_id=user_id)
         documents = await self.repo.list_documents(corpus_id)
         filtered_docs = _apply_document_filters(documents, filters or {})
         doc_lookup = {document.id: document for document in filtered_docs}
@@ -54,12 +52,14 @@ class ExportService(ResearchAccessMixin):
         yield _csv_line(["text_unit_id", "corpus_document_id", "document_title", "text"])
         for unit in units:
             document = doc_lookup.get(unit.corpus_document_id)
-            yield _csv_line([unit.id, unit.corpus_document_id, document.title if document else "", unit.text])
+            yield _csv_line(
+                [unit.id, unit.corpus_document_id, document.title if document else "", unit.text]
+            )
 
     async def export_units_csv(
         self, corpus_id: str, *, user_id: str, unit_type: str, **filters: Any
     ) -> str:
-        corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        await self.get_corpus_or_404(corpus_id, user_id=user_id)
         documents = await self.repo.list_documents(corpus_id)
         filtered_docs = _apply_document_filters(documents, filters or {})
         doc_ids = [d.id for d in filtered_docs]
@@ -182,7 +182,14 @@ class ExportService(ResearchAccessMixin):
         buffer = io.StringIO()
         writer = csv.writer(buffer)
         writer.writerow(
-            ["text_unit_id", "trained_model_id", "predicted_labels", "scores", "uncertainty", "created_at"]
+            [
+                "text_unit_id",
+                "trained_model_id",
+                "predicted_labels",
+                "scores",
+                "uncertainty",
+                "created_at",
+            ]
         )
         for prediction in predictions:
             writer.writerow(

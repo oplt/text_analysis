@@ -22,7 +22,7 @@ from backend.modules.text_research.domain.models import ContextualObservation, d
 def _parse_numeric(value: Any) -> float | None:
     if value is None:
         return None
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return float(value)
     text = str(value).strip()
     if not text or text.lower() in {"na", "n/a", "null", "."}:
@@ -133,7 +133,11 @@ class ContextualDatasetService(ResearchAccessMixin):
 
         normalized = {name.strip().lower(): name for name in reader.fieldnames if name}
         country_col = next(
-            (normalized[key] for key in ("country", "nation", "iso3", "iso_code") if key in normalized),
+            (
+                normalized[key]
+                for key in ("country", "nation", "iso3", "iso_code")
+                if key in normalized
+            ),
             None,
         )
         year_col = next(

@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.text_research.domain.models import AnalysisRun, loads
 
-
 ResearchOperation = Literal[
     "segmentation",
     "classification",

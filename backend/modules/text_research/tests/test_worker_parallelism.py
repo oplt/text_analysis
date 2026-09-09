@@ -96,6 +96,7 @@ class WorkerParallelismTests(unittest.TestCase):
         self.assertIn("RESEARCH_WORKER_BLAS_THREADS", policy["environment_variables"])
         self.assertIn("OMP_NUM_THREADS", policy["blas_env_vars"])
         self.assertEqual(policy["recommended_cpu_worker"]["RESEARCH_SKLEARN_N_JOBS"], 1)
+        self.assertIn("celery_prefork", policy["concurrency_policy"])
 
     def test_logging_hooks_register_process_init(self) -> None:
         from backend.workers import logging_hooks

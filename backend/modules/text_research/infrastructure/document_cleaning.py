@@ -243,12 +243,11 @@ def _exclude_bibliography(text: str) -> tuple[str, dict]:
     cut_at: int | None = None
     heading: str | None = None
     for i, line in enumerate(lines):
-        if _BIBLIOGRAPHY_HEADING_RE.match(line):
-            # Only cut if enough body remains before the heading.
-            if i >= 3:
-                cut_at = i
-                heading = line.strip()
-                break
+        # Only cut if enough body remains before the heading.
+        if _BIBLIOGRAPHY_HEADING_RE.match(line) and i >= 3:
+            cut_at = i
+            heading = line.strip()
+            break
     if cut_at is None:
         return text, {"cut": False}
     kept = "\n".join(lines[:cut_at]).rstrip()
@@ -299,7 +298,9 @@ def _apply_custom_regex(text: str, rules: list[dict[str, Any]]) -> tuple[str, di
     return current, {"rules": applied}
 
 
-def apply_cleaning(raw_text: str, config: CleaningConfig | dict[str, Any] | None = None) -> CleaningResult:
+def apply_cleaning(
+    raw_text: str, config: CleaningConfig | dict[str, Any] | None = None
+) -> CleaningResult:
     """Apply optional cleaning steps to a copy of ``raw_text``.
 
     Original ``raw_text`` is never modified. Discarded content is summarized in
@@ -453,7 +454,9 @@ def preview_cleaning(
     config: CleaningConfig | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Preview cleaning on sample strings without persistence."""
-    resolved = CleaningConfig.from_dict(config if isinstance(config, dict) or config is None else config.to_dict())
+    resolved = CleaningConfig.from_dict(
+        config if isinstance(config, dict) or config is None else config.to_dict()
+    )
     rows: list[dict[str, Any]] = []
     for text in texts:
         result = apply_cleaning(text, resolved)

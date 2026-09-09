@@ -2,9 +2,9 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
+from backend.lib.vectors import cosine_similarity
 from backend.modules.rag.domain.models import RetrievedChunk
 from backend.modules.rag.infrastructure.pgvector_adapter import PgVectorAdapter
-from backend.lib.vectors import cosine_similarity
 
 
 class RetrievalFilterTest(unittest.IsolatedAsyncioTestCase):

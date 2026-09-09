@@ -65,9 +65,8 @@ class IngestionQaService(ResearchAccessMixin):
             for document in documents:
                 canonical = canonical_by_doc.get(document.id)
                 rag_document = await rag_repo.get_document(document.rag_document_id)
-                filename = (
-                    (canonical.source_filename if canonical else None)
-                    or (rag_document.original_filename if rag_document else None)
+                filename = (canonical.source_filename if canonical else None) or (
+                    rag_document.original_filename if rag_document else None
                 )
                 content_type = rag_document.content_type if rag_document else None
 
@@ -76,7 +75,7 @@ class IngestionQaService(ResearchAccessMixin):
                         {
                             "code": "extraction_failure",
                             "severity": "error",
-                            "message": "No canonical research source — extraction/persist incomplete.",
+                            "message": "No canonical research source — extraction incomplete.",
                             "details": {},
                         }
                     ]
@@ -102,10 +101,7 @@ class IngestionQaService(ResearchAccessMixin):
                         has_extraction_failure=False,
                     )
                     findings = [f.to_dict() for f in findings_objs]
-                    raw_checksum = (
-                        canonical.raw_extracted_checksum
-                        or metrics["text_checksum"]
-                    )
+                    raw_checksum = canonical.raw_extracted_checksum or metrics["text_checksum"]
                     metrics = {
                         **metrics,
                         "has_canonical": True,
@@ -186,7 +182,9 @@ class IngestionQaService(ResearchAccessMixin):
                             "mutates_text": False,
                             "raw_representation": "CanonicalResearchSource.raw_extracted_text",
                             "cleaned_representation": "CanonicalResearchSource.canonical_text",
-                            "transformation_metadata": "CanonicalResearchSource.transformation_metadata_json",
+                            "transformation_metadata": (
+                                "CanonicalResearchSource.transformation_metadata_json"
+                            ),
                         },
                         "corpus_findings": corpus_findings,
                         "documents": per_document,

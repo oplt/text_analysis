@@ -85,6 +85,7 @@ def score_distribution_drift(
             }
         )
     except Exception:  # noqa: BLE001
+
         def _mean_std(values: list[float]) -> tuple[float, float]:
             mean = sum(values) / len(values)
             if len(values) < 2:

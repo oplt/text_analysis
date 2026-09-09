@@ -11,8 +11,9 @@ from backend.modules.text_research.infrastructure.artifact_store import Artifact
 
 class ArtifactStoreTests(unittest.TestCase):
     def test_stores_payload_with_content_addressed_lineage(self):
-        with tempfile.TemporaryDirectory() as artifact_dir, patch.dict(
-            "os.environ", {"RESEARCH_ARTIFACT_DIR": artifact_dir}
+        with (
+            tempfile.TemporaryDirectory() as artifact_dir,
+            patch.dict("os.environ", {"RESEARCH_ARTIFACT_DIR": artifact_dir}),
         ):
             store = ArtifactStore()
             descriptor = store.put(

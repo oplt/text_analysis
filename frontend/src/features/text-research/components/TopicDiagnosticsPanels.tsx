@@ -17,6 +17,7 @@ import { MetricCards, RankedBarChart, ScientificLineChart } from "./ResearchChar
 import { ResearchResultsTable } from "./ResearchResults";
 import { RunStatusChip } from "./ResearchShared";
 import type { AnalysisRun } from "../types";
+import { topicFilterPayload, type SharedTopicFilters } from "./topicFilters";
 
 function asRecord(value: unknown): Record<string, unknown> | null {
     return value && typeof value === "object" && !Array.isArray(value)
@@ -71,35 +72,6 @@ function parseRepresentatives(results: unknown, topicId: string): Representative
 }
 
 type ProfileOption = { id: string; name: string };
-
-type SharedTopicFilters = {
-    organization: string;
-    language: string;
-    region: string;
-    culturalSphere: string;
-    publicationYearMin: string;
-    publicationYearMax: string;
-};
-
-function optionalText(value: string): string | undefined {
-    const trimmed = value.trim();
-    return trimmed ? trimmed : undefined;
-}
-
-function filterPayload(filters: SharedTopicFilters) {
-    return {
-        organization: optionalText(filters.organization),
-        language: optionalText(filters.language),
-        region: optionalText(filters.region),
-        cultural_sphere: optionalText(filters.culturalSphere),
-        publication_year_min: filters.publicationYearMin
-            ? Number(filters.publicationYearMin)
-            : undefined,
-        publication_year_max: filters.publicationYearMax
-            ? Number(filters.publicationYearMax)
-            : undefined,
-    };
-}
 
 function CorpusFilterFields({
     filters,
@@ -181,7 +153,7 @@ export function TopicKSweepView({
         random_seed: number;
         preprocessing_profile_id?: string;
         holdout_fraction?: number;
-    } & ReturnType<typeof filterPayload>) => void;
+    } & ReturnType<typeof topicFilterPayload>) => void;
     isPending: boolean;
     run: AnalysisRun | null | undefined;
 }) {
@@ -307,7 +279,7 @@ export function TopicKSweepView({
                         preprocessing_profile_id: profileId || undefined,
                         holdout_fraction:
                             holdout != null && !Number.isNaN(holdout) ? holdout : undefined,
-                        ...filterPayload(filters),
+                        ...topicFilterPayload(filters),
                     });
                 }}
                 sx={{ alignSelf: "flex-start" }}
@@ -378,7 +350,6 @@ export function TopicKSweepView({
 
 export function TopicSeedStabilityView({
     corpusId,
-    unitType,
     profiles,
     filters,
     onFiltersChange,
@@ -387,7 +358,6 @@ export function TopicSeedStabilityView({
     run,
 }: {
     corpusId: string | null;
-    unitType: string;
     profiles: ProfileOption[];
     filters: SharedTopicFilters;
     onFiltersChange: (next: SharedTopicFilters) => void;
@@ -397,7 +367,7 @@ export function TopicSeedStabilityView({
         seeds: number[];
         max_iterations: number;
         preprocessing_profile_id?: string;
-    } & ReturnType<typeof filterPayload>) => void;
+    } & ReturnType<typeof topicFilterPayload>) => void;
     isPending: boolean;
     run: AnalysisRun | null | undefined;
 }) {
@@ -488,7 +458,7 @@ export function TopicSeedStabilityView({
                         seeds,
                         max_iterations: maxIterations,
                         preprocessing_profile_id: profileId || undefined,
-                        ...filterPayload(filters),
+                        ...topicFilterPayload(filters),
                     });
                 }}
                 sx={{ alignSelf: "flex-start" }}
@@ -542,9 +512,10 @@ export function TopicSeedStabilityView({
                 <ResearchResultsTable
                     rows={(results.per_seed_diagnostics as unknown[]).map((row, index) => {
                         const item = asRecord(row) ?? {};
+                        const seedValue = num(item.seed);
                         return {
                             id: String(item.seed ?? index),
-                            seed: item.seed,
+                            seed: seedValue ?? (item.seed != null ? String(item.seed) : null),
                             coherence: num(item.coherence),
                             diversity: num(item.topic_diversity),
                             overlap: num(item.top_term_overlap),
@@ -875,12 +846,3 @@ export function TopicComparisonView({
     );
 }
 
-export type { SharedTopicFilters };
-export const DEFAULT_TOPIC_FILTERS: SharedTopicFilters = {
-    organization: "",
-    language: "",
-    region: "",
-    culturalSphere: "",
-    publicationYearMin: "",
-    publicationYearMax: "",
-};

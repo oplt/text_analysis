@@ -31,7 +31,6 @@ from backend.modules.text_research.infrastructure.weighting import (
     WeightingScheme,
     apply_weighting,
     describe_weighting,
-    list_weighting_schemes,
     resolve_weighting_scheme,
 )
 
@@ -104,9 +103,7 @@ def moving_average_ttr(tokens: list[str], window: int = DEFAULT_MATTR_WINDOW) ->
         raise ValueError("window must be >= 2")
     if len(tokens) < window:
         return None
-    scores = [
-        type_token_ratio(tokens[i : i + window]) for i in range(0, len(tokens) - window + 1)
-    ]
+    scores = [type_token_ratio(tokens[i : i + window]) for i in range(0, len(tokens) - window + 1)]
     return statistics.mean(scores) if scores else None
 
 
@@ -187,9 +184,7 @@ def corpus_statistics(
     else:
         n_documents = n_units
 
-    diversity = lexical_diversity(
-        tokenized, mattr_window=mattr_window, msttr_window=msttr_window
-    )
+    diversity = lexical_diversity(tokenized, mattr_window=mattr_window, msttr_window=msttr_window)
 
     return {
         # ``document_count`` kept for backward compatibility (= text units when
@@ -396,9 +391,7 @@ def run_standardized_pipeline(
     else:
         result.stages["dfm"] = {"status": "skipped"}
 
-    result.statistics = corpus_statistics(
-        texts, tokenized, document_ids=document_ids
-    )
+    result.statistics = corpus_statistics(texts, tokenized, document_ids=document_ids)
     result.stages["statistical_analysis"] = {
         "status": "completed",
         "metrics": {
@@ -550,9 +543,7 @@ def validate_ngram_order(n: int, *, skip: int = 0) -> int:
     """Validate n-gram order ``n`` (and optional skip) within safe bounds."""
     order = int(n)
     if order < MIN_NGRAM_N or order > MAX_NGRAM_N:
-        raise ValueError(
-            f"n must be between {MIN_NGRAM_N} and {MAX_NGRAM_N} inclusive (got {n})"
-        )
+        raise ValueError(f"n must be between {MIN_NGRAM_N} and {MAX_NGRAM_N} inclusive (got {n})")
     if int(skip) != 0:
         # Contiguous n-grams only for now; skip-grams reserved without silent no-op.
         raise ValueError(
@@ -713,6 +704,7 @@ def kwic(
         token_attribute=token_attribute,
         max_matches=max_matches,
     )
+
 
 def dictionary_hits(tokenized: list[list[str]], terms: list[str]) -> dict[str, Any]:
     """Corpus-level dictionary hit counts for a flat term list (legacy helper)."""
@@ -965,9 +957,9 @@ def build_dfm_matrix(
                 if resolved_vectorizer != "hashing"
                 else [f"hash_{i}" for i in range(preview_cols)]
             ),
-            "unit_ids": (list(unit_ids) if unit_ids is not None else [str(i) for i in range(n_units)])[
-                :preview_rows
-            ],
+            "unit_ids": (
+                list(unit_ids) if unit_ids is not None else [str(i) for i in range(n_units)]
+            )[:preview_rows],
             "values": preview_values,
         },
     }
@@ -990,7 +982,6 @@ def build_dfm_matrix(
     return result
 
 
-
 def _config_dict(config: PreprocessingConfig | dict[str, Any] | None) -> dict[str, Any]:
     if config is None:
         return {}
@@ -1006,7 +997,10 @@ def _tokenize_texts(
     cache_key: str | None = None,
 ) -> list[list[str]]:
     if cache_key:
-        from backend.modules.text_research.infrastructure.feature_cache import get_cached, set_cached
+        from backend.modules.text_research.infrastructure.feature_cache import (
+            get_cached,
+            set_cached,
+        )
 
         cached = get_cached(cache_key)
         if cached is not None:
@@ -1142,13 +1136,26 @@ def build_dfm(
 
 
 def dfm_summary(result: dict[str, Any]) -> dict[str, Any]:
+    from backend.modules.text_research.infrastructure.scientific_warnings import (
+        dfm_scientific_warnings,
+        estimate_dfm_memory_bytes,
+    )
+
     dimensions = result.get("dimensions", {})
     sparse = result.get("sparse") or {}
+    unit_count = int(dimensions.get("units", 0) or 0)
+    feature_count = int(dimensions.get("features", 0) or 0)
+    nnz = int(result.get("nnz", sparse.get("nnz", 0)) or 0)
+    density = float(result.get("density", 0.0) or 0.0)
+    memory = estimate_dfm_memory_bytes(
+        unit_count=unit_count, feature_count=feature_count, nnz=nnz
+    )
     summary = {
-        "unit_count": dimensions.get("units", 0),
-        "feature_count": dimensions.get("features", 0),
-        "density": result.get("density", 0.0),
-        "nnz": result.get("nnz", sparse.get("nnz", 0)),
+        "unit_count": unit_count,
+        "feature_count": feature_count,
+        "density": density,
+        "sparsity": max(0.0, min(1.0, 1.0 - density)),
+        "nnz": nnz,
         "mode": result.get("mode") or result.get("weighting"),
         "weighting": result.get("weighting") or result.get("mode"),
         "storage": result.get("storage", "sparse"),
@@ -1158,6 +1165,15 @@ def dfm_summary(result: dict[str, Any]) -> dict[str, Any]:
         "has_preprocessing_config": result.get("preprocessing_config") is not None,
         "has_sparse": "sparse" in result,
         "has_dense": "dense_matrix" in result,
+        "estimated_memory_bytes": memory["preferred_bytes"],
+        "estimated_memory": memory,
+        "scientific_warnings": dfm_scientific_warnings(
+            unit_count=unit_count,
+            feature_count=feature_count,
+            nnz=nnz,
+            density=density,
+            estimated_memory_bytes=memory["dense_float64_bytes"],
+        ),
     }
     if result.get("weighting_scheme"):
         summary["weighting_scheme"] = result["weighting_scheme"]
@@ -1453,6 +1469,7 @@ def kwic_search(
         max_matches=max_matches,
     )
 
+
 def dictionary_analysis(
     texts: list[str],
     unit_ids: list[str],
@@ -1573,9 +1590,7 @@ def similarity_for_texts(
             )
         missing = [item_id for item_id in ids if item_id not in embeddings]
         if missing:
-            raise ValueError(
-                f"Missing embeddings for {len(missing)} item(s), e.g. {missing[:5]!r}"
-            )
+            raise ValueError(f"Missing embeddings for {len(missing)} item(s), e.g. {missing[:5]!r}")
         embed_vectors = [embeddings[item_id] for item_id in ids]
         tokenized = None
     else:

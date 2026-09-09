@@ -121,8 +121,6 @@ class ResearchAccessMixin:
         return dataset
 
     async def get_prediction_set_or_404(self, prediction_set_id: str, *, user_id: str):
-        from backend.modules.text_research.domain.models import PredictionSet
-
         prediction_set = await self.repo.get_prediction_set(prediction_set_id)
         if prediction_set is None:
             raise HTTPException(status_code=404, detail="Prediction set not found")

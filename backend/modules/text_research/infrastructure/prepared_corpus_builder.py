@@ -210,8 +210,9 @@ def prepare_texts_cached(
 ) -> PreparedCorpusArtifact:
     """Build or reuse an immutable prepared corpus by full scientific inputs.
 
-    The cache covers only deterministic cleaning/tokenization outputs.  It is
-    deliberately never used for fitted vectorizers, IDF, or classifiers.
+    Uses the layered stage cache (L1/L2/L3) with stampede protection. Covers
+    only deterministic cleaning/tokenization outputs — never fitted
+    vectorizers, IDF, supervised selectors, or classifiers.
     """
     from backend.modules.text_research.infrastructure import stage_cache
 
@@ -234,26 +235,35 @@ def prepare_texts_cached(
             json.dumps(cache_spec, sort_keys=True, default=str).encode("utf-8")
         ).hexdigest(),
         params=cache_spec,
+        preprocessing_config=resolved_config,
     )
-    cached = stage_cache.get_stage(cache_key)
-    if cached is not None and isinstance(cached.get("payload"), PreparedCorpusArtifact):
-        return cached["payload"]
 
-    prepared = prepare_texts(
+    def _factory() -> tuple[dict[str, Any], PreparedCorpusArtifact]:
+        prepared = prepare_texts(
+            texts,
+            config,
+            unit_ids=unit_ids,
+            document_ids=document_ids,
+            **kwargs,
+        )
+        return (
+            {
+                "stage_name": "prepared_corpus",
+                "corpus_checksum": prepared.corpus_checksum,
+                "pipeline_checksum": prepared.pipeline_checksum,
+            },
+            prepared,
+        )
+
+    cached = stage_cache.get_or_compute(cache_key, _factory, payload_format="joblib")
+    payload = cached.get("payload")
+    if isinstance(payload, PreparedCorpusArtifact):
+        return payload
+    # Joblib round-trip across processes may lose exact type in edge cases.
+    return prepare_texts(
         texts,
         config,
         unit_ids=unit_ids,
         document_ids=document_ids,
         **kwargs,
     )
-    stage_cache.put_stage(
-        cache_key,
-        meta={
-            "stage_name": "prepared_corpus",
-            "corpus_checksum": prepared.corpus_checksum,
-            "pipeline_checksum": prepared.pipeline_checksum,
-        },
-        payload=prepared,
-        payload_format="joblib",
-    )
-    return prepared

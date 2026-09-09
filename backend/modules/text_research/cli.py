@@ -8,27 +8,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
-
-def _json_default(value: Any) -> Any:
-    if hasattr(value, "model_dump"):
-        return value.model_dump()
-    if hasattr(value, "__dict__") and not isinstance(value, type):
-        try:
-            return dict(value.__dict__)
-        except Exception:
-            return str(value)
-    return str(value)
-
-
 from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
 from backend.modules.text_research.domain.prepared_corpus import compute_pipeline_checksum
 from backend.modules.text_research.infrastructure.drift_monitoring import build_drift_report
 from backend.modules.text_research.infrastructure.pipeline_compiler import compile_plan
+from backend.modules.text_research.infrastructure.prepared_corpus_builder import prepare_texts
 from backend.modules.text_research.infrastructure.preprocessing import (
     PreprocessingConfig,
     describe_implementation,
 )
-from backend.modules.text_research.infrastructure.prepared_corpus_builder import prepare_texts
 from backend.modules.text_research.infrastructure.text_transforms import (
     FixEncoding,
     Lowercase,
@@ -40,6 +28,17 @@ from backend.modules.text_research.infrastructure.topic_engines import (
     SklearnLDAEngine,
     SklearnNMFEngine,
 )
+
+
+def _json_default(value: Any) -> Any:
+    if hasattr(value, "model_dump"):
+        return value.model_dump()
+    if hasattr(value, "__dict__") and not isinstance(value, type):
+        try:
+            return dict(value.__dict__)
+        except Exception:
+            return str(value)
+    return str(value)
 
 
 def _load_json_arg(raw: str | None, path: str | None) -> dict[str, Any]:
@@ -127,7 +126,9 @@ def cmd_describe_plugins(_args: argparse.Namespace) -> int:
 
 def cmd_prepare_demo(args: argparse.Namespace) -> int:
     path = Path(args.texts_file)
-    texts = [line.rstrip("\n") for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    texts = [
+        line.rstrip("\n") for line in path.read_text(encoding="utf-8").splitlines() if line.strip()
+    ]
     config = PreprocessingConfig.from_dict(json.loads(args.config) if args.config else {})
     prepared = prepare_texts(texts, config)
     output = {

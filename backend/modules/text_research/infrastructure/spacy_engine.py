@@ -36,8 +36,7 @@ class SpacyLinguisticEngine:
             import spacy
         except ImportError as exc:
             raise ValueError(
-                "SpacyLinguisticEngine requires optional spaCy; "
-                "install with: pip install '.[nlp]'"
+                "SpacyLinguisticEngine requires optional spaCy; install with: pip install '.[nlp]'"
             ) from exc
         try:
             self._nlp = spacy.load(self.model_name)

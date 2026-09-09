@@ -7,6 +7,8 @@ import {
     FormControlLabel,
     InputLabel,
     MenuItem,
+    Radio,
+    RadioGroup,
     Select,
     Stack,
     TextField,
@@ -22,7 +24,7 @@ import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { useAuth } from "../../../hooks/useAuth";
 import { useResearchContext } from "../hooks/useResearchContext";
-import { UNIT_TYPE_OPTIONS, type UnitType } from "../types";
+import { UNIT_TYPE_OPTIONS, type AnnotationMode, type UnitType } from "../types";
 
 type Strategy = "overlap" | "shared" | "disjoint";
 
@@ -62,6 +64,8 @@ export function AnnotationSetupPanel() {
     const [selectedAnnotators, setSelectedAnnotators] = useState<string[]>(
         currentUser ? [currentUser.id] : []
     );
+    const [annotationMode, setAnnotationMode] = useState<AnnotationMode>("blind_reliability");
+    const [campaignName, setCampaignName] = useState("");
 
     const usersQuery = useQuery({
         queryKey: queryKeys.users.directory,
@@ -89,6 +93,10 @@ export function AnnotationSetupPanel() {
                 annotator_ids: selectedAnnotators,
                 strategy,
                 overlap_count: strategy === "overlap" ? overlapCount : undefined,
+                create_campaign: true,
+                annotation_mode: annotationMode,
+                campaign_name: campaignName.trim() || undefined,
+                codebook_id: ctx.selectedCodebookId || undefined,
             }),
         onSuccess: (result) => {
             ctx.setUnitType(unitType);
@@ -98,8 +106,10 @@ export function AnnotationSetupPanel() {
             void client.invalidateQueries({
                 queryKey: queryKeys.textResearch.annotationProgress(ctx.selectedCorpusId),
             });
+            const modeLabel =
+                result.annotation_mode === "ai_assisted" ? "AI-assisted" : "Blind reliability";
             showToast({
-                message: `Created ${result.assigned_count} task(s) across ${result.unique_units} units (${result.overlap_units} overlap).`,
+                message: `Created ${result.assigned_count} task(s) across ${result.unique_units} units (${result.overlap_units} overlap) · ${modeLabel} campaign.`,
                 severity: "success",
             });
         },
@@ -170,6 +180,61 @@ export function AnnotationSetupPanel() {
                         sx={{ width: 150 }}
                     />
                 ) : null}
+            </Stack>
+
+            <Stack spacing={1}>
+                <Typography variant="subtitle2">Annotation mode</Typography>
+                <RadioGroup
+                    value={annotationMode}
+                    onChange={(event) => setAnnotationMode(event.target.value as AnnotationMode)}
+                >
+                    <FormControlLabel
+                        value="blind_reliability"
+                        control={<Radio size="small" />}
+                        label={
+                            <Stack spacing={0.25}>
+                                <Typography variant="body2">Blind reliability coding</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Independent human coding. Model predictions and other coders&apos;
+                                    decisions are hidden.
+                                </Typography>
+                            </Stack>
+                        }
+                        sx={{ alignItems: "flex-start", ml: 0 }}
+                    />
+                    <FormControlLabel
+                        value="ai_assisted"
+                        control={<Radio size="small" />}
+                        label={
+                            <Stack spacing={0.25}>
+                                <Typography variant="body2">AI-assisted coding</Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    Model/AI suggestions may be shown to annotators.
+                                </Typography>
+                            </Stack>
+                        }
+                        sx={{ alignItems: "flex-start", ml: 0 }}
+                    />
+                </RadioGroup>
+                {annotationMode === "blind_reliability" ? (
+                    <Alert severity="info">
+                        Blind reliability coding hides model suggestions and peer annotations until
+                        tasks are complete, supporting independent double coding.
+                    </Alert>
+                ) : (
+                    <Alert severity="info">
+                        AI-assisted coding may show model suggestions alongside the codebook. Suggestions
+                        are never auto-applied — annotators decide each label.
+                    </Alert>
+                )}
+                <TextField
+                    size="small"
+                    label="Campaign name (optional)"
+                    value={campaignName}
+                    onChange={(event) => setCampaignName(event.target.value)}
+                    placeholder="e.g. Wave 1 reliability sample"
+                    fullWidth
+                />
             </Stack>
 
             <Stack spacing={0.5}>

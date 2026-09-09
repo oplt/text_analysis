@@ -13,11 +13,9 @@ from typing import Any, Protocol, runtime_checkable
 class TopicModelEngine(Protocol):
     name: str
 
-    def fit(self, texts: list[str], **kwargs: Any) -> dict[str, Any]:
-        ...
+    def fit(self, texts: list[str], **kwargs: Any) -> dict[str, Any]: ...
 
-    def transform(self, texts: list[str], **kwargs: Any) -> dict[str, Any]:
-        ...
+    def transform(self, texts: list[str], **kwargs: Any) -> dict[str, Any]: ...
 
 
 class SklearnLDAEngine:

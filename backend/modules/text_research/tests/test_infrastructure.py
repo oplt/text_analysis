@@ -109,8 +109,20 @@ class SegmentationTests(unittest.TestCase):
         text = "Page one body.\n\nPage two body."
         # Mimic canonical double-newline join provenance.
         page_provenance = [
-            {"index": 0, "page_number": 1, "section_heading": "Intro", "char_start": 0, "char_end": 14},
-            {"index": 1, "page_number": 2, "section_heading": None, "char_start": 16, "char_end": 29},
+            {
+                "index": 0,
+                "page_number": 1,
+                "section_heading": "Intro",
+                "char_start": 0,
+                "char_end": 14,
+            },
+            {
+                "index": 1,
+                "page_number": 2,
+                "section_heading": None,
+                "char_start": 16,
+                "char_end": 29,
+            },
         ]
         units = segmentation.segment_document(text, "paragraph", page_provenance=page_provenance)
         self.assertEqual(units[0]["page_number"], 1)
@@ -218,7 +230,11 @@ class PreprocessingTests(unittest.TestCase):
     def test_stemming_and_lemmatization_mutually_exclusive(self):
         with self.assertRaises(ValueError):
             preprocessing.PreprocessingConfig.from_dict(
-                {**preprocessing.DEFAULT_PREPROCESSING_CONFIG, "stemming": True, "lemmatization": True}
+                {
+                    **preprocessing.DEFAULT_PREPROCESSING_CONFIG,
+                    "stemming": True,
+                    "lemmatization": True,
+                }
             )
 
     def test_unicode_aware_tokenization(self):
@@ -518,9 +534,7 @@ class QuantitativeTests(unittest.TestCase):
 
     def test_trim_token_vocabulary_removes_rare_terms(self):
         tokenized = [["alpha", "beta"], ["alpha", "gamma"], ["alpha"]]
-        trimmed, meta = quantitative.trim_token_vocabulary(
-            tokenized, min_document_frequency=2
-        )
+        trimmed, meta = quantitative.trim_token_vocabulary(tokenized, min_document_frequency=2)
         self.assertEqual(meta["features_after"], 1)
         self.assertTrue(all(tok == "alpha" for row in trimmed for tok in row))
 
@@ -535,7 +549,9 @@ class QuantitativeTests(unittest.TestCase):
         self.assertEqual(results[0]["rank"], 1)
         self.assertAlmostEqual(results[-1]["cumulative_share"], 1.0, places=6)
         self.assertIn("document_frequency", term_lookup["universal"])
-        self.assertEqual(term_lookup["universal"]["raw_frequency"], term_lookup["universal"]["raw_count"])
+        self.assertEqual(
+            term_lookup["universal"]["raw_frequency"], term_lookup["universal"]["raw_count"]
+        )
 
     def test_term_frequencies_configurable_rate(self):
         per_100 = quantitative.term_frequencies(self.tokenized, rate_per=100)
@@ -591,7 +607,9 @@ class QuantitativeTests(unittest.TestCase):
         self.assertEqual(len(report["ngrams"]), 3)
         self.assertFalse(report["metadata"]["skip_grams_supported"])
         self.assertAlmostEqual(
-            sum(r["relative_frequency"] for r in quantitative.ngram_frequencies(self.tokenized, n=2)),
+            sum(
+                r["relative_frequency"] for r in quantitative.ngram_frequencies(self.tokenized, n=2)
+            ),
             1.0,
             places=6,
         )
@@ -650,7 +668,14 @@ class QuantitativeTests(unittest.TestCase):
     def test_build_dfm_tfidf_mode_has_float_weights(self):
         result = quantitative.build_dfm_matrix(self.tokenized, mode="tfidf")
         self.assertEqual(result["mode"], "tfidf")
-        self.assertTrue(any(isinstance(v, float) and v not in (0.0, 1.0) for row in result["dense_matrix"] for v in row) or result["nnz"] > 0)
+        self.assertTrue(
+            any(
+                isinstance(v, float) and v not in (0.0, 1.0)
+                for row in result["dense_matrix"]
+                for v in row
+            )
+            or result["nnz"] > 0
+        )
 
     def test_build_dfm_tf_and_sublinear(self):
         tf = quantitative.build_dfm_matrix(self.tokenized, mode="tf")
@@ -665,9 +690,7 @@ class QuantitativeTests(unittest.TestCase):
         self.assertIn("sparse", sub)
 
     def test_build_dfm_force_sparse_only_skips_dense(self):
-        result = quantitative.build_dfm_matrix(
-            self.tokenized, mode="count", force_sparse_only=True
-        )
+        result = quantitative.build_dfm_matrix(self.tokenized, mode="count", force_sparse_only=True)
         self.assertEqual(result["storage"], "sparse")
         self.assertNotIn("dense_matrix", result)
         self.assertEqual(result["sparse"]["shape"][0], 3)
@@ -815,9 +838,7 @@ class ClassifierTests(unittest.TestCase):
             random_seed=5,
         )
         self.assertIn("per_class", result["metrics"])
-        self.assertEqual(
-            set(result["metrics"]["multilabel_confusion_matrices"]), set(label_names)
-        )
+        self.assertEqual(set(result["metrics"]["multilabel_confusion_matrices"]), set(label_names))
         self.assertTrue(
             all(
                 len(matrix) == 2 and all(len(row) == 2 for row in matrix)

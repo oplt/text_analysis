@@ -31,7 +31,7 @@ import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { useSnackbar } from "../../../app/snackbarContext";
 import { useResearchContext } from "../hooks/useResearchContext";
-import type { CleaningPreview } from "../types";
+import type { CleaningPreview, CleaningProfile } from "../types";
 
 const DEFAULT_CONFIG: Record<string, unknown> = {
     unicode_normalization: null,
@@ -146,49 +146,129 @@ export function CleaningRunPanel({ profileId }: { profileId: string | null }) {
     );
 }
 
+function cleaningProfileDraft(profile: CleaningProfile) {
+    return {
+        name: profile.name,
+        description: profile.description ?? "",
+        version: profile.version,
+        config: { ...DEFAULT_CONFIG, ...profile.config },
+        rulesText: JSON.stringify(profile.config.custom_regex ?? [], null, 2),
+    };
+}
+
+function CleaningProfileFields({
+    profile,
+    onSave,
+    onDelete,
+    savePending,
+    deletePending,
+}: {
+    profile: CleaningProfile;
+    onSave: (draft: {
+        name: string;
+        description: string;
+        version: string;
+        config: Record<string, unknown>;
+        rulesText: string;
+    }) => void;
+    onDelete: () => void;
+    savePending: boolean;
+    deletePending: boolean;
+}) {
+    const initial = cleaningProfileDraft(profile);
+    const [name, setName] = useState(initial.name);
+    const [description, setDescription] = useState(initial.description);
+    const [version, setVersion] = useState(initial.version);
+    const [config, setConfig] = useState<Record<string, unknown>>(initial.config);
+    const [rulesText, setRulesText] = useState(initial.rulesText);
+
+    return (
+        <>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+                <Button
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={() => onSave({ name, description, version, config, rulesText })}
+                    disabled={savePending}
+                >
+                    Save
+                </Button>
+                <Button
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={onDelete}
+                    disabled={deletePending}
+                >
+                    Delete
+                </Button>
+            </Stack>
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+                <TextField label="Name" size="small" value={name} onChange={(event) => setName(event.target.value)} fullWidth />
+                <TextField label="Version" size="small" value={version} onChange={(event) => setVersion(event.target.value)} sx={{ minWidth: 130 }} />
+            </Stack>
+            <TextField label="Description" size="small" value={description} onChange={(event) => setDescription(event.target.value)} fullWidth />
+            <TextField select label="Unicode normalization" size="small" value={String(config.unicode_normalization ?? "")} onChange={(event) => setConfig({ ...config, unicode_normalization: event.target.value || null })} sx={{ maxWidth: 250 }}>
+                <MenuItem value="">None</MenuItem>{["NFC", "NFKC", "NFD", "NFKD"].map((form) => <MenuItem key={form} value={form}>{form}</MenuItem>)}
+            </TextField>
+            <Stack direction={{ xs: "column", sm: "row" }} flexWrap="wrap" useFlexGap>
+                {TOGGLES.map(([key, label]) => <FormControlLabel key={key} control={<Checkbox checked={Boolean(config[key])} onChange={(event) => setConfig({ ...config, [key]: event.target.checked })} />} label={label} />)}
+            </Stack>
+            <TextField label="Custom replacement rules (JSON array)" value={rulesText} onChange={(event) => setRulesText(event.target.value)} multiline minRows={3} helperText='Each rule uses {"pattern":"…","replacement":"…","count":0}.' />
+        </>
+    );
+}
+
 export function CleaningProfileEditor({ onProfileChange }: { onProfileChange: (profileId: string | null) => void }) {
     const ctx = useResearchContext();
     const client = useQueryClient();
     const { showToast } = useSnackbar();
     const [profileId, setProfileId] = useState("");
-    const [name, setName] = useState("Default cleaning profile");
-    const [description, setDescription] = useState("");
-    const [version, setVersion] = useState("1.0");
-    const [config, setConfig] = useState<Record<string, unknown>>(DEFAULT_CONFIG);
-    const [rulesText, setRulesText] = useState("[]");
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.cleaningProfiles(ctx.projectId),
         queryFn: () => listCleaningProfiles(ctx.projectId),
         enabled: Boolean(ctx.projectId),
     });
-    const profiles = profilesQuery.data ?? [];
-    const selected = useMemo(() => profiles.find((profile) => profile.id === profileId), [profileId, profiles]);
+    const profiles = useMemo(() => profilesQuery.data ?? [], [profilesQuery.data]);
+    const effectiveProfileId = useMemo(() => {
+        if (!profiles.length) return "";
+        if (profileId && profiles.some((profile) => profile.id === profileId)) return profileId;
+        return profiles[0].id;
+    }, [profileId, profiles]);
+    const selected = useMemo(
+        () => profiles.find((profile) => profile.id === effectiveProfileId) ?? null,
+        [profiles, effectiveProfileId]
+    );
 
-    useEffect(() => {
-        if (!profiles.length) return;
-        if (!profileId || !selected) setProfileId(profiles[0].id);
-    }, [profileId, profiles, selected]);
-    useEffect(() => {
-        if (!selected) return;
-        setName(selected.name);
-        setDescription(selected.description ?? "");
-        setVersion(selected.version);
-        setConfig({ ...DEFAULT_CONFIG, ...selected.config });
-        setRulesText(JSON.stringify(selected.config.custom_regex ?? [], null, 2));
-    }, [selected]);
-    useEffect(() => onProfileChange(profileId || null), [onProfileChange, profileId]);
+    useEffect(() => onProfileChange(effectiveProfileId || null), [onProfileChange, effectiveProfileId]);
 
     const invalidate = () => client.invalidateQueries({ queryKey: queryKeys.textResearch.cleaningProfiles(ctx.projectId) });
     const saveMutation = useMutation({
-        mutationFn: async () => {
+        mutationFn: async (draft: {
+            name: string;
+            description: string;
+            version: string;
+            config: Record<string, unknown>;
+            rulesText: string;
+        }) => {
             let customRegex: unknown;
-            try { customRegex = JSON.parse(rulesText); } catch { throw new Error("Custom rules must be valid JSON."); }
+            try { customRegex = JSON.parse(draft.rulesText); } catch { throw new Error("Custom rules must be valid JSON."); }
             if (!Array.isArray(customRegex)) throw new Error("Custom rules must be a JSON array.");
-            const payload = { name: name.trim(), description: description.trim() || undefined, version: version.trim() || "1.0", config: { ...config, custom_regex: customRegex } };
+            const payload = {
+                name: draft.name.trim(),
+                description: draft.description.trim() || undefined,
+                version: draft.version.trim() || "1.0",
+                config: { ...draft.config, custom_regex: customRegex },
+            };
             if (!payload.name) throw new Error("Profile name is required.");
-            return profileId ? updateCleaningProfile(profileId, payload) : createCleaningProfile(ctx.projectId, payload);
+            return effectiveProfileId
+                ? updateCleaningProfile(effectiveProfileId, payload)
+                : createCleaningProfile(ctx.projectId, payload);
         },
-        onSuccess: (profile) => { void invalidate(); setProfileId(profile.id); showToast({ message: "Cleaning profile saved.", severity: "success" }); },
+        onSuccess: (profile) => {
+            void invalidate();
+            setProfileId(profile.id);
+            showToast({ message: "Cleaning profile saved.", severity: "success" });
+        },
         onError: (error) => showToast({ message: getQueryErrorMessage(error, "Could not save cleaning profile."), severity: "error" }),
     });
     const createMutation = useMutation({
@@ -196,7 +276,7 @@ export function CleaningProfileEditor({ onProfileChange }: { onProfileChange: (p
         onSuccess: (profile) => { void invalidate(); setProfileId(profile.id); },
     });
     const deleteMutation = useMutation({
-        mutationFn: () => deleteCleaningProfile(profileId),
+        mutationFn: () => deleteCleaningProfile(effectiveProfileId),
         onSuccess: () => { setProfileId(""); void invalidate(); showToast({ message: "Cleaning profile deleted.", severity: "success" }); },
         onError: (error) => showToast({ message: getQueryErrorMessage(error, "Could not delete cleaning profile."), severity: "error" }),
     });
@@ -207,25 +287,21 @@ export function CleaningProfileEditor({ onProfileChange }: { onProfileChange: (p
                 <Stack spacing={1.5}>
                     {!profiles.length ? <EmptyState icon={<SaveIcon fontSize="large" />} title="No cleaning profiles" description="Create a profile to normalize extracted source text." /> : null}
                     <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
-                        <TextField select label="Profile" size="small" value={profileId} onChange={(event) => setProfileId(event.target.value)} sx={{ minWidth: 220 }}>
+                        <TextField select label="Profile" size="small" value={effectiveProfileId} onChange={(event) => setProfileId(event.target.value)} sx={{ minWidth: 220 }}>
                             {profiles.map((profile) => <MenuItem key={profile.id} value={profile.id}>{profile.name}</MenuItem>)}
                         </TextField>
                         <Button variant="outlined" onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>New profile</Button>
-                        <Button variant="contained" startIcon={<SaveIcon />} onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>Save</Button>
-                        <Button color="error" startIcon={<DeleteIcon />} onClick={() => deleteMutation.mutate()} disabled={!profileId || deleteMutation.isPending}>Delete</Button>
                     </Stack>
-                    <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
-                        <TextField label="Name" size="small" value={name} onChange={(event) => setName(event.target.value)} fullWidth />
-                        <TextField label="Version" size="small" value={version} onChange={(event) => setVersion(event.target.value)} sx={{ minWidth: 130 }} />
-                    </Stack>
-                    <TextField label="Description" size="small" value={description} onChange={(event) => setDescription(event.target.value)} fullWidth />
-                    <TextField select label="Unicode normalization" size="small" value={String(config.unicode_normalization ?? "")} onChange={(event) => setConfig({ ...config, unicode_normalization: event.target.value || null })} sx={{ maxWidth: 250 }}>
-                        <MenuItem value="">None</MenuItem>{["NFC", "NFKC", "NFD", "NFKD"].map((form) => <MenuItem key={form} value={form}>{form}</MenuItem>)}
-                    </TextField>
-                    <Stack direction={{ xs: "column", sm: "row" }} flexWrap="wrap" useFlexGap>
-                        {TOGGLES.map(([key, label]) => <FormControlLabel key={key} control={<Checkbox checked={Boolean(config[key])} onChange={(event) => setConfig({ ...config, [key]: event.target.checked })} />} label={label} />)}
-                    </Stack>
-                    <TextField label="Custom replacement rules (JSON array)" value={rulesText} onChange={(event) => setRulesText(event.target.value)} multiline minRows={3} helperText='Each rule uses {"pattern":"…","replacement":"…","count":0}.' />
+                    {selected ? (
+                        <CleaningProfileFields
+                            key={selected.id}
+                            profile={selected}
+                            onSave={(draft) => saveMutation.mutate(draft)}
+                            onDelete={() => deleteMutation.mutate()}
+                            savePending={saveMutation.isPending}
+                            deletePending={deleteMutation.isPending}
+                        />
+                    ) : null}
                 </Stack>
             </QueryBoundary>
         </SectionCard>

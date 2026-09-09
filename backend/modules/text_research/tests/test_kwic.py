@@ -59,7 +59,7 @@ class ConcordanceTests(unittest.TestCase):
         )
         keywords = [h["keyword"] for h in hits]
         self.assertTrue(all(k.startswith("Universal") or k == "Universal" for k in keywords))
-        self.assertTrue(all("universal" != k for k in keywords))
+        self.assertTrue(all(k != "universal" for k in keywords))
 
     def test_phrase(self):
         hits = kwic.concordance(
@@ -83,9 +83,7 @@ class ConcordanceTests(unittest.TestCase):
         self.assertEqual(hits[0]["match_char_end"], 16)
 
     def test_regex(self):
-        hits = kwic.concordance(
-            self.texts, self.meta, r"educat\w+", query_mode="regex", window=1
-        )
+        hits = kwic.concordance(self.texts, self.meta, r"educat\w+", query_mode="regex", window=1)
         self.assertGreaterEqual(len(hits), 2)
         self.assertTrue(any("educat" in h["keyword"].lower() for h in hits))
 
@@ -96,9 +94,7 @@ class ConcordanceTests(unittest.TestCase):
     def test_lemma_english(self):
         texts = ["Policies running policies."]
         meta = [{"text_unit_id": "l1"}]
-        hits = kwic.concordance(
-            texts, meta, "policy", query_mode="lemma", language="en", window=1
-        )
+        hits = kwic.concordance(texts, meta, "policy", query_mode="lemma", language="en", window=1)
         self.assertGreaterEqual(len(hits), 1)
 
     def test_invalid_regex_raises(self):

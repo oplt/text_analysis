@@ -48,7 +48,9 @@ class ArtifactRegistry:
         checksum: str,
     ) -> str:
         if kind not in ARTIFACT_KINDS:
-            raise ValueError(f"Unknown artifact kind {kind!r}; expected one of {sorted(ARTIFACT_KINDS)}")
+            raise ValueError(
+                f"Unknown artifact kind {kind!r}; expected one of {sorted(ARTIFACT_KINDS)}"
+            )
 
         with self._lock:
             existing_id = self._by_checksum.get((kind, checksum))
@@ -81,7 +83,9 @@ class ArtifactRegistry:
 
     def find_by_checksum(self, kind: str, checksum: str) -> ArtifactRecord | None:
         if kind not in ARTIFACT_KINDS:
-            raise ValueError(f"Unknown artifact kind {kind!r}; expected one of {sorted(ARTIFACT_KINDS)}")
+            raise ValueError(
+                f"Unknown artifact kind {kind!r}; expected one of {sorted(ARTIFACT_KINDS)}"
+            )
         with self._lock:
             artifact_id = self._by_checksum.get((kind, checksum))
             if artifact_id is None:
@@ -93,7 +97,9 @@ class ArtifactRegistry:
             records = list(self._by_id.values())
         if kind is not None:
             if kind not in ARTIFACT_KINDS:
-                raise ValueError(f"Unknown artifact kind {kind!r}; expected one of {sorted(ARTIFACT_KINDS)}")
+                raise ValueError(
+                    f"Unknown artifact kind {kind!r}; expected one of {sorted(ARTIFACT_KINDS)}"
+                )
             records = [record for record in records if record.kind == kind]
         return sorted(records, key=lambda record: (record.kind, record.artifact_id))
 

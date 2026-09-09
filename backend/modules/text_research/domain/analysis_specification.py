@@ -54,6 +54,12 @@ class PreprocessingSpec(BaseModel):
     cleaning_profile_id: str | None = None
 
 
+class FeatureSelectionSpec(BaseModel):
+    method: Literal["none", "chi2", "mutual_info", "l1"] = "none"
+    k: int | str = "all"
+    percentile: float | None = None
+
+
 class FeatureExtractionSpec(BaseModel):
     type: Literal["count", "binary", "tfidf", "sublinear_tf", "char_ngrams", "bm25"] = "tfidf"
     ngram_range: tuple[int, int] = (1, 1)
@@ -61,6 +67,7 @@ class FeatureExtractionSpec(BaseModel):
     max_df: float | int = 1.0
     max_features: int | None = None
     weighting: str | None = None
+    selection: FeatureSelectionSpec | None = None
 
 
 class ModelSpec(BaseModel):
@@ -134,7 +141,9 @@ class AnalysisSpecification(BaseModel):
         payload["analysis"]["parameters"] = _sort_dict_deep(payload["analysis"]["parameters"])
         payload["feature_extraction"] = _sort_dict_deep(payload["feature_extraction"])
         if payload.get("model"):
-            payload["model"]["hyperparameters"] = _sort_dict_deep(payload["model"]["hyperparameters"])
+            payload["model"]["hyperparameters"] = _sort_dict_deep(
+                payload["model"]["hyperparameters"]
+            )
         analysis_type = _canonical_analysis_type(payload["analysis"]["type"])
         payload["analysis"]["type"] = analysis_type
         return AnalysisSpecification.model_validate(payload)
@@ -147,16 +156,25 @@ class AnalysisSpecification(BaseModel):
         if normalized.analysis.type not in ANALYSIS_TYPES:
             raise ValueError(f"unsupported analysis.type: {normalized.analysis.type!r}")
 
-        if normalized.corpus.language_mode == "manual" and "language" not in normalized.corpus.filters:
+        if (
+            normalized.corpus.language_mode == "manual"
+            and "language" not in normalized.corpus.filters
+        ):
             raise ValueError("corpus.filters.language is required when language_mode is 'manual'")
 
         if normalized.validation is not None:
             strategy = normalized.validation.strategy
-            if strategy in {"grouped_holdout", "grouped_cv", "leave_one_group_out"}:
-                if not normalized.validation.group_field.strip():
-                    raise ValueError("validation.group_field is required for grouped validation strategies")
+            if (
+                strategy in {"grouped_holdout", "grouped_cv", "leave_one_group_out"}
+                and not normalized.validation.group_field.strip()
+            ):
+                raise ValueError(
+                    "validation.group_field is required for grouped validation strategies"
+                )
             if strategy == "temporal" and not normalized.validation.temporal_field:
-                raise ValueError("validation.temporal_field is required when strategy is 'temporal'")
+                raise ValueError(
+                    "validation.temporal_field is required when strategy is 'temporal'"
+                )
 
         if normalized.analysis.type == "classification":
             if normalized.model is None:

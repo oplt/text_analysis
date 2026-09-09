@@ -6,18 +6,16 @@ from typing import Any
 
 from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
 from backend.modules.text_research.domain.analysis_task import AnalysisTask, resource_class_for
+from backend.modules.text_research.infrastructure import stage_cache
 from backend.modules.text_research.infrastructure.execution_policy import (
     is_idempotent_hit,
     retry_policy_for,
 )
 from backend.modules.text_research.infrastructure.pipeline_compiler import (
-    ENGINE_VERSION,
+    ExecutionPlan,
     compile_plan,
     computation_identity,
 )
-from backend.modules.text_research.infrastructure import stage_cache
-from backend.modules.text_research.infrastructure.pipeline_compiler import ExecutionPlan
-from backend.modules.text_research.infrastructure.prepared_corpus_builder import prepare_texts
 from backend.modules.text_research.infrastructure.preprocessing import PreprocessingConfig
 from backend.modules.text_research.infrastructure.stage_runner import StageRunner
 
@@ -114,10 +112,7 @@ def run_prepared_analysis(
     Intended for CLI entry points and unit tests that run quantitative analyses
     without a database session.
     """
-    if isinstance(spec, dict):
-        spec_obj = AnalysisSpecification.model_validate(spec)
-    else:
-        spec_obj = spec
+    spec_obj = AnalysisSpecification.model_validate(spec) if isinstance(spec, dict) else spec
     normalized = spec_obj.normalize()
     normalized.validate()
     plan = compile_plan(normalized)

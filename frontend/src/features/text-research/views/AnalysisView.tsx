@@ -49,11 +49,8 @@ import {
 } from "../components/ResearchCharts";
 import { ChartTableToggle, ResearchResultPanel, ResearchResultsTable } from "../components/ResearchResults";
 import { MetadataFilterBar } from "../components/MetadataFilterBar";
-import {
-    AdvancedDfmPanel,
-    DEFAULT_DFM_CONFIG,
-    type AdvancedDfmConfig,
-} from "../components/AdvancedDfmPanel";
+import { AdvancedDfmPanel } from "../components/AdvancedDfmPanel";
+import { DEFAULT_DFM_CONFIG, type AdvancedDfmConfig } from "../components/advancedDfmConfig";
 import {
     ClusterExplorer,
     DimensionalityReductionView,
@@ -61,10 +58,16 @@ import {
     ReadabilityView,
     SimilarityExplorer,
 } from "../components/AdvancedAnalysisPanels";
+import {
+    ScientificWarnings,
+    collectScientificWarnings,
+} from "../components/ScientificWarnings";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 import type { AnalysisRun } from "../types";
+import MeasurementComparisonView from "./MeasurementComparisonView";
+import StatisticalModelView from "./StatisticalModelView";
 
 type AnalysisTab =
     | "overview"
@@ -79,7 +82,9 @@ type AnalysisTab =
     | "duplicates"
     | "clustering"
     | "dimensionality"
-    | "readability";
+    | "readability"
+    | "statistical"
+    | "measurement";
 
 const ANALYSIS_TAB_VALUES = [
     "overview",
@@ -95,6 +100,8 @@ const ANALYSIS_TAB_VALUES = [
     "clustering",
     "dimensionality",
     "readability",
+    "statistical",
+    "measurement",
 ] as const satisfies readonly AnalysisTab[];
 
 const TABS: Array<{ value: AnalysisTab; label: string }> = [
@@ -111,6 +118,8 @@ const TABS: Array<{ value: AnalysisTab; label: string }> = [
     { value: "clustering", label: "Clustering" },
     { value: "dimensionality", label: "Dimensions" },
     { value: "readability", label: "Readability" },
+    { value: "statistical", label: "Statistical model" },
+    { value: "measurement", label: "Measurement" },
 ];
 
 const GROUP_BY_OPTIONS = [
@@ -550,19 +559,36 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
         const sparsity =
             metricNumber([summary, metrics, results], ["sparsity"]) ??
             (typeof density === "number" ? 1 - density : null);
+        const nnz = metricNumber([summary, metrics, results], ["nnz", "non_zero_cells"]);
+        const memoryBytes = metricNumber([summary, metrics, results], [
+            "estimated_memory_bytes",
+        ]);
         const preview =
             asRecord(results?.preview) ??
             asRecord(summary?.preview) ??
             asRecord(asRecord(results?.summary)?.preview);
+        const dfmWarnings = collectScientificWarnings(summary, metrics, results);
         return (
             <Stack spacing={2}>
                 <MetricCards
                     items={[
-                        { label: "Units", value: formatMetric(unitCount) },
+                        { label: "Documents", value: formatMetric(unitCount) },
                         { label: "Features", value: formatMetric(featureCount) },
+                        { label: "Non-zero cells", value: formatMetric(nnz, 0) },
                         { label: "Density", value: formatMetric(density) },
                         { label: "Sparsity", value: formatMetric(sparsity) },
+                        {
+                            label: "Est. memory",
+                            value:
+                                memoryBytes == null
+                                    ? "—"
+                                    : `${(memoryBytes / (1024 * 1024)).toFixed(1)} MiB`,
+                        },
                     ]}
+                />
+                <ScientificWarnings
+                    title="DFM diagnostics are review signals, not automatic quality gates."
+                    warnings={dfmWarnings}
                 />
                 {preview ? <DfmPreviewTable preview={preview} /> : null}
                 <ResultsInspector data={payload} />
@@ -992,6 +1018,20 @@ export default function AnalysisView() {
             : tab === "dimensionality" ? <DimensionalityReductionView basePayload={basePayload} />
             : tab === "readability" ? <ReadabilityView basePayload={basePayload} />
             : null;
+
+    if (tab === "statistical" || tab === "measurement") {
+        return (
+            <Stack spacing={2}>
+                <PageTabs value={tab} onChange={setTab} tabs={TABS} ariaLabel="Analysis methods" />
+                <Alert severity="info">
+                    Statistical modeling and measurement comparison live under Analysis. APIs:{" "}
+                    <code>POST …/analysis/statistical-model</code> and{" "}
+                    <code>POST …/analysis/measurement-comparison</code>.
+                </Alert>
+                {tab === "statistical" ? <StatisticalModelView /> : <MeasurementComparisonView />}
+            </Stack>
+        );
+    }
 
     if (advancedPanel) {
         return (

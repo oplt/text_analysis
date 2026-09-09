@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Alert,
     Box,
@@ -84,6 +84,127 @@ function suggestNextVersion(version: string): string {
     return `${major}.${minor}`;
 }
 
+function LabelDraftForm({
+    sourceLabel,
+    creating,
+    frozen,
+    savePending,
+    onSave,
+    onCancelCreate,
+}: {
+    sourceLabel: AnnotationLabel | null;
+    creating: boolean;
+    frozen: boolean;
+    savePending: boolean;
+    onSave: (draft: LabelDraft) => void;
+    onCancelCreate: () => void;
+}) {
+    const [draft, setDraft] = useState<LabelDraft>(() =>
+        sourceLabel ? draftFromLabel(sourceLabel) : emptyDraft()
+    );
+
+    return (
+        <>
+            <TextField
+                label="Name"
+                size="small"
+                value={draft.name}
+                disabled={frozen && !creating}
+                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                fullWidth
+            />
+            <TextField
+                label="Definition"
+                size="small"
+                value={draft.description}
+                disabled={frozen && !creating}
+                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                fullWidth
+                multiline
+                minRows={2}
+            />
+            <TextField
+                label="Inclusion criteria"
+                size="small"
+                value={draft.inclusion_criteria}
+                disabled={frozen && !creating}
+                onChange={(e) => setDraft({ ...draft, inclusion_criteria: e.target.value })}
+                fullWidth
+                multiline
+                minRows={2}
+            />
+            <TextField
+                label="Exclusion criteria"
+                size="small"
+                value={draft.exclusion_criteria}
+                disabled={frozen && !creating}
+                onChange={(e) => setDraft({ ...draft, exclusion_criteria: e.target.value })}
+                fullWidth
+                multiline
+                minRows={2}
+            />
+            <TextField
+                label="Positive examples (one per line)"
+                size="small"
+                value={draft.positive_examples}
+                disabled={frozen && !creating}
+                onChange={(e) => setDraft({ ...draft, positive_examples: e.target.value })}
+                fullWidth
+                multiline
+                minRows={2}
+            />
+            <TextField
+                label="Negative examples (one per line)"
+                size="small"
+                value={draft.negative_examples}
+                disabled={frozen && !creating}
+                onChange={(e) => setDraft({ ...draft, negative_examples: e.target.value })}
+                fullWidth
+                multiline
+                minRows={2}
+            />
+            <FormControlLabel
+                control={
+                    <Checkbox
+                        size="small"
+                        checked={draft.is_placeholder}
+                        disabled={frozen}
+                        onChange={(event) =>
+                            setDraft({
+                                ...draft,
+                                is_placeholder: event.target.checked,
+                            })
+                        }
+                    />
+                }
+                label="Placeholder / demo label"
+            />
+            {(creating || sourceLabel?.is_placeholder) && (
+                <Chip
+                    size="small"
+                    label={
+                        sourceLabel?.is_placeholder || draft.is_placeholder
+                            ? "Placeholder / demo label"
+                            : "Research label"
+                    }
+                />
+            )}
+            <Stack direction="row" spacing={1}>
+                <Button
+                    variant="contained"
+                    disabled={frozen || savePending}
+                    onClick={() => onSave(draft)}
+                >
+                    {creating ? "Create label" : "Save label"}
+                </Button>
+                {creating ? (
+                    <Button onClick={onCancelCreate}>Cancel</Button>
+                ) : null}
+            </Stack>
+        </>
+    );
+}
+
 function CodebookChip({ codebook }: { codebook: Codebook }) {
     return (
         <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -110,35 +231,21 @@ export default function CodebookView() {
     const [versionOpen, setVersionOpen] = useState(false);
     const [newVersion, setNewVersion] = useState("");
     const [selectedLabelId, setSelectedLabelId] = useState<string | null>(null);
-    const [draft, setDraft] = useState<LabelDraft>(emptyDraft());
     const [creatingLabel, setCreatingLabel] = useState(false);
 
     const selected = ctx.selectedCodebook;
     const frozen = Boolean(selected?.is_frozen);
-    const selectedLabel = useMemo(
-        () => ctx.labels.find((label) => label.id === selectedLabelId) ?? null,
-        [ctx.labels, selectedLabelId]
-    );
-
-    useEffect(() => {
-        if (!ctx.labels.length) {
-            setSelectedLabelId(null);
-            setDraft(emptyDraft());
-            setCreatingLabel(false);
-            return;
+    const effectiveLabelId = useMemo(() => {
+        if (!ctx.labels.length) return null;
+        if (selectedLabelId && ctx.labels.some((label) => label.id === selectedLabelId)) {
+            return selectedLabelId;
         }
-        if (!selectedLabelId || !ctx.labels.some((label) => label.id === selectedLabelId)) {
-            setSelectedLabelId(ctx.labels[0].id);
-        }
+        return ctx.labels[0].id;
     }, [ctx.labels, selectedLabelId]);
-
-    useEffect(() => {
-        if (creatingLabel) {
-            setDraft(emptyDraft());
-            return;
-        }
-        if (selectedLabel) setDraft(draftFromLabel(selectedLabel));
-    }, [selectedLabel, creatingLabel]);
+    const selectedLabel = useMemo(() => {
+        if (creatingLabel || !effectiveLabelId) return null;
+        return ctx.labels.find((label) => label.id === effectiveLabelId) ?? null;
+    }, [creatingLabel, effectiveLabelId, ctx.labels]);
 
     function invalidateCodebooks(nextId?: string) {
         void client.invalidateQueries({ queryKey: queryKeys.textResearch.codebooks(ctx.projectId) });
@@ -208,7 +315,7 @@ export default function CodebookView() {
     });
 
     const saveLabelMutation = useMutation({
-        mutationFn: async () => {
+        mutationFn: async (draft: LabelDraft) => {
             if (!draft.name.trim()) throw new Error("Label name is required.");
             const payload = {
                 name: draft.name.trim(),
@@ -222,8 +329,8 @@ export default function CodebookView() {
             if (creatingLabel) {
                 return addLabel(ctx.selectedCodebookId, payload);
             }
-            if (!selectedLabelId) throw new Error("Select a label to edit.");
-            return updateLabel(selectedLabelId, payload);
+            if (!effectiveLabelId) throw new Error("Select a label to edit.");
+            return updateLabel(effectiveLabelId, payload);
         },
         onSuccess: (label) => {
             invalidateCodebooks();
@@ -332,11 +439,7 @@ export default function CodebookView() {
                         <Button
                             startIcon={<AddIcon />}
                             disabled={frozen}
-                            onClick={() => {
-                                setCreatingLabel(true);
-                                setSelectedLabelId(null);
-                                setDraft(emptyDraft());
-                            }}
+                            onClick={() => setCreatingLabel(true)}
                         >
                             Add label
                         </Button>
@@ -355,7 +458,7 @@ export default function CodebookView() {
                                     key={label.id}
                                     size="small"
                                     variant={
-                                        !creatingLabel && label.id === selectedLabelId
+                                        !creatingLabel && label.id === effectiveLabelId
                                             ? "contained"
                                             : "outlined"
                                     }
@@ -378,123 +481,20 @@ export default function CodebookView() {
 
                         <Stack spacing={1.5}>
                             {creatingLabel || selectedLabel ? (
-                                <>
-                                    <TextField
-                                        label="Name"
-                                        size="small"
-                                        value={draft.name}
-                                        disabled={frozen && !creatingLabel}
-                                        onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        label="Definition"
-                                        size="small"
-                                        value={draft.description}
-                                        disabled={frozen && !creatingLabel}
-                                        onChange={(e) =>
-                                            setDraft({ ...draft, description: e.target.value })
+                                <LabelDraftForm
+                                    key={creatingLabel ? "creating" : effectiveLabelId ?? "none"}
+                                    sourceLabel={creatingLabel ? null : selectedLabel}
+                                    creating={creatingLabel}
+                                    frozen={frozen}
+                                    savePending={saveLabelMutation.isPending}
+                                    onSave={(draft) => saveLabelMutation.mutate(draft)}
+                                    onCancelCreate={() => {
+                                        setCreatingLabel(false);
+                                        if (ctx.labels[0]) {
+                                            setSelectedLabelId(ctx.labels[0].id);
                                         }
-                                        fullWidth
-                                        multiline
-                                        minRows={2}
-                                    />
-                                    <TextField
-                                        label="Inclusion criteria"
-                                        size="small"
-                                        value={draft.inclusion_criteria}
-                                        disabled={frozen && !creatingLabel}
-                                        onChange={(e) =>
-                                            setDraft({ ...draft, inclusion_criteria: e.target.value })
-                                        }
-                                        fullWidth
-                                        multiline
-                                        minRows={2}
-                                    />
-                                    <TextField
-                                        label="Exclusion criteria"
-                                        size="small"
-                                        value={draft.exclusion_criteria}
-                                        disabled={frozen && !creatingLabel}
-                                        onChange={(e) =>
-                                            setDraft({ ...draft, exclusion_criteria: e.target.value })
-                                        }
-                                        fullWidth
-                                        multiline
-                                        minRows={2}
-                                    />
-                                    <TextField
-                                        label="Positive examples (one per line)"
-                                        size="small"
-                                        value={draft.positive_examples}
-                                        disabled={frozen && !creatingLabel}
-                                        onChange={(e) =>
-                                            setDraft({ ...draft, positive_examples: e.target.value })
-                                        }
-                                        fullWidth
-                                        multiline
-                                        minRows={2}
-                                    />
-                                    <TextField
-                                        label="Negative examples (one per line)"
-                                        size="small"
-                                        value={draft.negative_examples}
-                                        disabled={frozen && !creatingLabel}
-                                        onChange={(e) =>
-                                            setDraft({ ...draft, negative_examples: e.target.value })
-                                        }
-                                        fullWidth
-                                        multiline
-                                        minRows={2}
-                                    />
-                                    <FormControlLabel
-                                        control={
-                                            <Checkbox
-                                                size="small"
-                                                checked={draft.is_placeholder}
-                                                disabled={frozen}
-                                                onChange={(event) =>
-                                                    setDraft({
-                                                        ...draft,
-                                                        is_placeholder: event.target.checked,
-                                                    })
-                                                }
-                                            />
-                                        }
-                                        label="Placeholder / demo label"
-                                    />
-                                    {(creatingLabel || selectedLabel?.is_placeholder) && (
-                                        <Chip
-                                            size="small"
-                                            label={
-                                                selectedLabel?.is_placeholder || draft.is_placeholder
-                                                    ? "Placeholder / demo label"
-                                                    : "Research label"
-                                            }
-                                        />
-                                    )}
-                                    <Stack direction="row" spacing={1}>
-                                        <Button
-                                            variant="contained"
-                                            disabled={frozen || saveLabelMutation.isPending}
-                                            onClick={() => saveLabelMutation.mutate()}
-                                        >
-                                            {creatingLabel ? "Create label" : "Save label"}
-                                        </Button>
-                                        {creatingLabel ? (
-                                            <Button
-                                                onClick={() => {
-                                                    setCreatingLabel(false);
-                                                    if (ctx.labels[0]) {
-                                                        setSelectedLabelId(ctx.labels[0].id);
-                                                    }
-                                                }}
-                                            >
-                                                Cancel
-                                            </Button>
-                                        ) : null}
-                                    </Stack>
-                                </>
+                                    }}
+                                />
                             ) : (
                                 <Typography color="text.secondary">Select a label to edit.</Typography>
                             )}

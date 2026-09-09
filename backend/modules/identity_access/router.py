@@ -101,6 +101,7 @@ def _build_user(user: User) -> AuthUserResponse:
 
 # ------------------------------------------------------------------ core auth
 
+
 @router.post("/sign-up", response_model=GenericMessageResponse, status_code=202)
 async def sign_up(
     payload: SignUpRequest,
@@ -207,6 +208,7 @@ async def me(current_user: User = Depends(get_authenticated_user)):
 
 # ------------------------------------------------------------------ email verification
 
+
 @router.post("/verify-email", status_code=204)
 async def verify_email(
     payload: VerifyEmailRequest,
@@ -239,6 +241,7 @@ async def resend_verification(
 
 # ------------------------------------------------------------------ password reset
 
+
 @router.post("/forgot-password", status_code=204)
 async def forgot_password(
     payload: ForgotPasswordRequest,
@@ -264,6 +267,7 @@ async def reset_password(payload: ResetPasswordRequest, db: AsyncSession = Depen
 
 
 # ------------------------------------------------------------------ MFA
+
 
 @router.post("/mfa/enable", response_model=MfaEnableResponse)
 async def mfa_enable(

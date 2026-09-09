@@ -12,7 +12,6 @@ from functools import lru_cache
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
-
 DEFAULT_SPACY_MODEL = "en_core_web_sm"
 
 
@@ -73,7 +72,9 @@ def describe_spacy_provenance(model_name: str = DEFAULT_SPACY_MODEL) -> dict[str
         return meta
     try:
         nlp = require_spacy(model_name)
-        meta["model_version"] = getattr(nlp.meta, "get", lambda *_: None)("version") if hasattr(nlp, "meta") else None
+        meta["model_version"] = (
+            getattr(nlp.meta, "get", lambda *_: None)("version") if hasattr(nlp, "meta") else None
+        )
         if isinstance(getattr(nlp, "meta", None), dict):
             meta["model_version"] = nlp.meta.get("version")
             meta["model_lang"] = nlp.meta.get("lang")

@@ -8,7 +8,8 @@ observations.
 from __future__ import annotations
 
 from collections import Counter
-from typing import Any, Hashable
+from collections.abc import Hashable
+from typing import Any
 
 import numpy as np
 

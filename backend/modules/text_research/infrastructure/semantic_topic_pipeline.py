@@ -106,7 +106,6 @@ class CachedEmbeddingStage:
         )
 
 
-
 @dataclass
 class HashingEmbeddingStage:
     """Wrap :func:`get_embedding_provider` hashing backend."""

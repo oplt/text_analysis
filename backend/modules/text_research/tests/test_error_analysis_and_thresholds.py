@@ -13,8 +13,12 @@ from backend.modules.text_research.infrastructure.error_analysis import classifi
 class OptimizeThresholdObjectivesTests(unittest.TestCase):
     def setUp(self):
         self.y_true = np.array([0, 0, 1, 1, 1, 0, 1, 0])
-        self.y_proba = np.column_stack([1 - np.array([0.1, 0.2, 0.4, 0.55, 0.7, 0.25, 0.85, 0.15]),
-                                        np.array([0.1, 0.2, 0.4, 0.55, 0.7, 0.25, 0.85, 0.15])])
+        self.y_proba = np.column_stack(
+            [
+                1 - np.array([0.1, 0.2, 0.4, 0.55, 0.7, 0.25, 0.85, 0.15]),
+                np.array([0.1, 0.2, 0.4, 0.55, 0.7, 0.25, 0.85, 0.15]),
+            ]
+        )
         self.classes = ["neg", "pos"]
 
     def test_f1_objective_returns_threshold_and_score(self):
@@ -85,9 +89,7 @@ class OptimizeThresholdObjectivesTests(unittest.TestCase):
 class AbstentionTests(unittest.TestCase):
     def test_binary_abstention_marks_low_confidence(self):
         y_proba = np.array([[0.9, 0.1], [0.55, 0.45], [0.2, 0.8]])
-        result = classifiers.apply_abstention(
-            y_proba, confidence_threshold=0.6, task_type="binary"
-        )
+        result = classifiers.apply_abstention(y_proba, confidence_threshold=0.6, task_type="binary")
         self.assertEqual(result["abstained"], [False, True, False])
         self.assertEqual(result["predictions"][1], classifiers.ABSTENTION_MARKER)
         self.assertEqual(result["predictions"][2], 1)

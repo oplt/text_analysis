@@ -26,6 +26,8 @@ from sklearn.feature_extraction.text import CountVectorizer, HashingVectorizer, 
 from backend.modules.text_research.infrastructure import language_processing as lang
 from backend.modules.text_research.infrastructure.language_processing import (
     UNICODE_TOKEN_RE as _UNICODE_TOKEN_RE,
+)
+from backend.modules.text_research.infrastructure.language_processing import (
     lemmatization_available,
     negation_words_for,
     resolve_language,
@@ -172,12 +174,12 @@ class PreprocessingConfig:
         return asdict(self)
 
 
-def describe_implementation(config: PreprocessingConfig | dict[str, Any] | None = None) -> dict[str, Any]:
+def describe_implementation(
+    config: PreprocessingConfig | dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Recordable preprocessing provenance (never claims unused transforms)."""
     cfg = (
-        config
-        if isinstance(config, PreprocessingConfig)
-        else PreprocessingConfig.from_dict(config)
+        config if isinstance(config, PreprocessingConfig) else PreprocessingConfig.from_dict(config)
     )
     lang_code = normalize_language_code(cfg.language)
     profile = resolve_language(lang_code)
@@ -208,17 +210,19 @@ def describe_implementation(config: PreprocessingConfig | dict[str, Any] | None 
         "stemmer_package_version": _pkg_version("snowballstemmer") if cfg.stemming else None,
         "lemmatizer": lemma_name,
         "lemmatizer_package": (
-            "spacy"
-            if cfg.pos_lemmatization
-            else ("simplemma" if cfg.lemmatization else None)
+            "spacy" if cfg.pos_lemmatization else ("simplemma" if cfg.lemmatization else None)
         ),
         "lemmatizer_package_version": (
             spacy_meta.get("package_version")
             if cfg.pos_lemmatization
             else (_pkg_version("simplemma") if cfg.lemmatization else None)
         ),
-        "model_name": cfg.spacy_model if (cfg.pos_lemmatization or cfg.entity_masking or cfg.phrase_detection or cfg.enable_ner) else None,
-        "model_version": spacy_meta.get("model_version") if (cfg.pos_lemmatization or cfg.entity_masking or cfg.phrase_detection or cfg.enable_ner) else None,
+        "model_name": cfg.spacy_model
+        if (cfg.pos_lemmatization or cfg.entity_masking or cfg.phrase_detection or cfg.enable_ner)
+        else None,
+        "model_version": spacy_meta.get("model_version")
+        if (cfg.pos_lemmatization or cfg.entity_masking or cfg.phrase_detection or cfg.enable_ner)
+        else None,
         "spacy": spacy_meta,
         "entity_masking": bool(cfg.entity_masking),
         "phrase_detection": bool(cfg.phrase_detection),
@@ -352,13 +356,9 @@ def tokenize(text: str, config: dict[str, Any] | None = None) -> list[str]:
 
     if not cfg.get("pos_lemmatization"):
         if cfg.get("lemmatization"):
-            tokens = [
-                t if t in negation_words else lemmatize_token(t, language) for t in tokens
-            ]
+            tokens = [t if t in negation_words else lemmatize_token(t, language) for t in tokens]
         elif cfg.get("stemming"):
-            tokens = [
-                t if t in negation_words else snowball_stem(t, language) for t in tokens
-            ]
+            tokens = [t if t in negation_words else snowball_stem(t, language) for t in tokens]
 
     if cfg.get("phrase_detection"):
         from backend.modules.text_research.infrastructure.nlp_preprocessing import (

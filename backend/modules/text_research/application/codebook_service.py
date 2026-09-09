@@ -54,9 +54,7 @@ class CodebookService(ResearchAccessMixin):
     async def get_codebook(self, codebook_id: str, *, user_id: str) -> Codebook:
         return await self.get_codebook_or_404(codebook_id, user_id=user_id)
 
-    async def create_version(
-        self, codebook_id: str, *, user_id: str, new_version: str
-    ) -> Codebook:
+    async def create_version(self, codebook_id: str, *, user_id: str, new_version: str) -> Codebook:
         """Clone a codebook (frozen or not) into a new, mutable version."""
         source = await self.get_codebook_or_404(codebook_id, user_id=user_id)
         new_codebook = await self.repo.create_codebook(

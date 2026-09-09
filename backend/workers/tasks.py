@@ -3,8 +3,8 @@ from backend.modules.rag.workers import cleanup_document_sync, index_document_sy
 from backend.modules.text_research.infrastructure.execution_policy import retry_policy_for
 from backend.modules.text_research.workers import (
     classifier_training_sync,
-    robustness_sweep_sync,
     prediction_sync,
+    robustness_sweep_sync,
     segmentation_sync,
     topic_k_sweep_sync,
     topic_model_training_sync,

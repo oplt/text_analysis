@@ -41,13 +41,15 @@ import {
 import { ResearchResultsTable } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
 import {
-    DEFAULT_TOPIC_FILTERS,
     TopicComparisonView,
     TopicDocumentExplorer,
     TopicKSweepView,
     TopicSeedStabilityView,
-    type SharedTopicFilters,
 } from "../components/TopicDiagnosticsPanels";
+import {
+    DEFAULT_TOPIC_FILTERS,
+    type SharedTopicFilters,
+} from "../components/topicFilters";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
@@ -323,10 +325,12 @@ export default function TopicsView() {
     });
 
     const kSweepMutation = useMutation({
-        mutationFn: (payload: Parameters<typeof runTopicKSweep>[1]) =>
+        mutationFn: (
+            payload: Omit<Parameters<typeof runTopicKSweep>[1], "unit_type" | "run_async">
+        ) =>
             runTopicKSweep(ctx.selectedCorpusId, {
-                unit_type: ctx.unitType,
                 ...payload,
+                unit_type: ctx.unitType,
                 run_async: true,
             }),
         onSuccess: (run) => {
@@ -341,10 +345,12 @@ export default function TopicsView() {
     });
 
     const stabilityMutation = useMutation({
-        mutationFn: (payload: Parameters<typeof runTopicSeedStability>[1]) =>
+        mutationFn: (
+            payload: Omit<Parameters<typeof runTopicSeedStability>[1], "unit_type" | "run_async">
+        ) =>
             runTopicSeedStability(ctx.selectedCorpusId, {
-                unit_type: ctx.unitType,
                 ...payload,
+                unit_type: ctx.unitType,
                 run_async: true,
             }),
         onSuccess: (run) => {
@@ -655,7 +661,6 @@ export default function TopicsView() {
                 >
                     <TopicSeedStabilityView
                         corpusId={ctx.selectedCorpusId}
-                        unitType={ctx.unitType}
                         profiles={profileOptions}
                         filters={filters}
                         onFiltersChange={setFilters}

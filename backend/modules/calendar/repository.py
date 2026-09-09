@@ -53,4 +53,3 @@ class CalendarRepository:
         self.db.add(entry)
         await self.db.flush()
         return entry
-

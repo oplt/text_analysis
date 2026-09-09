@@ -97,7 +97,11 @@ class StratificationTests(unittest.TestCase):
             for i in range(10)
         ]
         plan = build_sampling_plan(
-            items, sample_size=10, random_seed=3, stratify_by=["field_1"], stratum_mode="proportional"
+            items,
+            sample_size=10,
+            random_seed=3,
+            stratify_by=["field_1"],
+            stratum_mode="proportional",
         )
         by_value = {s["stratum"]["field_1"]: s["selected"] for s in plan["strata"]}
         self.assertEqual(by_value["alpha"], 8)
@@ -141,9 +145,7 @@ class StratificationTests(unittest.TestCase):
             SamplingItem(id="u1", document_id="d1", metadata={"field_1": "alpha"}),
             SamplingItem(id="u2", document_id="d2", metadata={}),
         ]
-        plan = build_sampling_plan(
-            items, sample_size=2, random_seed=1, stratify_by=["field_1"]
-        )
+        plan = build_sampling_plan(items, sample_size=2, random_seed=1, stratify_by=["field_1"])
         self.assertEqual(len(plan["strata"]), 2)
         values = {s["stratum"]["field_1"] for s in plan["strata"]}
         self.assertEqual(values, {"alpha", None})
@@ -167,14 +169,12 @@ class MaxUnitsPerDocumentTests(unittest.TestCase):
             for doc in range(5)
             for i in range(10)
         ]
-        plan = build_sampling_plan(
-            items, sample_size=30, random_seed=11, max_units_per_document=3
-        )
+        plan = build_sampling_plan(items, sample_size=30, random_seed=11, max_units_per_document=3)
         counts: dict[str, int] = {}
         for unit_id in plan["selected_unit_ids"]:
             doc_id = unit_id.rsplit("-", 1)[0]
             counts[doc_id] = counts.get(doc_id, 0) + 1
-        for doc_id, count in counts.items():
+        for _doc_id, count in counts.items():
             self.assertLessEqual(count, 3)
         # 5 docs * cap 3 = 15 available under the cap, less than sample_size.
         self.assertEqual(plan["total_selected"], 15)
@@ -200,7 +200,7 @@ class MaxUnitsPerDocumentTests(unittest.TestCase):
         for unit_id in plan["selected_unit_ids"]:
             doc_id = unit_id.rsplit("-", 1)[0]
             counts[doc_id] = counts.get(doc_id, 0) + 1
-        for doc_id, count in counts.items():
+        for _doc_id, count in counts.items():
             self.assertLessEqual(count, 2)
 
     def test_document_level_sampling_caps_units_per_selected_document(self):
@@ -223,7 +223,7 @@ class MaxUnitsPerDocumentTests(unittest.TestCase):
         for unit_id in plan["selected_unit_ids"]:
             doc_id = unit_id.rsplit("-", 1)[0]
             counts[doc_id] = counts.get(doc_id, 0) + 1
-        for doc_id, count in counts.items():
+        for _doc_id, count in counts.items():
             self.assertEqual(count, 4)
 
     def test_invalid_max_units_per_document_raises(self):

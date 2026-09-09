@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Box, Skeleton, Stack } from "@mui/material";
 import { ProtectedRoute } from "../components/guards/ProtectedRoute";
 import { useAuth } from "../hooks/useAuth";
@@ -48,6 +48,15 @@ const AnalysisView = lazy(() =>
 const ClassificationView = lazy(() =>
     import("../features/text-research/views/ClassificationView").then((m) => ({ default: m.default }))
 );
+const ModelRegistryView = lazy(() =>
+    import("../features/text-research/views/ModelRegistryView").then((m) => ({ default: m.default }))
+);
+const DriftMonitoringView = lazy(() =>
+    import("../features/text-research/views/DriftMonitoringView").then((m) => ({ default: m.default }))
+);
+const PredictionSetsView = lazy(() =>
+    import("../features/text-research/views/PredictionSetsView").then((m) => ({ default: m.default }))
+);
 const TopicsView = lazy(() =>
     import("../features/text-research/views/TopicsView").then((m) => ({ default: m.default }))
 );
@@ -66,6 +75,12 @@ const RunsView = lazy(() =>
 const ExportsView = lazy(() =>
     import("../features/text-research/views/ExportsView").then((m) => ({ default: m.default }))
 );
+
+/** Deep-link aliases for Analysis-grouped tools (avoid extra top-level nav items). */
+function AnalysisSubRedirect({ tab }: { tab: "statistical" | "measurement" }) {
+    const { projectId } = useParams();
+    return <Navigate to={`/research/${projectId}/analysis?tab=${tab}`} replace />;
+}
 
 function PageLoader() {
     return (
@@ -120,7 +135,12 @@ export function AppRouter() {
                         <Route path="codebook" element={<SuspensePage><CodebookView /></SuspensePage>} />
                         <Route path="reliability" element={<SuspensePage><ReliabilityView /></SuspensePage>} />
                         <Route path="analysis" element={<SuspensePage><AnalysisView /></SuspensePage>} />
+                        <Route path="analysis/statistical" element={<AnalysisSubRedirect tab="statistical" />} />
+                        <Route path="analysis/measurement" element={<AnalysisSubRedirect tab="measurement" />} />
                         <Route path="classification" element={<SuspensePage><ClassificationView /></SuspensePage>} />
+                        <Route path="models" element={<SuspensePage><ModelRegistryView /></SuspensePage>} />
+                        <Route path="predictions" element={<SuspensePage><PredictionSetsView /></SuspensePage>} />
+                        <Route path="drift" element={<SuspensePage><DriftMonitoringView /></SuspensePage>} />
                         <Route path="topics" element={<SuspensePage><TopicsView /></SuspensePage>} />
                         <Route path="robustness" element={<SuspensePage><RobustnessView /></SuspensePage>} />
                         <Route path="explorer" element={<SuspensePage><ExplorerView /></SuspensePage>} />

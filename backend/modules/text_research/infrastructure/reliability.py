@@ -255,9 +255,7 @@ def fleiss_kappa(reliability_data: list[list[Label]]) -> dict[str, Any]:
     category_totals = [sum(table[i][j] for i in range(big_n)) for j in range(k)]
     p_j = [total / (big_n * n) for total in category_totals]
 
-    p_i = [
-        (sum(count * count for count in table[i]) - n) / (n * (n - 1)) for i in range(big_n)
-    ]
+    p_i = [(sum(count * count for count in table[i]) - n) / (n * (n - 1)) for i in range(big_n)]
     p_bar = sum(p_i) / big_n
     p_e_bar = sum(p * p for p in p_j)
 
@@ -433,3 +431,165 @@ def coder_pair_agreement_matrix(
 def krippendorff_alpha_nominal(reliability_data: list[list[Label]]) -> dict[str, Any]:
     """Alias for :func:`krippendorffs_alpha` at nominal measurement level."""
     return krippendorffs_alpha(reliability_data, level="nominal")
+
+
+def bootstrap_ci(
+    values: Sequence[float],
+    *,
+    confidence_level: float = 0.95,
+    bootstrap_samples: int = 2000,
+    random_seed: int = 42,
+) -> dict[str, Any] | None:
+    """Percentile bootstrap CI from already-computed resample statistics.
+
+    ``values`` should contain one statistic per bootstrap replicate (NaNs dropped).
+    Returns ``None`` when fewer than 2 finite replicates are available.
+    """
+    finite = [float(v) for v in values if v is not None and not math.isnan(float(v))]
+    if len(finite) < 2:
+        return None
+    finite.sort()
+    alpha = 1.0 - confidence_level
+    lower_idx = int(math.floor(alpha / 2.0 * (len(finite) - 1)))
+    upper_idx = int(math.ceil((1.0 - alpha / 2.0) * (len(finite) - 1)))
+    lower_idx = max(0, min(lower_idx, len(finite) - 1))
+    upper_idx = max(0, min(upper_idx, len(finite) - 1))
+    return {
+        "lower": finite[lower_idx],
+        "upper": finite[upper_idx],
+        "confidence_level": confidence_level,
+        "bootstrap_samples": bootstrap_samples,
+        "random_seed": random_seed,
+        "n_replicates": len(finite),
+    }
+
+
+def _rng(seed: int):
+    import random
+
+    return random.Random(seed)
+
+
+def bootstrap_unit_statistic(
+    unit_payloads: Sequence[Any],
+    statistic_fn,
+    *,
+    bootstrap_samples: int = 2000,
+    confidence_level: float = 0.95,
+    random_seed: int = 42,
+) -> dict[str, Any] | None:
+    """Resample *units* with replacement and compute a percentile CI.
+
+    ``statistic_fn`` receives a list of resampled unit payloads and must return
+    a float or ``None`` (skipped).
+    """
+    n = len(unit_payloads)
+    if n == 0:
+        return None
+    rng = _rng(random_seed)
+    replicates: list[float] = []
+    for _ in range(bootstrap_samples):
+        sample = [unit_payloads[rng.randrange(n)] for _ in range(n)]
+        value = statistic_fn(sample)
+        if value is None:
+            continue
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            continue
+        if math.isnan(numeric):
+            continue
+        replicates.append(numeric)
+    return bootstrap_ci(
+        replicates,
+        confidence_level=confidence_level,
+        bootstrap_samples=bootstrap_samples,
+        random_seed=random_seed,
+    )
+
+
+def attach_ci(stat: dict[str, Any] | None, ci: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Return a copy of ``stat`` with an optional ``ci`` key."""
+    if stat is None:
+        return None
+    out = dict(stat)
+    if ci is not None:
+        out["ci"] = ci
+    return out
+
+
+def reliability_diagnostics(
+    *,
+    n_coders: int,
+    pairable_unit_count: int,
+    missingness: float | None,
+    categories_observed: int,
+    fleiss: dict[str, Any] | None,
+    kappa: dict[str, Any] | None,
+    alpha: dict[str, Any] | None,
+    class_prevalence: dict[str, float] | None = None,
+    small_n_threshold: int = 20,
+    high_missingness_threshold: float = 0.35,
+    dominant_share_threshold: float = 0.85,
+    wide_ci_threshold: float = 0.4,
+) -> list[str]:
+    """Human-readable scientific warnings for a single-label reliability result."""
+    from backend.modules.text_research.infrastructure.scientific_warnings import (
+        ci_width,
+        dominant_category_share,
+        format_warning,
+    )
+
+    warnings: list[str] = []
+    if n_coders < 2:
+        warnings.append("kappa is not evaluable: fewer than two coders")
+    if pairable_unit_count == 0:
+        warnings.append("overlap is insufficient: no unit has annotations from at least two coders")
+    elif pairable_unit_count < small_n_threshold:
+        if n_coders == 2:
+            warnings.append(
+                f"Only {pairable_unit_count} overlapping annotations are available for Cohen's kappa."
+            )
+        else:
+            warnings.append(
+                f"n is very small: only {pairable_unit_count} pairable unit(s) "
+                f"(threshold {small_n_threshold})"
+            )
+    if missingness is not None and missingness >= high_missingness_threshold:
+        warnings.append(f"missingness is high: {missingness:.0%} of coder×unit cells are empty")
+    if categories_observed < 2 and pairable_unit_count > 0:
+        warnings.append("only one category was observed — chance-corrected indices are degenerate")
+
+    share = dominant_category_share(class_prevalence or {})
+    if share is not None and share >= dominant_share_threshold and pairable_unit_count > 0:
+        warnings.append(
+            f"{share:.0%} of annotations use one category. Kappa may be unstable."
+        )
+
+    for label, payload in (
+        ("Cohen's κ", kappa),
+        ("Fleiss κ", fleiss),
+        ("Krippendorff's α", alpha),
+    ):
+        if not isinstance(payload, dict):
+            continue
+        width = ci_width(payload.get("ci") if isinstance(payload.get("ci"), dict) else None)
+        if width is not None and width >= wide_ci_threshold:
+            warnings.append(
+                f"{label} confidence interval is wide (width={width:.2f}); interpret cautiously."
+            )
+
+    if kappa is not None and kappa.get("kappa") is None:
+        warnings.append("Cohen's κ is not evaluable for this label")
+    if alpha is not None and alpha.get("alpha") is None:
+        warnings.append("Krippendorff's α is not evaluable for this label")
+    if fleiss is not None:
+        if fleiss.get("kappa") is None and fleiss.get("reason"):
+            warnings.append(f"Fleiss design assumptions are violated: {fleiss['reason']}")
+        excluded = int(fleiss.get("n_units_excluded") or 0)
+        included = int(fleiss.get("n_units_included") or 0)
+        if fleiss.get("kappa") is not None and excluded > 0 and included > 0:
+            warnings.append(
+                f"Fleiss fixed-n design excluded {excluded} unit(s) with non-modal rater counts"
+            )
+    return [format_warning(message) for message in warnings]

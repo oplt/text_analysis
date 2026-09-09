@@ -67,9 +67,7 @@ class ListDocumentsRoutePaginationTests(unittest.IsolatedAsyncioTestCase):
             patch.object(
                 routes,
                 "CorpusService",
-                return_value=MagicMock(
-                    paginate_documents=AsyncMock(return_value=(documents, 17))
-                ),
+                return_value=MagicMock(paginate_documents=AsyncMock(return_value=(documents, 17))),
             ),
             patch.object(
                 routes,

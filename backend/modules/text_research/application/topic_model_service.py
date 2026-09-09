@@ -232,7 +232,10 @@ class TopicModelService(ResearchAccessMixin):
         params = loads(run.parameters_json, {})
 
         await self.repo.update_run(
-            run, status=AnalysisRunStatus.RUNNING.value, progress_stage="vectorizing", started_at=_utcnow()
+            run,
+            status=AnalysisRunStatus.RUNNING.value,
+            progress_stage="vectorizing",
+            started_at=_utcnow(),
         )
         await self.db.commit()
 
@@ -244,7 +247,9 @@ class TopicModelService(ResearchAccessMixin):
 
             config = PreprocessingConfig().to_dict()
             if params.get("preprocessing_profile_id"):
-                profile = await self.repo.get_preprocessing_profile(params["preprocessing_profile_id"])
+                profile = await self.repo.get_preprocessing_profile(
+                    params["preprocessing_profile_id"]
+                )
                 if profile is not None:
                     config.update(loads(profile.config_json, {}))
 
@@ -284,9 +289,7 @@ class TopicModelService(ResearchAccessMixin):
                 holdout_texts=holdout_texts,
                 embedding_provider=params.get("embedding_provider") or "hashing",
                 embedding_model_name=params.get("embedding_model_name"),
-                persist_embedding_artifacts=bool(
-                    params.get("persist_embedding_artifacts", True)
-                ),
+                persist_embedding_artifacts=bool(params.get("persist_embedding_artifacts", True)),
             )
 
             await self.repo.update_run(run, progress_stage="saving")
@@ -294,13 +297,17 @@ class TopicModelService(ResearchAccessMixin):
             model_path, model_artifact_metadata = model_storage.save_artifact_with_metadata(
                 result["model"], category="topic_models"
             )
-            vectorizer_path, vectorizer_artifact_metadata = model_storage.save_artifact_with_metadata(
-                result["vectorizer"], category="topic_vectorizers"
+            vectorizer_path, vectorizer_artifact_metadata = (
+                model_storage.save_artifact_with_metadata(
+                    result["vectorizer"], category="topic_vectorizers"
+                )
             )
 
             doc_topic = result["doc_topic_distribution"]
             dominant = result["dominant_topics"]
-            documents = {document.id: document for document in await self.repo.list_documents(run.corpus_id)}
+            documents = {
+                document.id: document for document in await self.repo.list_documents(run.corpus_id)
+            }
             doc_topic_rows = [
                 {
                     "text_unit_id": unit.id,
@@ -309,8 +316,10 @@ class TopicModelService(ResearchAccessMixin):
                 }
                 for i, unit in enumerate(train_units)
             ]
-            distribution_path, distribution_artifact_metadata = model_storage.save_artifact_with_metadata(
-                doc_topic_rows, category="topic_distributions"
+            distribution_path, distribution_artifact_metadata = (
+                model_storage.save_artifact_with_metadata(
+                    doc_topic_rows, category="topic_distributions"
+                )
             )
             dominant_counts = {str(k): v for k, v in Counter(dominant).items()}
             topic_prevalence = {
@@ -380,7 +389,10 @@ class TopicModelService(ResearchAccessMixin):
             await self.db.commit()
         except Exception as exc:  # noqa: BLE001
             await self.repo.update_run(
-                run, status=AnalysisRunStatus.FAILED.value, completed_at=_utcnow(), error_message=str(exc)
+                run,
+                status=AnalysisRunStatus.FAILED.value,
+                completed_at=_utcnow(),
+                error_message=str(exc),
             )
             await self.db.commit()
             raise
@@ -500,7 +512,9 @@ class TopicModelService(ResearchAccessMixin):
                 raise ValueError("No text units match the requested corpus/unit_type/filters")
             config = PreprocessingConfig().to_dict()
             if params.get("preprocessing_profile_id"):
-                profile = await self.repo.get_preprocessing_profile(params["preprocessing_profile_id"])
+                profile = await self.repo.get_preprocessing_profile(
+                    params["preprocessing_profile_id"]
+                )
                 if profile is not None:
                     config.update(loads(profile.config_json, {}))
             prepared = prepare_texts(
@@ -539,7 +553,9 @@ class TopicModelService(ResearchAccessMixin):
                 status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 completed_at=_utcnow(),
-                metrics_json=dumps({"unit_count": len(prepared.unit_ids), "k_values": params["k_values"]}),
+                metrics_json=dumps(
+                    {"unit_count": len(prepared.unit_ids), "k_values": params["k_values"]}
+                ),
                 results_json=dumps(
                     {
                         "rows": rows,
@@ -642,7 +658,9 @@ class TopicModelService(ResearchAccessMixin):
                 raise ValueError("No text units match the requested corpus/unit_type/filters")
             config = PreprocessingConfig().to_dict()
             if params.get("preprocessing_profile_id"):
-                profile = await self.repo.get_preprocessing_profile(params["preprocessing_profile_id"])
+                profile = await self.repo.get_preprocessing_profile(
+                    params["preprocessing_profile_id"]
+                )
                 if profile is not None:
                     config.update(loads(profile.config_json, {}))
             prepared = prepare_texts(

@@ -20,11 +20,11 @@ from backend.modules.audit import models as audit_models  # noqa: F401
 from backend.modules.calendar import models as calendar_models  # noqa: F401
 from backend.modules.identity_access import models as identity_models  # noqa: F401
 from backend.modules.memory.infrastructure import models as memory_models  # noqa: F401
-from backend.modules.rag.infrastructure import models as rag_models  # noqa: F401
 from backend.modules.notifications import models as notification_models  # noqa: F401
 from backend.modules.platform import models as platform_models  # noqa: F401
 from backend.modules.profile import models as profile_models  # noqa: F401
 from backend.modules.projects import models as project_models  # noqa: F401
+from backend.modules.rag.infrastructure import models as rag_models  # noqa: F401
 from backend.modules.settings import models as settings_models  # noqa: F401
 from backend.modules.text_research import domain as text_research_models  # noqa: F401
 from backend.modules.users import models as user_models  # noqa: F401

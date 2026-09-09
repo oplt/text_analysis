@@ -162,7 +162,9 @@ class CanonicalResearchSource(Base):
     page_provenance_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Raw extract is immutable; cleaning may rewrite canonical_text only.
     raw_extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    raw_extracted_checksum: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    raw_extracted_checksum: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
     cleaning_profile_id: Mapped[str | None] = mapped_column(
         ForeignKey("research_cleaning_profiles.id", ondelete="SET NULL"),
         nullable=True,
@@ -245,6 +247,47 @@ class AnnotationLabel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
+class AnnotationCampaign(Base):
+    """Controlled annotation study design (round / reliability set).
+
+    Reliability and blind-coding rules are campaign-scoped so pilot rounds,
+    AI-assisted coding, and blind human reliability coding do not mix.
+    """
+
+    __tablename__ = "research_annotation_campaigns"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    corpus_id: Mapped[str] = mapped_column(
+        ForeignKey("research_corpora.id", ondelete="CASCADE"), index=True
+    )
+    name: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    codebook_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_codebooks.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    codebook_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    unit_type: Mapped[str] = mapped_column(String(32), default="paragraph")
+    sampling_strategy: Mapped[str] = mapped_column(String(64), default="random")
+    assignment_strategy: Mapped[str] = mapped_column(String(64), default="overlap")
+    sample_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    overlap_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    overlap_percent: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # Derived from annotation_mode; kept explicit for query convenience.
+    blind_mode: Mapped[bool] = mapped_column(default=True)
+    ai_assistance_enabled: Mapped[bool] = mapped_column(default=False)
+    annotation_mode: Mapped[str] = mapped_column(String(32), default="blind_reliability")
+    status: Mapped[str] = mapped_column(String(32), default="active", index=True)
+    annotator_ids_json: Mapped[str] = mapped_column(Text, default="[]")
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    metadata_json: Mapped[str] = mapped_column(Text, default="{}")
+
+
 class AnnotationTask(Base):
     __tablename__ = "research_annotation_tasks"
     __table_args__ = (
@@ -252,6 +295,11 @@ class AnnotationTask(Base):
     )
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    campaign_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_annotation_campaigns.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     text_unit_id: Mapped[str] = mapped_column(
         ForeignKey("research_text_units.id", ondelete="CASCADE"), index=True
     )

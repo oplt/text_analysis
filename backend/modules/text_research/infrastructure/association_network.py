@@ -57,9 +57,9 @@ def build_association_network(
 
         freq_a = pair.get("freq_a")
         freq_b = pair.get("freq_b")
-        if isinstance(freq_a, (int, float)):
+        if isinstance(freq_a, int | float):
             frequency[term_a] = max(frequency.get(term_a, 0), int(freq_a))
-        if isinstance(freq_b, (int, float)):
+        if isinstance(freq_b, int | float):
             frequency[term_b] = max(frequency.get(term_b, 0), int(freq_b))
 
         degree[term_a] = degree.get(term_a, 0) + 1

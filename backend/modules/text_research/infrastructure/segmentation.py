@@ -221,6 +221,4 @@ def segment_text(
     language: str | None = None,
 ) -> list[dict[str, Any]]:
     """Alias for :func:`segment_document` used by application services."""
-    return segment_document(
-        text, unit_type, page_provenance=page_provenance, language=language
-    )
+    return segment_document(text, unit_type, page_provenance=page_provenance, language=language)

@@ -3,6 +3,9 @@
 The fitted vectorizer is only ever `.transform()`-ed here — never refit —
 matching the leakage-prevention contract established during training.
 Predictions are persisted separately from human annotations.
+
+Large corpora are processed in batches (transform → upsert) so peak memory
+stays bounded; annotation filtering uses a projected unit-id query.
 """
 
 from __future__ import annotations
@@ -15,13 +18,63 @@ from backend.modules.text_research.application.quantitative_analysis_service imp
     _apply_document_filters,
 )
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
-from backend.modules.text_research.domain.models import AnalysisRun, dumps, loads
+from backend.modules.text_research.domain.models import AnalysisRun, TextUnit, dumps, loads
 from backend.modules.text_research.infrastructure import model_storage
 from backend.modules.text_research.infrastructure.classifiers import predict_with_uncertainty
+from backend.modules.text_research.infrastructure.out_of_core import (
+    iter_item_batches,
+    resolve_batch_size,
+    should_use_out_of_core,
+)
 
 
 def _utcnow() -> datetime:
     return datetime.now(UTC)
+
+
+def _prediction_row(
+    *,
+    model_id: str,
+    unit_id: str,
+    task_type: str,
+    label_names: list[str],
+    prediction: dict[str, Any],
+) -> dict[str, object]:
+    if task_type == "multilabel":
+        predicted_binary = prediction["prediction"]
+        predicted_labels = [label_names[i] for i, flag in enumerate(predicted_binary) if flag]
+        probabilities = prediction.get("probabilities")
+        scores = (
+            {label_names[i]: float(probabilities[i]) for i in range(len(label_names))}
+            if probabilities is not None
+            else {}
+        )
+    else:
+        predicted_index = int(prediction["prediction"])
+        predicted_label = (
+            label_names[predicted_index]
+            if label_names and 0 <= predicted_index < len(label_names)
+            else str(predicted_index)
+        )
+        predicted_labels = [predicted_label]
+        probabilities = prediction.get("probabilities")
+        probability = prediction.get("probability")
+        if task_type == "multiclass" and probabilities is not None:
+            scores = {
+                label_names[i]: float(probabilities[i])
+                for i in range(min(len(label_names), len(probabilities)))
+            }
+        elif task_type == "binary" and probability is not None and len(label_names) > 1:
+            scores = {label_names[1]: float(probability)}
+        else:
+            scores = {}
+    return {
+        "trained_model_id": model_id,
+        "text_unit_id": unit_id,
+        "predicted_labels_json": dumps(predicted_labels),
+        "scores_json": dumps(scores),
+        "uncertainty": prediction.get("uncertainty"),
+    }
 
 
 class PredictionService(ResearchAccessMixin):
@@ -65,7 +118,12 @@ class PredictionService(ResearchAccessMixin):
             raise ValueError(f"AnalysisRun {run_id} not found")
         params = loads(run.parameters_json, {})
 
-        await self.repo.update_run(run, status=AnalysisRunStatus.RUNNING.value, progress_stage="loading_units", started_at=_utcnow())
+        await self.repo.update_run(
+            run,
+            status=AnalysisRunStatus.RUNNING.value,
+            progress_stage="loading_units",
+            started_at=_utcnow(),
+        )
         await self.db.commit()
 
         try:
@@ -81,28 +139,57 @@ class PredictionService(ResearchAccessMixin):
             )
 
             if params.get("only_unannotated"):
-                annotated_unit_ids = {
-                    a.text_unit_id for a in await self.repo.list_annotations_for_corpus(model.corpus_id)
-                }
-                units = [u for u in units if u.id not in annotated_unit_ids]
+                annotated_unit_ids = await self.repo.list_annotated_text_unit_ids(model.corpus_id)
+                units = [unit for unit in units if unit.id not in annotated_unit_ids]
 
             vectorizer = model_storage.load_artifact(model.vectorizer_artifact_path)
             classifier = model_storage.load_artifact(model.model_artifact_path)
             label_names = loads(model.label_ids_json, [])
-            texts = [u.text for u in units]
-
-            # §33: apply the same validation-tuned decision threshold(s)
-            # used when scoring TEST at training time, rather than the
-            # classifier's raw 0.5 default. Persisted additively under
-            # `metrics["thresholds"]`; absent/no-op entries (multiclass, no
-            # validation set, no predict_proba) are ignored here too.
             training_metrics = loads(model.metrics_json, {})
             thresholds = training_metrics.get("thresholds")
 
-            await self.repo.update_run(run, progress_stage="vectorizing")
+            await self.repo.update_run(run, progress_stage="predicting")
             await self.db.commit()
-            predictions = (
-                predict_with_uncertainty(
+
+            batch_size = resolve_batch_size(len(units))
+            predicted_unit_ids: list[str] = []
+            units_predicted = 0
+            use_batches = should_use_out_of_core(len(units)) or len(units) > batch_size
+
+            async def _persist_batch(
+                batch_units: list[TextUnit], batch_predictions: list[dict[str, Any]]
+            ) -> None:
+                nonlocal units_predicted
+                rows = [
+                    _prediction_row(
+                        model_id=model.id,
+                        unit_id=unit.id,
+                        task_type=model.task_type,
+                        label_names=label_names,
+                        prediction=prediction,
+                    )
+                    for unit, prediction in zip(batch_units, batch_predictions, strict=True)
+                ]
+                await self.repo.bulk_upsert_predictions(rows)
+                predicted_unit_ids.extend(unit.id for unit in batch_units)
+                units_predicted += len(batch_units)
+
+            if units and use_batches:
+                for batch in iter_item_batches(units, batch_size):
+                    batch_list = list(batch)
+                    texts = [unit.text for unit in batch_list]
+                    batch_predictions = predict_with_uncertainty(
+                        classifier,
+                        vectorizer,
+                        texts,
+                        task_type=model.task_type,
+                        label_names=label_names,
+                        thresholds=thresholds,
+                    )
+                    await _persist_batch(batch_list, batch_predictions)
+            elif units:
+                texts = [unit.text for unit in units]
+                predictions = predict_with_uncertainty(
                     classifier,
                     vectorizer,
                     texts,
@@ -110,54 +197,10 @@ class PredictionService(ResearchAccessMixin):
                     label_names=label_names,
                     thresholds=thresholds,
                 )
-                if texts
-                else []
-            )
-
-            await self.repo.update_run(run, progress_stage="predicting")
-            rows: list[dict[str, object]] = []
-            for unit, prediction in zip(units, predictions, strict=True):
-                if model.task_type == "multilabel":
-                    predicted_binary = prediction["prediction"]
-                    predicted_labels = [
-                        label_names[i] for i, flag in enumerate(predicted_binary) if flag
-                    ]
-                    probabilities = prediction.get("probabilities")
-                    scores = (
-                        {label_names[i]: float(probabilities[i]) for i in range(len(label_names))}
-                        if probabilities is not None
-                        else {}
-                    )
-                else:
-                    # Binary/multiclass models predict label-encoder integer
-                    # indices; decode via the persisted `label_ids` (fitted
-                    # `LabelEncoder.classes_`, in index order) rather than
-                    # stringifying the raw integer.
-                    predicted_index = int(prediction["prediction"])
-                    predicted_label = (
-                        label_names[predicted_index]
-                        if label_names and 0 <= predicted_index < len(label_names)
-                        else str(predicted_index)
-                    )
-                    predicted_labels = [predicted_label]
-                    probabilities = prediction.get("probabilities")
-                    probability = prediction.get("probability")
-                    if model.task_type == "multiclass" and probabilities is not None:
-                        scores = {
-                            label_names[i]: float(probabilities[i])
-                            for i in range(min(len(label_names), len(probabilities)))
-                        }
-                    elif model.task_type == "binary" and probability is not None and len(label_names) > 1:
-                        scores = {label_names[1]: float(probability)}
-                    else:
-                        scores = {}
-                uncertainty = prediction.get("uncertainty")
-                rows.append({"trained_model_id": model.id, "text_unit_id": unit.id, "predicted_labels_json": dumps(predicted_labels), "scores_json": dumps(scores), "uncertainty": uncertainty})
+                await self.repo.update_run(run, progress_stage="saving")
+                await _persist_batch(units, predictions)
 
             await self.repo.update_run(run, progress_stage="saving")
-            for start in range(0, len(rows), 500):
-                await self.repo.bulk_upsert_predictions(rows[start : start + 500])
-
             from backend.modules.text_research.application.prediction_set_service import (
                 PredictionSetService,
             )
@@ -165,7 +208,7 @@ class PredictionService(ResearchAccessMixin):
             prediction_set = await PredictionSetService(self.db).create_from_run(
                 run=run,
                 model=model,
-                unit_ids=[unit.id for unit in units],
+                unit_ids=predicted_unit_ids or [unit.id for unit in units],
                 created_by=run.created_by,
             )
 
@@ -174,18 +217,22 @@ class PredictionService(ResearchAccessMixin):
                 status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 completed_at=_utcnow(),
-                metrics_json=dumps({"units_predicted": len(units)}),
+                metrics_json=dumps({"units_predicted": units_predicted}),
                 results_json=dumps(
                     {
-                        "unit_count": len(units),
+                        "unit_count": units_predicted,
                         "prediction_set_id": prediction_set.id,
+                        "batch_size": batch_size if use_batches else len(units),
                     }
                 ),
             )
             await self.db.commit()
         except Exception as exc:  # noqa: BLE001
             await self.repo.update_run(
-                run, status=AnalysisRunStatus.FAILED.value, completed_at=_utcnow(), error_message=str(exc)
+                run,
+                status=AnalysisRunStatus.FAILED.value,
+                completed_at=_utcnow(),
+                error_message=str(exc),
             )
             await self.db.commit()
             raise

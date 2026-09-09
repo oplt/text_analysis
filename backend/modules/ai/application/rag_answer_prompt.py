@@ -10,7 +10,7 @@ from backend.modules.identity_access.models import User
 
 DEFAULT_RAG_ANSWER_SYSTEM_PROMPT = (
     "You are a helpful assistant. Answer using only the provided context when relevant. "
-    "Cite sources using the [Source N] labels in the document context (include filename when helpful). "
+    "Cite sources using [Source N] labels in document context (include filename when helpful). "
     "If the context does not contain enough information to answer confidently, say so "
     "explicitly instead of guessing."
 )
@@ -71,9 +71,7 @@ async def resolve_rag_answer_prompt(repo: AiRepository, user: User) -> RagAnswer
     if not template:
         return _default_prompt_spec()
 
-    versions, _ = await repo.list_prompt_versions(
-        template.id, limit=MAX_PAGE_LIMIT, offset=0
-    )
+    versions, _ = await repo.list_prompt_versions(template.id, limit=MAX_PAGE_LIMIT, offset=0)
     version = None
     if template.active_version_id:
         version = next((item for item in versions if item.id == template.active_version_id), None)

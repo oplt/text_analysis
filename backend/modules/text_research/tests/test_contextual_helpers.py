@@ -7,9 +7,9 @@ from datetime import UTC, datetime
 from types import SimpleNamespace
 
 from backend.modules.text_research.application.contextual_dataset_service import (
+    ContextualDatasetService,
     _parse_numeric,
     _pearson,
-    ContextualDatasetService,
 )
 
 

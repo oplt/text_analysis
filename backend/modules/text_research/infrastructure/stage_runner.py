@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
 from backend.modules.text_research.domain.prepared_corpus import PreparedCorpusArtifact
 from backend.modules.text_research.infrastructure import artifact_registry, stage_cache
 from backend.modules.text_research.infrastructure.pipeline_compiler import (
-    ENGINE_VERSION,
     ExecutionPlan,
     computation_identity,
 )
@@ -279,7 +279,9 @@ def _run_dictionary(context: dict[str, Any], _plan: ExecutionPlan) -> None:
     if isinstance(spec_payload, dict):
         dictionary_spec = parse_dictionary_payload(spec_payload)
     else:
-        dictionary_spec = parse_dictionary_payload({"terms": spec_payload or [], "source": "inline"})
+        dictionary_spec = parse_dictionary_payload(
+            {"terms": spec_payload or [], "source": "inline"}
+        )
     group_keys = _resolve_group_keys(
         prepared,
         group_by=params.get("group_by"),
@@ -463,7 +465,9 @@ def _run_readability(context: dict[str, Any], _plan: ExecutionPlan) -> None:
 
 
 def _run_statistical_model(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.infrastructure.statistical_modeling import fit_statistical_model
+    from backend.modules.text_research.infrastructure.statistical_modeling import (
+        fit_statistical_model,
+    )
 
     params = context["spec"].analysis.parameters
     rows = params.get("rows") or context.get("rows")
@@ -479,7 +483,6 @@ def _run_statistical_model(context: dict[str, Any], _plan: ExecutionPlan) -> Non
 
 
 def _run_delegated(context: dict[str, Any], plan: ExecutionPlan) -> None:
-    analysis_type = context["spec"].analysis.type
     callback = context.get("delegate_callback")
     if callback is not None:
         context["results"] = callback(context, plan)

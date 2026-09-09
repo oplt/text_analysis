@@ -5,7 +5,6 @@ from backend.core.cache import (
     PLATFORM_CONFIG_CACHE_KEY,
     PLATFORM_FEATURE_FLAGS_CACHE_KEY,
     cache_get_json,
-    cache_key,
     cache_set_json,
     embedding_cache_key,
     invalidate_platform_caches,
@@ -45,10 +44,16 @@ class CacheHelpersTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(value, {"count": 2})
 
     def test_embedding_cache_key_is_stable_and_namespaced(self):
-        first = embedding_cache_key("openai", "text-embedding-3-small", "hello world", dimensions=1536)
-        second = embedding_cache_key("openai", "text-embedding-3-small", "hello world", dimensions=1536)
+        first = embedding_cache_key(
+            "openai", "text-embedding-3-small", "hello world", dimensions=1536
+        )
+        second = embedding_cache_key(
+            "openai", "text-embedding-3-small", "hello world", dimensions=1536
+        )
         third = embedding_cache_key("openai", "text-embedding-3-small", "other", dimensions=1536)
-        different_dims = embedding_cache_key("openai", "text-embedding-3-small", "hello world", dimensions=768)
+        different_dims = embedding_cache_key(
+            "openai", "text-embedding-3-small", "hello world", dimensions=768
+        )
 
         self.assertEqual(first, second)
         self.assertNotEqual(first, third)
@@ -162,7 +167,9 @@ class EmbeddingCacheTest(unittest.IsolatedAsyncioTestCase):
         provider = AsyncMock()
         provider.key = "local"
         provider.embed_texts = AsyncMock(return_value=[[0.5, 0.6]])
-        registry.embedding_provider_and_model = MagicMock(return_value=(provider, "local-heuristic"))
+        registry.embedding_provider_and_model = MagicMock(
+            return_value=(provider, "local-heuristic")
+        )
 
         with (
             patch("backend.lib.embedding_cache.settings") as mock_settings,

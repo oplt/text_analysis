@@ -8,8 +8,9 @@ leakage-safe group boundary as :func:`classifiers.grouped_train_val_test_split`)
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass
-from typing import Any, Iterator
+from typing import Any
 
 import numpy as np
 
@@ -90,9 +91,7 @@ def _pick_stratified_fold(
     from sklearn.model_selection import StratifiedGroupKFold
 
     indices = np.arange(len(labels))
-    sgkf = StratifiedGroupKFold(
-        n_splits=max(2, n_splits), shuffle=True, random_state=random_seed
-    )
+    sgkf = StratifiedGroupKFold(n_splits=max(2, n_splits), shuffle=True, random_state=random_seed)
     folds = list(sgkf.split(indices, labels, groups))
     fold_idx = int(random_seed) % len(folds)
     return folds[fold_idx]
@@ -112,9 +111,7 @@ def _group_shuffle_holdout(
     if len(set(pool_groups)) < 2:
         return pool_indices, np.array([], dtype=int)
 
-    splitter = GroupShuffleSplit(
-        n_splits=1, test_size=holdout_size, random_state=random_seed
-    )
+    splitter = GroupShuffleSplit(n_splits=1, test_size=holdout_size, random_state=random_seed)
     rel_train, rel_holdout = next(splitter.split(pool_indices, groups=pool_groups))
     return pool_indices[rel_train], pool_indices[rel_holdout]
 
@@ -284,9 +281,7 @@ def nested_grouped_cv_indices(
                     shuffle=True,
                     random_state=random_seed,
                 )
-                inner_iterator = inner_cv.split(
-                    outer_train, outer_train_labels, outer_train_groups
-                )
+                inner_iterator = inner_cv.split(outer_train, outer_train_labels, outer_train_groups)
             else:
                 from sklearn.model_selection import GroupKFold
 

@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 from scipy import sparse
 
-from backend.modules.text_research.infrastructure import quantitative, weighting
+from backend.modules.text_research.infrastructure import quantitative
 from backend.modules.text_research.infrastructure.weighting import (
     WeightingScheme,
     apply_weighting,

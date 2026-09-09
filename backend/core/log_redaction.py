@@ -6,6 +6,7 @@ import logging
 import re
 from urllib.parse import urlsplit, urlunsplit
 
+
 def redact_message(message: str) -> str:
     redacted = re.sub(r"(?i)\bbearer\s+\S+", "Bearer [REDACTED]", message)
     redacted = re.sub(

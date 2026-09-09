@@ -12,9 +12,9 @@ from backend.modules.text_research.application.analysis_executor import (
     run_prepared_analysis,
 )
 from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
+from backend.modules.text_research.infrastructure import stage_cache
 from backend.modules.text_research.infrastructure.pipeline_compiler import compile_plan
 from backend.modules.text_research.infrastructure.preprocessing import PreprocessingConfig
-from backend.modules.text_research.infrastructure import stage_cache
 from backend.modules.text_research.infrastructure.stage_runner import StageRunner
 
 

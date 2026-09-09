@@ -146,7 +146,7 @@ def analyze_document_text(
             QaFinding(
                 code="excessive_replacement_chars",
                 severity="warning",
-                message="Excessive Unicode replacement characters (U+FFFD) — possible encoding damage.",
+                message="Excessive Unicode replacement chars (U+FFFD) — possible encoding damage.",
                 details={
                     "replacement_char_count": replacement_count,
                     "replacement_ratio": round(replacement_ratio, 4),
@@ -209,7 +209,7 @@ def analyze_document_text(
                 QaFinding(
                     code="language_mismatch",
                     severity="warning",
-                    message="Language metadata suggests English, but character distribution looks non-English.",
+                    message="Language metadata suggests English, but chars look non-English.",
                     details={"language": language, "ascii_letter_ratio": round(ascii_ratio, 4)},
                 )
             )
@@ -218,7 +218,7 @@ def analyze_document_text(
                 QaFinding(
                     code="language_mismatch",
                     severity="info",
-                    message="Language metadata is non-English, but text is overwhelmingly Latin/ASCII.",
+                    message="Language metadata is non-English, but text is mostly Latin/ASCII.",
                     details={"language": language, "ascii_letter_ratio": round(ascii_ratio, 4)},
                 )
             )

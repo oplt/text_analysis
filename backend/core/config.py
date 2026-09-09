@@ -34,6 +34,19 @@ class Settings(BaseSettings):
     PLATFORM_DEFAULT_MODULE_PACK: str = "full_platform"
 
     DATABASE_URL: str
+    # SQLAlchemy async connection pool (API process).
+    # With PgBouncer (transaction pooling), keep these modest and prefer
+    # DB_POOL_RECYCLE below server idle timeouts; see docs/runbooks/postgres-pgbouncer.md.
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_TIMEOUT: int = 30
+    DB_POOL_RECYCLE: int = 1800
+    # Per Celery worker *process* pool. Keep small: total connections ≈
+    # worker_processes × (DB_WORKER_POOL_SIZE + DB_WORKER_MAX_OVERFLOW).
+    DB_WORKER_POOL_SIZE: int = 2
+    DB_WORKER_MAX_OVERFLOW: int = 2
+    DB_WORKER_POOL_TIMEOUT: int = 30
+    DB_WORKER_POOL_RECYCLE: int = 1800
     REDIS_URL: str
     CACHE_ENABLED: bool = True
     CACHE_EMBEDDING_TTL_SECONDS: int = 600
@@ -179,6 +192,12 @@ class Settings(BaseSettings):
     # Text Research (text research) model/vectorizer artifact storage
     RESEARCH_ARTIFACT_DIR: str = "var/research_artifacts"
     RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD: int = 50
+    # Layered stage cache (L1 process / L2 Redis / L3 shared artifacts).
+    RESEARCH_STAGE_CACHE_TTL_SECONDS: int = 604800  # 7 days
+    RESEARCH_STAGE_LOCK_TTL_SECONDS: int = 120
+    RESEARCH_STAGE_LOCK_WAIT_SECONDS: int = 60
+    RESEARCH_STAGE_L1_MAX_ENTRIES: int = 32
+    RESEARCH_STAGE_L1_MAX_BYTES: int = 16 * 1024 * 1024
 
     # Nested parallelism controls for Celery CPU workers (§22).
     # Keep BLAS/OpenMP and sklearn/joblib at 1 inside each worker process so

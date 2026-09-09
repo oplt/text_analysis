@@ -70,6 +70,6 @@ def describe_linguistic_capabilities() -> dict[str, Any]:
         "dependency_frequencies": SpacyLinguisticEngine.available(),
         "notes": [
             "POS/dependency require optional spaCy (see SpacyLinguisticEngine).",
-            "Lemmatization is available through preprocessing when simplemma supports the language.",
+            "Lemmatization available via preprocessing when simplemma supports the language.",
         ],
     }

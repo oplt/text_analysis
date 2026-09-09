@@ -11,91 +11,7 @@ import {
     Typography,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-
-export type ClassifierAlgorithm =
-    | "logistic_regression"
-    | "linear_svm"
-    | "multinomial_nb"
-    | "complement_nb"
-    | "sgd_classifier"
-    | "embedding_logistic"
-    | "embedding_svm";
-
-export type ClassificationTrainConfig = {
-    algorithm: ClassifierAlgorithm;
-    taskType: "" | "binary" | "multiclass" | "multilabel";
-    profileId: string;
-    modelName: string;
-    vectorizer: "tfidf" | "count";
-    useWordNgrams: boolean;
-    ngramMin: number;
-    ngramMax: number;
-    useCharNgrams: boolean;
-    charNgramMin: number;
-    charNgramMax: number;
-    minDf: number;
-    maxDf: number;
-    maxFeatures: string;
-    classWeight: "none" | "balanced";
-    regularizationC: number;
-    nbAlpha: number;
-    sgdLoss: string;
-    testSize: number;
-    valSize: number;
-    randomSeed: number;
-    validationStrategy: "holdout" | "nested_grouped_cv";
-    nestedOuter: number;
-    nestedInner: number;
-    tuneHyperparameters: boolean;
-    searchType: "grid" | "random";
-    paramGridText: string;
-    searchScoring: string;
-    hyperparameterNIter: number;
-    tuneThresholds: boolean;
-    thresholdObjective: string;
-    bootstrapSamples: number;
-    ciLevel: number;
-    calibrationMethod: "sigmoid" | "isotonic";
-    embeddingProvider: string;
-};
-
-export const DEFAULT_CLASSIFICATION_TRAIN_CONFIG: ClassificationTrainConfig = {
-    algorithm: "logistic_regression",
-    taskType: "",
-    profileId: "",
-    modelName: "",
-    vectorizer: "tfidf",
-    useWordNgrams: true,
-    ngramMin: 1,
-    ngramMax: 2,
-    useCharNgrams: false,
-    charNgramMin: 3,
-    charNgramMax: 5,
-    minDf: 1,
-    maxDf: 1,
-    maxFeatures: "",
-    classWeight: "balanced",
-    regularizationC: 1,
-    nbAlpha: 1,
-    sgdLoss: "log_loss",
-    testSize: 0.25,
-    valSize: 0.2,
-    randomSeed: 42,
-    validationStrategy: "holdout",
-    nestedOuter: 5,
-    nestedInner: 3,
-    tuneHyperparameters: false,
-    searchType: "grid",
-    paramGridText: "",
-    searchScoring: "f1_macro",
-    hyperparameterNIter: 10,
-    tuneThresholds: true,
-    thresholdObjective: "f1",
-    bootstrapSamples: 200,
-    ciLevel: 0.95,
-    calibrationMethod: "sigmoid",
-    embeddingProvider: "hashing",
-};
+import type { ClassificationTrainConfig, ClassifierAlgorithm } from "./classificationTrainConfig";
 
 type ProfileOption = { id: string; name: string };
 
@@ -307,6 +223,61 @@ export function ClassificationConfigPanel({
                         disabled={isEmbedding}
                         sx={{ width: 140 }}
                         helperText="Blank = no cap"
+                    />
+                </Stack>
+            </Section>
+
+            <Section
+                title="Feature selection"
+                description="Supervised selection after DF pruning. Fit on train labels only."
+                defaultExpanded
+            >
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
+                    <TextField
+                        select
+                        size="small"
+                        label="Method"
+                        value={config.featureSelectionMethod}
+                        onChange={(e) =>
+                            patch({
+                                featureSelectionMethod: e.target
+                                    .value as ClassificationTrainConfig["featureSelectionMethod"],
+                            })
+                        }
+                        disabled={isEmbedding}
+                        sx={{ minWidth: 180 }}
+                    >
+                        <MenuItem value="none">None</MenuItem>
+                        <MenuItem value="chi2">Chi-square</MenuItem>
+                        <MenuItem value="mutual_info">Mutual information</MenuItem>
+                        <MenuItem value="l1">L1 selection</MenuItem>
+                    </TextField>
+                    <TextField
+                        size="small"
+                        label="Top K"
+                        value={config.featureSelectionK}
+                        onChange={(e) => patch({ featureSelectionK: e.target.value })}
+                        disabled={
+                            isEmbedding ||
+                            config.featureSelectionMethod === "none" ||
+                            config.featureSelectionMethod === "l1" ||
+                            Boolean(config.featureSelectionPercentile.trim())
+                        }
+                        sx={{ width: 140 }}
+                        helperText="Integer or all"
+                    />
+                    <TextField
+                        size="small"
+                        label="Percentile"
+                        value={config.featureSelectionPercentile}
+                        onChange={(e) => patch({ featureSelectionPercentile: e.target.value })}
+                        disabled={
+                            isEmbedding ||
+                            config.featureSelectionMethod === "none" ||
+                            config.featureSelectionMethod === "l1"
+                        }
+                        sx={{ width: 140 }}
+                        helperText="Optional; overrides K"
                     />
                 </Stack>
             </Section>

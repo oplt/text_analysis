@@ -106,11 +106,7 @@ class AiRepository:
         limit: int = DEFAULT_PAGE_LIMIT,
         offset: int = 0,
     ) -> tuple[list[AiRun], int]:
-        stmt = (
-            select(AiRun)
-            .where(AiRun.user_id == user_id)
-            .order_by(AiRun.created_at.desc())
-        )
+        stmt = select(AiRun).where(AiRun.user_id == user_id).order_by(AiRun.created_at.desc())
         return await paginate_scalars(self.db, stmt, limit=limit, offset=offset)
 
     async def list_reviews_for_user(

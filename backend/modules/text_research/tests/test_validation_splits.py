@@ -2,7 +2,8 @@
 splits (§38, §39). Pure functions — no DB, no sklearn — run without asyncio
 plugin autoload:
 
-    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest backend/modules/text_research/tests/test_validation_splits.py
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest \
+      backend/modules/text_research/tests/test_validation_splits.py
 """
 
 from __future__ import annotations

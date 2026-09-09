@@ -32,10 +32,10 @@ from backend.modules.text_research.domain.enums import (
     ModelLifecycleStatus,
 )
 from backend.modules.text_research.domain.models import AnalysisRun, TrainedModel, dumps, loads
-from backend.modules.text_research.infrastructure import model_storage
-from backend.modules.text_research.infrastructure import classifiers
+from backend.modules.text_research.infrastructure import classifiers, model_storage
 from backend.modules.text_research.infrastructure.classifiers import (
     FeatureConfig,
+    FeatureSelectionConfig,
     extract_linear_coefficients,
     fit_text_classifier,
     flatten_single_label_targets,
@@ -43,8 +43,14 @@ from backend.modules.text_research.infrastructure.classifiers import (
     infer_task_type,
 )
 from backend.modules.text_research.infrastructure.error_analysis import classifier_error_report
-from backend.modules.text_research.infrastructure.prepared_corpus_builder import prepare_texts_cached
+from backend.modules.text_research.infrastructure.prepared_corpus_builder import (
+    prepare_texts_cached,
+)
 from backend.modules.text_research.infrastructure.preprocessing import PreprocessingConfig
+from backend.modules.text_research.infrastructure.provenance import (
+    merge_completion_provenance,
+    partition_hash,
+)
 
 
 def _utcnow() -> datetime:
@@ -70,6 +76,9 @@ class ClassificationService(ResearchAccessMixin):
         min_df: float | int = 1,
         max_df: float | int = 1.0,
         max_features: int | None = None,
+        feature_selection_method: str = "none",
+        feature_selection_k: int | str = "all",
+        feature_selection_percentile: float | None = None,
         class_weight: str | None = None,
         regularization_c: float = 1.0,
         nb_alpha: float = 1.0,
@@ -125,6 +134,9 @@ class ClassificationService(ResearchAccessMixin):
             "min_df": min_df,
             "max_df": max_df,
             "max_features": max_features,
+            "feature_selection_method": feature_selection_method,
+            "feature_selection_k": feature_selection_k,
+            "feature_selection_percentile": feature_selection_percentile,
             "class_weight": class_weight,
             "regularization_c": regularization_c,
             "nb_alpha": nb_alpha,
@@ -178,6 +190,11 @@ class ClassificationService(ResearchAccessMixin):
                 "min_df": min_df,
                 "max_df": max_df,
                 "max_features": max_features,
+                "selection": {
+                    "method": feature_selection_method,
+                    "k": feature_selection_k,
+                    "percentile": feature_selection_percentile,
+                },
             },
             model={
                 "family": algorithm,
@@ -314,6 +331,11 @@ class ClassificationService(ResearchAccessMixin):
                 max_df=params["max_df"],
                 max_features=params["max_features"],
             )
+            selection_config = FeatureSelectionConfig(
+                method=params.get("feature_selection_method", "none"),
+                k=params.get("feature_selection_k", "all"),
+                percentile=params.get("feature_selection_percentile"),
+            )
 
             # §31 hyperparameter tuning: small grid/random search over
             # C/alpha/max_features, scored on VALIDATION only (or
@@ -337,6 +359,7 @@ class ClassificationService(ResearchAccessMixin):
                     algorithm=params["algorithm"],
                     feature_config=feature_config,
                     preprocessing_config=config,
+                    selection_config=selection_config,
                     label_names=label_names if task_type == "multilabel" else None,
                     class_weight=params["class_weight"],
                     C=params["regularization_c"],
@@ -348,7 +371,10 @@ class ClassificationService(ResearchAccessMixin):
                     hyperparameter_scoring=params.get("hyperparameter_scoring", "f1_macro"),
                     embedding_provider=params.get("embedding_provider", "hashing"),
                 )
-            if params.get("tune_hyperparameters") and params.get("validation_strategy") != "nested_grouped_cv":
+            if (
+                params.get("tune_hyperparameters")
+                and params.get("validation_strategy") != "nested_grouped_cv"
+            ):
                 await self.repo.update_run(run, progress_stage="hyperparameter_search")
                 await self.db.commit()
                 run = await ensure_not_cancelled(self.repo, run)
@@ -362,6 +388,7 @@ class ClassificationService(ResearchAccessMixin):
                     algorithm=params["algorithm"],
                     feature_config=feature_config,
                     preprocessing_config=config,
+                    selection_config=selection_config,
                     label_names=label_names if task_type == "multilabel" else None,
                     class_weight=params["class_weight"],
                     C=params["regularization_c"],
@@ -440,6 +467,7 @@ class ClassificationService(ResearchAccessMixin):
                     algorithm=resolved_algorithm,
                     feature_config=feature_config,
                     preprocessing_config=config,
+                    selection_config=selection_config,
                     sgd_loss=params.get("sgd_loss", "log_loss"),
                     nb_alpha=params.get("nb_alpha", 1.0),
                     **fit_kwargs,
@@ -507,7 +535,11 @@ class ClassificationService(ResearchAccessMixin):
                     # position even when the task type is binary/multiclass.
                     label_ids_json=dumps(fit_result["classes"]),
                     feature_config_json=dumps(
-                        {**config, "feature_config": fit_result["feature_config"]}
+                        {
+                            **config,
+                            "feature_config": fit_result["feature_config"],
+                            "feature_selection": fit_result.get("feature_selection"),
+                        }
                     ),
                     training_config_json=dumps(params),
                     metrics_json=dumps(fit_result["metrics"]),
@@ -526,6 +558,38 @@ class ClassificationService(ResearchAccessMixin):
                 progress_stage="completed",
                 completed_at=_utcnow(),
                 metrics_json=dumps(fit_result["metrics"]),
+                parameters_json=dumps(
+                    merge_completion_provenance(
+                        params,
+                        corpus_snapshot_id=snapshot.id,
+                        corpus_snapshot_hash=prepared.corpus_checksum,
+                        corpus_checksum=prepared.corpus_checksum,
+                        pipeline_checksum=prepared.pipeline_checksum,
+                        model_artifact_checksum=model_artifact_metadata.get("sha256"),
+                        output_artifact_checksums=[
+                            checksum
+                            for checksum in (
+                                model_artifact_metadata.get("sha256"),
+                                vectorizer_artifact_metadata.get("sha256"),
+                            )
+                            if checksum
+                        ],
+                        split_hashes={
+                            "train": partition_hash(sorted(set(split["groups_train"]))),
+                            "validation": partition_hash(
+                                sorted(set(split.get("groups_val", [])))
+                            ),
+                            "test": partition_hash(sorted(set(split["groups_test"]))),
+                        },
+                        feature_configuration=fit_result.get("feature_config"),
+                        feature_selection_configuration=fit_result.get("feature_selection"),
+                        algorithm=params.get("algorithm"),
+                        hyperparameters=params.get("hyperparameters")
+                        or params.get("model_hyperparameters"),
+                        validation_strategy=params.get("split_strategy")
+                        or "grouped_by_source_document",
+                    )
+                ),
                 results_json=dumps(
                     {
                         "trained_model_id": trained_model.id,
@@ -534,6 +598,9 @@ class ClassificationService(ResearchAccessMixin):
                         "n_val": len(split.get("X_val", [])),
                         "n_test": fit_result["n_test"],
                         "vocabulary_size": fit_result["vocabulary_size"],
+                        "feature_space": fit_result.get("feature_space"),
+                        "feature_selection": fit_result.get("feature_selection"),
+                        "scientific_warnings": fit_result.get("scientific_warnings") or [],
                         "classes": fit_result["classes"],
                         "artifact_metadata": {
                             "model": model_artifact_metadata,

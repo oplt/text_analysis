@@ -1,9 +1,9 @@
 """HTTP routes for the text research workflow."""
 
-
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import csv
 import io
 import json
@@ -15,45 +15,49 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps.auth import get_current_user
 from backend.api.deps.db import get_db
-from backend.db.session import SessionLocal
 from backend.core.pagination import (
     PaginatedResponse,
     PaginationParams,
     paginated_response,
     pagination_params,
 )
+from backend.db.session import SessionLocal
 from backend.modules.identity_access.models import User
+from backend.modules.text_research.api.corpora import router as corpora_router
 from backend.modules.text_research.api.schemas import (
     ActiveLearningAssignRequest,
     AdjudicationSaveRequest,
     AnalysisRequest,
     AnalysisRunResponse,
     AnnotationAssignRequest,
+    AnnotationCampaignAssignRequest,
+    AnnotationCampaignCreate,
+    AnnotationCampaignResponse,
+    AnnotationCampaignUpdate,
     AnnotationLabelCreate,
     AnnotationLabelResponse,
     AnnotationLabelUpdate,
     AnnotationResponse,
     AnnotationSaveRequest,
+    ApplyCleaningRequest,
     BulkMetadataUpdate,
-    MetadataImportResponse,
     ClassifierPredictRequest,
     ClassifierTrainRequest,
-    CodebookCreate,
-    CodebookResponse,
     CleaningPreviewRequest,
     CleaningPreviewResponse,
     CleaningProfileCreate,
     CleaningProfileResponse,
     CleaningProfileUpdate,
-    ApplyCleaningRequest,
+    ClusteringRequest,
+    CodebookCreate,
+    CodebookResponse,
     ComparativeAnalysisRequest,
     ContextualDatasetCreate,
     ContextualDatasetDetail,
     ContextualDatasetSummary,
-    ContextualObservationPage,
     ContextualImportResponse,
     ContextualLinkRequest,
-    ClusteringRequest,
+    ContextualObservationPage,
     CooccurrenceRequest,
     CorpusAnnotationAssignRequest,
     CorpusAnnotationAssignResponse,
@@ -68,15 +72,21 @@ from backend.modules.text_research.api.schemas import (
     DictionaryAnalysisRequest,
     DictionaryCreate,
     DictionaryResponse,
-    DimensionalityReductionRequest,
     DictionaryUpdate,
+    DimensionalityReductionRequest,
+    DriftMonitoringRequest,
     DuplicateDetectionRequest,
     ExportManifestResponse,
     FrequencyRequest,
     KeynessRequest,
-    MeasurementComparisonRequest,
     KwicRequest,
+    MeasurementComparisonRequest,
+    MetadataImportResponse,
+    ModelLifecycleUpdateRequest,
+    ModelPredictionItemResponse,
     NgramRequest,
+    PredictionSetDetailResponse,
+    PredictionSetResponse,
     PreprocessingPreviewRequest,
     PreprocessingPreviewResponse,
     PreprocessingProfileCreate,
@@ -91,36 +101,25 @@ from backend.modules.text_research.api.schemas import (
     RobustnessRequest,
     SegmentRequest,
     SimilarityRequest,
-    StatisticalModelRequest,
     SourceTextResponse,
+    StatisticalModelRequest,
     TextUnitContextResponse,
     TopicKSweepRequest,
     TopicLabelRequest,
     TopicSeedStabilityRequest,
     TopicTrainRequest,
-    DriftMonitoringRequest,
-    ModelLifecycleUpdateRequest,
-    ModelPredictionItemResponse,
-    PredictionSetDetailResponse,
-    PredictionSetResponse,
     TrainedModelResponse,
     TrainingDatasetSnapshotResponse,
 )
 from backend.modules.text_research.application.active_learning_service import ActiveLearningService
-from backend.modules.text_research.application.drift_service import DriftService
-from backend.modules.text_research.application.model_lifecycle_service import ModelLifecycleService
 from backend.modules.text_research.application.adjudication_service import AdjudicationService
 from backend.modules.text_research.application.annotation_service import AnnotationService
+from backend.modules.text_research.application.campaign_service import AnnotationCampaignService
 from backend.modules.text_research.application.classification_service import ClassificationService
+from backend.modules.text_research.application.cleaning_service import CleaningProfileService
 from backend.modules.text_research.application.codebook_service import CodebookService
 from backend.modules.text_research.application.comparative_analysis_service import (
     ComparativeAnalysisService,
-)
-from backend.modules.text_research.application.statistical_modeling_service import (
-    StatisticalModelingService,
-)
-from backend.modules.text_research.application.measurement_validation_service import (
-    MeasurementValidationService,
 )
 from backend.modules.text_research.application.contextual_dataset_service import (
     ContextualDatasetService,
@@ -130,9 +129,13 @@ from backend.modules.text_research.application.dashboard_service import Dashboar
 from backend.modules.text_research.application.dataset_builder_service import DatasetBuilderService
 from backend.modules.text_research.application.demo_seed_service import DemoSeedService
 from backend.modules.text_research.application.dictionary_service import DictionaryService
+from backend.modules.text_research.application.drift_service import DriftService
 from backend.modules.text_research.application.export_service import ExportService
 from backend.modules.text_research.application.ingestion_qa_service import IngestionQaService
-from backend.modules.text_research.application.cleaning_service import CleaningProfileService
+from backend.modules.text_research.application.measurement_validation_service import (
+    MeasurementValidationService,
+)
+from backend.modules.text_research.application.model_lifecycle_service import ModelLifecycleService
 from backend.modules.text_research.application.prediction_service import PredictionService
 from backend.modules.text_research.application.prediction_set_service import PredictionSetService
 from backend.modules.text_research.application.preprocessing_service import (
@@ -145,16 +148,18 @@ from backend.modules.text_research.application.reliability_service import Reliab
 from backend.modules.text_research.application.robustness_service import RobustnessService
 from backend.modules.text_research.application.run_service import RunService
 from backend.modules.text_research.application.segmentation_service import SegmentationService
+from backend.modules.text_research.application.statistical_modeling_service import (
+    StatisticalModelingService,
+)
 from backend.modules.text_research.application.topic_model_service import TopicModelService
-from backend.modules.text_research.api.corpora import router as corpora_router
 from backend.modules.text_research.domain.models import (
     AnalysisRun,
     AnnotationLabel,
     CleaningProfile,
     CorpusDocument,
     DictionaryDefinition,
-    PreprocessingProfile,
     PredictionSet,
+    PreprocessingProfile,
     ResearchCorpus,
     TrainedModel,
     TrainingDatasetSnapshot,
@@ -225,13 +230,21 @@ def _run_event_name(
     previous: AnalysisRunResponse | None,
 ) -> str:
     """Return the SSE event that describes the newest persisted run state."""
-    if previous is None or current.status != previous.status:
-        if current.status in _TERMINAL_RUN_STATUSES | {"queued"}:
-            return current.status
-        return "started" if current.status in {"running", "pending"} else "progress"
-    if current.artifact_path and current.artifact_path != previous.artifact_path:
-        return "artifact-created"
-    return "progress"
+    from backend.modules.text_research.infrastructure.run_events import run_event_name
+
+    prev = None
+    if previous is not None:
+        prev = {
+            "status": previous.status,
+            "progress_stage": previous.progress_stage,
+            "artifact_path": previous.artifact_path,
+        }
+    return run_event_name(
+        status=current.status,
+        progress_stage=current.progress_stage,
+        artifact_path=current.artifact_path,
+        previous=prev,
+    )
 
 
 def _profile_response(profile: PreprocessingProfile) -> PreprocessingProfileResponse:
@@ -1000,6 +1013,148 @@ async def assign_corpus_annotation_tasks(
         stratum_mode=body.stratum_mode,
         sampling_level=body.sampling_level,
         max_units_per_document=body.max_units_per_document,
+        campaign_id=body.campaign_id,
+        create_campaign=body.create_campaign and body.campaign_id is None,
+        campaign_name=body.campaign_name,
+        campaign_description=body.campaign_description,
+        annotation_mode=body.annotation_mode,
+        blind_mode=body.blind_mode,
+        ai_assistance_enabled=body.ai_assistance_enabled,
+        codebook_id=body.codebook_id,
+    )
+
+
+@router.post(
+    "/projects/{project_id}/annotation-campaigns",
+    response_model=AnnotationCampaignResponse,
+    status_code=201,
+)
+async def create_annotation_campaign(
+    project_id: str,
+    body: AnnotationCampaignCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = AnnotationCampaignService(db)
+    campaign = await service.create_campaign_committed(
+        user_id=current_user.id,
+        project_id=project_id,
+        corpus_id=body.corpus_id,
+        name=body.name,
+        description=body.description,
+        codebook_id=body.codebook_id,
+        unit_type=body.unit_type,
+        sampling_strategy=body.sampling_strategy,
+        assignment_strategy=body.assignment_strategy,
+        sample_size=body.sample_size,
+        overlap_count=body.overlap_count,
+        overlap_percent=body.overlap_percent,
+        annotation_mode=body.annotation_mode,
+        blind_mode=body.blind_mode,
+        ai_assistance_enabled=body.ai_assistance_enabled,
+        annotator_ids=body.annotator_ids,
+        metadata=body.metadata,
+    )
+    return await service.campaign_payload(campaign)
+
+
+@router.get(
+    "/projects/{project_id}/annotation-campaigns",
+    response_model=list[AnnotationCampaignResponse],
+)
+async def list_annotation_campaigns(
+    project_id: str,
+    corpus_id: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = AnnotationCampaignService(db)
+    campaigns = await service.list_campaigns(
+        project_id, user_id=current_user.id, corpus_id=corpus_id
+    )
+    return [await service.campaign_payload(campaign) for campaign in campaigns]
+
+
+@router.get(
+    "/annotation-campaigns/{campaign_id}",
+    response_model=AnnotationCampaignResponse,
+)
+async def get_annotation_campaign(
+    campaign_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = AnnotationCampaignService(db)
+    campaign = await service.get_campaign(campaign_id, user_id=current_user.id)
+    return await service.campaign_payload(campaign)
+
+
+@router.patch(
+    "/annotation-campaigns/{campaign_id}",
+    response_model=AnnotationCampaignResponse,
+)
+async def patch_annotation_campaign(
+    campaign_id: str,
+    body: AnnotationCampaignUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = AnnotationCampaignService(db)
+    campaign = await service.patch_campaign(
+        campaign_id,
+        user_id=current_user.id,
+        name=body.name,
+        description=body.description,
+        status=body.status,
+        annotation_mode=body.annotation_mode,
+        blind_mode=body.blind_mode,
+        ai_assistance_enabled=body.ai_assistance_enabled,
+        metadata=body.metadata,
+    )
+    return await service.campaign_payload(campaign)
+
+
+@router.post("/annotation-campaigns/{campaign_id}/assign", status_code=201)
+async def assign_annotation_campaign(
+    campaign_id: str,
+    body: AnnotationCampaignAssignRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await AnnotationCampaignService(db).assign(
+        campaign_id,
+        user_id=current_user.id,
+        annotator_ids=body.annotator_ids,
+        sample_size=body.sample_size,
+        strategy=body.strategy,
+        overlap_count=body.overlap_count,
+        overlap_percent=body.overlap_percent,
+        random_seed=body.random_seed,
+        stratify_by=body.stratify_by,
+        stratum_mode=body.stratum_mode,
+        sampling_level=body.sampling_level,
+        max_units_per_document=body.max_units_per_document,
+    )
+
+
+@router.get("/annotation-campaigns/{campaign_id}/progress")
+async def annotation_campaign_progress(
+    campaign_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await AnnotationCampaignService(db).progress(campaign_id, user_id=current_user.id)
+
+
+@router.get("/text-units/{text_unit_id}/blind-policy")
+async def text_unit_blind_policy(
+    text_unit_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await AnnotationService(db).get_text_unit_or_404(text_unit_id, user_id=current_user.id)
+    return await AnnotationCampaignService(db).blind_policy_for_annotator_unit(
+        text_unit_id=text_unit_id, annotator_id=current_user.id
     )
 
 
@@ -1016,9 +1171,7 @@ async def list_annotation_queue(
         limit=pagination.limit,
         offset=pagination.offset,
     )
-    return paginated_response(
-        queue, total=total, limit=pagination.limit, offset=pagination.offset
-    )
+    return paginated_response(queue, total=total, limit=pagination.limit, offset=pagination.offset)
 
 
 @router.post("/annotations", response_model=list[AnnotationResponse])
@@ -1058,6 +1211,27 @@ async def list_unit_annotations(
     return [AnnotationResponse.model_validate(a) for a in annotations]
 
 
+@router.get(
+    "/corpora/{corpus_id}/annotations",
+    response_model=list[AnnotationResponse],
+)
+async def list_corpus_annotations_for_units(
+    corpus_id: str,
+    text_unit_ids: list[str] = Query(default=[]),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List human annotations for specific units.
+
+    Predictions and adjudications are never returned here — callers must keep
+    MODEL PREDICTION / HUMAN ANNOTATION / ADJUDICATED GOLD layers separate.
+    """
+    annotations = await AnnotationService(db).list_annotations_for_units(
+        corpus_id, user_id=current_user.id, text_unit_ids=text_unit_ids
+    )
+    return [AnnotationResponse.model_validate(a) for a in annotations]
+
+
 @router.get("/text-units/{text_unit_id}/context", response_model=TextUnitContextResponse)
 async def get_text_unit_context(
     text_unit_id: str,
@@ -1087,6 +1261,45 @@ async def compute_reliability(
         user_id=current_user.id,
         codebook_id=body.codebook_id,
         label_ids=body.label_ids,
+        campaign_id=body.campaign_id,
+        unit_type=body.unit_type,
+        annotator_ids=body.annotator_ids,
+        bootstrap_samples=body.bootstrap_samples,
+        confidence_level=body.confidence_level,
+        random_seed=body.random_seed,
+    )
+    return _run_response(run)
+
+
+@router.post(
+    "/annotation-campaigns/{campaign_id}/reliability",
+    response_model=AnalysisRunResponse,
+)
+async def compute_campaign_reliability(
+    campaign_id: str,
+    body: ReliabilityRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    campaign = await AnnotationCampaignService(db).get_campaign(
+        campaign_id, user_id=current_user.id
+    )
+    codebook_id = body.codebook_id or campaign.codebook_id
+    if not codebook_id:
+        raise HTTPException(
+            status_code=422, detail="codebook_id is required when the campaign has none"
+        )
+    run = await ReliabilityService(db).compute_reliability(
+        campaign.corpus_id,
+        user_id=current_user.id,
+        codebook_id=codebook_id,
+        label_ids=body.label_ids,
+        campaign_id=campaign_id,
+        unit_type=body.unit_type or campaign.unit_type,
+        annotator_ids=body.annotator_ids,
+        bootstrap_samples=body.bootstrap_samples,
+        confidence_level=body.confidence_level,
+        random_seed=body.random_seed,
     )
     return _run_response(run)
 
@@ -1161,9 +1374,6 @@ def _analysis_filters(body: AnalysisRequest) -> dict[str, Any]:
         "hierarchy",
         "exclusions",
         "dictionary_language",
-        "case_sensitive",
-        "rate_per",
-        "group_by",
         "association_method",
         "directional",
         "min_frequency",
@@ -1187,11 +1397,7 @@ def _analysis_filters(body: AnalysisRequest) -> dict[str, Any]:
         "minhash_threshold",
         "max_pairs",
     }
-    return {
-        k: v
-        for k, v in body.model_dump().items()
-        if k not in excluded and v is not None
-    }
+    return {k: v for k, v in body.model_dump().items() if k not in excluded and v is not None}
 
 
 @router.post("/corpora/{corpus_id}/analysis/corpus-stats", response_model=AnalysisRunResponse)
@@ -1679,6 +1885,9 @@ async def train_classifier(
         min_df=body.min_df,
         max_df=body.max_df,
         max_features=body.max_features,
+        feature_selection_method=body.feature_selection_method,
+        feature_selection_k=body.feature_selection_k,
+        feature_selection_percentile=body.feature_selection_percentile,
         class_weight=body.class_weight,
         regularization_c=body.regularization_c,
         nb_alpha=body.nb_alpha,
@@ -1880,6 +2089,8 @@ async def list_prediction_sets(
 async def list_uncertain_predictions(
     model_id: str,
     limit: int = Query(default=20, ge=1, le=500),
+    campaign_id: str | None = None,
+    text_unit_id: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -1887,7 +2098,23 @@ async def list_uncertain_predictions(
 
     This endpoint deliberately returns model output separately from human
     annotations; users explicitly choose which units enter an annotation task.
+
+    When ``campaign_id`` or ``text_unit_id`` refers to a blind campaign for the
+    current annotator, the queue is empty — predictions must not be fetched.
     """
+    if campaign_id:
+        campaign = await AnnotationCampaignService(db).get_campaign(
+            campaign_id, user_id=current_user.id
+        )
+        if campaign.blind_mode:
+            return []
+    if text_unit_id:
+        policy = await AnnotationCampaignService(db).blind_policy_for_annotator_unit(
+            text_unit_id=text_unit_id, annotator_id=current_user.id
+        )
+        if policy.get("hide_model_predictions"):
+            return []
+
     rows = await ActiveLearningService(db).uncertain_queue(
         model_id, user_id=current_user.id, limit=limit
     )
@@ -2065,7 +2292,9 @@ def _topic_seed_stability_filters(body: TopicSeedStabilityRequest) -> dict[str, 
 
 
 @router.post(
-    "/corpora/{corpus_id}/topics/seed-stability", response_model=AnalysisRunResponse, status_code=202
+    "/corpora/{corpus_id}/topics/seed-stability",
+    response_model=AnalysisRunResponse,
+    status_code=202,
 )
 async def topic_seed_stability(
     corpus_id: str,
@@ -2153,8 +2382,6 @@ async def run_robustness_sweep(
     return _run_response(run)
 
 
-
-
 @router.post("/corpora/{corpus_id}/analysis/statistical-model", response_model=AnalysisRunResponse)
 async def statistical_model(
     corpus_id: str,
@@ -2196,6 +2423,7 @@ async def measurement_comparison(
         subgroup=body.subgroup,
     )
     return _run_response(run)
+
 
 @router.post("/corpora/{corpus_id}/comparative/prevalence", response_model=AnalysisRunResponse)
 async def comparative_prevalence(
@@ -2286,28 +2514,123 @@ async def stream_run_events(
     run_id: str,
     current_user: User = Depends(get_current_user),
 ):
-    """Stream persisted run state changes, with a client-side polling fallback."""
+    """Stream run state via Redis Pub/Sub, with rare DB reconcile + FE poll fallback.
+
+    Workers persist durable state in PostgreSQL and publish snapshots to Redis.
+    This endpoint is the transport only — it does not poll the DB every second.
+    """
+    from backend.core.cache import redis_client
+    from backend.core.config import settings
+    from backend.modules.text_research.infrastructure.run_events import (
+        TERMINAL_RUN_STATUSES,
+        run_events_channel,
+    )
+
+    # Authorize once up front.
+    async with SessionLocal() as session:
+        await RunService(session).get_run(run_id, user_id=current_user.id)
+
+    async def _load_response() -> AnalysisRunResponse:
+        async with SessionLocal() as session:
+            run = await RunService(session).get_run(run_id, user_id=current_user.id)
+            return _run_response(run)
 
     async def events():
         previous: AnalysisRunResponse | None = None
-        while True:
-            async with SessionLocal() as session:
-                run = await RunService(session).get_run(run_id, user_id=current_user.id)
-                current = _run_response(run)
+        current = await _load_response()
+        event_name = _run_event_name(current, previous)
+        payload = json.dumps(current.model_dump(mode="json"), separators=(",", ":"))
+        if current.artifact_path:
+            yield f"event: artifact-created\ndata: {payload}\n\n"
+        yield f"event: {event_name}\ndata: {payload}\n\n"
+        previous = current
+        if current.status in TERMINAL_RUN_STATUSES:
+            return
 
-            if previous != current:
-                payload = json.dumps(current.model_dump(mode="json"), separators=(",", ":"))
-                if current.artifact_path and (
-                    previous is None or current.artifact_path != previous.artifact_path
-                ):
-                    yield f"event: artifact-created\ndata: {payload}\n\n"
-                event_name = _run_event_name(current, previous)
-                yield f"event: {event_name}\ndata: {payload}\n\n"
-                previous = current
+        channel = run_events_channel(run_id)
+        pubsub = None
+        use_redis = bool(getattr(settings, "CACHE_ENABLED", True))
+        last_db_reconcile = asyncio.get_running_loop().time()
+        db_reconcile_every = 15.0
 
-            if current.status in _TERMINAL_RUN_STATUSES:
-                return
-            await asyncio.sleep(1)
+        try:
+            if use_redis:
+                pubsub = redis_client.pubsub()
+                await pubsub.subscribe(channel)
+
+            while True:
+                message = None
+                if pubsub is not None:
+                    try:
+                        message = await pubsub.get_message(
+                            ignore_subscribe_messages=True, timeout=1.0
+                        )
+                    except Exception:
+                        # Redis hiccup → fall back to DB polling for this stream.
+                        pubsub = None
+                        use_redis = False
+
+                if message and message.get("type") == "message":
+                    raw = message.get("data")
+                    try:
+                        envelope = json.loads(raw) if isinstance(raw, str) else raw
+                        run_payload = envelope.get("run") if isinstance(envelope, dict) else None
+                        redis_event = (
+                            envelope.get("event") if isinstance(envelope, dict) else None
+                        )
+                    except (TypeError, json.JSONDecodeError):
+                        run_payload = None
+                        redis_event = None
+
+                    if isinstance(run_payload, dict):
+                        current = AnalysisRunResponse.model_validate(run_payload)
+                        payload = json.dumps(
+                            current.model_dump(mode="json"), separators=(",", ":")
+                        )
+                        if current.artifact_path and (
+                            previous is None or current.artifact_path != previous.artifact_path
+                        ):
+                            yield f"event: artifact-created\ndata: {payload}\n\n"
+                        name = redis_event or _run_event_name(current, previous)
+                        if name != "artifact-created":
+                            yield f"event: {name}\ndata: {payload}\n\n"
+                        elif previous is not None and current.artifact_path == previous.artifact_path:
+                            # Redis said artifact-created but path unchanged — treat as progress.
+                            yield f"event: progress\ndata: {payload}\n\n"
+                        previous = current
+                        if current.status in TERMINAL_RUN_STATUSES:
+                            return
+                        continue
+
+                now = asyncio.get_running_loop().time()
+                # Rare DB reconcile (missed publish / Redis down) — not 1Hz polling.
+                should_reconcile = (not use_redis) or (now - last_db_reconcile >= db_reconcile_every)
+                if should_reconcile:
+                    last_db_reconcile = now
+                    current = await _load_response()
+                    if previous != current:
+                        payload = json.dumps(
+                            current.model_dump(mode="json"), separators=(",", ":")
+                        )
+                        if current.artifact_path and (
+                            previous is None or current.artifact_path != previous.artifact_path
+                        ):
+                            yield f"event: artifact-created\ndata: {payload}\n\n"
+                        yield f"event: {_run_event_name(current, previous)}\ndata: {payload}\n\n"
+                        previous = current
+                    if current.status in TERMINAL_RUN_STATUSES:
+                        return
+                    if not use_redis:
+                        await asyncio.sleep(2)
+                        continue
+
+                # SSE comment heartbeat keeps proxies from buffering/closing idle streams.
+                yield ": keepalive\n\n"
+        finally:
+            if pubsub is not None:
+                with contextlib.suppress(Exception):
+                    await pubsub.unsubscribe(channel)
+                    await pubsub.aclose()
 
     return StreamingResponse(
         events(),

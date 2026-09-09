@@ -76,7 +76,9 @@ def kmeans_cluster(
         algorithm,
     )
     if algo not in ("kmeans", "minibatch_kmeans"):
-        raise ValueError(f"Unsupported clustering algorithm {algorithm!r}; expected one of {ALGORITHMS}")
+        raise ValueError(
+            f"Unsupported clustering algorithm {algorithm!r}; expected one of {ALGORITHMS}"
+        )
 
     n_samples = matrix.shape[0]
     effective_k = max(1, min(n_clusters, n_samples))

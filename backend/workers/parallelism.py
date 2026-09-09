@@ -31,9 +31,7 @@ _BLAS_THREAD_ENV_VARS = (
 )
 
 # Hint loky (joblib process backend) not to claim all CPUs.
-_JOBLIB_ENV_VARS = (
-    "LOKY_MAX_CPU_COUNT",
-)
+_JOBLIB_ENV_VARS = ("LOKY_MAX_CPU_COUNT",)
 
 
 def _settings_values() -> dict[str, Any]:
@@ -89,7 +87,9 @@ def _set_env_int(name: str, value: int, *, overwrite: bool) -> None:
         os.environ[name] = str(value)
 
 
-def configure_worker_parallelism(*, force: bool = False, overwrite_env: bool = True) -> dict[str, Any]:
+def configure_worker_parallelism(
+    *, force: bool = False, overwrite_env: bool = True
+) -> dict[str, Any]:
     """Apply BLAS / OpenMP / joblib / sklearn thread caps in this process.
 
     Safe to call multiple times; subsequent calls are no-ops unless ``force``.
@@ -164,6 +164,29 @@ def describe_parallelism_policy() -> dict[str, Any]:
             "threads oversubscription."
         ),
         "defaults": values,
+        "concurrency_policy": {
+            "asyncio": [
+                "PostgreSQL (async SQLAlchemy / asyncpg)",
+                "Redis",
+                "HTTP / FastAPI request handlers",
+                "network and object-storage I/O",
+            ],
+            "celery_prefork": [
+                "sklearn estimators",
+                "topic models",
+                "CPU-heavy NLP",
+                "statistics / quantitative pipelines",
+            ],
+            "gpu_workers": [
+                "sentence-transformers",
+                "large embedding models",
+            ],
+            "threads": (
+                "Only where native libraries release the GIL or I/O requires them. "
+                "Do not set sklearn/joblib n_jobs=-1 inside Celery workers."
+            ),
+            "blas_and_joblib": "Capped via configure_worker_parallelism (default 1).",
+        },
         "environment_variables": {
             "RESEARCH_APPLY_THREAD_LIMITS": "Master switch (default true)",
             "RESEARCH_WORKER_BLAS_THREADS": (
@@ -173,12 +196,16 @@ def describe_parallelism_policy() -> dict[str, Any]:
             "RESEARCH_SKLEARN_N_JOBS": "Default/clamp for sklearn estimator n_jobs",
             "RESEARCH_JOBLIB_N_JOBS": "Default/clamp for joblib + LOKY_MAX_CPU_COUNT",
             "CELERY_CONCURRENCY": "Process count (Procfile.dev / celery --concurrency)",
+            "DB_WORKER_POOL_SIZE": "Per-process SQLAlchemy pool (see db.session)",
+            "DB_WORKER_MAX_OVERFLOW": "Per-process SQLAlchemy overflow",
         },
         "recommended_cpu_worker": {
             "CELERY_CONCURRENCY": "match physical cores or slightly below",
             "RESEARCH_WORKER_BLAS_THREADS": 1,
             "RESEARCH_SKLEARN_N_JOBS": 1,
             "RESEARCH_JOBLIB_N_JOBS": 1,
+            "DB_WORKER_POOL_SIZE": 2,
+            "DB_WORKER_MAX_OVERFLOW": 2,
             "note": (
                 "Prefer more Celery processes with 1 thread each over one process "
                 "with nested all-core parallelism when running research_cpu queues."

@@ -6,8 +6,9 @@ Implements the leakage-safe classification pipeline:
     extractor on TRAIN only -> Fit classifier -> Transform VAL/TEST with the
     TRAIN-fitted extractor -> Predict -> Metrics -> Persist.
 
-Critical invariant: the vectorizer is always fit exclusively on training
-texts; validation/test texts are only ever ``.transform()``-ed.
+Critical invariant: the vectorizer (and any supervised feature selector)
+is always fit exclusively on training texts/labels; validation/test texts
+are only ever ``.transform()``-ed.
 
 Task types (binary / multiclass / multilabel) are never silently forced.
 :func:`infer_task_type` only infers a task type from label shape when the
@@ -17,18 +18,25 @@ unambiguous (see §27).
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from dataclasses import fields as dataclass_fields
 from typing import Any
 
 import numpy as np
 from sklearn import metrics as skmetrics
 from sklearn.isotonic import IsotonicRegression
+from sklearn.feature_selection import (
+    SelectFromModel,
+    SelectKBest,
+    SelectPercentile,
+    chi2,
+    mutual_info_classif,
+)
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.model_selection import GroupKFold, ParameterGrid, ParameterSampler
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.naive_bayes import ComplementNB, MultinomialNB
-from sklearn.pipeline import FeatureUnion
+from sklearn.pipeline import FeatureUnion, Pipeline
 from sklearn.preprocessing import LabelEncoder, MultiLabelBinarizer
 from sklearn.svm import LinearSVC
 
@@ -180,9 +188,7 @@ def grouped_train_val_test_split(
         from sklearn.model_selection import GroupShuffleSplit
 
         indices = np.arange(len(X_texts))
-        test_splitter = GroupShuffleSplit(
-            n_splits=1, test_size=test_size, random_state=random_seed
-        )
+        test_splitter = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_seed)
         train_val_idx, test_idx = next(test_splitter.split(indices, groups=groups))
 
         train_val_groups = _select(groups, train_val_idx)
@@ -353,6 +359,211 @@ class FeatureConfig:
         known = {f.name for f in dataclass_fields(cls)}
         filtered = {k: v for k, v in data.items() if k in known}
         return cls(**filtered)
+
+
+FEATURE_SELECTION_METHODS = ("none", "chi2", "mutual_info", "l1")
+
+
+@dataclass
+class FeatureSelectionConfig:
+    """Supervised feature selection applied AFTER vectorization (§ Phase 4).
+
+    Distinct from unsupervised DF pruning (``min_df`` / ``max_df`` /
+    ``max_features`` on the vectorizer). The selector is fit on TRAIN labels
+    only and never sees validation/test texts.
+    """
+
+    method: str = "none"  # none | chi2 | mutual_info | l1
+    k: int | str = "all"  # int or "all"
+    percentile: float | None = None  # if set, uses SelectPercentile instead of k
+
+    def __post_init__(self) -> None:
+        if self.method not in FEATURE_SELECTION_METHODS:
+            raise ValueError(
+                f"feature selection method must be one of {FEATURE_SELECTION_METHODS}, "
+                f"got {self.method!r}"
+            )
+        if self.percentile is not None and not (0.0 < float(self.percentile) <= 100.0):
+            raise ValueError("percentile must be in (0, 100]")
+        if self.k != "all":
+            try:
+                k_int = int(self.k)
+            except (TypeError, ValueError) as exc:
+                raise ValueError("k must be an int or 'all'") from exc
+            if k_int < 1:
+                raise ValueError("k must be >= 1")
+            self.k = k_int
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(
+        cls, data: dict[str, Any] | FeatureSelectionConfig | None
+    ) -> FeatureSelectionConfig:
+        if isinstance(data, FeatureSelectionConfig):
+            return data
+        if not data:
+            return cls()
+        known = {f.name for f in dataclass_fields(cls)}
+        filtered = {k: v for k, v in data.items() if k in known}
+        return cls(**filtered)
+
+    @property
+    def enabled(self) -> bool:
+        return self.method != "none"
+
+
+def _multilabel_score_func(score_func):
+    """Reduce multilabel targets to a single score vector (max across labels)."""
+
+    def _scored(X, y):
+        y_arr = np.asarray(y)
+        if y_arr.ndim == 1:
+            return score_func(X, y_arr)
+        scores = []
+        pvals = []
+        for col in range(y_arr.shape[1]):
+            out = score_func(X, y_arr[:, col])
+            if isinstance(out, tuple):
+                s, p = out
+            else:
+                s, p = out, None
+            scores.append(s)
+            if p is not None:
+                pvals.append(p)
+        merged_scores = np.nanmax(np.vstack(scores), axis=0)
+        if pvals:
+            return merged_scores, np.nanmin(np.vstack(pvals), axis=0)
+        return merged_scores
+
+    return _scored
+
+
+class ClampedSelectKBest(SelectKBest):
+    """SelectKBest that clamps ``k`` to ``n_features`` when the matrix is smaller."""
+
+    def fit(self, X, y=None):
+        n_features = X.shape[1]
+        if self.k != "all" and int(self.k) > n_features:
+            self.k = int(n_features)
+        return super().fit(X, y)
+
+
+def build_feature_selector(
+    selection_config: FeatureSelectionConfig | dict[str, Any] | None,
+    *,
+    task_type: str = "binary",
+    random_seed: int = 42,
+) -> Any | None:
+    """Return an unfitted sklearn selector, or ``None`` when method is ``none``."""
+    cfg = FeatureSelectionConfig.from_dict(selection_config)
+    if not cfg.enabled:
+        return None
+
+    if cfg.method == "mutual_info":
+
+        def _mi(X, y):
+            y_arr = np.asarray(y)
+            if y_arr.ndim == 1:
+                return mutual_info_classif(X, y_arr, random_state=random_seed)
+            scores = [
+                mutual_info_classif(X, y_arr[:, col], random_state=random_seed)
+                for col in range(y_arr.shape[1])
+            ]
+            return np.nanmax(np.vstack(scores), axis=0)
+
+        score_func = _mi
+    elif cfg.method == "chi2":
+        score_func = _multilabel_score_func(chi2) if task_type == "multilabel" else chi2
+    else:
+        # L1-based SelectFromModel (optional)
+        estimator = LogisticRegression(
+            penalty="l1",
+            solver="liblinear",
+            C=1.0,
+            max_iter=2000,
+            random_state=random_seed,
+        )
+        if task_type == "multilabel":
+            estimator = OneVsRestClassifier(estimator)
+        return SelectFromModel(estimator)
+
+    if cfg.percentile is not None:
+        return SelectPercentile(score_func=score_func, percentile=float(cfg.percentile))
+    if cfg.k == "all":
+        return ClampedSelectKBest(score_func=score_func, k="all")
+    return ClampedSelectKBest(score_func=score_func, k=int(cfg.k))
+
+
+def build_text_feature_pipeline(
+    feature_config: FeatureConfig | dict[str, Any] | None,
+    preprocessing_config: dict[str, Any] | None = None,
+    selection_config: FeatureSelectionConfig | dict[str, Any] | None = None,
+    *,
+    task_type: str = "binary",
+    random_seed: int = 42,
+) -> Any:
+    """Vectorizer (+ optional supervised selector) as a single transform pipeline."""
+    vectorizer = build_feature_extractor(feature_config, preprocessing_config)
+    selector = build_feature_selector(
+        selection_config, task_type=task_type, random_seed=random_seed
+    )
+    if selector is None:
+        return vectorizer
+    return Pipeline([("vectorizer", vectorizer), ("select", selector)])
+
+
+def estimate_raw_vocabulary_size(
+    texts: list[str],
+    feature_config: FeatureConfig | dict[str, Any] | None,
+    preprocessing_config: dict[str, Any] | None = None,
+) -> int:
+    """Vocabulary size on ``texts`` with DF pruning / max_features disabled."""
+    fc = replace(
+        FeatureConfig.from_dict(feature_config),
+        min_df=1,
+        max_df=1.0,
+        max_features=None,
+    )
+    vectorizer = build_feature_extractor(fc, preprocessing_config)
+    vectorizer.fit(texts)
+    return int(len(vectorizer.get_feature_names_out()))
+
+
+def feature_space_summary(
+    feature_pipeline: Any,
+    model: Any | None = None,
+    *,
+    raw_vocabulary: int | None = None,
+) -> dict[str, Any]:
+    """Report vocabulary sizes after DF pruning and supervised selection."""
+    if isinstance(feature_pipeline, Pipeline) and "vectorizer" in feature_pipeline.named_steps:
+        vectorizer = feature_pipeline.named_steps["vectorizer"]
+        selector = feature_pipeline.named_steps.get("select")
+        after_df = int(len(vectorizer.get_feature_names_out()))
+        if selector is not None and hasattr(selector, "get_support"):
+            after_sel = int(np.asarray(selector.get_support()).sum())
+        else:
+            after_sel = after_df
+        method = type(selector).__name__ if selector is not None else "none"
+    else:
+        after_df = int(len(feature_pipeline.get_feature_names_out()))
+        after_sel = after_df
+        method = "none"
+
+    n_nonzero = None
+    coef = getattr(model, "coef_", None) if model is not None else None
+    if coef is not None:
+        n_nonzero = int(np.count_nonzero(coef))
+
+    return {
+        "raw_vocabulary": int(raw_vocabulary) if raw_vocabulary is not None else after_df,
+        "after_df_pruning": after_df,
+        "after_supervised_selection": after_sel,
+        "n_nonzero_coefficients": n_nonzero,
+        "selection_step": method,
+    }
 
 
 def build_feature_extractor(
@@ -554,9 +765,7 @@ def _threshold_objective_score(
         if cm.shape != (2, 2):
             return float("-inf")
         tn, fp, fn, tp = cm.ravel()
-        return float(
-            utility_tp * tp + utility_tn * tn + utility_fp * fp + utility_fn * fn
-        )
+        return float(utility_tp * tp + utility_tn * tn + utility_fp * fp + utility_fn * fn)
     raise ValueError(f"Unsupported threshold objective: {objective!r}")
 
 
@@ -727,8 +936,14 @@ def apply_abstention(
 
     proba = np.asarray(y_proba, dtype=float)
     if task_type == "binary":
-        confidence = np.maximum(proba[:, 1], proba[:, 0]) if proba.ndim == 2 else np.maximum(proba, 1.0 - proba)
-        raw_pred = (proba[:, 1] >= 0.5).astype(int) if proba.ndim == 2 else (proba >= 0.5).astype(int)
+        confidence = (
+            np.maximum(proba[:, 1], proba[:, 0])
+            if proba.ndim == 2
+            else np.maximum(proba, 1.0 - proba)
+        )
+        raw_pred = (
+            (proba[:, 1] >= 0.5).astype(int) if proba.ndim == 2 else (proba >= 0.5).astype(int)
+        )
     elif task_type == "multiclass":
         confidence = np.max(proba, axis=1)
         raw_pred = np.argmax(proba, axis=1)
@@ -793,7 +1008,9 @@ def abstention_summary(
     y_true_valid = y_true_scored[valid_mask]
     y_pred_valid = np.asarray([p for p in y_pred_scored[valid_mask]], dtype=int)
     if y_true_valid.ndim == 2:
-        summary["scored_subset_accuracy"] = float(skmetrics.accuracy_score(y_true_valid, y_pred_valid))
+        summary["scored_subset_accuracy"] = float(
+            skmetrics.accuracy_score(y_true_valid, y_pred_valid)
+        )
         summary["scored_hamming_loss"] = float(skmetrics.hamming_loss(y_true_valid, y_pred_valid))
     else:
         summary["scored_accuracy"] = float(
@@ -848,7 +1065,9 @@ def _score_metric(y_true: np.ndarray, y_pred: np.ndarray, metric_name: str) -> f
         if metric_name == "balanced_accuracy":
             return float(skmetrics.balanced_accuracy_score(y_true, y_pred))
         if metric_name == "precision_macro":
-            return float(skmetrics.precision_score(y_true, y_pred, average="macro", zero_division=0))
+            return float(
+                skmetrics.precision_score(y_true, y_pred, average="macro", zero_division=0)
+            )
         if metric_name == "recall_macro":
             return float(skmetrics.recall_score(y_true, y_pred, average="macro", zero_division=0))
         return None
@@ -1035,7 +1254,9 @@ def fit_probability_calibrator(
     return lr
 
 
-def apply_probability_calibrator(calibrator: Any, proba_column: np.ndarray, method: str) -> np.ndarray:
+def apply_probability_calibrator(
+    calibrator: Any, proba_column: np.ndarray, method: str
+) -> np.ndarray:
     if calibrator is None:
         return np.asarray(proba_column)
     if method == "isotonic":
@@ -1089,7 +1310,9 @@ def calibrate_and_reevaluate(
         calibrated_test_proba = np.array(test_proba, copy=True, dtype=float)
         notes: dict[str, str] = {}
         for i, label in enumerate(classes):
-            calibrator = fit_probability_calibrator(val_true_arr[:, i], val_proba[:, i], method=method)
+            calibrator = fit_probability_calibrator(
+                val_true_arr[:, i], val_proba[:, i], method=method
+            )
             if calibrator is None:
                 notes[str(label)] = "single-class validation fold; not recalibrated"
                 continue
@@ -1097,7 +1320,9 @@ def calibrate_and_reevaluate(
                 calibrator, test_proba[:, i], method
             )
         before = compute_calibration_summary(test_true_arr, test_proba, task_type, classes)
-        after = compute_calibration_summary(test_true_arr, calibrated_test_proba, task_type, classes)
+        after = compute_calibration_summary(
+            test_true_arr, calibrated_test_proba, task_type, classes
+        )
         result: dict[str, Any] = {"method": method, "before": before, "after": after}
         if notes:
             result["notes"] = notes
@@ -1114,7 +1339,9 @@ def calibrate_and_reevaluate(
         calibrator = fit_probability_calibrator(val_bin, val_proba[:, i], method=method)
         if calibrator is None:
             continue
-        calibrated_test_proba[:, i] = apply_probability_calibrator(calibrator, test_proba[:, i], method)
+        calibrated_test_proba[:, i] = apply_probability_calibrator(
+            calibrator, test_proba[:, i], method
+        )
     before = compute_calibration_summary(test_true_arr, test_proba, task_type, classes)
     after = compute_calibration_summary(test_true_arr, calibrated_test_proba, task_type, classes)
     return {
@@ -1167,6 +1394,7 @@ def hyperparameter_search(
     n_iter: int = 10,
     scoring: str = "f1_macro",
     cv_folds: int = 3,
+    selection_config: FeatureSelectionConfig | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Hyperparameter tuning (§31).
 
@@ -1183,6 +1411,7 @@ def hyperparameter_search(
     ``max_df``, ``ngram_max``). Unrecognized keys are ignored.
     """
     fc_base = FeatureConfig.from_dict(feature_config)
+    sc_base = FeatureSelectionConfig.from_dict(selection_config)
     fc_field_names = {f.name for f in dataclass_fields(FeatureConfig)}
 
     grid = dict(default_hyperparameter_grid(algorithm))
@@ -1194,9 +1423,7 @@ def hyperparameter_search(
     else:
         combos = list(ParameterGrid(grid))
         if search_type == "random" and len(combos) > max(1, n_iter):
-            combos = list(
-                ParameterSampler(grid, n_iter=n_iter, random_state=random_seed)
-            )
+            combos = list(ParameterSampler(grid, n_iter=n_iter, random_state=random_seed))
 
     def _score_split(
         x_tr: list[str], y_tr: list[Any], x_ev: list[str], y_ev: list[Any], combo: dict[str, Any]
@@ -1207,7 +1434,13 @@ def hyperparameter_search(
                 fc_kwargs[key] = value
         try:
             fc_variant = FeatureConfig.from_dict(fc_kwargs)
-            vec = build_feature_extractor(fc_variant, preprocessing_config)
+            vec = build_text_feature_pipeline(
+                fc_variant,
+                preprocessing_config,
+                sc_base,
+                task_type=task_type,
+                random_seed=random_seed,
+            )
             combo_class_weight = combo.get("class_weight", class_weight)
             combo_c = combo.get("C", C)
             combo_alpha = combo.get("alpha")
@@ -1220,9 +1453,6 @@ def hyperparameter_search(
             else:
                 nb_alpha = 1.0
 
-            X_tr_vec = vec.fit_transform(x_tr)
-            X_ev_vec = vec.transform(x_ev)
-
             if task_type == "multilabel":
                 mlb = MultiLabelBinarizer(classes=label_names)
                 y_tr_enc = mlb.fit_transform(y_tr)
@@ -1233,6 +1463,9 @@ def hyperparameter_search(
                 if not set(y_ev).issubset(set(le.classes_)):
                     return None
                 y_ev_enc = le.transform(y_ev)
+
+            X_tr_vec = vec.fit_transform(x_tr, y_tr_enc)
+            X_ev_vec = vec.transform(x_ev)
 
             model = _build_model(
                 algorithm,
@@ -1252,7 +1485,6 @@ def hyperparameter_search(
             return _score_metric(y_ev_enc, y_pred, scoring)
         except (ValueError, IndexError):
             return None
-
     results: list[dict[str, Any]] = []
 
     if X_val_texts:
@@ -1539,11 +1771,6 @@ def _fit_classifier_and_evaluate(
     if task_type not in TASK_TYPES:
         raise ValueError(f"Unsupported task_type: {task_type!r}; expected one of {TASK_TYPES}")
 
-    # CRITICAL: fit on train only, transform val/test with the train-fitted vectorizer.
-    X_train_vec = vectorizer.fit_transform(X_train_texts)
-    X_test_vec = vectorizer.transform(X_test_texts)
-    X_val_vec = vectorizer.transform(X_val_texts) if X_val_texts else None
-
     label_encoder: LabelEncoder | None = None
     mlb: MultiLabelBinarizer | None = None
 
@@ -1559,6 +1786,13 @@ def _fit_classifier_and_evaluate(
         y_test_enc = label_encoder.transform(y_test)
         y_val_enc = label_encoder.transform(y_val) if y_val else None
         classes = list(label_encoder.classes_)
+
+    # CRITICAL: fit vectorizer (+ supervised selector) on TRAIN only.
+    # Pass y so SelectKBest / SelectFromModel can use labels; plain
+    # CountVectorizer/TfidfVectorizer ignore y.
+    X_train_vec = vectorizer.fit_transform(X_train_texts, y_train_enc)
+    X_test_vec = vectorizer.transform(X_test_texts)
+    X_val_vec = vectorizer.transform(X_val_texts) if X_val_texts else None
 
     model = _build_model(
         algorithm, task_type, random_seed, class_weight, C, sgd_loss=sgd_loss, nb_alpha=nb_alpha
@@ -1635,7 +1869,9 @@ def _fit_classifier_and_evaluate(
 
     # §36: calibration diagnostics (+ optional VAL-fit recalibration evaluated on TEST).
     if y_proba_test is not None:
-        calibration_summary = compute_calibration_summary(y_test_enc, y_proba_test, task_type, classes)
+        calibration_summary = compute_calibration_summary(
+            y_test_enc, y_proba_test, task_type, classes
+        )
         recalibration = None
         if y_val_enc is not None and y_proba_val is not None:
             recalibration = calibrate_and_reevaluate(
@@ -1654,6 +1890,30 @@ def _fit_classifier_and_evaluate(
     else:
         metrics_out["calibration"] = {"note": "Calibration skipped: model has no predict_proba."}
 
+    from backend.modules.text_research.infrastructure.scientific_warnings import (
+        assert_no_leakage_soft_warning,
+        classifier_scientific_warnings,
+    )
+    from backend.modules.text_research.infrastructure.validation_splits import class_prevalence
+
+    feature_space = feature_space_summary(vectorizer, model)
+    if task_type == "multilabel":
+        train_prevalence = class_prevalence(
+            [[str(label) for label in row] for row in y_train]
+            if y_train and isinstance(y_train[0], (list, tuple, set))
+            else [[str(label)] for label in y_train]
+        )
+    else:
+        train_prevalence = class_prevalence([[str(label)] for label in y_train])
+
+    scientific_warnings = classifier_scientific_warnings(
+        feature_space=feature_space,
+        n_train=len(X_train_texts),
+        n_test=len(X_test_texts),
+        class_prevalence=train_prevalence,
+    )
+    assert_no_leakage_soft_warning(scientific_warnings)
+
     return {
         "vectorizer": vectorizer,
         "model": model,
@@ -1666,7 +1926,9 @@ def _fit_classifier_and_evaluate(
         "n_train": len(X_train_texts),
         "n_val": len(X_val_texts) if X_val_texts else 0,
         "n_test": len(X_test_texts),
-        "vocabulary_size": len(vectorizer.get_feature_names_out()),
+        "vocabulary_size": int(X_train_vec.shape[1]),
+        "feature_space": feature_space,
+        "scientific_warnings": scientific_warnings,
         "evaluation": {
             "y_true": _to_native(y_test_enc),
             "y_pred": _to_native(y_pred_final),
@@ -1753,6 +2015,7 @@ def fit_text_classifier(
     algorithm: str = "logistic_regression",
     feature_config: FeatureConfig | dict[str, Any] | None = None,
     preprocessing_config: dict[str, Any] | None = None,
+    selection_config: FeatureSelectionConfig | dict[str, Any] | None = None,
     label_names: list[str] | None = None,
     class_weight: str | dict | None = None,
     C: float = 1.0,
@@ -1777,10 +2040,11 @@ def fit_text_classifier(
 
     ``feature_config`` (a :class:`FeatureConfig` or an equivalent dict)
     selects count vs. TF-IDF weighting and word and/or character n-grams
-    (combined via ``FeatureUnion`` when both are enabled). The resulting
-    feature extractor is fit ONLY on ``X_train_texts``; ``X_test_texts``/
-    ``X_val_texts`` are only ever transformed with that already-fitted
-    extractor.
+    (combined via ``FeatureUnion`` when both are enabled). Optional
+    ``selection_config`` adds a supervised selector (chi2 / mutual_info / l1)
+    fit on TRAIN labels only. The resulting feature pipeline is fit ONLY on
+    ``X_train_texts``; ``X_test_texts``/``X_val_texts`` are only ever
+    transformed with that already-fitted pipeline.
 
     Optional additive parameters implement §31/§33/§35/§36 — all no-ops
     (with a persisted explanatory note) when their prerequisite data is
@@ -1798,7 +2062,14 @@ def fit_text_classifier(
       the optional §36 recalibration step.
     """
     fc = FeatureConfig.from_dict(feature_config)
-    vectorizer = build_feature_extractor(fc, preprocessing_config)
+    sc = FeatureSelectionConfig.from_dict(selection_config)
+    vectorizer = build_text_feature_pipeline(
+        fc,
+        preprocessing_config,
+        sc,
+        task_type=task_type,
+        random_seed=random_seed,
+    )
 
     result = _fit_classifier_and_evaluate(
         vectorizer,
@@ -1828,9 +2099,13 @@ def fit_text_classifier(
         ci_metrics=ci_metrics,
         calibration_method=calibration_method,
     )
+    raw_vocab = estimate_raw_vocabulary_size(X_train_texts, fc, preprocessing_config)
     result["feature_config"] = fc.to_dict()
+    result["feature_selection"] = sc.to_dict()
+    result["feature_space"] = feature_space_summary(
+        result["vectorizer"], result["model"], raw_vocabulary=raw_vocab
+    )
     return result
-
 
 def extract_linear_coefficients(
     model: Any,
@@ -1927,9 +2202,7 @@ def predict_with_uncertainty(
     if task_type == "binary":
         if hasattr(model, "predict_proba"):
             proba = model.predict_proba(X_vec)
-            threshold = (
-                thresholds.get("threshold") if isinstance(thresholds, dict) else None
-            )
+            threshold = thresholds.get("threshold") if isinstance(thresholds, dict) else None
             for i in range(len(texts)):
                 p_positive = float(proba[i][-1])
                 prediction = (
@@ -1997,9 +2270,7 @@ def predict_with_uncertainty(
     # multilabel
     if hasattr(model, "predict_proba"):
         proba = model.predict_proba(X_vec)
-        label_thresholds = (
-            thresholds.get("thresholds") if isinstance(thresholds, dict) else None
-        )
+        label_thresholds = thresholds.get("thresholds") if isinstance(thresholds, dict) else None
         for i in range(len(texts)):
             p = np.clip(np.asarray(proba[i]).reshape(-1), 1e-12, 1.0 - 1e-12)
             binary_entropy = float(-np.mean(p * np.log(p) + (1 - p) * np.log(1 - p)))
@@ -2057,7 +2328,7 @@ class _EmbeddingVectorizer:
     def fit(self, texts: list[str], y: Any = None) -> _EmbeddingVectorizer:
         return self
 
-    def fit_transform(self, texts: list[str]) -> np.ndarray:
+    def fit_transform(self, texts: list[str], y: Any = None) -> np.ndarray:
         return np.asarray(self.provider.embed_texts(texts), dtype=float)
 
     def transform(self, texts: list[str]) -> np.ndarray:
@@ -2150,6 +2421,7 @@ def nested_grouped_cv_evaluation(
     hyperparameter_param_grid: dict[str, list[Any]] | None = None,
     hyperparameter_scoring: str = "f1_macro",
     embedding_provider: str | None = None,
+    selection_config: FeatureSelectionConfig | dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run nested grouped CV and return outer-fold metrics."""
     from backend.modules.text_research.infrastructure.split_planner import (
@@ -2190,6 +2462,7 @@ def nested_grouped_cv_evaluation(
                     random_seed=random_seed,
                     param_grid=hyperparameter_param_grid,
                     scoring=hyperparameter_scoring,
+                    selection_config=selection_config,
                 )
                 score = search.get("best_score")
                 if score is not None:
@@ -2234,6 +2507,7 @@ def nested_grouped_cv_evaluation(
                 algorithm=resolved,
                 feature_config=fc,
                 preprocessing_config=preprocessing_config,
+                selection_config=selection_config,
                 label_names=label_names,
                 class_weight=best_params.get("class_weight", class_weight),
                 C=combo_c,
@@ -2241,7 +2515,6 @@ def nested_grouped_cv_evaluation(
                 groups_test=test_groups,
                 tune_thresholds=False,
             )
-
         outer_rows.append(
             {
                 "fold": fold_index,

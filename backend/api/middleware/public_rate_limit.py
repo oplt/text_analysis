@@ -1,11 +1,11 @@
+import logging
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse, Response
 
 from backend.core.cache import redis_client
 from backend.core.config import settings
-
-import logging
 
 logger = logging.getLogger("backend.rate_limit")
 

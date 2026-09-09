@@ -46,7 +46,9 @@ class ResourceCacheRoundTripTest(unittest.IsolatedAsyncioTestCase):
                 }
             ),
         ):
-            loaded = await get_cached_model_list(user_directory_cache_key(50, 0), UserDirectoryResponse)
+            loaded = await get_cached_model_list(
+                user_directory_cache_key(50, 0), UserDirectoryResponse
+            )
 
         self.assertIsNotNone(loaded)
         items, total = loaded

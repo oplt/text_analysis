@@ -259,9 +259,7 @@ class DocumentIngestionService:
                 job,
                 status=IngestionJobStatus.FAILED,
                 error_message=(
-                    exc.detail[:500]
-                    if isinstance(exc.detail, str)
-                    else "Document indexing failed"
+                    exc.detail[:500] if isinstance(exc.detail, str) else "Document indexing failed"
                 ),
                 finished=True,
             )

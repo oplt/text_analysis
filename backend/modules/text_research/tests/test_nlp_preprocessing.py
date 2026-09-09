@@ -8,12 +8,12 @@ from backend.modules.text_research.infrastructure.nlp_preprocessing import (
     merge_phrase_tokens,
     spacy_available,
 )
+from backend.modules.text_research.infrastructure.prepared_corpus_builder import prepare_texts
 from backend.modules.text_research.infrastructure.preprocessing import (
     PreprocessingConfig,
     describe_implementation,
     tokenize,
 )
-from backend.modules.text_research.infrastructure.prepared_corpus_builder import prepare_texts
 
 
 class NlpPreprocessingHelpersTests(unittest.TestCase):

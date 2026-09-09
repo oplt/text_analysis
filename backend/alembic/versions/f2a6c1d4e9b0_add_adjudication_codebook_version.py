@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "f2a6c1d4e9b0"

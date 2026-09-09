@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from backend.core.config import settings
 from backend.modules.text_research.infrastructure.pipeline_compiler import (
@@ -51,7 +52,9 @@ class Checkpoint:
     updated_at: str
 
     @classmethod
-    def now(cls, *, stage: str, progress: float, payload: dict[str, Any] | None = None) -> Checkpoint:
+    def now(
+        cls, *, stage: str, progress: float, payload: dict[str, Any] | None = None
+    ) -> Checkpoint:
         return cls(
             stage=stage,
             progress=progress,

@@ -7,7 +7,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from backend.modules.text_research.api import corpora, routes
+from backend.modules.text_research.api import corpora
 from backend.modules.text_research.application.corpus_service import CorpusService
 from backend.modules.text_research.infrastructure.repositories import ResearchRepository
 
@@ -16,8 +16,7 @@ class CorpusMetadataFacetTests(unittest.IsolatedAsyncioTestCase):
     async def test_route_returns_sql_aggregated_counts_including_high_cardinality(self):
         facets = {
             "organization": [
-                {"value": f"organization-{index}", "count": 1}
-                for index in range(1_000)
+                {"value": f"organization-{index}", "count": 1} for index in range(1_000)
             ],
             "organization_type": [],
             "publication_year": [{"value": "2024", "count": 3}],

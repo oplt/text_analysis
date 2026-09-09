@@ -276,9 +276,15 @@ class CorpusService(ResearchAccessMixin):
         updated = 0
         errors: list[str] = []
         row_number = 1
-        for row, document_id, rag_document_id in zip(rows, document_ids, rag_document_ids, strict=True):
+        for row, document_id, rag_document_id in zip(
+            rows, document_ids, rag_document_ids, strict=True
+        ):
             row_number += 1
-            document = documents_by_id.get(document_id) if document_id else documents_by_rag_id.get(rag_document_id)
+            document = (
+                documents_by_id.get(document_id)
+                if document_id
+                else documents_by_rag_id.get(rag_document_id)
+            )
             if document is None:
                 errors.append(f"row {row_number}: document not found in this corpus")
                 continue

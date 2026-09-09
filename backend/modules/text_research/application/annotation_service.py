@@ -37,16 +37,14 @@ class AnnotationService(ResearchAccessMixin):
             raise HTTPException(status_code=404, detail="One or more text units were not found")
         for corpus_id in set(unit_corpora.values()):
             await self.get_corpus_or_404(corpus_id, user_id=user_id)
-        pairs = [(unit_id, annotator_id) for unit_id in unique_unit_ids for annotator_id in annotator_ids]
+        pairs = [
+            (unit_id, annotator_id) for unit_id in unique_unit_ids for annotator_id in annotator_ids
+        ]
         created = await self.repo.bulk_create_tasks(pairs)
         # Also return already-existing tasks for the requested pairs.
         existing = await self.repo.list_tasks_for_units(unique_unit_ids)
         wanted = {(unit_id, annotator_id) for unit_id, annotator_id in pairs}
-        matched = [
-            task
-            for task in existing
-            if (task.text_unit_id, task.annotator_id) in wanted
-        ]
+        matched = [task for task in existing if (task.text_unit_id, task.annotator_id) in wanted]
         await self.db.commit()
         return matched if matched else created
 
@@ -66,6 +64,14 @@ class AnnotationService(ResearchAccessMixin):
         stratum_mode: str = STRATUM_MODE_PROPORTIONAL,
         sampling_level: str = SAMPLING_LEVEL_UNIT,
         max_units_per_document: int | None = None,
+        campaign_id: str | None = None,
+        create_campaign: bool = False,
+        campaign_name: str | None = None,
+        annotation_mode: str | None = None,
+        blind_mode: bool | None = None,
+        ai_assistance_enabled: bool | None = None,
+        codebook_id: str | None = None,
+        campaign_description: str | None = None,
     ) -> dict[str, Any]:
         """Assign corpus text units using an explicit sampling / overlap strategy.
 
@@ -77,11 +83,53 @@ class AnnotationService(ResearchAccessMixin):
         `sample_size` units. Overlap/shared/disjoint distribution across
         annotators is then computed over the sampled pool via
         `assignment_planning`.
+
+        When ``create_campaign`` is true (or campaign mode fields are set),
+        an ``AnnotationCampaign`` is created and tasks are tagged with it.
         """
-        await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
         targets = annotator_ids or [user_id]
         if not targets:
             raise HTTPException(status_code=422, detail="At least one annotator is required")
+
+        resolved_campaign_id = campaign_id
+        campaign_meta: dict[str, Any] | None = None
+        if resolved_campaign_id is None and (
+            create_campaign
+            or annotation_mode is not None
+            or blind_mode is not None
+            or ai_assistance_enabled is not None
+            or campaign_name is not None
+        ):
+            from backend.modules.text_research.application.campaign_service import (
+                AnnotationCampaignService,
+            )
+
+            campaign = await AnnotationCampaignService(self.db).create_campaign(
+                user_id=user_id,
+                project_id=corpus.project_id,
+                corpus_id=corpus_id,
+                name=campaign_name or f"Annotation campaign ({unit_type})",
+                description=campaign_description,
+                codebook_id=codebook_id,
+                unit_type=unit_type,
+                assignment_strategy=strategy,
+                sample_size=sample_size,
+                overlap_count=overlap_count,
+                overlap_percent=overlap_percent,
+                annotation_mode=annotation_mode,
+                blind_mode=blind_mode,
+                ai_assistance_enabled=ai_assistance_enabled,
+                annotator_ids=targets,
+            )
+            # create_campaign already committed; reopen work for task creation
+            resolved_campaign_id = campaign.id
+            campaign_meta = {
+                "campaign_id": campaign.id,
+                "annotation_mode": campaign.annotation_mode,
+                "blind_mode": campaign.blind_mode,
+                "ai_assistance_enabled": campaign.ai_assistance_enabled,
+            }
 
         units = await self.repo.list_text_units_for_corpus(corpus_id, unit_type=unit_type)
         if not units:
@@ -140,7 +188,7 @@ class AnnotationService(ResearchAccessMixin):
         if not pairs:
             raise HTTPException(status_code=422, detail="Assignment plan produced no tasks.")
 
-        created = await self.repo.bulk_create_tasks(pairs)
+        created = await self.repo.bulk_create_tasks(pairs, campaign_id=resolved_campaign_id)
         await self.db.commit()
 
         unique_units = {unit_id for unit_id, _ in pairs}
@@ -155,15 +203,21 @@ class AnnotationService(ResearchAccessMixin):
                 1 for annotators in membership.values() if len(annotators) == len(targets)
             )
 
-        return {
+        payload: dict[str, Any] = {
             "assigned_count": len(created),
             "unique_units": len(unique_units),
             "overlap_units": overlap_units,
             "strategy": strategy,
             "unit_type": unit_type,
-            "per_annotator": {annotator_id: len(unit_ids) for annotator_id, unit_ids in plan.items()},
+            "per_annotator": {
+                annotator_id: len(unit_ids) for annotator_id, unit_ids in plan.items()
+            },
             "sampling_plan": sampling_plan,
+            "campaign_id": resolved_campaign_id,
         }
+        if campaign_meta:
+            payload.update(campaign_meta)
+        return payload
 
     async def list_queue(
         self,
@@ -186,18 +240,53 @@ class AnnotationService(ResearchAccessMixin):
             unit.id: unit
             for unit in await self.repo.list_text_units_by_ids([t.text_unit_id for t in tasks])
         }
-        return [
-            {
-                "task": {
-                    "id": task.id,
-                    "text_unit_id": task.text_unit_id,
-                    "annotator_id": task.annotator_id,
-                    "status": task.status,
-                    "assigned_at": task.assigned_at,
-                    "completed_at": task.completed_at,
-                },
-                "text_unit": (
-                    {
+        campaigns = await self.repo.list_campaigns_for_tasks(
+            [t.campaign_id for t in tasks if t.campaign_id]
+        )
+        items: list[dict[str, Any]] = []
+        for task in tasks:
+            unit = units.get(task.text_unit_id)
+            if unit is None:
+                continue
+            campaign = campaigns.get(task.campaign_id) if task.campaign_id else None
+            blind = bool(campaign.blind_mode) if campaign is not None else False
+            incomplete = task.status != AnnotationTaskStatus.COMPLETED.value
+            hide_while_coding = blind and incomplete
+            ai_enabled = (
+                bool(campaign.ai_assistance_enabled and not campaign.blind_mode)
+                if campaign is not None
+                else True
+            )
+            items.append(
+                {
+                    "task": {
+                        "id": task.id,
+                        "campaign_id": task.campaign_id,
+                        "text_unit_id": task.text_unit_id,
+                        "annotator_id": task.annotator_id,
+                        "status": task.status,
+                        "assigned_at": task.assigned_at,
+                        "completed_at": task.completed_at,
+                    },
+                    "campaign": (
+                        {
+                            "id": campaign.id,
+                            "name": campaign.name,
+                            "annotation_mode": campaign.annotation_mode,
+                            "blind_mode": campaign.blind_mode,
+                            "ai_assistance_enabled": campaign.ai_assistance_enabled,
+                        }
+                        if campaign is not None
+                        else None
+                    ),
+                    "blind_policy": {
+                        "blind_mode": blind,
+                        "hide_model_predictions": hide_while_coding or blind,
+                        "hide_peer_annotations": hide_while_coding,
+                        "hide_adjudications": hide_while_coding,
+                        "ai_assistance_enabled": ai_enabled,
+                    },
+                    "text_unit": {
                         "id": unit.id,
                         "corpus_document_id": unit.corpus_document_id,
                         "unit_type": unit.unit_type,
@@ -212,14 +301,10 @@ class AnnotationService(ResearchAccessMixin):
                         "text_hash": unit.text_hash,
                         "source_text_hash": unit.source_text_hash,
                         "created_at": unit.created_at,
-                    }
-                    if (unit := units.get(task.text_unit_id)) is not None
-                    else None
-                ),
-            }
-            for task in tasks
-            if task.text_unit_id in units
-        ], total
+                    },
+                }
+            )
+        return items, total
 
     async def save_annotations(
         self,
@@ -271,7 +356,50 @@ class AnnotationService(ResearchAccessMixin):
         self, text_unit_id: str, *, user_id: str
     ) -> list[Annotation]:
         await self.get_text_unit_or_404(text_unit_id, user_id=user_id)
-        return await self.repo.list_annotations_for_unit(text_unit_id)
+        annotations = await self.repo.list_annotations_for_unit(text_unit_id)
+        from backend.modules.text_research.application.campaign_service import (
+            AnnotationCampaignService,
+        )
+
+        policy = await AnnotationCampaignService(self.db).blind_policy_for_annotator_unit(
+            text_unit_id=text_unit_id, annotator_id=user_id
+        )
+        if policy.get("hide_peer_annotations"):
+            return [row for row in annotations if row.annotator_id == user_id]
+        return annotations
+
+    async def list_annotations_for_units(
+        self, corpus_id: str, *, user_id: str, text_unit_ids: list[str]
+    ) -> list[Annotation]:
+        """Return annotations for units in a corpus without merging into predictions/gold.
+
+        Blind campaigns still hide peer codes for units the caller is annotating.
+        """
+        await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        unique_ids = list(dict.fromkeys(text_unit_ids))
+        if len(unique_ids) > 500:
+            raise HTTPException(
+                status_code=422,
+                detail="At most 500 text_unit_ids may be requested at once",
+            )
+        annotations = await self.repo.list_annotations_for_units(unique_ids)
+        if not annotations:
+            return []
+
+        from backend.modules.text_research.application.campaign_service import (
+            AnnotationCampaignService,
+        )
+
+        campaign_service = AnnotationCampaignService(self.db)
+        visible: list[Annotation] = []
+        for row in annotations:
+            policy = await campaign_service.blind_policy_for_annotator_unit(
+                text_unit_id=row.text_unit_id, annotator_id=user_id
+            )
+            if policy.get("hide_peer_annotations") and row.annotator_id != user_id:
+                continue
+            visible.append(row)
+        return visible
 
     async def get_unit_context(
         self, text_unit_id: str, *, user_id: str, window: int = 2

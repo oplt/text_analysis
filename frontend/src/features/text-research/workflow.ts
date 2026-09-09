@@ -11,6 +11,9 @@ export type WorkflowStageId =
     | "analyze"
     | "topics"
     | "classify"
+    | "models"
+    | "predictions"
+    | "drift"
     | "validate"
     | "explore"
     | "contextual"
@@ -73,6 +76,24 @@ export const RESEARCH_WORKFLOW_STAGES: WorkflowStageDefinition[] = [
         label: "Classify",
         route: "classification",
         description: "Train and apply text classifiers",
+    },
+    {
+        id: "models",
+        label: "Models",
+        route: "models",
+        description: "Registry, lifecycle, prediction sets",
+    },
+    {
+        id: "predictions",
+        label: "Predictions",
+        route: "predictions",
+        description: "Browse prediction sets vs human/gold",
+    },
+    {
+        id: "drift",
+        label: "Drift",
+        route: "drift",
+        description: "Monitor prediction and feature drift",
     },
     {
         id: "validate",
@@ -387,6 +408,72 @@ export function deriveWorkflowStages(input: WorkflowInput): WorkflowStageState[]
                     ...stage,
                     status: "incomplete",
                     detail: "No trained models",
+                    blockedReason: null,
+                };
+            }
+            case "models": {
+                if (modelCount === 0) {
+                    return {
+                        ...stage,
+                        status: "blocked",
+                        detail: null,
+                        blockedReason: "Train a classifier first",
+                    };
+                }
+                return {
+                    ...stage,
+                    status: "complete",
+                    detail: `${modelCount} in registry`,
+                    blockedReason: null,
+                };
+            }
+            case "predictions": {
+                if (modelCount === 0) {
+                    return {
+                        ...stage,
+                        status: "blocked",
+                        detail: null,
+                        blockedReason: "Train a model and run predictions first",
+                    };
+                }
+                const predictionRuns = runCount(summary, "classifier_prediction");
+                if (predictionRuns > 0) {
+                    return {
+                        ...stage,
+                        status: "complete",
+                        detail: `${predictionRuns} prediction run${predictionRuns === 1 ? "" : "s"}`,
+                        blockedReason: null,
+                    };
+                }
+                return {
+                    ...stage,
+                    status: "incomplete",
+                    detail: "No prediction sets yet",
+                    blockedReason: null,
+                };
+            }
+            case "drift": {
+                if (modelCount === 0) {
+                    return {
+                        ...stage,
+                        status: "blocked",
+                        detail: null,
+                        blockedReason: "Train models before drift monitoring",
+                    };
+                }
+                const driftRuns = runCount(summary, "drift_monitoring");
+                if (driftRuns > 0) {
+                    return {
+                        ...stage,
+                        status: "complete",
+                        detail: `${driftRuns} drift run${driftRuns === 1 ? "" : "s"}`,
+                        blockedReason: null,
+                    };
+                }
+                return {
+                    ...stage,
+                    status: "incomplete",
+                    detail: "No drift checks yet",
                     blockedReason: null,
                 };
             }

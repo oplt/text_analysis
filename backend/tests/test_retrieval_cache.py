@@ -72,7 +72,9 @@ def test_get_and_set_cached_retrieval() -> None:
 
     async def _run() -> None:
         with (
-            patch("backend.lib.retrieval_cache.cache_get_json", AsyncMock(return_value=None)) as cache_get,
+            patch(
+                "backend.lib.retrieval_cache.cache_get_json", AsyncMock(return_value=None)
+            ) as cache_get,
             patch("backend.lib.retrieval_cache.cache_set_json", AsyncMock()) as cache_set,
             patch("backend.lib.retrieval_cache.settings") as mock_settings,
         ):
@@ -105,7 +107,9 @@ def test_get_and_set_cached_retrieval() -> None:
 
 def test_invalidate_retrieval_cache_deletes_scope_pattern() -> None:
     async def _run() -> None:
-        with patch("backend.lib.retrieval_cache.cache_delete_pattern", AsyncMock()) as delete_pattern:
+        with patch(
+            "backend.lib.retrieval_cache.cache_delete_pattern", AsyncMock()
+        ) as delete_pattern:
             await invalidate_retrieval_cache(user_id="user-1", project_id="proj-1")
 
         delete_pattern.assert_awaited_once_with(
@@ -117,7 +121,9 @@ def test_invalidate_retrieval_cache_deletes_scope_pattern() -> None:
 
 def test_invalidate_retrieval_cache_for_document_clears_project_and_global_scopes() -> None:
     async def _run() -> None:
-        with patch("backend.lib.retrieval_cache.cache_delete_pattern", AsyncMock()) as delete_pattern:
+        with patch(
+            "backend.lib.retrieval_cache.cache_delete_pattern", AsyncMock()
+        ) as delete_pattern:
             await invalidate_retrieval_cache_for_document(
                 user_id="user-1",
                 project_id="proj-1",
@@ -127,9 +133,7 @@ def test_invalidate_retrieval_cache_for_document_clears_project_and_global_scope
         delete_pattern.assert_any_await(
             retrieval_cache_pattern(user_id="user-1", project_id="proj-1")
         )
-        delete_pattern.assert_any_await(
-            retrieval_cache_pattern(user_id="user-1", project_id=None)
-        )
+        delete_pattern.assert_any_await(retrieval_cache_pattern(user_id="user-1", project_id=None))
 
     asyncio.run(_run())
 

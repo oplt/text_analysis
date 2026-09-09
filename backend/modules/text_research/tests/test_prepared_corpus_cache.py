@@ -6,7 +6,6 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from backend.modules.text_research.infrastructure import stage_cache
 from backend.modules.text_research.infrastructure.prepared_corpus_builder import (
     prepare_texts_cached,
 )
@@ -14,8 +13,9 @@ from backend.modules.text_research.infrastructure.prepared_corpus_builder import
 
 class PreparedCorpusCacheTests(unittest.TestCase):
     def test_identical_scientific_inputs_reuse_prepared_artifact(self):
-        with tempfile.TemporaryDirectory() as artifact_dir, patch.dict(
-            "os.environ", {"RESEARCH_ARTIFACT_DIR": artifact_dir}
+        with (
+            tempfile.TemporaryDirectory() as artifact_dir,
+            patch.dict("os.environ", {"RESEARCH_ARTIFACT_DIR": artifact_dir}),
         ):
             first = prepare_texts_cached(
                 ["The market and trade"],
@@ -41,8 +41,9 @@ class PreparedCorpusCacheTests(unittest.TestCase):
         self.assertEqual(first.token_sequences, second.token_sequences)
 
     def test_changed_preprocessing_produces_distinct_artifact(self):
-        with tempfile.TemporaryDirectory() as artifact_dir, patch.dict(
-            "os.environ", {"RESEARCH_ARTIFACT_DIR": artifact_dir}
+        with (
+            tempfile.TemporaryDirectory() as artifact_dir,
+            patch.dict("os.environ", {"RESEARCH_ARTIFACT_DIR": artifact_dir}),
         ):
             lower = prepare_texts_cached(
                 ["Market Trade"],
@@ -61,4 +62,3 @@ class PreparedCorpusCacheTests(unittest.TestCase):
 
         self.assertNotEqual(lower.pipeline_checksum, original_case.pipeline_checksum)
         self.assertNotEqual(lower.token_sequences, original_case.token_sequences)
-

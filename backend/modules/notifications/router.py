@@ -35,8 +35,12 @@ async def list_notifications(
     return paginated_response(
         [
             NotificationResponse(
-                id=n.id, type=n.type, title=n.title, body=n.body,
-                is_read=n.is_read, created_at=n.created_at,
+                id=n.id,
+                type=n.type,
+                title=n.title,
+                body=n.body,
+                is_read=n.is_read,
+                created_at=n.created_at,
             )
             for n in items
         ],

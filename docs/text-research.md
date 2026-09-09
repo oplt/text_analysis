@@ -9,6 +9,9 @@ user-defined — the platform does not ship substantive research constructs.
 
 Engineering report for the research-grade upgrade: [`text-research-engineering-report.md`](text-research-engineering-report.md).
 
+Scientific & operational guide (campaigns, reliability, leakage, cache, events,
+lifecycle, drift, provenance): [`text-research-scientific-operations.md`](text-research-scientific-operations.md).
+
 ## Architecture
 
 ```text
@@ -44,12 +47,13 @@ to reconstruct analysis text.
 ```text
 Project → Research Corpus → RAG documents + metadata
        → Segmentation → TextUnits
+       → AnnotationCampaign (blind or AI-assisted) → Assign → Annotate
+       → Reliability (Cohen / Fleiss / Krippendorff, nominal) → Adjudication
        → Quantitative analysis / Topic models
-       → Human annotation → Reliability → Adjudication
        → Frozen TrainingDatasetSnapshot
-       → Classifier training (grouped split, TF-IDF fit on train only)
-       → Evaluation → Corpus-wide prediction → Active learning
-       → Comparative analysis / Dashboard / Export
+       → Classifier training (grouped split, TF-IDF + selector fit on train only)
+       → Evaluation → PredictionSet (MODEL layer) → Active learning
+       → Model Registry / Drift monitoring / Comparative analysis / Export
 ```
 
 ## API
@@ -59,11 +63,12 @@ Base path: `/api/v1/research`
 Key groups:
 
 - **Corpora**: `/projects/{id}/corpora`, `/corpora/{id}/documents`, `/corpora/{id}/segment`
-- **Annotation**: `/codebooks`, `/annotations`, `/corpora/{id}/reliability`, `/adjudication`
+- **Annotation**: `/codebooks`, `/annotation-campaigns`, `/annotations`, `/corpora/{id}/reliability`, `/adjudication`
 - **Analysis**: `/corpora/{id}/analysis/*` (stats, frequencies, ngrams, dfm, kwic, keyness, …)
 - **Classification**: `/classifiers/dataset-preview`, `/classifiers/train`, `/classifiers/{id}/predict`
+- **Models / predictions / drift**: `/projects/{id}/models`, `/prediction-sets`, `/corpora/{id}/monitoring/drift`
 - **Topics**: `/corpora/{id}/topics/train`
-- **Runs**: `/runs/{id}` with status polling; Celery for large jobs
+- **Runs**: `/runs/{id}`, `/runs/{id}/events` (SSE + Redis; DB reconcile / poll fallback); Celery for large jobs
 
 All endpoints require authentication and project membership.
 
@@ -73,10 +78,13 @@ Routes under `/research/:projectId/`:
 
 - `dashboard` — KPI summary from persisted data
 - `corpus` — corpus CRUD, demo seed, segmentation
-- `annotation` — multilabel workspace
-- `reliability` — Cohen's κ, Krippendorff's α
-- `analysis` — quantitative text analysis
+- `annotation` — campaign setup + multilabel workspace (blind / AI-assisted)
+- `reliability` — Cohen's κ (2 coders), Fleiss' κ (3+), Krippendorff's α; bootstrap CIs
+- `analysis` — quantitative text analysis (+ statistical / measurement tabs)
 - `classification` — dataset preview, training, metrics
+- `models` — model registry lifecycle
+- `predictions` — prediction sets (MODEL / HUMAN / GOLD layers)
+- `drift` — distribution drift review signals
 - `topics` — LDA / NMF
 - `explorer` — comparative discourse prevalence
 - `exports` — CSV + reproducibility manifest
@@ -88,7 +96,9 @@ Open from a project detail page via **Open Text Research**.
 Implemented in `infrastructure/` (scikit-learn, scipy, numpy):
 
 - Term frequencies, n-grams, DFM (count/binary/TF-IDF), KWIC, dictionary hits, keyness, co-occurrence
-- Cohen's kappa, Krippendorff's alpha (nominal), agreement matrices
+- **Reliability (nominal only):** Cohen's κ (exactly two coders), Fleiss' κ (3+
+  fixed-*n*), Krippendorff's α (2+, missing/ragged). See
+  [`text-research-scientific-operations.md`](text-research-scientific-operations.md).
 - LDA, NMF with diagnostics (perplexity, topic diversity, overlap)
 - Classifiers: Logistic Regression, Linear SVM, Multinomial NB, Complement NB, SGDClassifier
   (log_loss/hinge); OneVsRest wrapping for multilabel
@@ -96,6 +106,8 @@ Implemented in `infrastructure/` (scikit-learn, scipy, numpy):
   label shape only when not explicitly requested, never silently forced to multilabel
 - Configurable `FeatureConfig`: count or TF-IDF vectors, word n-grams and/or
   character n-grams (combined via `FeatureUnion`)
+- Optional supervised feature selection fit **only on train** (nested CV refits
+  per outer fold); leakage is prevented, not soft-warned
 - Grouped train/validation/test split by source document (leakage prevention);
   validation is skipped with a note (not an error) when too few groups remain
 
@@ -106,10 +118,13 @@ Profiles stored in `research_preprocessing_profiles`. Default preserves negation
 
 ## Training data & leakage prevention
 
-1. Annotations → reliability → adjudication
+1. Campaign-scoped annotations → reliability → adjudication (GOLD layer separate)
 2. `DatasetBuilderService` creates immutable `TrainingDatasetSnapshot`
-3. Classifier vectorizer is **fit only on training partition**
+3. Classifier vectorizer **and** supervised feature selector are **fit only on
+   the training partition** (nested CV refits per fold)
 4. Default split: **group by source document**
+5. Predictions land in `PredictionSet` / `ModelPrediction` — never overwrite
+   human annotations
 
 ## Demo data
 
@@ -149,6 +164,17 @@ Applied on Celery `worker_process_init` / `worker_ready` via
 `backend/workers/parallelism.py`, and again at the start of research sync
 job entrypoints (covers eager in-process runs).
 
+**Concurrency policy**
+
+| Runtime | Use for |
+|---------|---------|
+| asyncio | PostgreSQL, Redis, HTTP, network/storage I/O |
+| Celery prefork | sklearn, topic models, CPU-heavy NLP, statistics |
+| GPU workers | sentence-transformers, large embedding models |
+| threads | only when native libs release the GIL or I/O needs them |
+
+Do **not** set `n_jobs=-1` broadly inside workers.
+
 Recommended for a dedicated `research_cpu` worker:
 
 ```bash
@@ -156,14 +182,41 @@ CELERY_CONCURRENCY=4          # ≈ physical cores (or slightly below)
 RESEARCH_WORKER_BLAS_THREADS=1
 RESEARCH_SKLEARN_N_JOBS=1
 RESEARCH_JOBLIB_N_JOBS=1
+DB_WORKER_POOL_SIZE=2
+DB_WORKER_MAX_OVERFLOW=2
 ```
 
 Inspect the active policy:
 
 ```python
 from backend.workers.parallelism import describe_parallelism_policy
+from backend.db.session import describe_database_pool_policy
 print(describe_parallelism_policy())
+print(describe_database_pool_policy())
 ```
+
+### Database pools + PgBouncer
+
+API and Celery use **explicit** SQLAlchemy pool settings
+(`DB_POOL_*` / `DB_WORKER_POOL_*` in `backend/core/config.py`, wired in
+`backend/db/session.py`). Production deployments should place **PgBouncer in
+transaction pooling mode** in front of Postgres — see
+[docs/runbooks/postgres-pgbouncer.md](runbooks/postgres-pgbouncer.md).
+
+### Large-corpus performance
+
+Hot paths avoid unbounded ORM loads where possible:
+
+- `list_text_units_by_ids` / prediction lookups chunk PostgreSQL `IN` lists
+- large `list_text_units_for_corpus` calls page through the DB
+- prediction uses projected annotated-unit ids + batched transform/upsert
+- reliability already projects `(text_unit_id, label_id, annotator_id, value)`
+- composite indexes for codebook_version, campaign tasks, and run status
+  (see Alembic `b9c0d1e2f3a4`)
+
+Out-of-core tokenization / HashingVectorizer helpers live in
+`infrastructure/out_of_core.py` and kick in at
+`RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD`.
 
 ## Migrations
 
@@ -202,7 +255,10 @@ npm run test:e2e -- e2e/research-flow.spec.ts
 CI runs the research Playwright workflow against the **current commit SHA** in
 `.github/workflows/ci.yml` (API + Postgres + Redis + Vite). Quality-gate jobs
 also cover backend lint/tests, frontend lint/tests/build, Alembic upgrade, and
-1k/10k scale benchmarks (100k opt-in via workflow_dispatch).
+1k/10k scale benchmarks plus workflow micro-benchmarks (reliability, classification
+prep, prediction serialize, SSE events, cache hit/miss). 100k units and 1M
+annotation cells are opt-in (`BENCHMARK_INCLUDE_100K=1`, `BENCHMARK_INCLUDE_1M=1`
+or workflow_dispatch). Soft latency budgets only — not flaky SLO gates.
 
 Local mirrors:
 
@@ -211,7 +267,9 @@ make check          # ruff + eslint + tsc
 make test-backend
 make test-frontend
 make bench-1k
-make ci-local       # check + unit tests + 1k bench for $(git rev-parse HEAD)
+make bench-workflows
+make bench-all      # 1k + 10k scale + workflows
+make ci-local       # check + unit tests + 1k + workflows for $(git rev-parse HEAD)
 ```
 
 `e2e/research-flow.spec.ts` exercises the full pipeline via API (demo seed → segment →

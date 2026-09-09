@@ -8,8 +8,8 @@ from sqlalchemy import text
 from backend.core.cache import (
     OBSERVABILITY_STATUS_CACHE_KEY,
     cache_get_or_load_model,
+    redis_client,
 )
-from backend.core.cache import redis_client
 from backend.core.config import Settings
 from backend.db.session import engine
 from backend.observability.schemas import (
@@ -79,9 +79,7 @@ class ObservabilityService:
 
         def dashboard(path: str) -> ObservabilityToolLink:
             url = (
-                build_public_url(self._settings.GRAFANA_PUBLIC_URL, path)
-                if path.strip()
-                else None
+                build_public_url(self._settings.GRAFANA_PUBLIC_URL, path) if path.strip() else None
             )
             return _tool_link(url, has_technical_access)
 

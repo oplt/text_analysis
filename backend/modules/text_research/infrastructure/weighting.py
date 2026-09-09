@@ -6,7 +6,6 @@ reproducible weighting provenance independent of tokenizer choices.
 
 from __future__ import annotations
 
-import math
 from dataclasses import asdict, dataclass
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any

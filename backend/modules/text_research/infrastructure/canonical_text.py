@@ -136,7 +136,15 @@ def build_canonical_from_full_text(
         text=normalized,
         text_checksum=sha256_text(normalized),
         page_provenance=(
-            [{"index": 0, "page_number": None, "section_heading": None, "char_start": 0, "char_end": len(normalized)}]
+            [
+                {
+                    "index": 0,
+                    "page_number": None,
+                    "section_heading": None,
+                    "char_start": 0,
+                    "char_end": len(normalized),
+                }
+            ]
             if normalized
             else []
         ),
@@ -152,7 +160,9 @@ def build_canonical_from_full_text(
     )
 
 
-def adjacent_chunk_overlap_chars(left: str, right: str, *, min_chars: int = _MIN_OVERLAP_CHARS) -> int:
+def adjacent_chunk_overlap_chars(
+    left: str, right: str, *, min_chars: int = _MIN_OVERLAP_CHARS
+) -> int:
     """Return shared suffix/prefix length between adjacent chunk texts, else 0."""
     if not left or not right:
         return 0

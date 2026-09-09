@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     Accordion,
     AccordionDetails,
@@ -41,6 +41,7 @@ import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { useResearchContext } from "../hooks/useResearchContext";
+import type { PreprocessingProfile } from "../types";
 import {
     DEFAULT_PREPROCESSING_CONFIG,
     LANGUAGE_OPTIONS,
@@ -82,52 +83,37 @@ function patchConfig(
     return next;
 }
 
-export function PreprocessingPanel() {
-    const ctx = useResearchContext();
-    const client = useQueryClient();
-    const { showToast } = useSnackbar();
+function preprocessingProfileDraft(profile: PreprocessingProfile) {
+    const config = configFromProfile(profile.config);
+    return {
+        profileName: profile.name,
+        config,
+        customStopwordsText: (config.custom_stopwords ?? []).join("\n"),
+    };
+}
 
-    const [selectedProfileId, setSelectedProfileId] = useState("");
-    const [profileName, setProfileName] = useState("Default profile");
-    const [config, setConfig] = useState<PreprocessingConfigPayload>(DEFAULT_PREPROCESSING_CONFIG);
-    const [customStopwordsText, setCustomStopwordsText] = useState("");
-    const [sampleText, setSampleText] = useState(DEFAULT_SAMPLE);
-    const [preview, setPreview] = useState<PreprocessingPreview | null>(null);
-
-    const profilesQuery = useQuery({
-        queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
-        queryFn: () => listPreprocessingProfiles(ctx.projectId),
-        enabled: Boolean(ctx.projectId),
-    });
-
-    const profiles = profilesQuery.data ?? [];
-    const selectedProfile = useMemo(
-        () => profiles.find((profile) => profile.id === selectedProfileId) ?? null,
-        [profiles, selectedProfileId]
-    );
-
-    useEffect(() => {
-        if (!profiles.length) {
-            setSelectedProfileId("");
-            return;
-        }
-        if (!selectedProfileId || !profiles.some((p) => p.id === selectedProfileId)) {
-            setSelectedProfileId(profiles[0].id);
-        }
-    }, [profiles, selectedProfileId]);
-
-    useEffect(() => {
-        if (!selectedProfile) {
-            setProfileName("Default profile");
-            setConfig(DEFAULT_PREPROCESSING_CONFIG);
-            setCustomStopwordsText("");
-            return;
-        }
-        setProfileName(selectedProfile.name);
-        const next = configFromProfile(selectedProfile.config);
-        setConfig(next);
-        setCustomStopwordsText((next.custom_stopwords ?? []).join("\n"));
-    }, [selectedProfile]);
+function PreprocessingProfileEditor({
+    profile,
+    onSave,
+    onDraftChange,
+    savePending,
+}: {
+    profile: PreprocessingProfile;
+    onSave: (draft: {
+        profileName: string;
+        config: PreprocessingConfigPayload;
+        customStopwordsText: string;
+    }) => void;
+    onDraftChange: (draft: {
+        profileName: string;
+        config: PreprocessingConfigPayload;
+    }) => void;
+    savePending: boolean;
+}) {
+    const initial = preprocessingProfileDraft(profile);
+    const [profileName, setProfileName] = useState(initial.profileName);
+    const [config, setConfig] = useState<PreprocessingConfigPayload>(initial.config);
+    const [customStopwordsText, setCustomStopwordsText] = useState(initial.customStopwordsText);
 
     const workingConfig = useMemo(
         (): PreprocessingConfigPayload => ({
@@ -140,159 +126,45 @@ export function PreprocessingPanel() {
         [config, customStopwordsText]
     );
 
-    const previewMutation = useMutation({
-        mutationFn: () =>
-            previewPreprocessing({
-                project_id: ctx.projectId,
-                corpus_id: ctx.selectedCorpusId || undefined,
-                unit_type: ctx.unitType,
-                texts: sampleText.trim() ? [sampleText.trim()] : undefined,
-                config: workingConfig,
-                sample_size: 5,
-            }),
-        onSuccess: (data) => setPreview(data),
-        onError: (error) =>
-            showToast({
-                message: getQueryErrorMessage(error, "Failed to preview preprocessing."),
-                severity: "error",
-            }),
-    });
-
-    const saveMutation = useMutation({
-        mutationFn: async () => {
-            if (!profileName.trim()) {
-                throw new Error("Profile name is required.");
-            }
-            if (selectedProfileId) {
-                return updatePreprocessingProfile(selectedProfileId, {
-                    name: profileName.trim(),
-                    config: workingConfig,
-                });
-            }
-            return createPreprocessingProfile(ctx.projectId, {
-                name: profileName.trim(),
-                config: workingConfig,
-            });
-        },
-        onSuccess: (profile) => {
-            void client.invalidateQueries({
-                queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
-            });
-            setSelectedProfileId(profile.id);
-            showToast({ message: "Preprocessing profile saved.", severity: "success" });
-        },
-        onError: (error) =>
-            showToast({
-                message: getQueryErrorMessage(error, "Failed to save preprocessing profile."),
-                severity: "error",
-            }),
-    });
-
-    const createMutation = useMutation({
-        mutationFn: () =>
-            createPreprocessingProfile(ctx.projectId, {
-                name: "New preprocessing profile",
-                config: DEFAULT_PREPROCESSING_CONFIG,
-            }),
-        onSuccess: (profile) => {
-            void client.invalidateQueries({
-                queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
-            });
-            setSelectedProfileId(profile.id);
-            showToast({ message: "Created a new preprocessing profile.", severity: "success" });
-        },
-        onError: (error) =>
-            showToast({
-                message: getQueryErrorMessage(error, "Failed to create profile."),
-                severity: "error",
-            }),
-    });
-
     const needsSpacy =
         Boolean(config.pos_lemmatization) ||
         Boolean(config.entity_masking) ||
         Boolean(config.phrase_detection) ||
         Boolean(config.enable_ner);
 
+    useEffect(() => {
+        onDraftChange({ profileName, config: workingConfig });
+    }, [profileName, workingConfig, onDraftChange]);
+
     return (
         <Stack spacing={2}>
-            <SectionCard
-                title="Preprocessing profiles"
-                description="Classical Unicode preprocessing is the default. Optional spaCy NLP extras stay off unless enabled."
-                action={
-                    <Stack direction="row" spacing={1}>
-                        <Button
-                            size="small"
-                            variant="outlined"
-                            onClick={() => createMutation.mutate()}
-                            disabled={createMutation.isPending}
-                        >
-                            New profile
-                        </Button>
-                        <Button
-                            size="small"
-                            variant="contained"
-                            startIcon={<SaveIcon />}
-                            onClick={() => saveMutation.mutate()}
-                            disabled={saveMutation.isPending}
-                        >
-                            Save
-                        </Button>
-                    </Stack>
-                }
-            >
-                <QueryBoundary
-                    isLoading={profilesQuery.isLoading}
-                    isError={profilesQuery.isError}
-                    error={profilesQuery.error}
-                    onRetry={() => void profilesQuery.refetch()}
-                    variant="inline"
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems={{ sm: "center" }}>
+                <TextField
+                    size="small"
+                    label="Profile name"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    sx={{ flex: 1 }}
+                />
+                <Button
+                    size="small"
+                    variant="contained"
+                    startIcon={<SaveIcon />}
+                    onClick={() =>
+                        onSave({ profileName, config: workingConfig, customStopwordsText })
+                    }
+                    disabled={savePending}
                 >
-                    {!profiles.length ? (
-                        <EmptyState
-                            icon={<PreprocessIcon fontSize="large" />}
-                            title="No preprocessing profiles yet"
-                            description="Create a profile, tune options, preview tokens, then save for analysis runs."
-                            action={
-                                <Button variant="contained" onClick={() => createMutation.mutate()}>
-                                    Create profile
-                                </Button>
-                            }
-                        />
-                    ) : (
-                        <Stack spacing={2}>
-                            <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-                                <TextField
-                                    select
-                                    size="small"
-                                    label="Active profile"
-                                    value={selectedProfileId}
-                                    onChange={(e) => setSelectedProfileId(e.target.value)}
-                                    sx={{ minWidth: 220 }}
-                                >
-                                    {profiles.map((profile) => (
-                                        <MenuItem key={profile.id} value={profile.id}>
-                                            {profile.name}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-                                <TextField
-                                    size="small"
-                                    label="Profile name"
-                                    value={profileName}
-                                    onChange={(e) => setProfileName(e.target.value)}
-                                    sx={{ flex: 1 }}
-                                />
-                            </Stack>
+                    Save
+                </Button>
+            </Stack>
 
-                            <Typography variant="body2" color="text.secondary">
-                                Active: <strong>{selectedProfile?.name ?? profileName}</strong>
-                                {selectedProfile
-                                    ? ` · updated ${new Date(selectedProfile.updated_at).toLocaleString()}`
-                                    : ""}
-                            </Typography>
+            <Typography variant="body2" color="text.secondary">
+                Active: <strong>{profileName}</strong>
+                {` · updated ${new Date(profile.updated_at).toLocaleString()}`}
+            </Typography>
 
-                            <Accordion defaultExpanded disableGutters>
+            <Accordion defaultExpanded disableGutters>
                                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                     <Typography variant="subtitle2">Language & classical cleaning</Typography>
                                 </AccordionSummary>
@@ -587,6 +459,185 @@ export function PreprocessingPanel() {
                                     </Stack>
                                 </AccordionDetails>
                             </Accordion>
+        </Stack>
+    );
+}
+
+export function PreprocessingPanel() {
+    const ctx = useResearchContext();
+    const client = useQueryClient();
+    const { showToast } = useSnackbar();
+
+    const [selectedProfileId, setSelectedProfileId] = useState("");
+    const [sampleText, setSampleText] = useState(DEFAULT_SAMPLE);
+    const [preview, setPreview] = useState<PreprocessingPreview | null>(null);
+    const [previewConfig, setPreviewConfig] = useState<PreprocessingConfigPayload>(
+        DEFAULT_PREPROCESSING_CONFIG
+    );
+    const [previewProfileName, setPreviewProfileName] = useState("Default profile");
+
+    const profilesQuery = useQuery({
+        queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
+        queryFn: () => listPreprocessingProfiles(ctx.projectId),
+        enabled: Boolean(ctx.projectId),
+    });
+
+    const profiles = useMemo(() => profilesQuery.data ?? [], [profilesQuery.data]);
+    const effectiveProfileId = useMemo(() => {
+        if (!profiles.length) return "";
+        if (selectedProfileId && profiles.some((profile) => profile.id === selectedProfileId)) {
+            return selectedProfileId;
+        }
+        return profiles[0].id;
+    }, [profiles, selectedProfileId]);
+    const selectedProfile = useMemo(
+        () => profiles.find((profile) => profile.id === effectiveProfileId) ?? null,
+        [profiles, effectiveProfileId]
+    );
+
+    const previewMutation = useMutation({
+        mutationFn: () =>
+            previewPreprocessing({
+                project_id: ctx.projectId,
+                corpus_id: ctx.selectedCorpusId || undefined,
+                unit_type: ctx.unitType,
+                texts: sampleText.trim() ? [sampleText.trim()] : undefined,
+                config: previewConfig,
+                sample_size: 5,
+            }),
+        onSuccess: (data) => setPreview(data),
+        onError: (error) =>
+            showToast({
+                message: getQueryErrorMessage(error, "Failed to preview preprocessing."),
+                severity: "error",
+            }),
+    });
+
+    const saveMutation = useMutation({
+        mutationFn: async (draft: {
+            profileName: string;
+            config: PreprocessingConfigPayload;
+        }) => {
+            if (!draft.profileName.trim()) {
+                throw new Error("Profile name is required.");
+            }
+            if (!effectiveProfileId) {
+                return createPreprocessingProfile(ctx.projectId, {
+                    name: draft.profileName.trim(),
+                    config: draft.config,
+                });
+            }
+            return updatePreprocessingProfile(effectiveProfileId, {
+                name: draft.profileName.trim(),
+                config: draft.config,
+            });
+        },
+        onSuccess: (profile) => {
+            void client.invalidateQueries({
+                queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
+            });
+            setSelectedProfileId(profile.id);
+            showToast({ message: "Preprocessing profile saved.", severity: "success" });
+        },
+        onError: (error) =>
+            showToast({
+                message: getQueryErrorMessage(error, "Failed to save preprocessing profile."),
+                severity: "error",
+            }),
+    });
+
+    const handleDraftChange = useCallback(
+        (draft: { profileName: string; config: PreprocessingConfigPayload }) => {
+            setPreviewConfig(draft.config);
+            setPreviewProfileName(draft.profileName);
+        },
+        []
+    );
+
+    const createMutation = useMutation({
+        mutationFn: () =>
+            createPreprocessingProfile(ctx.projectId, {
+                name: "New preprocessing profile",
+                config: DEFAULT_PREPROCESSING_CONFIG,
+            }),
+        onSuccess: (profile) => {
+            void client.invalidateQueries({
+                queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
+            });
+            setSelectedProfileId(profile.id);
+            showToast({ message: "Created a new preprocessing profile.", severity: "success" });
+        },
+        onError: (error) =>
+            showToast({
+                message: getQueryErrorMessage(error, "Failed to create profile."),
+                severity: "error",
+            }),
+    });
+
+    return (
+        <Stack spacing={2}>
+            <SectionCard
+                title="Preprocessing profiles"
+                description="Classical Unicode preprocessing is the default. Optional spaCy NLP extras stay off unless enabled."
+                action={
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => createMutation.mutate()}
+                        disabled={createMutation.isPending}
+                    >
+                        New profile
+                    </Button>
+                }
+            >
+                <QueryBoundary
+                    isLoading={profilesQuery.isLoading}
+                    isError={profilesQuery.isError}
+                    error={profilesQuery.error}
+                    onRetry={() => void profilesQuery.refetch()}
+                    variant="inline"
+                >
+                    {!profiles.length ? (
+                        <EmptyState
+                            icon={<PreprocessIcon fontSize="large" />}
+                            title="No preprocessing profiles yet"
+                            description="Create a profile, tune options, preview tokens, then save for analysis runs."
+                            action={
+                                <Button variant="contained" onClick={() => createMutation.mutate()}>
+                                    Create profile
+                                </Button>
+                            }
+                        />
+                    ) : (
+                        <Stack spacing={2}>
+                            <TextField
+                                select
+                                size="small"
+                                label="Active profile"
+                                value={effectiveProfileId}
+                                onChange={(e) => setSelectedProfileId(e.target.value)}
+                                sx={{ minWidth: 220 }}
+                            >
+                                {profiles.map((profile) => (
+                                    <MenuItem key={profile.id} value={profile.id}>
+                                        {profile.name}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                            {selectedProfile ? (
+                                <PreprocessingProfileEditor
+                                    key={selectedProfile.id}
+                                    profile={selectedProfile}
+                                    onDraftChange={handleDraftChange}
+                                    onSave={(draft) => {
+                                        saveMutation.mutate({
+                                            profileName: draft.profileName,
+                                            config: draft.config,
+                                        });
+                                    }}
+                                    savePending={saveMutation.isPending}
+                                />
+                            ) : null}
                         </Stack>
                     )}
                 </QueryBoundary>
@@ -627,7 +678,7 @@ export function PreprocessingPanel() {
                                 {" · "}vocabulary {preview.vocabulary_size}
                                 {preview.profile_name
                                     ? ` · profile ${preview.profile_name}`
-                                    : ` · draft ${profileName}`}
+                                    : ` · draft ${previewProfileName}`}
                                 {" · "}
                                 {preview.stemmer || "no stemmer"}
                                 {preview.lemmatization_supported ? " · lemmatization available" : ""}

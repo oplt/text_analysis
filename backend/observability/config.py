@@ -54,7 +54,9 @@ def load_config() -> ObservabilityConfig:
         enabled=env_bool("OBSERVABILITY_ENABLED", True),
         service_name=env_str("OTEL_SERVICE_NAME", settings.OTEL_SERVICE_NAME or settings.APP_NAME),
         environment=settings.APP_ENV or env_str("APP_ENV", "local"),
-        otlp_endpoint=env_str("OTEL_EXPORTER_OTLP_ENDPOINT", configured_endpoint or "http://localhost:4318").rstrip("/"),
+        otlp_endpoint=env_str(
+            "OTEL_EXPORTER_OTLP_ENDPOINT", configured_endpoint or "http://localhost:4318"
+        ).rstrip("/"),
         otlp_protocol=env_str("OTEL_EXPORTER_OTLP_PROTOCOL", configured_protocol).lower(),
         otlp_insecure=env_bool("OTLP_INSECURE", settings.OTLP_INSECURE),
         traces_exporter=env_str("OTEL_TRACES_EXPORTER", settings.OTEL_TRACES_EXPORTER).lower(),

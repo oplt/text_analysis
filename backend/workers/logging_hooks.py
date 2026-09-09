@@ -5,7 +5,13 @@ from __future__ import annotations
 import logging
 from time import perf_counter
 
-from celery.signals import task_failure, task_postrun, task_prerun, worker_process_init, worker_ready
+from celery.signals import (
+    task_failure,
+    task_postrun,
+    task_prerun,
+    worker_process_init,
+    worker_ready,
+)
 
 from backend.core.config import settings
 from backend.core.logging import setup_logging
@@ -32,7 +38,10 @@ def configure_worker_process(**_kwargs) -> None:
 @worker_ready.connect
 def configure_worker_logging(**_kwargs) -> None:
     setup_logging()
-    from backend.workers.parallelism import configure_worker_parallelism, describe_parallelism_policy
+    from backend.workers.parallelism import (
+        configure_worker_parallelism,
+        describe_parallelism_policy,
+    )
 
     # Solo / threads pools may not emit worker_process_init the same way; apply once.
     configure_worker_parallelism(force=False)

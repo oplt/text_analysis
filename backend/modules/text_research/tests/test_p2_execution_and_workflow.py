@@ -5,6 +5,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+
 from backend.core.config import settings
 from backend.modules.text_research.application.workflow_composer import (
     compile_recipe,
@@ -42,7 +43,9 @@ class QueueMappingTests(unittest.TestCase):
         self.assertEqual(queue_for_resource_class("research_cpu"), settings.RESEARCH_QUEUE_CPU)
         self.assertEqual(queue_for_resource_class("research_io"), settings.RESEARCH_QUEUE_IO)
         self.assertEqual(queue_for_resource_class("research_nlp"), settings.RESEARCH_QUEUE_NLP)
-        self.assertEqual(queue_for_resource_class("research_memory"), settings.RESEARCH_QUEUE_MEMORY)
+        self.assertEqual(
+            queue_for_resource_class("research_memory"), settings.RESEARCH_QUEUE_MEMORY
+        )
         self.assertEqual(queue_for_resource_class("research_gpu"), settings.RESEARCH_QUEUE_GPU)
 
     def test_resource_class_for_analysis_types(self) -> None:

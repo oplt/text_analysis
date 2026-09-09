@@ -94,9 +94,7 @@ def _allocate(sizes: list[int], total: int, mode: str) -> list[int]:
             raw = [int(x) for x in exact]  # floor
             remainder = target_total - sum(raw)
             # Largest-remainder method for deterministic, exact-sum rounding.
-            order = sorted(
-                range(n), key=lambda i: (exact[i] - raw[i], -i), reverse=True
-            )
+            order = sorted(range(n), key=lambda i: (exact[i] - raw[i], -i), reverse=True)
             for i in range(remainder):
                 raw[order[i % n]] += 1
 
@@ -217,9 +215,7 @@ def build_sampling_plan(
                     )
 
         selected_atoms.extend(chosen)
-        stratum_labels = (
-            dict(zip(stratify_fields, key, strict=True)) if stratify_fields else {}
-        )
+        stratum_labels = dict(zip(stratify_fields, key, strict=True)) if stratify_fields else {}
         # Restore the true missing marker to None for readability in output.
         stratum_labels = {
             field_name: (None if value == _MISSING_STRATUM_VALUE else value)
@@ -243,9 +239,7 @@ def build_sampling_plan(
             selected_unit_ids.extend(unit.id for unit in doc_units)
     else:
         selected_unit_ids = [atom.id for atom in selected_atoms]
-        selected_document_ids = list(
-            dict.fromkeys(atom.document_id for atom in selected_atoms)
-        )
+        selected_document_ids = list(dict.fromkeys(atom.document_id for atom in selected_atoms))
 
     return {
         "sampling_config": {

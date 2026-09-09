@@ -10,9 +10,9 @@ from backend.modules.text_research.application.analysis_executor import (
     build_spec_from_request,
 )
 from backend.modules.text_research.application.topic_model_service import build_metadata_breakdowns
+from backend.modules.text_research.infrastructure import topic_models
 from backend.modules.text_research.infrastructure.prepared_corpus_builder import prepare_texts
 from backend.modules.text_research.infrastructure.preprocessing import PreprocessingConfig
-from backend.modules.text_research.infrastructure import topic_models
 
 
 class PreparedTopicModelTests(unittest.TestCase):
@@ -63,9 +63,7 @@ class PreparedTopicModelTests(unittest.TestCase):
     def test_lda_holdout_perplexity(self) -> None:
         config = PreprocessingConfig().to_dict()
         prepared = prepare_texts(self.texts, config)
-        holdout = list(
-            prepare_texts(["market economy trade liberty"], config).texts_joined
-        )
+        holdout = list(prepare_texts(["market economy trade liberty"], config).texts_joined)
         result = topic_models.train_topic_model(
             self.texts,
             algorithm="lda",

@@ -8,8 +8,9 @@ aligned to the unit text the researcher sees.
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Any, Iterator
+from typing import Any
 
 _WORD_RE = re.compile(r"\S+")
 _NON_WORD_RE = re.compile(r"[^\w']", re.UNICODE)
@@ -106,10 +107,10 @@ def wildcard_to_regex(pattern: str, *, case_sensitive: bool) -> re.Pattern[str]:
 
 
 def _lemma_of(token: str, language: str | None) -> str:
-    from backend.modules.text_research.infrastructure.preprocessing import lemmatize_token
     from backend.modules.text_research.infrastructure.language_processing import (
         lemmatization_available,
     )
+    from backend.modules.text_research.infrastructure.preprocessing import lemmatize_token
 
     if not language or not lemmatization_available(language):
         raise ValueError(
@@ -227,7 +228,10 @@ def _iter_wildcard_matches(
     n = len(patterns)
     for start in range(0, len(tokens) - n + 1):
         window = tokens[start : start + n]
-        if all(pat.match(_strip_punct(tok.text) or tok.text) for tok, pat in zip(window, patterns, strict=True)):
+        if all(
+            pat.match(_strip_punct(tok.text) or tok.text)
+            for tok, pat in zip(window, patterns, strict=True)
+        ):
             yield start, start + n
 
 
@@ -284,7 +288,9 @@ def _build_hit(
 
     hit: dict[str, Any] = {
         "left_context": " ".join(left_tokens),
-        "keyword": " ".join(match_tokens) if match_tokens else text[match_char_start:match_char_end],
+        "keyword": " ".join(match_tokens)
+        if match_tokens
+        else text[match_char_start:match_char_end],
         "right_context": " ".join(right_tokens),
         "left_tokens": left_tokens,
         "match_tokens": match_tokens,

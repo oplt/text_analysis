@@ -2,7 +2,10 @@ import { apiFetch, type Paginated } from "./client";
 import type {
     AnalysisRun,
     Annotation,
+    AnnotationBlindPolicy,
+    AnnotationCampaign,
     AnnotationLabel,
+    AnnotationMode,
     AnnotationProgress,
     AnnotationQueueItem,
     Codebook,
@@ -425,6 +428,14 @@ export async function assignCorpusAnnotationTasks(
         stratum_mode?: "proportional" | "equal";
         sampling_level?: "unit" | "document";
         max_units_per_document?: number;
+        create_campaign?: boolean;
+        campaign_name?: string;
+        campaign_description?: string;
+        campaign_id?: string;
+        codebook_id?: string;
+        annotation_mode?: AnnotationMode;
+        blind_mode?: boolean;
+        ai_assistance_enabled?: boolean;
     }
 ): Promise<{
     assigned_count: number;
@@ -434,11 +445,59 @@ export async function assignCorpusAnnotationTasks(
     unit_type: string;
     per_annotator: Record<string, number>;
     sampling_plan?: Record<string, unknown> | null;
+    campaign_id?: string | null;
+    annotation_mode?: AnnotationMode | null;
+    blind_mode?: boolean | null;
+    ai_assistance_enabled?: boolean | null;
 }> {
     return apiFetch(`${BASE}/corpora/${corpusId}/annotations/assign`, {
         method: "POST",
         body: JSON.stringify(payload),
     });
+}
+
+export async function listAnnotationCampaigns(
+    projectId: string,
+    corpusId?: string
+): Promise<AnnotationCampaign[]> {
+    const search = new URLSearchParams();
+    if (corpusId) search.set("corpus_id", corpusId);
+    const qs = search.size ? `?${search}` : "";
+    return apiFetch(`${BASE}/projects/${projectId}/annotation-campaigns${qs}`);
+}
+
+export async function createAnnotationCampaign(
+    projectId: string,
+    payload: {
+        corpus_id: string;
+        name: string;
+        description?: string;
+        codebook_id?: string;
+        unit_type?: UnitType;
+        sampling_strategy?: string;
+        assignment_strategy?: string;
+        sample_size?: number;
+        overlap_count?: number;
+        overlap_percent?: number;
+        annotation_mode?: AnnotationMode;
+        blind_mode?: boolean;
+        ai_assistance_enabled?: boolean;
+        annotator_ids?: string[];
+        metadata?: Record<string, unknown>;
+    }
+): Promise<AnnotationCampaign> {
+    return apiFetch(`${BASE}/projects/${projectId}/annotation-campaigns`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function getAnnotationCampaign(campaignId: string): Promise<AnnotationCampaign> {
+    return apiFetch(`${BASE}/annotation-campaigns/${campaignId}`);
+}
+
+export async function getTextUnitBlindPolicy(textUnitId: string): Promise<AnnotationBlindPolicy> {
+    return apiFetch(`${BASE}/text-units/${textUnitId}/blind-policy`);
 }
 
 export async function saveAnnotations(payload: {
@@ -459,6 +518,18 @@ export async function getAnnotationProgress(corpusId: string): Promise<Annotatio
 
 export async function listUnitAnnotations(textUnitId: string): Promise<Annotation[]> {
     return apiFetch(`${BASE}/text-units/${textUnitId}/annotations`);
+}
+
+export async function listAnnotationsForUnits(
+    corpusId: string,
+    textUnitIds: string[]
+): Promise<Annotation[]> {
+    if (!textUnitIds.length) return [];
+    const search = new URLSearchParams();
+    for (const id of textUnitIds) {
+        search.append("text_unit_ids", id);
+    }
+    return apiFetch(`${BASE}/corpora/${encodeURIComponent(corpusId)}/annotations?${search}`);
 }
 
 export async function getTextUnitContext(
@@ -490,9 +561,20 @@ export async function getTextUnitContext(
 // Reliability
 // ------------------------------------------------------------------
 
+export type ComputeReliabilityPayload = {
+    codebook_id: string;
+    label_ids?: string[];
+    campaign_id?: string;
+    unit_type?: string;
+    annotator_ids?: string[];
+    bootstrap_samples?: number;
+    confidence_level?: number;
+    random_seed?: number;
+};
+
 export async function computeReliability(
     corpusId: string,
-    payload: { codebook_id: string; label_ids?: string[] }
+    payload: ComputeReliabilityPayload
 ): Promise<AnalysisRun> {
     return apiFetch(`${BASE}/corpora/${corpusId}/reliability`, {
         method: "POST",
@@ -814,6 +896,9 @@ export async function trainClassifier(payload: {
     min_df?: number;
     max_df?: number;
     max_features?: number | null;
+    feature_selection_method?: "none" | "chi2" | "mutual_info" | "l1";
+    feature_selection_k?: number | "all";
+    feature_selection_percentile?: number | null;
     class_weight?: string | null;
     regularization_c?: number;
     nb_alpha?: number;
@@ -876,9 +961,13 @@ export async function predictClassifier(
 
 export async function listUncertainPredictions(
     modelId: string,
-    limit = 20
+    options: { limit?: number; campaignId?: string; textUnitId?: string } = {}
 ): Promise<UncertainPrediction[]> {
-    return apiFetch(`${BASE}/classifiers/${modelId}/active-learning/queue?limit=${limit}`);
+    const search = new URLSearchParams();
+    search.set("limit", String(options.limit ?? 20));
+    if (options.campaignId) search.set("campaign_id", options.campaignId);
+    if (options.textUnitId) search.set("text_unit_id", options.textUnitId);
+    return apiFetch(`${BASE}/classifiers/${modelId}/active-learning/queue?${search}`);
 }
 
 export async function assignUncertainPredictions(
@@ -894,10 +983,131 @@ export async function assignUncertainPredictions(
 
 export async function listClassifiers(
     projectId: string,
-    corpusId?: string
+    corpusId?: string,
+    lifecycleStatus?: string
 ): Promise<TrainedModel[]> {
-    const qs = corpusId ? `?corpus_id=${encodeURIComponent(corpusId)}` : "";
+    const search = new URLSearchParams();
+    if (corpusId) search.set("corpus_id", corpusId);
+    if (lifecycleStatus) search.set("lifecycle_status", lifecycleStatus);
+    const qs = search.toString() ? `?${search}` : "";
     return apiFetch(`${BASE}/projects/${projectId}/classifiers${qs}`);
+}
+
+export async function listModels(
+    projectId: string,
+    options: { corpusId?: string; lifecycleStatus?: string } = {}
+): Promise<TrainedModel[]> {
+    const search = new URLSearchParams();
+    if (options.corpusId) search.set("corpus_id", options.corpusId);
+    if (options.lifecycleStatus) search.set("lifecycle_status", options.lifecycleStatus);
+    const qs = search.toString() ? `?${search}` : "";
+    return apiFetch(`${BASE}/projects/${projectId}/models${qs}`);
+}
+
+export async function getClassifier(modelId: string): Promise<TrainedModel> {
+    return apiFetch(`${BASE}/classifiers/${encodeURIComponent(modelId)}`);
+}
+
+export async function updateModelLifecycle(
+    modelId: string,
+    payload: {
+        status: "candidate" | "approved" | "deprecated";
+        notes?: string | null;
+        deprecate_others?: boolean;
+    }
+): Promise<TrainedModel> {
+    return apiFetch(`${BASE}/models/${encodeURIComponent(modelId)}/lifecycle`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function cloneClassifierConfig(modelId: string): Promise<Record<string, unknown>> {
+    return apiFetch(`${BASE}/classifiers/${encodeURIComponent(modelId)}/clone`, {
+        method: "POST",
+    });
+}
+
+export async function listModelPredictions(
+    modelId: string,
+    options: { limit?: number; offset?: number } = {}
+): Promise<unknown[]> {
+    const search = new URLSearchParams();
+    search.set("limit", String(options.limit ?? 100));
+    search.set("offset", String(options.offset ?? 0));
+    return apiFetch(
+        `${BASE}/classifiers/${encodeURIComponent(modelId)}/predictions?${search}`
+    );
+}
+
+export async function listPredictionSets(
+    corpusId: string,
+    options: { limit?: number; offset?: number } = {}
+): Promise<
+    Array<{
+        id: string;
+        project_id: string;
+        corpus_id: string;
+        trained_model_id: string;
+        model_version: number;
+        dataset_snapshot_id: string | null;
+        analysis_run_id: string;
+        created_by: string;
+        created_at: string;
+        metadata: Record<string, unknown>;
+    }>
+> {
+    const search = new URLSearchParams();
+    search.set("limit", String(options.limit ?? 50));
+    search.set("offset", String(options.offset ?? 0));
+    return apiFetch(`${BASE}/corpora/${encodeURIComponent(corpusId)}/prediction-sets?${search}`);
+}
+
+export async function getPredictionSet(predictionSetId: string): Promise<{
+    id: string;
+    project_id: string;
+    corpus_id: string;
+    trained_model_id: string;
+    model_version: number;
+    dataset_snapshot_id: string | null;
+    analysis_run_id: string;
+    created_by: string;
+    created_at: string;
+    metadata: Record<string, unknown>;
+    predictions: Array<{
+        id: string;
+        trained_model_id: string;
+        text_unit_id: string;
+        predicted_labels: string[];
+        scores: Record<string, number>;
+        uncertainty: number | null;
+        created_at: string;
+    }>;
+}> {
+    return apiFetch(`${BASE}/prediction-sets/${encodeURIComponent(predictionSetId)}`);
+}
+
+export async function compareClassifierDrift(
+    corpusId: string,
+    payload: {
+        baseline: {
+            label_counts?: Record<string, number>;
+            scores?: number[];
+            top_terms?: string[];
+        };
+        current: {
+            label_counts?: Record<string, number>;
+            scores?: number[];
+            top_terms?: string[];
+        };
+        baseline_run_id?: string | null;
+        current_run_id?: string | null;
+    }
+): Promise<Record<string, unknown>> {
+    return apiFetch(`${BASE}/corpora/${encodeURIComponent(corpusId)}/monitoring/drift`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
 }
 
 export async function listDatasetSnapshots(
@@ -1179,6 +1389,11 @@ export type RunProvenance = {
     status: string;
     random_seed: number | null;
     artifact_path: string | null;
+    created_by?: string | null;
+    started_at?: string | null;
+    completed_at?: string | null;
+    corpus_id?: string | null;
+    project_id?: string | null;
     provenance: Record<string, unknown>;
     reproduce: Record<string, unknown>;
     runtime_now: Record<string, unknown>;

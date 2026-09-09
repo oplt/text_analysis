@@ -47,8 +47,7 @@ def document_metadata_fields(document: CorpusDocument) -> dict[str, Any]:
     """Flatten a document's built-in columns + custom metadata_json into one
     dict usable for generic stratification by any field name."""
     metadata: dict[str, Any] = {
-        field_name: getattr(document, field_name, None)
-        for field_name in _DOCUMENT_METADATA_COLUMNS
+        field_name: getattr(document, field_name, None) for field_name in _DOCUMENT_METADATA_COLUMNS
     }
     extra = loads(document.metadata_json, default=None)
     if isinstance(extra, dict):
@@ -88,9 +87,7 @@ class SamplingService(ResearchAccessMixin):
             allowed = set(candidate_unit_ids)
             units = [unit for unit in units if unit.id in allowed]
         if not units:
-            raise HTTPException(
-                status_code=422, detail="No candidate units available for sampling"
-            )
+            raise HTTPException(status_code=422, detail="No candidate units available for sampling")
 
         document_ids = list(dict.fromkeys(unit.corpus_document_id for unit in units))
         documents = await self.repo.list_documents_by_ids(document_ids)

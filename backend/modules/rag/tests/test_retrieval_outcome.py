@@ -66,12 +66,15 @@ class RetrievalOutcomeTest(unittest.IsolatedAsyncioTestCase):
         service.vector_store = MagicMock()
         service.vector_store.similarity_search = AsyncMock(return_value=[])
 
-        with patch(
-            "backend.modules.rag.application.retrieval_service.get_cached_retrieval",
-            AsyncMock(return_value=None),
-        ), patch(
-            "backend.modules.rag.application.retrieval_service.set_cached_retrieval",
-            AsyncMock(),
+        with (
+            patch(
+                "backend.modules.rag.application.retrieval_service.get_cached_retrieval",
+                AsyncMock(return_value=None),
+            ),
+            patch(
+                "backend.modules.rag.application.retrieval_service.set_cached_retrieval",
+                AsyncMock(),
+            ),
         ):
             outcome = await service.retrieve("hello", user_id="user-1", project_id=None)
 

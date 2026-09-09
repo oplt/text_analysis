@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Any, Iterator
+from typing import Any
 
 _WORD_RE = re.compile(r"\S+")
 _NON_WORD_RE = re.compile(r"[^\w']", re.UNICODE)
@@ -127,10 +128,7 @@ def _wildcard_regex(pattern: str, *, case_sensitive: bool) -> re.Pattern[str]:
 
 def _parse_leaf(item: Any, path: tuple[str, ...]) -> DictionaryEntry:
     category = path[0] if path else None
-    if len(path) >= 2:
-        subcategory = "/".join(path[1:])
-    else:
-        subcategory = None
+    subcategory = "/".join(path[1:]) if len(path) >= 2 else None
 
     if isinstance(item, str):
         expr = item.strip()
@@ -497,7 +495,11 @@ def match_dictionary(
 
     for unit_index, tokens in enumerate(tokenized):
         meta = dict(metadata[unit_index]) if metadata else {}
-        unit_id = unit_ids[unit_index] if unit_ids is not None else meta.get("text_unit_id", str(unit_index))
+        unit_id = (
+            unit_ids[unit_index]
+            if unit_ids is not None
+            else meta.get("text_unit_id", str(unit_index))
+        )
 
         exclusion_spans: list[tuple[int, int]] = []
         for excl in spec.exclusions:

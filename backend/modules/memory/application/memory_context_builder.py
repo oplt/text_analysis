@@ -69,7 +69,6 @@ class MemoryContextBuilder:
         deduped.sort(key=self._rank_score, reverse=True)
         return deduped[: request.limit]
 
-
     def _rank_score(self, item: MemoryItem) -> float:
         level_weight = LEVEL_WEIGHTS.get(item.metadata.memory_level, 0.5)
         relevance = item.score or 0.5

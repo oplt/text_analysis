@@ -73,7 +73,9 @@ class DictionaryService(ResearchAccessMixin):
         await self.db.commit()
         return dictionary
 
-    async def list_dictionaries(self, *, project_id: str, user_id: str) -> list[DictionaryDefinition]:
+    async def list_dictionaries(
+        self, *, project_id: str, user_id: str
+    ) -> list[DictionaryDefinition]:
         await self.ensure_project_access(user_id=user_id, project_id=project_id)
         return await self.repo.list_dictionaries(project_id)
 
@@ -142,7 +144,9 @@ class DictionaryService(ResearchAccessMixin):
                         if exclusions is not None
                         else [e.to_dict() for e in existing_spec.exclusions],
                         language=language if language is not None else existing_spec.language,
-                        description=description if description is not None else dictionary.description,
+                        description=description
+                        if description is not None
+                        else dictionary.description,
                         version=version or dictionary.version,
                         name=name or dictionary.name,
                     )
@@ -153,7 +157,9 @@ class DictionaryService(ResearchAccessMixin):
                         if exclusions is not None
                         else [e.to_dict() for e in existing_spec.exclusions],
                         language=language if language is not None else existing_spec.language,
-                        description=description if description is not None else dictionary.description,
+                        description=description
+                        if description is not None
+                        else dictionary.description,
                         version=version or dictionary.version,
                         name=name or dictionary.name,
                     )
@@ -166,9 +172,7 @@ class DictionaryService(ResearchAccessMixin):
             )
             fields["terms_json"] = serialize_dictionary_payload(
                 spec,
-                hierarchy=hierarchy
-                if hierarchy is not None
-                else hierarchy_from_payload(payload),
+                hierarchy=hierarchy if hierarchy is not None else hierarchy_from_payload(payload),
             )
         updated = await self.repo.update_dictionary(dictionary, **fields)
         await self.db.commit()

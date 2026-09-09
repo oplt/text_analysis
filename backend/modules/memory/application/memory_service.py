@@ -227,9 +227,7 @@ class MemoryService:
             await self._ensure_project_access(user_id, project_id)
 
         level_values = (
-            [level.value for level in levels]
-            if levels
-            else [level.value for level in MemoryLevel]
+            [level.value for level in levels] if levels else [level.value for level in MemoryLevel]
         )
         cached = await get_cached_memory_search(
             user_id=user_id,
@@ -264,9 +262,7 @@ class MemoryService:
             return await self._filter_authorized_read_items(user_id, items)
 
         try:
-            level_results = await asyncio.gather(
-                *[_search_level(level) for level in search_levels]
-            )
+            level_results = await asyncio.gather(*[_search_level(level) for level in search_levels])
             for level_items in level_results:
                 collected.extend(level_items)
             metrics.memory_search_success.inc()
@@ -481,7 +477,9 @@ class MemoryService:
                     source_ref=source_message_id,
                 )
 
-        return list(await asyncio.gather(*[_remember_candidate(candidate) for candidate in candidates]))
+        return list(
+            await asyncio.gather(*[_remember_candidate(candidate) for candidate in candidates])
+        )
 
     async def _authorize_write(
         self,

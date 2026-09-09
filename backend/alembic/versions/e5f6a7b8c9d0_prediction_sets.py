@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "e5f6a7b8c9d0"
@@ -24,12 +25,18 @@ def upgrade() -> None:
         sa.Column("created_by", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("metadata_json", sa.Text(), nullable=False),
-        sa.ForeignKeyConstraint(["analysis_run_id"], ["research_analysis_runs.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["analysis_run_id"], ["research_analysis_runs.id"], ondelete="CASCADE"
+        ),
         sa.ForeignKeyConstraint(["corpus_id"], ["research_corpora.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["created_by"], ["users.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["dataset_snapshot_id"], ["research_training_dataset_snapshots.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(
+            ["dataset_snapshot_id"], ["research_training_dataset_snapshots.id"], ondelete="SET NULL"
+        ),
         sa.ForeignKeyConstraint(["project_id"], ["projects.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["trained_model_id"], ["research_trained_models.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["trained_model_id"], ["research_trained_models.id"], ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -59,8 +66,12 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_research_prediction_sets_analysis_run_id", table_name="research_prediction_sets")
-    op.drop_index("ix_research_prediction_sets_trained_model_id", table_name="research_prediction_sets")
+    op.drop_index(
+        "ix_research_prediction_sets_analysis_run_id", table_name="research_prediction_sets"
+    )
+    op.drop_index(
+        "ix_research_prediction_sets_trained_model_id", table_name="research_prediction_sets"
+    )
     op.drop_index("ix_research_prediction_sets_corpus_id", table_name="research_prediction_sets")
     op.drop_index("ix_research_prediction_sets_project_id", table_name="research_prediction_sets")
     op.drop_table("research_prediction_sets")

@@ -36,9 +36,7 @@ class AssociationNetworkTests(unittest.TestCase):
         self.assertIn("degree", node)
 
     def test_include_network_false(self):
-        report = collocation.collocation_report(
-            self.tokenized, window=2, include_network=False
-        )
+        report = collocation.collocation_report(self.tokenized, window=2, include_network=False)
         self.assertNotIn("network", report)
 
     def test_no_semantic_claims(self):

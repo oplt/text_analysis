@@ -7,7 +7,9 @@ import unittest
 import numpy as np
 
 from backend.modules.text_research.infrastructure import embeddings
-from backend.modules.text_research.infrastructure.embedding_classifier import fit_embedding_classifier
+from backend.modules.text_research.infrastructure.embedding_classifier import (
+    fit_embedding_classifier,
+)
 from backend.modules.text_research.infrastructure.spacy_engine import SpacyLinguisticEngine
 
 

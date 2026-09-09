@@ -62,10 +62,7 @@ def _resolve_group_keys(
     if not field:
         return None
     doc_lookup = {d.id: d for d in documents}
-    return [
-        _resolve_group_value(doc_lookup.get(unit.corpus_document_id), field)
-        for unit in units
-    ]
+    return [_resolve_group_value(doc_lookup.get(unit.corpus_document_id), field) for unit in units]
 
 
 def _tokenized_from_prepared(prepared: PreparedCorpusArtifact) -> list[list[str]]:
@@ -178,7 +175,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "preprocessing_config": config.to_dict(),
                 "preprocessing_implementation": describe_implementation(config),
             }
-        profile = await self.get_preprocessing_profile_or_404(preprocessing_profile_id, user_id=user_id)
+        profile = await self.get_preprocessing_profile_or_404(
+            preprocessing_profile_id, user_id=user_id
+        )
         config = PreprocessingProfileService.resolve_config(profile)
         return config, {
             "preprocessing_profile_id": profile.id,
@@ -199,7 +198,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         units = await self.repo.list_text_units_for_corpus(
             corpus_id,
             unit_type=unit_type,
-            document_ids=doc_ids if (filters and filter_kwargs) or (filters and filters.get("document_ids")) else None,
+            document_ids=doc_ids
+            if (filters and filter_kwargs) or (filters and filters.get("document_ids"))
+            else None,
         )
         if not units:
             raise HTTPException(
@@ -236,7 +237,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         await self.db.commit()
         return run
 
-    def _document_lookup(self, units: list[TextUnit], documents: list[CorpusDocument]) -> dict[str, CorpusDocument]:
+    def _document_lookup(
+        self, units: list[TextUnit], documents: list[CorpusDocument]
+    ) -> dict[str, CorpusDocument]:
         return {d.id: d for d in documents}
 
     def _cache_key(
@@ -273,7 +276,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units, documents = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
-        config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id, user_id=user_id
+        )
         texts = [u.text for u in units]
         cache_key = self._cache_key(
             corpus_id=corpus.id,
@@ -354,7 +359,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units, documents = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
-        config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id, user_id=user_id
+        )
         texts = [u.text for u in units]
         prepared, identity = _prepare_with_identity(
             corpus_id=corpus.id,
@@ -427,7 +434,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units, _ = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
-        config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id, user_id=user_id
+        )
         texts = [u.text for u in units]
         prepared, identity = _prepare_with_identity(
             corpus_id=corpus.id,
@@ -502,7 +511,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units, _ = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
-        config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id, user_id=user_id
+        )
         texts = [u.text for u in units]
         prepared, identity = _prepare_with_identity(
             corpus_id=corpus.id,
@@ -574,10 +585,13 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "unit_count": summary["unit_count"],
                 "feature_count": summary["feature_count"],
                 "density": summary["density"],
+                "sparsity": summary.get("sparsity"),
                 "nnz": summary["nnz"],
                 "storage": summary["storage"],
                 "mode": summary["mode"],
                 "trim": summary.get("trim"),
+                "estimated_memory_bytes": summary.get("estimated_memory_bytes"),
+                "scientific_warnings": summary.get("scientific_warnings"),
             },
             results={
                 "summary": summary,
@@ -701,7 +715,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units, documents = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
-        config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id, user_id=user_id
+        )
         texts = [u.text for u in units]
         prepared, identity = _prepare_with_identity(
             corpus_id=corpus.id,
@@ -857,7 +873,10 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         if not filters_a or not filters_b:
             raise HTTPException(
                 status_code=400,
-                detail="filters_a and filters_b are required — choose comparison groups from corpus metadata",
+                detail=(
+                    "filters_a and filters_b are required — choose comparison "
+                    "groups from corpus metadata"
+                ),
             )
         corpus, units_a, _ = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters_a
@@ -870,7 +889,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 status_code=400,
                 detail="Both comparison groups must contain at least one text unit",
             )
-        config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id, user_id=user_id
+        )
         prepared_a, identity = _prepare_with_identity(
             corpus_id=corpus.id,
             analysis_type="keyness",
@@ -969,7 +990,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units, _ = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
-        config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id, user_id=user_id
+        )
         prepared, identity = _prepare_with_identity(
             corpus_id=corpus.id,
             analysis_type="cooccurrence",
@@ -1087,7 +1110,11 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             texts=texts,
             config=config,
             units=units,
-            analysis_parameters={"method": canonical_method, "mode": canonical_mode, "group_by": group_by},
+            analysis_parameters={
+                "method": canonical_method,
+                "mode": canonical_mode,
+                "group_by": group_by,
+            },
         )
         tokenized = _tokenized_from_prepared(prepared)
 
@@ -1311,7 +1338,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units, _ = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
-        config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id, user_id=user_id
+        )
         prepared, identity = _prepare_with_identity(
             corpus_id=corpus.id,
             analysis_type="clustering",
@@ -1389,7 +1418,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units, _ = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
-        config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id, user_id=user_id
+        )
         cfg = config if isinstance(config, dict) else config.to_dict()
 
         def _run() -> dict[str, Any]:

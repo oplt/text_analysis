@@ -36,4 +36,3 @@ class ExecutionLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(run.execution_key or ""), 64)
         db.flush.assert_awaited_once()
         db.commit.assert_awaited_once()
-

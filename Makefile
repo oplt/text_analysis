@@ -1,4 +1,15 @@
-.PHONY: local-dev docker-dev prod-dev db-migrate observability-up observability-down observability-logs observability-status start-observability-stack stop-observability-stack local-dev-no-observability fix check install-hooks commit-ready test-backend test-frontend bench-1k bench-10k ci-local
+.PHONY: local-dev docker-dev prod-dev db-migrate observability-up observability-down observability-logs observability-status start-observability-stack stop-observability-stack local-dev-no-observability fix check install-hooks commit-ready test-backend test-frontend bench-1k bench-10k ci-local backend-sync backend-lock backend-lock-check
+
+# Deterministic backend deps (Phase 14): install from committed backend/uv.lock
+backend-sync:
+	cd backend && ./scripts/sync-deps.sh
+
+backend-lock:
+	cd backend && uv lock
+	cd backend && uv export --frozen --no-dev --no-emit-project -o requirements.txt
+
+backend-lock-check:
+	cd backend && uv lock --check
 
 db-migrate:
 	$(MAKE) -f Makefile.local db-migrate
@@ -51,7 +62,15 @@ bench-10k:
 	PYTHONPATH=. PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 BENCHMARK_INCLUDE_10K=1 BENCHMARK_INCLUDE_100K=0 \
 		backend/.venv/bin/pytest backend/modules/text_research/tests/test_benchmark_scale.py::ScaleBenchmarkTests::test_benchmark_10k_units -q -s
 
-ci-local: check test-backend test-frontend bench-1k
+bench-workflows:
+	PYTHONPATH=. PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 BENCHMARK_INCLUDE_10K=0 BENCHMARK_INCLUDE_100K=0 BENCHMARK_INCLUDE_1M=0 \
+		backend/.venv/bin/pytest backend/modules/text_research/tests/test_benchmark_scale.py::WorkflowBenchmarkTests -q -s
+
+bench-all:
+	PYTHONPATH=. PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 BENCHMARK_INCLUDE_10K=1 BENCHMARK_INCLUDE_100K=0 BENCHMARK_INCLUDE_1M=0 \
+		backend/.venv/bin/pytest backend/modules/text_research/tests/test_benchmark_scale.py -q -s
+
+ci-local: check test-backend test-frontend bench-1k bench-workflows
 	@echo "Local quality gates passed for $$(git rev-parse HEAD)"
 
 install-hooks:

@@ -26,7 +26,9 @@ from backend.modules.text_research.domain.models import (
     ResearchCorpus,
     dumps,
 )
-from backend.modules.text_research.infrastructure.canonical_text import build_canonical_from_full_text
+from backend.modules.text_research.infrastructure.canonical_text import (
+    build_canonical_from_full_text,
+)
 
 SYNTHETIC_TAG = "SYNTHETIC DEMO DATA"
 

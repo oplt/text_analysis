@@ -14,10 +14,11 @@ from backend.core.pagination import DEFAULT_PAGE_LIMIT, paginate_scalars
 from backend.modules.text_research.domain.enums import AnnotationTaskStatus
 from backend.modules.text_research.domain.models import (
     Adjudication,
+    AnalysisRun,
     Annotation,
+    AnnotationCampaign,
     AnnotationLabel,
     AnnotationTask,
-    AnalysisRun,
     CanonicalResearchSource,
     CleaningProfile,
     Codebook,
@@ -33,7 +34,16 @@ from backend.modules.text_research.domain.models import (
     TopicLabel,
     TrainedModel,
     TrainingDatasetSnapshot,
+    dumps,
 )
+from backend.modules.text_research.infrastructure.out_of_core import (
+    iter_item_batches,
+    resolve_batch_size,
+    should_use_out_of_core,
+)
+
+# PostgreSQL IN (...) lists stay efficient below a few thousand bind params.
+_IN_CLAUSE_BATCH = 500
 
 
 def _utcnow() -> datetime:
@@ -73,9 +83,7 @@ class ResearchRepository:
         return row
 
     async def get_corpus(self, corpus_id: str) -> ResearchCorpus | None:
-        result = await self.db.execute(
-            select(ResearchCorpus).where(ResearchCorpus.id == corpus_id)
-        )
+        result = await self.db.execute(select(ResearchCorpus).where(ResearchCorpus.id == corpus_id))
         return result.scalar_one_or_none()
 
     async def get_run_by_execution_key(
@@ -153,9 +161,7 @@ class ResearchRepository:
         await self.db.flush()
         return row
 
-    async def get_canonical_source(
-        self, corpus_document_id: str
-    ) -> CanonicalResearchSource | None:
+    async def get_canonical_source(self, corpus_document_id: str) -> CanonicalResearchSource | None:
         result = await self.db.execute(
             select(CanonicalResearchSource).where(
                 CanonicalResearchSource.corpus_document_id == corpus_document_id
@@ -253,10 +259,13 @@ class ResearchRepository:
     async def list_documents_by_ids(self, document_ids: list[str]) -> list[CorpusDocument]:
         if not document_ids:
             return []
-        result = await self.db.execute(
-            select(CorpusDocument).where(CorpusDocument.id.in_(document_ids))
-        )
-        return list(result.scalars().all())
+        rows: list[CorpusDocument] = []
+        for batch in iter_item_batches(list(document_ids), _IN_CLAUSE_BATCH):
+            result = await self.db.execute(
+                select(CorpusDocument).where(CorpusDocument.id.in_(list(batch)))
+            )
+            rows.extend(result.scalars().all())
+        return rows
 
     async def get_document_by_rag_id(
         self, *, corpus_id: str, rag_document_id: str
@@ -366,9 +375,7 @@ class ResearchRepository:
             sort_dir=sort_dir,
         )
         if limit is not None:
-            items, _total = await paginate_scalars(
-                self.db, stmt, limit=limit, offset=offset
-            )
+            items, _total = await paginate_scalars(self.db, stmt, limit=limit, offset=offset)
             return items
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
@@ -397,9 +404,7 @@ class ResearchRepository:
                 .order_by(column)
             )
             rows = (await self.db.execute(statement)).all()
-            facets[field] = [
-                {"value": str(row.value), "count": int(row.count)} for row in rows
-            ]
+            facets[field] = [{"value": str(row.value), "count": int(row.count)} for row in rows]
         return facets
 
     async def paginate_documents(
@@ -481,9 +486,7 @@ class ResearchRepository:
             await self.db.flush()
         return rows
 
-    async def delete_text_units_for_document(
-        self, corpus_document_id: str, unit_type: str
-    ) -> None:
+    async def delete_text_units_for_document(self, corpus_document_id: str, unit_type: str) -> None:
         await self.db.execute(
             delete(TextUnit).where(
                 TextUnit.corpus_document_id == corpus_document_id,
@@ -499,8 +502,11 @@ class ResearchRepository:
     async def list_text_units_by_ids(self, unit_ids: list[str]) -> list[TextUnit]:
         if not unit_ids:
             return []
-        result = await self.db.execute(select(TextUnit).where(TextUnit.id.in_(unit_ids)))
-        return list(result.scalars().all())
+        rows: list[TextUnit] = []
+        for batch in iter_item_batches(list(unit_ids), _IN_CLAUSE_BATCH):
+            result = await self.db.execute(select(TextUnit).where(TextUnit.id.in_(list(batch))))
+            rows.extend(result.scalars().all())
+        return rows
 
     async def list_text_units_for_document(
         self, corpus_document_id: str, unit_type: str | None = None
@@ -529,12 +535,82 @@ class ResearchRepository:
         if unit_type:
             stmt = stmt.where(TextUnit.unit_type == unit_type)
         if document_ids:
-            stmt = stmt.where(TextUnit.corpus_document_id.in_(document_ids))
+            # Chunk large document_id filters to keep IN lists bounded.
+            if len(document_ids) <= _IN_CLAUSE_BATCH:
+                stmt = stmt.where(TextUnit.corpus_document_id.in_(document_ids))
+                stmt = stmt.order_by(TextUnit.corpus_document_id.asc(), TextUnit.position.asc())
+                if limit is not None:
+                    stmt = stmt.offset(offset).limit(limit)
+                result = await self.db.execute(stmt)
+                return list(result.scalars().all())
+            rows: list[TextUnit] = []
+            for batch in iter_item_batches(list(document_ids), _IN_CLAUSE_BATCH):
+                batch_stmt = (
+                    select(TextUnit)
+                    .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
+                    .where(
+                        CorpusDocument.corpus_id == corpus_id,
+                        TextUnit.corpus_document_id.in_(list(batch)),
+                    )
+                )
+                if unit_type:
+                    batch_stmt = batch_stmt.where(TextUnit.unit_type == unit_type)
+                batch_stmt = batch_stmt.order_by(
+                    TextUnit.corpus_document_id.asc(), TextUnit.position.asc()
+                )
+                result = await self.db.execute(batch_stmt)
+                rows.extend(result.scalars().all())
+            rows.sort(key=lambda unit: (unit.corpus_document_id, unit.position))
+            if limit is not None:
+                return rows[offset : offset + limit]
+            return rows
         stmt = stmt.order_by(TextUnit.corpus_document_id.asc(), TextUnit.position.asc())
         if limit is not None:
             stmt = stmt.offset(offset).limit(limit)
+            result = await self.db.execute(stmt)
+            return list(result.scalars().all())
+
+        # Page large corpora instead of one unbounded SELECT *.
+        total = await self.count_text_units_for_corpus(corpus_id, unit_type=unit_type)
+        if should_use_out_of_core(total):
+            rows: list[TextUnit] = []
+            async for page in self.iter_text_units_for_corpus(
+                corpus_id, unit_type=unit_type, document_ids=None
+            ):
+                rows.extend(page)
+            return rows
+
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
+
+    async def iter_text_units_for_corpus(
+        self,
+        corpus_id: str,
+        *,
+        unit_type: str | None = None,
+        document_ids: list[str] | None = None,
+        batch_size: int | None = None,
+    ):
+        """Yield text-unit pages so callers need not materialize huge corpora at once."""
+        page_size = resolve_batch_size(
+            await self.count_text_units_for_corpus(corpus_id, unit_type=unit_type),
+            batch_size,
+        )
+        offset = 0
+        while True:
+            page = await self.list_text_units_for_corpus(
+                corpus_id,
+                unit_type=unit_type,
+                document_ids=document_ids,
+                limit=page_size,
+                offset=offset,
+            )
+            if not page:
+                break
+            yield page
+            offset += len(page)
+            if len(page) < page_size:
+                break
 
     async def count_text_units_for_corpus(
         self, corpus_id: str, *, unit_type: str | None = None
@@ -763,21 +839,24 @@ class ResearchRepository:
     async def create_task(
         self, *, text_unit_id: str, annotator_id: str, status: str = "assigned"
     ) -> AnnotationTask:
-        row = AnnotationTask(
-            text_unit_id=text_unit_id, annotator_id=annotator_id, status=status
-        )
+        row = AnnotationTask(text_unit_id=text_unit_id, annotator_id=annotator_id, status=status)
         self.db.add(row)
         await self.db.flush()
         return row
 
     async def bulk_create_tasks(
-        self, pairs: list[tuple[str, str]], *, status: str = "assigned"
+        self,
+        pairs: list[tuple[str, str]],
+        *,
+        status: str = "assigned",
+        campaign_id: str | None = None,
     ) -> list[AnnotationTask]:
         """Create missing tasks for (text_unit_id, annotator_id) pairs in bulk.
 
         Uses PostgreSQL ``ON CONFLICT DO NOTHING`` against the unique
         (text_unit_id, annotator_id) constraint so concurrent assigners never
-        collide and we avoid per-pair existence lookups.
+        collide and we avoid per-pair existence lookups. When ``campaign_id``
+        is set, existing rows for those pairs are tagged with the campaign.
         """
         if not pairs:
             return []
@@ -794,6 +873,7 @@ class ResearchRepository:
         rows = [
             {
                 "id": str(uuid4()),
+                "campaign_id": campaign_id,
                 "text_unit_id": text_unit_id,
                 "annotator_id": annotator_id,
                 "status": status,
@@ -818,8 +898,109 @@ class ResearchRepository:
             )
             result = await self.db.execute(stmt)
             created.extend(result.scalars().all())
+
+        if campaign_id is not None:
+            unit_ids = [unit_id for unit_id, _ in unique_pairs]
+            annotator_ids = {annotator_id for _, annotator_id in unique_pairs}
+            existing = await self.list_tasks_for_units(unit_ids)
+            wanted = set(unique_pairs)
+            for task in existing:
+                if (
+                    task.text_unit_id,
+                    task.annotator_id,
+                ) in wanted and task.annotator_id in annotator_ids:
+                    task.campaign_id = campaign_id
+
         await self.db.flush()
         return created
+
+    # ------------------------------------------------------------------
+    # AnnotationCampaign
+    # ------------------------------------------------------------------
+
+    async def create_annotation_campaign(self, **kwargs: Any) -> AnnotationCampaign:
+        annotator_ids = kwargs.pop("annotator_ids", [])
+        metadata = kwargs.pop("metadata", {})
+        row = AnnotationCampaign(
+            **kwargs,
+            annotator_ids_json=dumps(annotator_ids),
+            metadata_json=dumps(metadata or {}),
+        )
+        self.db.add(row)
+        await self.db.flush()
+        return row
+
+    async def get_annotation_campaign(self, campaign_id: str) -> AnnotationCampaign | None:
+        result = await self.db.execute(
+            select(AnnotationCampaign).where(AnnotationCampaign.id == campaign_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def list_annotation_campaigns(
+        self, project_id: str, *, corpus_id: str | None = None
+    ) -> list[AnnotationCampaign]:
+        stmt = (
+            select(AnnotationCampaign)
+            .where(AnnotationCampaign.project_id == project_id)
+            .order_by(AnnotationCampaign.created_at.desc())
+        )
+        if corpus_id:
+            stmt = stmt.where(AnnotationCampaign.corpus_id == corpus_id)
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
+
+    async def annotation_progress_for_campaign(self, campaign_id: str) -> dict[str, Any]:
+        counts_stmt = (
+            select(AnnotationTask.annotator_id, AnnotationTask.status, func.count())
+            .where(AnnotationTask.campaign_id == campaign_id)
+            .group_by(AnnotationTask.annotator_id, AnnotationTask.status)
+        )
+        counts_result = await self.db.execute(counts_stmt)
+        by_annotator: dict[str, dict[str, int]] = {}
+        total_tasks = 0
+        completed_tasks = 0
+        for annotator_id, status, count in counts_result.all():
+            count_int = int(count)
+            total_tasks += count_int
+            bucket = by_annotator.setdefault(str(annotator_id), {"assigned": 0, "completed": 0})
+            bucket["assigned"] += count_int
+            if status == AnnotationTaskStatus.COMPLETED.value:
+                completed_tasks += count_int
+                bucket["completed"] += count_int
+        completed_units = int(
+            await self.db.scalar(
+                select(func.count(func.distinct(AnnotationTask.text_unit_id))).where(
+                    AnnotationTask.campaign_id == campaign_id,
+                    AnnotationTask.status == AnnotationTaskStatus.COMPLETED.value,
+                )
+            )
+            or 0
+        )
+        total_units = int(
+            await self.db.scalar(
+                select(func.count(func.distinct(AnnotationTask.text_unit_id))).where(
+                    AnnotationTask.campaign_id == campaign_id
+                )
+            )
+            or 0
+        )
+        return {
+            "total_units": total_units,
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_tasks,
+            "completed_units": completed_units,
+            "by_annotator": by_annotator,
+        }
+
+    async def list_campaigns_for_tasks(
+        self, campaign_ids: list[str]
+    ) -> dict[str, AnnotationCampaign]:
+        if not campaign_ids:
+            return {}
+        result = await self.db.execute(
+            select(AnnotationCampaign).where(AnnotationCampaign.id.in_(list(set(campaign_ids))))
+        )
+        return {row.id: row for row in result.scalars().all()}
 
     async def count_annotation_tasks_for_corpus(self, corpus_id: str) -> dict[str, int]:
         stmt = (
@@ -982,10 +1163,13 @@ class ResearchRepository:
     async def list_annotations_for_units(self, text_unit_ids: list[str]) -> list[Annotation]:
         if not text_unit_ids:
             return []
-        result = await self.db.execute(
-            select(Annotation).where(Annotation.text_unit_id.in_(text_unit_ids))
-        )
-        return list(result.scalars().all())
+        rows: list[Annotation] = []
+        for batch in iter_item_batches(list(text_unit_ids), _IN_CLAUSE_BATCH):
+            result = await self.db.execute(
+                select(Annotation).where(Annotation.text_unit_id.in_(batch))
+            )
+            rows.extend(result.scalars().all())
+        return rows
 
     async def list_annotations_for_corpus(self, corpus_id: str) -> list[Annotation]:
         result = await self.db.execute(
@@ -996,22 +1180,93 @@ class ResearchRepository:
         )
         return list(result.scalars().all())
 
+    async def list_annotated_text_unit_ids(self, corpus_id: str) -> set[str]:
+        """Project distinct annotated unit ids — no full Annotation ORM graphs."""
+        result = await self.db.execute(
+            select(Annotation.text_unit_id)
+            .join(TextUnit, TextUnit.id == Annotation.text_unit_id)
+            .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
+            .where(CorpusDocument.corpus_id == corpus_id)
+            .distinct()
+        )
+        return {str(unit_id) for unit_id in result.scalars().all()}
+
+    async def list_reliability_annotation_rows(
+        self,
+        corpus_id: str,
+        *,
+        codebook_version: str,
+        campaign_id: str | None = None,
+        unit_type: str | None = None,
+        annotator_ids: list[str] | None = None,
+        label_ids: list[str] | None = None,
+    ) -> list[Any]:
+        """Load only fields needed for reliability, filtered in PostgreSQL.
+
+        Returns ORM rows with ``text_unit_id``, ``label_id``, ``annotator_id``,
+        ``value`` (and optionally ``codebook_version``) — not full Annotation graphs.
+        When ``campaign_id`` is set, only annotations that match a campaign task
+        for the same ``(text_unit_id, annotator_id)`` are included.
+        """
+        stmt = (
+            select(
+                Annotation.text_unit_id,
+                Annotation.label_id,
+                Annotation.annotator_id,
+                Annotation.value,
+            )
+            .join(TextUnit, TextUnit.id == Annotation.text_unit_id)
+            .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
+            .where(
+                CorpusDocument.corpus_id == corpus_id,
+                Annotation.codebook_version == codebook_version,
+            )
+        )
+        if unit_type:
+            stmt = stmt.where(TextUnit.unit_type == unit_type)
+        if label_ids:
+            stmt = stmt.where(Annotation.label_id.in_(label_ids))
+        if annotator_ids:
+            stmt = stmt.where(Annotation.annotator_id.in_(annotator_ids))
+        if campaign_id:
+            stmt = stmt.where(
+                select(AnnotationTask.id)
+                .where(
+                    AnnotationTask.text_unit_id == Annotation.text_unit_id,
+                    AnnotationTask.annotator_id == Annotation.annotator_id,
+                    AnnotationTask.campaign_id == campaign_id,
+                )
+                .exists()
+            )
+        result = await self.db.execute(stmt)
+        return list(result.all())
+
     async def list_annotations_for_annotator(
         self, annotator_id: str, *, text_unit_ids: list[str] | None = None
     ) -> list[Annotation]:
-        stmt = select(Annotation).where(Annotation.annotator_id == annotator_id)
-        if text_unit_ids is not None:
-            stmt = stmt.where(Annotation.text_unit_id.in_(text_unit_ids))
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        if text_unit_ids is not None and not text_unit_ids:
+            return []
+        if text_unit_ids is None:
+            result = await self.db.execute(
+                select(Annotation).where(Annotation.annotator_id == annotator_id)
+            )
+            return list(result.scalars().all())
+        rows: list[Annotation] = []
+        for batch in iter_item_batches(list(text_unit_ids), _IN_CLAUSE_BATCH):
+            result = await self.db.execute(
+                select(Annotation).where(
+                    Annotation.annotator_id == annotator_id,
+                    Annotation.text_unit_id.in_(list(batch)),
+                )
+            )
+            rows.extend(result.scalars().all())
+        return rows
 
     # ------------------------------------------------------------------
     # Adjudication
     # ------------------------------------------------------------------
 
-    async def get_adjudication(
-        self, *, text_unit_id: str, label_id: str
-    ) -> Adjudication | None:
+    async def get_adjudication(self, *, text_unit_id: str, label_id: str) -> Adjudication | None:
         result = await self.db.execute(
             select(Adjudication).where(
                 Adjudication.text_unit_id == text_unit_id,
@@ -1093,8 +1348,10 @@ class ResearchRepository:
         return list(result.scalars().all())
 
     async def count_snapshots(self, project_id: str, *, corpus_id: str | None = None) -> int:
-        stmt = select(func.count()).select_from(TrainingDatasetSnapshot).where(
-            TrainingDatasetSnapshot.project_id == project_id
+        stmt = (
+            select(func.count())
+            .select_from(TrainingDatasetSnapshot)
+            .where(TrainingDatasetSnapshot.project_id == project_id)
         )
         if corpus_id:
             stmt = stmt.where(TrainingDatasetSnapshot.corpus_id == corpus_id)
@@ -1108,6 +1365,9 @@ class ResearchRepository:
     async def create_run(self, run: AnalysisRun) -> AnalysisRun:
         self.db.add(run)
         await self.db.flush()
+        from backend.modules.text_research.infrastructure.run_events import publish_run_event
+
+        publish_run_event(run, previous=None)
         return run
 
     async def get_run(self, run_id: str) -> AnalysisRun | None:
@@ -1115,9 +1375,16 @@ class ResearchRepository:
         return result.scalar_one_or_none()
 
     async def update_run(self, run: AnalysisRun, **fields: Any) -> AnalysisRun:
+        from backend.modules.text_research.infrastructure.run_events import (
+            publish_run_event,
+            snapshot_fields,
+        )
+
+        previous = snapshot_fields(run)
         for key, value in fields.items():
             setattr(run, key, value)
         await self.db.flush()
+        publish_run_event(run, previous=previous)
         return run
 
     async def list_runs(
@@ -1201,8 +1468,10 @@ class ResearchRepository:
         return list(result.scalars().all())
 
     async def count_models(self, project_id: str, *, corpus_id: str | None = None) -> int:
-        stmt = select(func.count()).select_from(TrainedModel).where(
-            TrainedModel.project_id == project_id
+        stmt = (
+            select(func.count())
+            .select_from(TrainedModel)
+            .where(TrainedModel.project_id == project_id)
         )
         if corpus_id:
             stmt = stmt.where(TrainedModel.corpus_id == corpus_id)
@@ -1312,13 +1581,16 @@ class ResearchRepository:
     ) -> list[ModelPrediction]:
         if not text_unit_ids:
             return []
-        result = await self.db.execute(
-            select(ModelPrediction).where(
-                ModelPrediction.trained_model_id == trained_model_id,
-                ModelPrediction.text_unit_id.in_(text_unit_ids),
+        rows: list[ModelPrediction] = []
+        for batch in iter_item_batches(list(text_unit_ids), _IN_CLAUSE_BATCH):
+            result = await self.db.execute(
+                select(ModelPrediction).where(
+                    ModelPrediction.trained_model_id == trained_model_id,
+                    ModelPrediction.text_unit_id.in_(list(batch)),
+                )
             )
-        )
-        return list(result.scalars().all())
+            rows.extend(result.scalars().all())
+        return rows
 
     # ------------------------------------------------------------------
     # PredictionSet

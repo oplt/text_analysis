@@ -90,9 +90,7 @@ async def send_verification_email(to: str, token: str) -> None:
         <p>This link expires in 24 hours.</p>
         """,
         text_body=(
-            "Thanks for signing up.\n"
-            f"Verify your email: {link}\n"
-            "This link expires in 24 hours."
+            f"Thanks for signing up.\nVerify your email: {link}\nThis link expires in 24 hours."
         ),
     )
 

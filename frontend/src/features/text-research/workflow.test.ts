@@ -126,7 +126,7 @@ describe("deriveWorkflowStages", () => {
 
         expect(stages.map((stage) => stage.id)).toEqual([
             "corpus", "prepare", "codebook", "annotate", "reliability", "analyze",
-            "topics", "classify", "validate", "explore", "contextual", "export",
+            "topics", "classify", "models", "predictions", "drift", "validate", "explore", "contextual", "export",
         ]);
         expect(stages.find((stage) => stage.id === "codebook")).toMatchObject({
             status: "current",

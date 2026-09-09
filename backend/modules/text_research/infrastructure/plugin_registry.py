@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 PluginFactory = Callable[..., Any]
 
@@ -70,7 +71,9 @@ def register_builtins() -> None:
             metadata={"engine": engine_name},
         )
 
-    from backend.modules.text_research.infrastructure.classifiers import ALGORITHMS as CLASSIFIER_ALGORITHMS
+    from backend.modules.text_research.infrastructure.classifiers import (
+        ALGORITHMS as CLASSIFIER_ALGORITHMS,
+    )
     from backend.modules.text_research.infrastructure.embedding_classifier import (
         ALGORITHMS as EMBEDDING_ALGORITHMS,
     )

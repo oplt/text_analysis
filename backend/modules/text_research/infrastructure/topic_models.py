@@ -458,7 +458,6 @@ def _train_semantic_topic_model(
     }
 
 
-
 def k_sweep(
     texts: list[str],
     k_values: list[int],
@@ -706,11 +705,7 @@ def seed_stability(
                 "matching_method": "hungarian",
             }
             if runs[i]["topic_vectors"] and runs[j]["topic_vectors"]:
-                cosines = [
-                    m["topic_word_cosine"]
-                    for m in matching
-                    if "topic_word_cosine" in m
-                ]
+                cosines = [m["topic_word_cosine"] for m in matching if "topic_word_cosine" in m]
                 if cosines:
                     pair_entry["mean_topic_word_cosine"] = float(np.mean(cosines))
             doc_sim = document_distribution_similarity(

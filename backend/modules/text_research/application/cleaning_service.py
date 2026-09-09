@@ -84,7 +84,9 @@ class CleaningProfileService(ResearchAccessMixin):
         if version is not None:
             fields["version"] = version
         if config is not None:
-            fields["config_json"] = json.dumps(self._resolved_config_dict(config), ensure_ascii=True)
+            fields["config_json"] = json.dumps(
+                self._resolved_config_dict(config), ensure_ascii=True
+            )
         updated = await self.repo.update_cleaning_profile(profile, **fields)
         await self.db.commit()
         return updated
@@ -209,8 +211,7 @@ class CleaningProfileService(ResearchAccessMixin):
                     await self.repo.update_canonical_source(
                         source,
                         raw_extracted_text=raw,
-                        raw_extracted_checksum=source.canonical_text_checksum
-                        or sha256_text(raw),
+                        raw_extracted_checksum=source.canonical_text_checksum or sha256_text(raw),
                     )
 
                 result = apply_cleaning(raw, config)

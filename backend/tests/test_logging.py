@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
-import asyncio
-
-import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from starlette.responses import PlainTextResponse
@@ -25,7 +23,6 @@ from backend.core.log_context import get_correlation_id, reset_correlation_id, s
 from backend.core.log_handlers import cleanup_old_logs, resolve_log_file_path
 from backend.core.log_redaction import RedactingFilter, redact_message, redact_url
 from backend.core.logging import setup_logging
-
 
 REQUIRED_SETTINGS = {
     "DATABASE_URL": "postgresql+asyncpg://app:app@localhost:5432/app_db",
@@ -98,8 +95,9 @@ def test_redact_url_masks_credentials():
 
 def test_setup_logging_writes_to_file(tmp_path: Path):
     log_file = tmp_path / "logs.txt"
-    with patch("backend.core.logging.settings") as mock_settings, patch(
-        "backend.core.log_handlers.settings", mock_settings
+    with (
+        patch("backend.core.logging.settings") as mock_settings,
+        patch("backend.core.log_handlers.settings", mock_settings),
     ):
         mock_settings.LOG_LEVEL = "INFO"
         mock_settings.LOG_TO_CONSOLE = False

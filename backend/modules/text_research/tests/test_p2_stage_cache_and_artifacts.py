@@ -11,11 +11,13 @@ from unittest import mock
 import numpy as np
 from scipy import sparse
 
-from backend.modules.text_research.infrastructure import artifact_registry
-from backend.modules.text_research.infrastructure import clustering
-from backend.modules.text_research.infrastructure import feature_cache
-from backend.modules.text_research.infrastructure import quantitative
-from backend.modules.text_research.infrastructure import stage_cache
+from backend.modules.text_research.infrastructure import (
+    artifact_registry,
+    clustering,
+    feature_cache,
+    quantitative,
+    stage_cache,
+)
 from backend.modules.text_research.infrastructure.out_of_core import (
     build_hashing_matrix,
     dense_preview,

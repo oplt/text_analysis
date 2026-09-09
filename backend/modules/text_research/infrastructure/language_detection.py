@@ -133,7 +133,9 @@ class LangdetectLanguageDetector:
             "confidence": float(top.prob),
             "detector_name": self.name,
             "detector_version": self.version,
-            "candidates": [{"language": item.lang, "confidence": float(item.prob)} for item in detected],
+            "candidates": [
+                {"language": item.lang, "confidence": float(item.prob)} for item in detected
+            ],
         }
 
 

@@ -56,7 +56,7 @@ class ObservabilityServiceTest(unittest.TestCase):
         self.assertEqual(url, "http://localhost:3001/d/api-observability/backend-api")
 
     def test_links_return_configured_urls_for_admin(self):
-        user = SimpleNamespace(is_admin=True)
+        SimpleNamespace(is_admin=True)
         links = ObservabilityService(make_settings()).get_links(is_admin=True)
 
         self.assertEqual(
@@ -67,10 +67,10 @@ class ObservabilityServiceTest(unittest.TestCase):
         self.assertTrue(links.tempo_explore_url.allowed)
 
     def test_missing_optional_urls_are_not_configured(self):
-        user = SimpleNamespace(is_admin=True)
-        links = ObservabilityService(
-            make_settings(GRAFANA_FRONTEND_DASHBOARD_PATH="")
-        ).get_links(is_admin=True)
+        SimpleNamespace(is_admin=True)
+        links = ObservabilityService(make_settings(GRAFANA_FRONTEND_DASHBOARD_PATH="")).get_links(
+            is_admin=True
+        )
 
         self.assertIsNone(links.dashboards.frontend.url)
         self.assertFalse(links.dashboards.frontend.configured)
@@ -146,8 +146,12 @@ class ObservabilityStatusTest(unittest.IsolatedAsyncioTestCase):
                 return response
 
         with patch("backend.observability.service.httpx.AsyncClient", FakeAsyncClient):
-            await service._http_status("http://localhost:9090/graph", "Prometheus", "2026-01-01T00:00:00+00:00")
-            await service._http_status("http://localhost:3001/", "Grafana", "2026-01-01T00:00:00+00:00")
+            await service._http_status(
+                "http://localhost:9090/graph", "Prometheus", "2026-01-01T00:00:00+00:00"
+            )
+            await service._http_status(
+                "http://localhost:3001/", "Grafana", "2026-01-01T00:00:00+00:00"
+            )
 
         self.assertEqual(len(created_clients), 1)
 

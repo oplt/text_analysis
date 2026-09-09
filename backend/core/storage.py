@@ -67,7 +67,6 @@ class ObjectStorage:
                     }
                 self._client.create_bucket(**create_kwargs)
 
-
         try:
             await asyncio.to_thread(_ensure_bucket)
         except Exception as exc:
@@ -142,9 +141,7 @@ class ObjectStorage:
             raise StorageNotConfiguredError(
                 "Object storage is not configured. Set STORAGE_BUCKET and storage credentials."
             )
-        response = self._client.get_object(
-            Bucket=bucket or settings.STORAGE_BUCKET, Key=object_key
-        )
+        response = self._client.get_object(Bucket=bucket or settings.STORAGE_BUCKET, Key=object_key)
         return response["Body"].read()
 
     def upload_bytes_sync(

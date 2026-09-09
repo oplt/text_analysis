@@ -34,7 +34,7 @@ export default function ResearchLandingPage() {
         queryFn: listProjects,
     });
 
-    const projects = projectsQuery.data ?? [];
+    const projects = useMemo(() => projectsQuery.data ?? [], [projectsQuery.data]);
     const lastProjectId = getLastResearchProjectId();
     const lastProject = useMemo(
         () => projects.find((project) => project.id === lastProjectId) ?? null,

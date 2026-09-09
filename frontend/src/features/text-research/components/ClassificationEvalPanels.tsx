@@ -218,7 +218,7 @@ export function ClassificationErrorBrowser({
         );
     }
 
-    const caseRows = [
+    const caseRows: Array<Record<string, unknown> & { kind: string }> = [
         ...uncertain.map((row) => ({ ...(asRecord(row) ?? {}), kind: "uncertain" })),
         ...highConfErrors.map((row) => ({ ...(asRecord(row) ?? {}), kind: "high-confidence error" })),
     ];

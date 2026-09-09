@@ -39,7 +39,10 @@ class ModelLifecycleService(ResearchAccessMixin):
         except ValueError as exc:
             raise HTTPException(
                 status_code=422,
-                detail=f"Invalid lifecycle status {status!r}; expected candidate, approved, or deprecated",
+                detail=(
+                    f"Invalid lifecycle status {status!r}; "
+                    "expected candidate, approved, or deprecated"
+                ),
             ) from exc
 
         model = await self.get_model_or_404(model_id, user_id=user_id)
@@ -74,9 +77,7 @@ class ModelLifecycleService(ResearchAccessMixin):
                     status_code=422,
                     detail=f"Invalid lifecycle status {status!r}",
                 ) from exc
-        return await self.repo.list_models(
-            project_id, corpus_id=corpus_id, lifecycle_status=status
-        )
+        return await self.repo.list_models(project_id, corpus_id=corpus_id, lifecycle_status=status)
 
     async def _deprecate_siblings(
         self,

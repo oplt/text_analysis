@@ -127,7 +127,9 @@ def embedding_cache_key(
     *,
     dimensions: int | None = None,
 ) -> str:
-    resolved_dimensions = dimensions if dimensions is not None else settings.RAG_EMBEDDING_DIMENSIONS
+    resolved_dimensions = (
+        dimensions if dimensions is not None else settings.RAG_EMBEDDING_DIMENSIONS
+    )
     digest = hashlib.sha256(
         f"{provider}\0{model}\0{resolved_dimensions}\0{text}".encode()
     ).hexdigest()

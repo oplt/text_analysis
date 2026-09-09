@@ -187,9 +187,7 @@ def collocation_report(
         freq_b = int(term_counts[term_b])
         if freq_a < min_frequency or freq_b < min_frequency:
             continue
-        scores = score_pair(
-            count=count, freq_a=freq_a, freq_b=freq_b, n_tokens=total_tokens
-        )
+        scores = score_pair(count=count, freq_a=freq_a, freq_b=freq_b, n_tokens=total_tokens)
         association_score = float(scores[method if method != "count" else "count"])
         if method == "count":
             association_score = float(count)

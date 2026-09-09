@@ -8,7 +8,10 @@ from typing import Any
 
 from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
 from backend.modules.text_research.domain.workflow_recipe import WorkflowRecipe
-from backend.modules.text_research.infrastructure.pipeline_compiler import ExecutionPlan, compile_plan
+from backend.modules.text_research.infrastructure.pipeline_compiler import (
+    ExecutionPlan,
+    compile_plan,
+)
 
 
 def compile_recipe(recipe: WorkflowRecipe) -> list[ExecutionPlan]:

@@ -43,9 +43,7 @@ class RunService(ResearchAccessMixin):
 
         run = await self.get_run_or_404(run_id, user_id=user_id)
         parameters = loads(run.parameters_json, {})
-        reproduce = extract_reproduce_request(
-            parameters, run_type=run.run_type, run_id=run.id
-        )
+        reproduce = extract_reproduce_request(parameters, run_type=run.run_type, run_id=run.id)
         return {
             "run_type": run.run_type,
             "corpus_id": run.corpus_id,
@@ -57,19 +55,30 @@ class RunService(ResearchAccessMixin):
 
     async def get_provenance(self, run_id: str, *, user_id: str) -> dict[str, Any]:
         from backend.modules.text_research.infrastructure.provenance import (
+            enrich_provenance_response,
             extract_reproduce_request,
             runtime_environment,
         )
 
         run = await self.get_run_or_404(run_id, user_id=user_id)
         parameters = loads(run.parameters_json, {})
-        provenance = parameters.get("provenance") if isinstance(parameters.get("provenance"), dict) else {}
+        results = loads(run.results_json, {}) if run.results_json else {}
+        provenance = enrich_provenance_response(
+            run=run,
+            parameters=parameters,
+            results=results if isinstance(results, dict) else {},
+        )
         return {
             "run_id": run.id,
             "run_type": run.run_type,
             "status": run.status,
             "random_seed": run.random_seed,
             "artifact_path": run.artifact_path,
+            "created_by": run.created_by,
+            "started_at": run.started_at.isoformat() if run.started_at else None,
+            "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+            "corpus_id": run.corpus_id,
+            "project_id": run.project_id,
             "provenance": provenance,
             "reproduce": extract_reproduce_request(
                 parameters, run_type=run.run_type, run_id=run.id
@@ -102,6 +111,12 @@ class RunService(ResearchAccessMixin):
                 user_id=user_id,
                 codebook_id=params["codebook_id"],
                 label_ids=params.get("label_ids"),
+                campaign_id=params.get("campaign_id"),
+                unit_type=params.get("unit_type"),
+                annotator_ids=params.get("annotator_ids"),
+                bootstrap_samples=int(params.get("bootstrap_samples") or 2000),
+                confidence_level=float(params.get("confidence_level") or 0.95),
+                random_seed=params.get("random_seed"),
             )
 
         if run.run_type == AnalysisRunType.CORPUS_STATS.value:
@@ -426,9 +441,7 @@ class RunService(ResearchAccessMixin):
         assert refreshed is not None
         return refreshed
 
-    async def compare_runs(
-        self, run_a_id: str, run_b_id: str, *, user_id: str
-    ) -> dict[str, Any]:
+    async def compare_runs(self, run_a_id: str, run_b_id: str, *, user_id: str) -> dict[str, Any]:
         run_a = await self.get_run_or_404(run_a_id, user_id=user_id)
         run_b = await self.get_run_or_404(run_b_id, user_id=user_id)
         params_a = loads(run_a.parameters_json, {}) or {}
@@ -436,7 +449,7 @@ class RunService(ResearchAccessMixin):
         metrics_a = loads(run_a.metrics_json, {}) or {}
         metrics_b = loads(run_b.metrics_json, {}) or {}
 
-        param_keys = sorted(set(params_a) | set(params_b))
+        sorted(set(params_a) | set(params_b))
         metric_keys = sorted(set(metrics_a) | set(metrics_b))
 
         def flatten(prefix: str, value: Any, out: dict[str, Any]) -> None:

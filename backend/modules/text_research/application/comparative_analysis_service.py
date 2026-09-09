@@ -22,12 +22,17 @@ from backend.modules.text_research.application.access import ResearchAccessMixin
 from backend.modules.text_research.application.quantitative_analysis_service import (
     _filter_kwargs,
 )
-from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType, ProvenanceMode
+from backend.modules.text_research.domain.enums import (
+    AnalysisRunStatus,
+    AnalysisRunType,
+    ProvenanceMode,
+)
 from backend.modules.text_research.domain.models import AnalysisRun, dumps, loads
 
 
 def _utcnow() -> datetime:
     return datetime.now(UTC)
+
 
 def _resolve_group_value(doc: Any, group_by: str) -> str:
     """Read a grouping field from built-in columns or custom metadata_json."""
@@ -86,10 +91,15 @@ class ComparativeAnalysisService(ResearchAccessMixin):
         if provenance_mode != ProvenanceMode.MODEL_ONLY.value:
             annotations = await self.repo.list_annotations_for_units(unit_ids)
             adjudications = await self.repo.list_adjudications_for_units(unit_ids)
-            adjudication_lookup = {(a.text_unit_id, a.label_id): a.final_value for a in adjudications}
+            adjudication_lookup = {
+                (a.text_unit_id, a.label_id): a.final_value for a in adjudications
+            }
             by_label_unit: dict[str, dict[str, list[str]]] = {}
             for annotation in annotations:
-                if annotation.codebook_version != codebook.version or annotation.label_id not in label_ids:
+                if (
+                    annotation.codebook_version != codebook.version
+                    or annotation.label_id not in label_ids
+                ):
                     continue
                 by_label_unit.setdefault(annotation.label_id, {}).setdefault(
                     annotation.text_unit_id, []
@@ -110,7 +120,9 @@ class ComparativeAnalysisService(ResearchAccessMixin):
             if not model_id:
                 raise HTTPException(
                     status_code=400,
-                    detail="model_id is required when provenance_mode is model_only or human_preferred",
+                    detail=(
+                        "model_id is required when provenance_mode is model_only or human_preferred"
+                    ),
                 )
             model = await self.get_model_or_404(model_id, user_id=user_id)
             label_names = loads(model.label_ids_json, [])
@@ -243,7 +255,9 @@ class ComparativeAnalysisService(ResearchAccessMixin):
                         "filters": filters,
                     }
                 ),
-                metrics_json=dumps({"unit_count": len(units), "provenance_counts": provenance_counts}),
+                metrics_json=dumps(
+                    {"unit_count": len(units), "provenance_counts": provenance_counts}
+                ),
                 results_json=dumps({"prevalence": prevalence, "examples": examples}),
                 created_by=user_id,
                 started_at=_utcnow(),

@@ -31,4 +31,3 @@ async def create_calendar_item(
 ):
     service = CalendarService(db)
     return await service.create_item(current_user, payload)
-

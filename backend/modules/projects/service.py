@@ -139,9 +139,7 @@ class ProjectsService:
         offset: int = 0,
     ) -> tuple[list[tuple[ProjectTask, User | None]], int]:
         project = await self._get_project_or_404(user_id, project_id)
-        return await self.repo.list_tasks_with_assignees(
-            project.id, limit=limit, offset=offset
-        )
+        return await self.repo.list_tasks_with_assignees(project.id, limit=limit, offset=offset)
 
     async def create_task(
         self,
@@ -243,9 +241,7 @@ class ProjectsService:
         payload: ProjectTaskReorderRequest,
     ) -> list[tuple[ProjectTask, User | None]]:
         project = await self._get_project_for_write_or_404(user_id, project_id)
-        task_rows, _ = await self.repo.list_tasks_with_assignees(
-            project.id, limit=MAX_PAGE_LIMIT
-        )
+        task_rows, _ = await self.repo.list_tasks_with_assignees(project.id, limit=MAX_PAGE_LIMIT)
         tasks_by_id = {task.id: task for task, _ in task_rows}
         previous_status_by_id = {task.id: task.status for task, _ in task_rows}
 
@@ -353,7 +349,7 @@ class ProjectsService:
             title=f"Task assigned: {task.title}",
             body=(
                 f"{self._actor_label(actor)} assigned you the task "
-                f"\"{task.title}\" in project \"{project.name}\"."
+                f'"{task.title}" in project "{project.name}".'
             ),
         )
 
@@ -378,8 +374,8 @@ class ProjectsService:
             type="task_due_date_updated",
             title=f"Due date updated: {task.title}",
             body=(
-                f"{self._actor_label(actor)} set the due date for \"{task.title}\" "
-                f"to {task.due_date.isoformat()} in project \"{project.name}\"."
+                f'{self._actor_label(actor)} set the due date for "{task.title}" '
+                f'to {task.due_date.isoformat()} in project "{project.name}".'
             ),
         )
 
@@ -402,8 +398,8 @@ class ProjectsService:
             type="task_status_changed",
             title=f"Task moved to {target_label}: {task.title}",
             body=(
-                f"{self._actor_label(actor)} moved \"{task.title}\" to {target_label} "
-                f"in project \"{project.name}\"."
+                f'{self._actor_label(actor)} moved "{task.title}" to {target_label} '
+                f'in project "{project.name}".'
             ),
         )
 

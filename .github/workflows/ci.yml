@@ -24,6 +24,7 @@ env:
   PYTHONPATH: .
   PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
   PIP_DISABLE_PIP_VERSION_CHECK: "1"
+  UV_FROZEN: "1"
 
 jobs:
   identity:
@@ -39,6 +40,27 @@ jobs:
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
           echo "Evaluating quality gates for commit $(git rev-parse HEAD)"
+
+  backend-lock:
+    name: Backend dependency lock (uv.lock)
+    needs: identity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.identity.outputs.sha }}
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Verify uv.lock matches pyproject.toml
+        working-directory: backend
+        run: uv lock --check
+      - name: Record lock checksum
+        working-directory: backend
+        run: |
+          sha256sum uv.lock | tee "${GITHUB_STEP_SUMMARY:-/dev/stderr}"
+          test -s uv.lock
 
   backend-lint:
     name: Backend lint (ruff)
@@ -59,23 +81,19 @@ jobs:
 
   backend-tests:
     name: Backend unit tests
-    needs: identity
+    needs: [identity, backend-lock]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.identity.outputs.sha }}
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: backend/pyproject.toml
-      - name: Install backend
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install backend (frozen lock)
         working-directory: backend
-        run: |
-          python -m venv .venv
-          . .venv/bin/activate
-          pip install -e ".[dev]"
+        run: uv sync --frozen --extra dev
       - name: Pytest (text_research + workers parallelism)
         run: |
           backend/.venv/bin/pytest \
@@ -85,7 +103,7 @@ jobs:
 
   backend-benchmarks:
     name: Performance-sensitive benchmarks
-    needs: identity
+    needs: [identity, backend-lock]
     runs-on: ubuntu-latest
     env:
       BENCHMARK_INCLUDE_10K: "1"
@@ -96,18 +114,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.identity.outputs.sha }}
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: backend/pyproject.toml
-      - name: Install backend
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install backend (frozen lock)
         working-directory: backend
-        run: |
-          python -m venv .venv
-          . .venv/bin/activate
-          pip install -e ".[dev]"
-      - name: Run 1k / 10k (and optional 100k) benchmarks
+        run: uv sync --frozen --extra dev
+      - name: Run scale + workflow benchmarks
         run: |
           backend/.venv/bin/pytest \
             backend/modules/text_research/tests/test_benchmark_scale.py -q -s
@@ -121,7 +135,7 @@ jobs:
 
   migrations:
     name: Migration validation
-    needs: identity
+    needs: [identity, backend-lock]
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -148,17 +162,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.identity.outputs.sha }}
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: backend/pyproject.toml
-      - name: Install backend
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install backend (frozen lock)
         working-directory: backend
-        run: |
-          python -m venv .venv
-          . .venv/bin/activate
-          pip install -e ".[dev]"
+        run: uv sync --frozen --extra dev
       - name: Alembic upgrade head
         working-directory: backend
         run: |
@@ -238,22 +248,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.identity.outputs.sha }}
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: backend/pyproject.toml
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Install backend
+      - name: Install backend (frozen lock)
         working-directory: backend
-        run: |
-          python -m venv .venv
-          . .venv/bin/activate
-          pip install -e ".[dev]"
+        run: uv sync --frozen --extra dev
       - name: Migrate database
         working-directory: backend
         run: |

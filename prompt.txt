@@ -1,0 +1,1775 @@
+You are a senior Python/FastAPI/React engineer and computational text-analysis researcher.
+Your task is to improve the existing system so that it is:
+
+1. reliable,
+2. scalable,
+3. scientifically auditable,
+4. reproducible,
+5. safe against methodological errors such as data leakage and coder contamination,
+6. maintainable as a production-grade research platform.
+
+Do not rewrite working functionality unnecessarily.
+
+Preserve the repository's existing architecture, concepts, APIs, analysis runs, dataset snapshots, provenance, annotation workflows, grouped train/validation/test splitting, Celery workers, Redis, SQLAlchemy async database access, React Query, and current text-analysis capabilities unless a change is explicitly justified below.
+
+Before implementing changes, inspect the current repository and adapt the implementation to the actual code. Do not assume APIs or schemas that do not exist.
+
+---
+
+# PRIMARY OBJECTIVES
+
+Implement the following major improvements:
+
+1. Fix all current CI, packaging, backend lint, frontend lint, tests and build failures.
+2. Add first-class Annotation Campaigns.
+3. Add blind reliability coding.
+4. Extend reliability analysis with confidence intervals and stronger diagnostics.
+5. Add proper supervised feature-selection pipelines.
+6. Make research-stage caching shared and scalable.
+7. Replace database-polling SSE with Redis-driven run events.
+8. Add a complete Model Registry, Prediction Sets and Drift Monitoring frontend.
+9. Strengthen experiment provenance and scientific reproducibility.
+10. Improve large-corpus performance without introducing nested CPU oversubscription.
+
+The system must remain scientifically defensible.
+
+---
+
+# PHASE 0 — ESTABLISH A CLEAN BASELINE ✅
+
+Before implementing features, make current HEAD green.
+
+## 0.1 Fix Python packaging ✅
+
+Current packaging appears incompatible with the repository layout and editable installation.
+
+Investigate:
+
+* `backend/pyproject.toml`
+* `backend/__init__.py`
+* package discovery
+* imports such as:
+
+  * `backend.modules.text_research...`
+  * `backend.core...`
+  * `backend.workers...`
+
+The current CI error reports multiple top-level packages such as:
+
+* `db`
+* `api`
+* `core`
+* `alembic`
+* `workers`
+* `modules`
+* `observability`
+
+Use a clean package layout.
+
+Preferred solution if practical:
+
+```text
+backend/
+    pyproject.toml
+    src/
+        backend/
+            __init__.py
+            api/
+            core/
+            db/
+            modules/
+            workers/
+            observability/
+```
+
+Otherwise configure setuptools explicitly and consistently.
+
+Do not solve this by merely hiding the discovery error while leaving ambiguous package semantics.
+
+Acceptance criteria:
+
+```bash
+pip install -e ".[dev]"
+```
+
+must succeed.
+
+---
+
+## 0.2 Fix backend lint ✅
+
+Inspect and fix Ruff issues throughout the text-research module.
+
+Especially inspect:
+
+```text
+backend/modules/text_research/api/routes.py
+```
+
+Known issues include duplicate set entries and unused variables/imports.
+
+Do not disable lint rules just to make CI green unless there is a documented architectural reason.
+
+Consider splitting the oversized routes module into:
+
+```text
+backend/modules/text_research/api/routes/
+    corpora.py
+    preparation.py
+    preprocessing.py
+    annotation.py
+    reliability.py
+    quantitative.py
+    classification.py
+    topics.py
+    robustness.py
+    models.py
+    monitoring.py
+    runs.py
+    exports.py
+```
+
+Only perform this refactor if it can be done safely without changing route behavior.
+
+---
+
+## 0.3 Fix frontend lint and unnecessary render cascades ✅
+
+Known affected files include:
+
+```text
+frontend/src/features/text-research/components/CleaningPanel.tsx
+frontend/src/features/text-research/components/PreprocessingPanel.tsx
+frontend/src/features/text-research/components/AdvancedDfmPanel.tsx
+frontend/src/features/text-research/components/ClassificationConfigPanel.tsx
+frontend/src/features/text-research/components/TopicDiagnosticsPanels.tsx
+
+frontend/src/features/text-research/hooks/useResearchContext.tsx
+frontend/src/features/text-research/hooks/useRunEvents.ts
+
+frontend/src/features/text-research/views/CodebookView.tsx
+frontend/src/features/text-research/views/PrepareView.tsx
+frontend/src/features/text-research/views/ReliabilityView.tsx
+```
+
+React currently reports synchronous `setState()` calls inside effects and unnecessary unstable dependencies.
+
+Refactor according to:
+
+```text
+Server state  -> React Query
+UI state      -> local useState
+Derived state -> direct derivation/useMemo
+Draft editing -> explicit local draft state
+```
+
+Avoid mirroring query results into local state through effects unless the user is editing a draft.
+
+Move reusable constants/functions from React component files into utility/config files where required by `react-refresh/only-export-components`.
+
+Acceptance criteria:
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+must all succeed.
+
+---
+
+## 0.4 Dependency audit ✅
+
+The current frontend dependency installation reports critical/high vulnerabilities.
+
+Audit them and:
+
+* update safe dependencies,
+* distinguish dev-only from runtime exposure,
+* document remaining exceptions,
+* do not blindly use `npm audit fix --force` if it introduces breaking changes.
+
+---
+
+# PHASE 1 — ANNOTATION CAMPAIGNS ✅
+
+Introduce a first-class `AnnotationCampaign` concept.
+
+Current annotation assignment and reliability are too corpus-wide. Reliability should be tied to a controlled study design.
+
+## Scientific rationale
+
+Reliability must not accidentally combine:
+
+* different annotation rounds,
+* different unit types,
+* different annotator groups,
+* pilot annotations,
+* AI-assisted annotation,
+* blind human reliability annotation,
+* codebook versions.
+
+## Suggested model
+
+Inspect the existing domain model conventions and create something conceptually equivalent to:
+
+```python
+AnnotationCampaign:
+    id
+    project_id
+    corpus_id
+    name
+    description
+
+    codebook_id
+    codebook_version
+
+    unit_type
+
+    sampling_strategy
+    assignment_strategy
+
+    sample_size
+    overlap_count
+    overlap_percent
+
+    blind_mode
+    ai_assistance_enabled
+
+    status
+    created_by
+    created_at
+    started_at
+    completed_at
+
+    metadata_json
+```
+
+Related association information should preserve:
+
+```text
+campaign
+    ├── annotators
+    ├── assigned units
+    ├── overlap units
+    ├── annotation tasks
+    └── reliability runs
+```
+
+Do not duplicate annotation rows unnecessarily if the current task model can reference a campaign.
+
+## Likely backend files
+
+Inspect and modify as appropriate:
+
+```text
+backend/modules/text_research/domain/models.py
+backend/modules/text_research/domain/enums.py
+
+backend/modules/text_research/application/assignment_planning.py
+backend/modules/text_research/application/reliability_service.py
+
+backend/modules/text_research/infrastructure/repository.py
+backend/modules/text_research/infrastructure/*repository*
+
+backend/modules/text_research/api/routes.py
+backend/modules/text_research/api/schemas.py
+
+backend/alembic/
+```
+
+Search the repository for:
+
+```text
+AnnotationTask
+Annotation
+assignCorpusAnnotationTasks
+list_annotations_for_corpus
+codebook_version
+unit_type
+```
+
+and update the relevant files.
+
+## API
+
+Add campaign endpoints conceptually similar to:
+
+```text
+POST   /projects/{project_id}/annotation-campaigns
+GET    /projects/{project_id}/annotation-campaigns
+
+GET    /annotation-campaigns/{campaign_id}
+PATCH  /annotation-campaigns/{campaign_id}
+
+POST   /annotation-campaigns/{campaign_id}/assign
+GET    /annotation-campaigns/{campaign_id}/progress
+
+POST   /annotation-campaigns/{campaign_id}/reliability
+```
+
+Reliability should prefer:
+
+```text
+campaign_id
+```
+
+instead of only:
+
+```text
+corpus_id
+```
+
+Preserve backwards compatibility where practical.
+
+---
+
+# PHASE 2 — BLIND RELIABILITY CODING ✅
+
+Add an explicit annotation mode separating:
+
+```text
+BLIND HUMAN RELIABILITY
+```
+
+from:
+
+```text
+AI-ASSISTED ANNOTATION
+```
+
+## Blind mode rules ✅
+
+When a campaign is blind:
+
+Annotators MUST NOT see:
+
+* other annotators' decisions,
+* adjudicated values,
+* model predictions,
+* LLM suggestions,
+* reliability results before completing their own assigned coding,
+* consensus labels.
+
+This is required to avoid anchoring and coder contamination.
+
+## Related frontend files
+
+Inspect:
+
+```text
+frontend/src/features/text-research/views/AnnotationView.tsx
+frontend/src/features/text-research/components/AnnotationSetupPanel.tsx
+frontend/src/features/text-research/types.ts
+frontend/src/api/textResearch.ts
+```
+
+Current `AnnotationView.tsx` retrieves classifier predictions for annotation units.
+
+Change this so prediction retrieval is conditional on the campaign mode.
+
+Conceptually:
+
+```tsx
+if (campaign.blind_mode) {
+    do not fetch predictions;
+}
+```
+
+Do not merely hide an already-fetched model result in CSS.
+
+## UI ✅
+
+In campaign setup make the distinction explicit:
+
+```text
+Annotation mode
+
+○ Blind reliability coding
+  Independent human coding.
+  Model predictions and other coders' decisions are hidden.
+
+○ AI-assisted coding
+  Model/AI suggestions may be shown to annotators.
+```
+
+Persist the selected mode in campaign provenance.
+
+---
+
+# PHASE 3 — RELIABILITY ANALYSIS ✅
+
+The existing backend already supports:
+
+* raw agreement,
+* Cohen's kappa,
+* Fleiss' kappa,
+* Krippendorff's alpha,
+* pairwise coder agreement,
+* disagreement inspection.
+
+Preserve this implementation.
+
+Relevant files include:
+
+```text
+backend/modules/text_research/application/reliability_service.py
+backend/modules/text_research/infrastructure/reliability.py
+
+frontend/src/features/text-research/views/ReliabilityView.tsx
+frontend/src/features/text-research/components/ResearchCharts.tsx
+```
+
+---
+
+## 3.1 Reliability must be campaign-scoped ✅
+
+Change reliability retrieval so the service selects only annotations matching the campaign's:
+
+```text
+corpus
+codebook version
+unit type
+annotation round/campaign
+assigned annotators
+```
+
+Push filtering to PostgreSQL.
+
+Do not load all corpus annotations and filter everything in Python when avoidable.
+
+Select only fields needed for reliability:
+
+```text
+text_unit_id
+label_id
+annotator_id
+value
+```
+
+---
+
+## 3.2 Display Fleiss kappa ✅
+
+Backend already computes Fleiss' kappa for 3+ raters.
+
+Expose it in:
+
+```text
+frontend/src/features/text-research/views/ReliabilityView.tsx
+```
+
+Logic:
+
+```text
+2 coders:
+    raw agreement
+    Cohen's kappa
+    Krippendorff alpha
+
+3+ coders:
+    pairwise agreement
+    Fleiss kappa when fixed-n design permits
+    Krippendorff alpha
+```
+
+Do not calculate ordinary Cohen's kappa as a single statistic for 3+ coders.
+
+Optional pairwise Cohen values may be shown separately.
+
+---
+
+## 3.3 Bootstrap confidence intervals ✅
+
+Add confidence intervals for at least:
+
+```text
+Cohen's kappa
+Krippendorff's alpha
+Fleiss' kappa where appropriate
+raw agreement
+```
+
+Use reproducible bootstrap resampling over units.
+
+Example result:
+
+```json
+{
+  "kappa": 0.71,
+  "ci": {
+    "lower": 0.63,
+    "upper": 0.79,
+    "confidence_level": 0.95,
+    "bootstrap_samples": 2000,
+    "random_seed": 42
+  }
+}
+```
+
+Expose configuration with sensible defaults:
+
+```text
+bootstrap_samples = 2000
+confidence_level = 0.95
+random_seed
+```
+
+Store the seed and CI configuration in run provenance.
+
+---
+
+## 3.4 Reliability diagnostics ✅
+
+Prioritize per-label results over only overall mean values.
+
+Show:
+
+```text
+Label               κ/α       CI        n
+------------------------------------------------
+Universalism        .91       ...       ...
+Liberalism          .84       ...       ...
+Multiculturalism    .76       ...       ...
+Self-expression     .39       ...       ...
+```
+
+Clearly warn when:
+
+```text
+n is very small
+missingness is high
+overlap is insufficient
+only one category was observed
+kappa is not evaluable
+Fleiss design assumptions are violated
+```
+
+Consider adding Gwet's AC1 later, but do not block this implementation on it.
+
+---
+
+# PHASE 4 — PROPER SUPERVISED FEATURE SELECTION ✅
+
+The app already supports feature pruning using:
+
+```text
+min_df
+max_df
+max_features
+word n-grams
+character n-grams
+TF-IDF/count
+```
+
+Do not confuse this with supervised feature selection.
+
+Add a first-class supervised feature-selection stage.
+
+## Relevant backend files
+
+Inspect:
+
+```text
+backend/modules/text_research/infrastructure/classifiers.py
+backend/modules/text_research/infrastructure/preprocessing.py
+backend/modules/text_research/application/classification_service.py
+```
+
+Search for:
+
+```text
+FeatureConfig
+build_feature_extractor
+train
+fit_transform
+transform
+```
+
+## Add configuration
+
+Conceptually:
+
+```python
+FeatureSelectionConfig:
+    method: none | chi2 | mutual_info | l1
+    k: int | "all"
+    percentile: float | None
+```
+
+Initial required implementations:
+
+```text
+none
+chi2
+mutual_info
+```
+
+Optional:
+
+```text
+L1-based SelectFromModel
+```
+
+## Leakage requirement
+
+The pipeline MUST be:
+
+```text
+TRAIN
+ ↓
+vectorizer.fit_transform(TRAIN)
+ ↓
+feature_selector.fit_transform(TRAIN)
+ ↓
+classifier.fit(TRAIN)
+
+VALIDATION
+ ↓
+vectorizer.transform(VALIDATION)
+ ↓
+feature_selector.transform(VALIDATION)
+
+TEST
+ ↓
+vectorizer.transform(TEST)
+ ↓
+feature_selector.transform(TEST)
+```
+
+Never fit vectorizer or supervised selector on validation/test data.
+
+Nested CV must also fit the selector only inside each training fold.
+
+Add tests proving no leakage.
+
+## Frontend
+
+Update:
+
+```text
+frontend/src/features/text-research/components/ClassificationConfigPanel.tsx
+frontend/src/features/text-research/views/ClassificationView.tsx
+frontend/src/api/textResearch.ts
+```
+
+Add a "Feature selection" section:
+
+```text
+Method:
+  None
+  Chi-square
+  Mutual information
+  L1 selection
+
+Top K:
+  5000
+```
+
+Display:
+
+```text
+Raw vocabulary
+After document-frequency pruning
+After supervised selection
+Non-zero model coefficients
+```
+
+---
+
+# PHASE 5 — SHARED RESEARCH STAGE CACHING ✅
+
+Existing cache-related files include:
+
+```text
+backend/core/cache.py
+
+backend/modules/text_research/infrastructure/feature_cache.py
+backend/modules/text_research/infrastructure/stage_cache.py
+backend/modules/text_research/infrastructure/out_of_core.py
+```
+
+The current stage-cache design is useful but local process/local filesystem caching does not scale reliably across workers/containers.
+
+Implement a layered caching model.
+
+## Target
+
+```text
+L1:
+small per-process LRU cache
+
+L2:
+Redis
+- metadata
+- computation status
+- locks
+- cache pointer information
+
+L3:
+shared object/artifact storage
+- S3-compatible storage / MinIO / shared artifact backend
+- large token outputs
+- embeddings
+- sparse matrices
+- topic artifacts
+- trained models
+```
+
+If the repository already has a generic storage abstraction, reuse it.
+
+Do not hard-code AWS-specific behavior if avoidable.
+
+---
+
+## Cache identity
+
+Retain content-addressed cache keys based on:
+
+```text
+engine_version
+stage_name
+corpus snapshot checksum
+specification hash
+parameters
+preprocessing configuration
+```
+
+Add required inputs where missing.
+
+Never reuse a cache artifact when scientifically relevant inputs differ.
+
+---
+
+## Stampede protection
+
+Add Redis distributed locks.
+
+Concept:
+
+```text
+research:lock:{computation_hash}
+```
+
+Algorithm:
+
+```text
+cache lookup
+    ↓ miss
+acquire distributed lock
+    ↓
+cache lookup again
+    ↓
+compute once
+    ↓
+persist shared artifact
+    ↓
+publish cache metadata
+    ↓
+release lock
+```
+
+Handle stale locks safely.
+
+---
+
+## Do NOT cache leakage-sensitive fitted classifier features globally
+
+Keep the existing methodological safeguard:
+
+Supervised TF-IDF/vectorizers and feature selectors must be fitted from training partitions.
+
+Do not cache fitted supervised artifacts in ways that can leak validation/test information.
+
+---
+
+# PHASE 6 — REDIS-DRIVEN RUN EVENTS ✅
+
+Current run-event streaming uses SSE but repeatedly queries PostgreSQL approximately once per second.
+
+Relevant files:
+
+```text
+backend/modules/text_research/api/routes.py
+backend/workers/*
+backend/core/cache.py
+
+frontend/src/features/text-research/hooks/useRunEvents.ts
+frontend/src/features/text-research/runPolling.ts
+```
+
+Search for:
+
+```text
+/runs/{run_id}/events
+StreamingResponse
+asyncio.sleep
+EventSource
+invalidateQueries
+```
+
+Replace DB polling with Redis Pub/Sub or Redis Streams.
+
+## Target architecture
+
+```text
+Celery worker
+    │
+    ├── persist durable run state in PostgreSQL
+    │
+    └── publish event to Redis
+                │
+                ↓
+FastAPI SSE endpoint
+                │
+                ↓
+Browser
+```
+
+Run events:
+
+```text
+queued
+started
+progress
+artifact-created
+completed
+failed
+cancelled
+```
+
+PostgreSQL remains the durable source of truth.
+
+Redis is only the event transport.
+
+---
+
+## Reconnection
+
+The frontend must gracefully recover if Redis/SSE connectivity is interrupted.
+
+Keep current polling fallback.
+
+Suggested behavior:
+
+```text
+SSE connected:
+    no polling
+
+SSE disconnected:
+    poll every 2 seconds while run active
+
+terminal run:
+    no polling
+```
+
+---
+
+## Avoid unnecessary refetches
+
+Current SSE handler invalidates the run query after receiving an event.
+
+If the SSE payload already contains the full current run representation, use:
+
+```tsx
+queryClient.setQueryData(...)
+```
+
+where safe.
+
+Only invalidate broader collections when necessary.
+
+---
+
+# PHASE 7 — DATABASE AND WORKER SCALABILITY ✅
+
+Relevant files:
+
+```text
+backend/db/session.py
+backend/workers/parallelism.py
+backend/core/config.py
+```
+
+The current worker parallelism protection against:
+
+```text
+Celery processes
+× sklearn n_jobs
+× BLAS threads
+```
+
+must be preserved.
+
+Do NOT set `n_jobs=-1` broadly.
+
+## Add explicit DB pool settings
+
+Support configuration such as:
+
+```text
+DB_POOL_SIZE
+DB_MAX_OVERFLOW
+DB_POOL_TIMEOUT
+DB_POOL_RECYCLE
+```
+
+Make API and Celery worker pool behavior explicit.
+
+Document a PgBouncer deployment recommendation.
+
+---
+
+## Concurrency policy
+
+Use:
+
+```text
+asyncio:
+PostgreSQL
+Redis
+HTTP
+network/storage I/O
+
+Celery prefork/process:
+sklearn
+topic models
+CPU-heavy NLP
+statistics
+
+GPU-specific workers:
+sentence-transformers
+large embedding models
+
+threads:
+only where native libraries release the GIL or I/O requires them
+```
+
+Keep BLAS and joblib thread caps.
+
+---
+
+# PHASE 8 — LARGE-CORPUS PERFORMANCE ✅
+
+Audit services that fetch entire corpora or annotation sets into memory.
+
+Important candidates include:
+
+```text
+backend/modules/text_research/application/reliability_service.py
+classification dataset preparation
+prediction persistence
+topic preparation
+quantitative preprocessing
+```
+
+Improve through:
+
+```text
+database filtering
+projection of only required columns
+streaming
+pagination
+bulk inserts
+batch updates
+batched embeddings
+out-of-core artifacts
+sparse matrices
+```
+
+Avoid ORM N+1 loops.
+
+Add appropriate indexes for common text-research queries.
+
+Likely indexing candidates:
+
+```text
+corpus_id
+campaign_id
+codebook_version
+text_unit_id
+annotator_id
+label_id
+unit_type
+trained_model_id
+analysis_run status
+```
+
+Confirm with actual queries before adding indexes.
+
+---
+
+# PHASE 9 — COMPLETE MODEL REGISTRY FRONTEND ✅
+
+The backend already contains model lifecycle and prediction-related endpoints.
+
+Inspect:
+
+```text
+backend/modules/text_research/api/routes.py
+
+frontend/src/api/textResearch.ts
+frontend/src/features/text-research/views/ClassificationView.tsx
+frontend/src/app/router.tsx
+frontend/src/features/text-research/views/ResearchLayout.tsx
+```
+
+Backend capabilities include or appear to include:
+
+```text
+/projects/{project_id}/models
+/models/{model_id}/lifecycle
+
+/classifiers/{model_id}/predictions
+
+/prediction-sets/{prediction_set_id}
+/corpora/{corpus_id}/prediction-sets
+
+/corpora/{corpus_id}/monitoring/drift
+
+/classifiers/{model_id}/clone
+```
+
+Create a proper Model Registry frontend.
+
+## Suggested view
+
+```text
+Model Registry
+
+Model              Status       Macro F1    Dataset      Created
+-----------------------------------------------------------------
+liberalism-v7      Production   .84         snap-17      ...
+liberalism-v6      Deprecated   .81         snap-13      ...
+```
+
+Model detail should include:
+
+```text
+metadata
+training snapshot
+task type
+algorithm
+feature config
+feature selection config
+metrics
+confidence intervals
+coefficients
+calibration
+provenance
+prediction sets
+drift status
+lifecycle history
+```
+
+Actions:
+
+```text
+Promote to production
+Deprecate
+Archive
+Clone config
+Predict
+Open prediction set
+Run drift check
+Retrain
+Compare model
+```
+
+---
+
+# PHASE 10 — DRIFT MONITORING FRONTEND ✅
+
+Expose the existing drift endpoint in a dedicated panel.
+
+Required drift diagnostics should distinguish where possible:
+
+```text
+input/feature distribution drift
+prediction distribution drift
+class prevalence drift
+performance drift when new adjudicated labels become available
+```
+
+Do not label distribution drift as proven model degradation.
+
+Show:
+
+```text
+Baseline
+Current sample
+Metric
+Value
+Threshold
+Status
+```
+
+Persist drift runs as auditable analysis runs if this matches the existing run architecture.
+
+---
+
+# PHASE 11 — PREDICTION SET FRONTEND ✅
+
+Create interfaces for:
+
+```text
+prediction set list
+prediction set detail
+individual predictions
+scores/probabilities
+uncertainty
+source model
+source corpus snapshot
+creation date
+filters
+```
+
+Allow filtering by:
+
+```text
+predicted label
+confidence
+uncertainty
+review status
+human disagreement
+```
+
+Preserve distinction between:
+
+```text
+MODEL PREDICTION
+HUMAN ANNOTATION
+ADJUDICATED GOLD
+```
+
+Never silently convert a prediction to human gold.
+
+---
+
+# PHASE 12 — ROUTE EXISTING ORPHAN FRONTENDS ✅
+
+The following views exist but are not currently mounted in the main research router:
+
+```text
+frontend/src/features/text-research/views/StatisticalModelView.tsx
+frontend/src/features/text-research/views/MeasurementComparisonView.tsx
+```
+
+Wire them into:
+
+```text
+frontend/src/app/router.tsx
+frontend/src/features/text-research/views/ResearchLayout.tsx
+```
+
+Prefer grouping them under an Analysis section rather than adding excessive top-level navigation.
+
+Verify their API calls actually match current backend endpoints.
+
+---
+
+# PHASE 13 — SCIENTIFIC PROVENANCE ✅
+
+Strengthen every analysis run's provenance.
+
+Relevant areas:
+
+```text
+backend/modules/text_research/domain/models.py
+backend/modules/text_research/application/run_service.py
+backend/modules/text_research/infrastructure/stage_cache.py
+model storage
+snapshot services
+```
+
+Every scientifically meaningful run should persist when applicable:
+
+```text
+git commit SHA
+application version
+Python version
+package lock checksum
+Docker image digest if available
+
+corpus snapshot ID
+corpus snapshot hash
+
+annotation campaign ID
+codebook ID
+codebook version
+
+unit type
+filters
+
+preprocessing profile ID
+preprocessing config
+preprocessing config hash
+
+feature configuration
+feature selection configuration
+
+random seed
+
+algorithm
+hyperparameters
+
+train/validation/test group assignments or reproducible hashes
+validation strategy
+
+model artifact checksum
+
+library versions
+
+input artifact checksums
+output artifact checksums
+
+created_by
+started_at
+completed_at
+```
+
+Do not rely only on mutable configuration names.
+
+---
+
+# PHASE 14 — LOCK DEPENDENCIES ✅
+
+Add deterministic Python dependency locking.
+
+Prefer:
+
+```text
+uv.lock
+```
+
+or another project-standard reproducible lock format.
+
+Do not remove `pyproject.toml`.
+
+CI should install from a deterministic dependency graph where practical.
+
+Record dependency-lock checksum in run provenance.
+
+---
+
+# PHASE 15 — RESEARCH UX / SCIENTIFIC WARNINGS ✅
+
+Add domain-aware warnings rather than only raw numbers.
+
+Examples:
+
+```text
+Warning: Only 14 overlapping annotations are available for Cohen's kappa.
+
+Warning: 88% of annotations use one category. Kappa may be unstable.
+
+Warning: Feature selection was fitted outside the training fold.
+```
+
+The last condition must actually be prevented; it should be tested, not merely warned about.
+
+Additional useful diagnostics:
+
+```text
+DFM documents
+features
+non-zero cells
+sparsity
+estimated memory
+
+classifier:
+raw vocabulary
+post-min_df vocabulary
+selected feature count
+
+reliability:
+n coders
+n pairable units
+missingness
+class prevalence
+CI width
+```
+
+---
+
+# PHASE 16 — TESTS ✅
+
+Add or update tests for all new functionality.
+
+## Annotation campaign tests
+
+Test:
+
+```text
+campaign creation
+unit type isolation
+codebook version isolation
+annotator membership
+assignment strategies
+overlap
+campaign completion
+```
+
+## Blind mode tests
+
+Prove that blind campaigns do not expose:
+
+```text
+model predictions
+other coder decisions
+adjudicated labels
+```
+
+through backend APIs or frontend query behavior.
+
+## Reliability tests
+
+Test:
+
+```text
+2 coders -> Cohen + alpha
+3 coders -> Fleiss + alpha
+missing annotations
+no overlap
+single-category edge cases
+confidence intervals
+reproducible bootstrap seed
+campaign isolation
+unit type isolation
+```
+
+## Feature-selection leakage tests
+
+Explicitly test that:
+
+```text
+fit()
+```
+
+for both vectorizer and supervised selector receives training data only.
+
+Test nested CV independently.
+
+## Cache tests
+
+Test:
+
+```text
+same identity -> hit
+changed preprocessing -> miss
+changed corpus snapshot -> miss
+changed engine version -> miss
+distributed lock prevents duplicate computation
+```
+
+## Run events tests
+
+Test:
+
+```text
+queued
+started
+progress
+completed
+failed
+cancelled
+
+Redis unavailable -> frontend/backend polling fallback remains functional
+```
+
+## Model registry tests
+
+Test:
+
+```text
+lifecycle transitions
+prediction set listing
+prediction detail
+drift endpoint
+frontend route availability
+```
+
+---
+
+# PHASE 17 — PERFORMANCE BENCHMARKS ✅
+
+Add lightweight reproducible benchmarks for representative workflows.
+
+Examples:
+
+```text
+10k units
+100k units
+1M annotations where feasible synthetically
+```
+
+Measure:
+
+```text
+tokenization throughput
+DFM generation
+reliability computation
+classification preparation
+prediction insertion
+SSE/run-event DB query load
+cache hit/miss latency
+```
+
+The benchmarks must not become flaky CI gates.
+
+Use them as regression measurements.
+
+---
+
+# PHASE 18 — DOCUMENTATION ✅
+
+Update repository documentation.
+
+Document:
+
+```text
+Annotation Campaign workflow
+Blind vs AI-assisted annotation
+Reliability statistic selection
+Confidence intervals
+Feature-selection leakage rules
+Caching architecture
+Redis event architecture
+Worker concurrency policy
+Model lifecycle
+Drift interpretation
+Prediction provenance
+Reproducibility guarantees
+```
+
+Explain clearly:
+
+```text
+Cohen's kappa:
+exactly two coders
+
+Fleiss' kappa:
+3+ coders under fixed-n nominal design
+
+Krippendorff's alpha:
+2+ coders, supports missing/ragged annotations
+```
+
+Document that current reliability is nominal unless ordinal/interval support is later implemented.
+
+---
+
+# REQUIRED SCIENTIFIC INVARIANTS
+
+These invariants must never be violated:
+
+## 1. No classifier leakage
+
+```text
+vectorizer.fit
+feature_selector.fit
+threshold tuning
+hyperparameter tuning
+```
+
+must never use final test data.
+
+## 2. No blind-coder contamination
+
+Blind annotation campaigns must not expose:
+
+```text
+other human annotations
+AI/model predictions
+adjudicated values
+```
+
+before the coder completes their task.
+
+## 3. Predictions are not gold labels
+
+Keep separate provenance for:
+
+```text
+human
+model
+LLM
+adjudicated
+```
+
+## 4. Reliability has a defined sampling frame
+
+Every reliability result should identify:
+
+```text
+campaign
+unit type
+codebook version
+annotators
+shared units
+missingness
+```
+
+## 5. Reproducibility
+
+All stochastic methods must accept and persist a random seed.
+
+## 6. Cache correctness
+
+Cache keys must include every scientifically relevant parameter.
+
+## 7. PostgreSQL remains durable source of truth
+
+Redis events/cache must never become the only persistent source for research results.
+
+---
+
+# EXPECTED FILE AREAS
+
+At minimum inspect these areas before implementation:
+
+## Backend
+
+```text
+backend/pyproject.toml
+
+backend/core/config.py
+backend/core/cache.py
+
+backend/db/session.py
+
+backend/workers/
+backend/workers/parallelism.py
+
+backend/modules/text_research/domain/
+backend/modules/text_research/domain/models.py
+backend/modules/text_research/domain/enums.py
+
+backend/modules/text_research/application/
+backend/modules/text_research/application/assignment_planning.py
+backend/modules/text_research/application/reliability_service.py
+
+backend/modules/text_research/infrastructure/
+backend/modules/text_research/infrastructure/reliability.py
+backend/modules/text_research/infrastructure/classifiers.py
+backend/modules/text_research/infrastructure/preprocessing.py
+backend/modules/text_research/infrastructure/feature_cache.py
+backend/modules/text_research/infrastructure/stage_cache.py
+backend/modules/text_research/infrastructure/out_of_core.py
+backend/modules/text_research/infrastructure/model_storage.py
+
+backend/modules/text_research/api/
+backend/modules/text_research/api/routes.py
+backend/modules/text_research/api/schemas.py
+
+backend/alembic/
+```
+
+Search for actual related services/repositories rather than assuming this list is complete.
+
+## Frontend
+
+```text
+frontend/src/app/router.tsx
+
+frontend/src/api/textResearch.ts
+
+frontend/src/features/text-research/types.ts
+
+frontend/src/features/text-research/hooks/useResearchContext.tsx
+frontend/src/features/text-research/hooks/useRunEvents.ts
+frontend/src/features/text-research/runPolling.ts
+
+frontend/src/features/text-research/components/AnnotationSetupPanel.tsx
+frontend/src/features/text-research/components/ClassificationConfigPanel.tsx
+frontend/src/features/text-research/components/AdvancedDfmPanel.tsx
+frontend/src/features/text-research/components/ResearchCharts.tsx
+
+frontend/src/features/text-research/views/AnnotationView.tsx
+frontend/src/features/text-research/views/ReliabilityView.tsx
+frontend/src/features/text-research/views/ClassificationView.tsx
+frontend/src/features/text-research/views/RunsView.tsx
+frontend/src/features/text-research/views/ResearchLayout.tsx
+frontend/src/features/text-research/views/StatisticalModelView.tsx
+frontend/src/features/text-research/views/MeasurementComparisonView.tsx
+```
+
+Create new files where separation improves maintainability.
+
+Suggested additions:
+
+```text
+frontend/src/features/text-research/views/AnnotationCampaignsView.tsx
+frontend/src/features/text-research/views/ModelRegistryView.tsx
+frontend/src/features/text-research/views/ModelDetailView.tsx
+frontend/src/features/text-research/views/DriftMonitoringView.tsx
+frontend/src/features/text-research/views/PredictionSetsView.tsx
+```
+
+---
+
+# IMPLEMENTATION STRATEGY
+
+Do not attempt a giant uncontrolled rewrite.
+
+Implement in this order:
+
+```text
+1. CI/package/lint baseline
+2. AnnotationCampaign persistence and APIs
+3. blind-mode enforcement
+4. campaign-scoped reliability
+5. confidence intervals + Fleiss UI
+6. supervised feature-selection stage
+7. shared cache/storage + distributed locks
+8. Redis run-event transport
+9. DB/pool/large-corpus optimizations
+10. orphaned frontend routes
+11. model registry
+12. prediction sets
+13. drift frontend
+14. provenance hardening
+15. documentation + tests + benchmarks
+```
+
+After each phase:
+
+```text
+run backend tests
+run frontend tests
+run lint
+run typecheck/build
+run migrations
+```
+
+Do not continue while a newly introduced regression remains unexplained.
+
+---
+
+# DELIVERABLE FORMAT
+
+When implementation is complete, provide:
+
+## 1. Summary
+
+Explain what was changed.
+
+## 2. File-by-file change list
+
+Example:
+
+```text
+backend/.../reliability_service.py
+- campaign-scoped reliability
+- bootstrap CI
+- DB-side filtering
+
+frontend/.../ReliabilityView.tsx
+- Fleiss kappa
+- CI display
+- campaign selector
+```
+
+## 3. Database migrations
+
+List new tables/columns/indexes.
+
+## 4. New API endpoints
+
+Document request/response contracts.
+
+## 5. Scientific safeguards
+
+Explicitly explain:
+
+```text
+how annotation blindness is enforced
+how reliability samples are isolated
+how test leakage is prevented
+how cache correctness is guaranteed
+```
+
+## 6. Performance changes
+
+Explain:
+
+```text
+what is cached
+where it is cached
+what became asynchronous
+what was batched
+what queries were reduced
+```
+
+## 7. Tests
+
+Report:
+
+```text
+backend tests
+frontend tests
+lint
+build
+migration validation
+```
+
+## 8. Remaining limitations
+
+Do not claim unsupported capabilities.
+
+For example, if reliability remains nominal only, state this explicitly.
+
+---
+
+# SUCCESS CRITERIA
+
+The work is successful when:
+
+```text
+CI is green.
+
+Two or more researchers can participate in a formally defined annotation campaign.
+
+Blind reliability coding cannot expose machine predictions or other annotators' decisions.
+
+Cohen's kappa works correctly for two coders.
+
+Fleiss' kappa is available and visible for appropriate 3+ coder designs.
+
+Krippendorff's alpha supports incomplete multi-coder designs.
+
+Reliability results include reproducible confidence intervals.
+
+Reliability is campaign/unit-type/codebook-version scoped.
+
+Supervised feature selection exists and is leakage-safe.
+
+Research stage cache artifacts can be reused across worker processes/containers.
+
+Duplicate expensive computations are protected by distributed locks.
+
+SSE run updates use Redis events instead of querying PostgreSQL every second per connected client.
+
+PostgreSQL remains the durable run-state source.
+
+Model lifecycle is manageable from the frontend.
+
+Prediction sets are inspectable from the frontend.
+
+Drift monitoring is available from the frontend.
+
+Existing StatisticalModelView and MeasurementComparisonView are actually routed.
+
+Runs contain enough provenance to reproduce and audit scientific analyses.
+
+Large-corpus operations use batching/streaming/bulk operations where appropriate.
+
+Celery/sklearn/BLAS parallelism remains bounded and does not create nested CPU oversubscription.
+```
+
+The priority is not to add the largest number of algorithms.
+
+The priority is to make `text_analysis` a trustworthy computational social-science platform whose outputs can be defended in a publication, reproduced later, scaled to substantially larger corpora, and audited from raw corpus through annotation, preprocessing, feature construction, modeling, evaluation and final result.
+
+I would use this as the **top-level Cursor implementation prompt**, then implement it phase by phase rather than asking Cursor to modify the entire repository in one pass.

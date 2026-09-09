@@ -34,9 +34,7 @@ class ProjectsRepository:
             .where(ProjectMember.user_id == user_id)
             .distinct()
         )
-        total = int(
-            await self.db.scalar(select(func.count()).select_from(id_stmt.subquery())) or 0
-        )
+        total = int(await self.db.scalar(select(func.count()).select_from(id_stmt.subquery())) or 0)
         result = await self.db.execute(
             select(Project)
             .join(ProjectMember, ProjectMember.project_id == Project.id)

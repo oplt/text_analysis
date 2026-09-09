@@ -11,7 +11,9 @@ from backend.tests.integration_support import (
 )
 
 
-@unittest.skipUnless(integration_enabled(), "Set RUN_INTEGRATION_TESTS=1 with postgres/redis running")
+@unittest.skipUnless(
+    integration_enabled(), "Set RUN_INTEGRATION_TESTS=1 with postgres/redis running"
+)
 class AuthApiIntegrationTest(unittest.IsolatedAsyncioTestCase):
     async def test_sign_up_sign_in_me_and_logout(self):
         async with api_client() as client:

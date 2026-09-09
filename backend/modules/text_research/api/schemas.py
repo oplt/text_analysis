@@ -281,11 +281,26 @@ class CorpusAnnotationAssignRequest(BaseModel):
     )
     stratify_by: list[str] | None = Field(
         default=None,
-        description="Metadata field names to stratify by, e.g. ['field_1', 'field_2']. Generic — any supported document metadata field works.",
+        description=(
+            "Metadata field names to stratify by, e.g. ['field_1', 'field_2']. "
+            "Generic — any supported document metadata field works."
+        ),
     )
     stratum_mode: str = Field(default="proportional", description="proportional | equal")
     sampling_level: str = Field(default="unit", description="unit | document")
     max_units_per_document: int | None = Field(default=None, ge=1)
+    # Campaign / blind reliability (Phase 1–2)
+    create_campaign: bool = True
+    campaign_name: str | None = None
+    campaign_description: str | None = None
+    campaign_id: str | None = None
+    codebook_id: str | None = None
+    annotation_mode: str | None = Field(
+        default="blind_reliability",
+        description="blind_reliability | ai_assisted",
+    )
+    blind_mode: bool | None = None
+    ai_assistance_enabled: bool | None = None
 
 
 class CorpusAnnotationAssignResponse(BaseModel):
@@ -294,6 +309,79 @@ class CorpusAnnotationAssignResponse(BaseModel):
     overlap_units: int
     strategy: str
     unit_type: str
+    per_annotator: dict[str, int]
+    sampling_plan: dict[str, Any] | None = None
+    campaign_id: str | None = None
+    annotation_mode: str | None = None
+    blind_mode: bool | None = None
+    ai_assistance_enabled: bool | None = None
+
+
+class AnnotationCampaignCreate(BaseModel):
+    corpus_id: str
+    name: str
+    description: str | None = None
+    codebook_id: str | None = None
+    unit_type: str = "paragraph"
+    sampling_strategy: str = "random"
+    assignment_strategy: str = "overlap"
+    sample_size: int | None = Field(default=None, ge=1, le=5000)
+    overlap_count: int | None = Field(default=None, ge=0, le=5000)
+    overlap_percent: float | None = Field(default=None, ge=0, le=100)
+    annotation_mode: str = Field(default="blind_reliability")
+    blind_mode: bool | None = None
+    ai_assistance_enabled: bool | None = None
+    annotator_ids: list[str] | None = None
+    metadata: dict[str, Any] | None = None
+
+
+class AnnotationCampaignUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    status: str | None = None
+    annotation_mode: str | None = None
+    blind_mode: bool | None = None
+    ai_assistance_enabled: bool | None = None
+    metadata: dict[str, Any] | None = None
+
+
+class AnnotationCampaignResponse(BaseModel):
+    id: str
+    project_id: str
+    corpus_id: str
+    name: str
+    description: str | None
+    codebook_id: str | None
+    codebook_version: str | None
+    unit_type: str
+    sampling_strategy: str
+    assignment_strategy: str
+    sample_size: int | None
+    overlap_count: int | None
+    overlap_percent: float | None
+    blind_mode: bool
+    ai_assistance_enabled: bool
+    annotation_mode: str
+    status: str
+    annotator_ids: list[str]
+    created_by: str
+    created_at: datetime
+    started_at: datetime | None
+    completed_at: datetime | None
+    metadata: dict[str, Any]
+
+
+class AnnotationCampaignAssignRequest(BaseModel):
+    annotator_ids: list[str] | None = None
+    sample_size: int | None = Field(default=None, ge=1, le=5000)
+    strategy: str | None = None
+    overlap_count: int | None = Field(default=None, ge=0, le=5000)
+    overlap_percent: float | None = Field(default=None, ge=0, le=100)
+    random_seed: int | None = None
+    stratify_by: list[str] | None = None
+    stratum_mode: str = "proportional"
+    sampling_level: str = "unit"
+    max_units_per_document: int | None = Field(default=None, ge=1)
     per_annotator: dict[str, int]
     sampling_plan: dict[str, Any] | None = None
 
@@ -330,6 +418,12 @@ class AnnotationResponse(BaseModel):
 class ReliabilityRequest(BaseModel):
     codebook_id: str
     label_ids: list[str] | None = None
+    campaign_id: str | None = None
+    unit_type: str | None = None
+    annotator_ids: list[str] | None = None
+    bootstrap_samples: int = Field(default=2000, ge=100, le=20000)
+    confidence_level: float = Field(default=0.95, gt=0.5, lt=1.0)
+    random_seed: int | None = None
 
 
 class AdjudicationSaveRequest(BaseModel):
@@ -616,8 +710,7 @@ class DuplicateDetectionRequest(AnalysisRequest):
     methods: list[str] | None = Field(
         default=None,
         description=(
-            "Any of exact | normalized | lexical | minhash "
-            "(default: exact, normalized, lexical)."
+            "Any of exact | normalized | lexical | minhash (default: exact, normalized, lexical)."
         ),
     )
     lexical_threshold: float = Field(default=0.85, ge=0, le=1)
@@ -675,6 +768,11 @@ class ClassifierTrainRequest(BaseModel):
     min_df: float | int = 1
     max_df: float | int = 1.0
     max_features: int | None = None
+    # Supervised feature selection (Phase 4): applied after DF pruning,
+    # fit on TRAIN labels only — never on validation/test.
+    feature_selection_method: str = "none"  # none | chi2 | mutual_info | l1
+    feature_selection_k: int | str = "all"
+    feature_selection_percentile: float | None = None
     class_weight: str | None = None
     regularization_c: float = 1.0
     # Naive Bayes (multinomial/complement) smoothing parameter (§31/§32).
@@ -717,7 +815,10 @@ class ClassifierTrainRequest(BaseModel):
     )
     threshold_objective: str = Field(
         default="f1",
-        description="f1 | precision | recall | balanced_accuracy | youden_j | expected_cost | custom_utility",
+        description=(
+            "f1 | precision | recall | balanced_accuracy | youden_j | "
+            "expected_cost | custom_utility"
+        ),
     )
     threshold_utility_tp: float = 1.0
     threshold_utility_tn: float = 1.0
@@ -899,7 +1000,7 @@ class RobustnessRequest(BaseModel):
     )
     temporal_field: str = Field(
         default="publication_year",
-        description="Document metadata field used for temporal holdout/expanding-window validation.",
+        description="Document metadata field for temporal holdout/expanding-window validation.",
     )
     temporal_windows: bool = Field(
         default=False, description="Also run expanding-window temporal validation."

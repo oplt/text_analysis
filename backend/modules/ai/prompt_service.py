@@ -20,7 +20,7 @@ def _render_template(template: str, variables: dict[str, Any]) -> str:
         value = variables.get(key)
         if value is None:
             return ""
-        if isinstance(value, (dict, list)):
+        if isinstance(value, dict | list):
             return json.dumps(value, ensure_ascii=True)
         return str(value)
 

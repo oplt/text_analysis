@@ -9,9 +9,7 @@ class RagChunkListingTest(unittest.IsolatedAsyncioTestCase):
         from backend.modules.rag.api.routes import list_document_chunks
 
         repo = MagicMock()
-        repo.get_document = AsyncMock(
-            return_value=SimpleNamespace(id="doc-1", user_id="user-a")
-        )
+        repo.get_document = AsyncMock(return_value=SimpleNamespace(id="doc-1", user_id="user-a"))
         long_content = "x" * 500
         repo.list_chunks_for_document = AsyncMock(
             return_value=(
@@ -46,9 +44,7 @@ class RagChunkListingTest(unittest.IsolatedAsyncioTestCase):
         from backend.modules.rag.api.routes import list_document_chunks
 
         repo = MagicMock()
-        repo.get_document = AsyncMock(
-            return_value=SimpleNamespace(id="doc-1", user_id="user-a")
-        )
+        repo.get_document = AsyncMock(return_value=SimpleNamespace(id="doc-1", user_id="user-a"))
         long_content = "x" * 500
         repo.list_chunks_for_document = AsyncMock(
             return_value=(

@@ -30,8 +30,7 @@ class TextTransform(Protocol):
 
     def transform(self, text: str, context: dict[str, Any]) -> str: ...
 
-    def transform_tokens(self, tokens: list[str], context: dict[str, Any]) -> list[str]:
-        ...
+    def transform_tokens(self, tokens: list[str], context: dict[str, Any]) -> list[str]: ...
 
 
 def _cfg(context: dict[str, Any]) -> dict[str, Any]:
@@ -265,9 +264,7 @@ class PosLemmatizeTransform:
             pos_aware_lemmas,
         )
 
-        lemmas = pos_aware_lemmas(
-            text, model_name=str(cfg.get("spacy_model") or "en_core_web_sm")
-        )
+        lemmas = pos_aware_lemmas(text, model_name=str(cfg.get("spacy_model") or "en_core_web_sm"))
         if cfg.get("lowercase", True):
             lemmas = [t.lower() for t in lemmas]
         return lemmas

@@ -36,6 +36,12 @@ import {
     type WorkflowStageState,
 } from "../workflow";
 
+const ANALYSIS_SUBLINKS = [
+    { tab: "overview", label: "Corpus tools" },
+    { tab: "statistical", label: "Statistical model" },
+    { tab: "measurement", label: "Measurement" },
+] as const;
+
 function routeFromPath(pathname: string, projectId: string): string {
     const prefix = `/research/${projectId}/`;
     if (!pathname.startsWith(prefix)) return "dashboard";
@@ -188,6 +194,46 @@ function ResearchLayoutInner() {
                         <Alert severity="error" sx={{ mb: 2 }}>
                             Failed to load corpora for this project.
                         </Alert>
+                    ) : null}
+                    {activeRoute === "analysis" ? (
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            flexWrap="wrap"
+                            useFlexGap
+                            sx={{ mb: 1.5 }}
+                            aria-label="Analysis section"
+                        >
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ alignSelf: "center", mr: 0.5 }}
+                            >
+                                Analysis
+                            </Typography>
+                            {ANALYSIS_SUBLINKS.map((link) => (
+                                <Button
+                                    key={link.tab}
+                                    size="small"
+                                    variant={
+                                        location.search.includes(`tab=${link.tab}`) ||
+                                        (link.tab === "overview" &&
+                                            !location.search.includes("tab="))
+                                            ? "contained"
+                                            : "outlined"
+                                    }
+                                    onClick={() =>
+                                        navigate(
+                                            link.tab === "overview"
+                                                ? `/research/${projectId}/analysis`
+                                                : `/research/${projectId}/analysis?tab=${link.tab}`
+                                        )
+                                    }
+                                >
+                                    {link.label}
+                                </Button>
+                            ))}
+                        </Stack>
                     ) : null}
                     <QueryBoundary
                         isLoading={ctx.corporaLoading && ctx.corpora.length === 0}

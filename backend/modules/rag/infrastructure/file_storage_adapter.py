@@ -46,9 +46,8 @@ class FileStorageAdapter:
         except ObjectStorageError:
             raise
         except Exception as exc:
-            raise ObjectStorageError(
-                "Failed to upload document to object storage"
-            ) from exc
+            raise ObjectStorageError("Failed to upload document to object storage") from exc
+
     async def delete_document(self, storage_path: str | None) -> None:
         if storage_path:
             await object_storage.delete_object(storage_path)

@@ -65,9 +65,7 @@ async def list_users(
         data_query = data_query.where(*filters)
 
     total = await db.scalar(total_query)
-    result = await db.execute(
-        data_query.offset((page - 1) * page_size).limit(page_size)
-    )
+    result = await db.execute(data_query.offset((page - 1) * page_size).limit(page_size))
 
     return AdminUserListResponse(
         items=[_user_to_response(user) for user in result.scalars().all()],
@@ -125,9 +123,13 @@ async def list_audit_logs(
     logs = await repo.list_recent(limit=100)
     return [
         AuditLogResponse(
-            id=log.id, user_id=log.user_id, action=log.action,
-            resource_type=log.resource_type, resource_id=log.resource_id,
-            ip_address=log.ip_address, created_at=log.created_at,
+            id=log.id,
+            user_id=log.user_id,
+            action=log.action,
+            resource_type=log.resource_type,
+            resource_id=log.resource_id,
+            ip_address=log.ip_address,
+            created_at=log.created_at,
         )
         for log in logs
     ]
@@ -140,9 +142,7 @@ async def get_metrics(
 ):
     total, verified, active, notifs = await asyncio.gather(
         db.scalar(select(func.count()).select_from(User)),
-        db.scalar(
-            select(func.count()).select_from(User).where(User.is_verified.is_(True))
-        ),
+        db.scalar(select(func.count()).select_from(User).where(User.is_verified.is_(True))),
         db.scalar(select(func.count()).select_from(User).where(User.is_active.is_(True))),
         db.scalar(select(func.count()).select_from(Notification)),
     )

@@ -86,7 +86,35 @@ export type TrainedModel = {
     metrics: Record<string, unknown>;
     version: number;
     name: string | null;
+    lifecycle_status: "candidate" | "approved" | "deprecated" | string;
+    lifecycle_notes: string | null;
+    lifecycle_updated_at: string | null;
     created_by: string;
+    created_at: string;
+};
+
+export type ModelLifecycleStatus = "candidate" | "approved" | "deprecated";
+
+export type PredictionSetSummary = {
+    id: string;
+    project_id: string;
+    corpus_id: string;
+    trained_model_id: string;
+    model_version: number;
+    dataset_snapshot_id: string | null;
+    analysis_run_id: string;
+    created_by: string;
+    created_at: string;
+    metadata: Record<string, unknown>;
+};
+
+export type ModelPredictionItem = {
+    id: string;
+    trained_model_id: string;
+    text_unit_id: string;
+    predicted_labels: string[];
+    scores: Record<string, number>;
+    uncertainty: number | null;
     created_at: string;
 };
 
@@ -193,15 +221,62 @@ export type Annotation = {
     updated_at: string;
 };
 
+export type AnnotationMode = "blind_reliability" | "ai_assisted";
+
+export type AnnotationCampaign = {
+    id: string;
+    project_id: string;
+    corpus_id: string;
+    name: string;
+    description: string | null;
+    codebook_id: string | null;
+    codebook_version: string | null;
+    unit_type: string;
+    sampling_strategy: string;
+    assignment_strategy: string;
+    sample_size: number | null;
+    overlap_count: number | null;
+    overlap_percent: number | null;
+    blind_mode: boolean;
+    ai_assistance_enabled: boolean;
+    annotation_mode: AnnotationMode;
+    status: string;
+    annotator_ids: string[];
+    created_by: string;
+    created_at: string;
+    started_at: string | null;
+    completed_at: string | null;
+    metadata: Record<string, unknown>;
+};
+
+export type AnnotationBlindPolicy = {
+    blind_mode: boolean;
+    hide_model_predictions: boolean;
+    hide_peer_annotations?: boolean;
+    hide_adjudications?: boolean;
+    ai_assistance_enabled: boolean;
+};
+
+export type AnnotationQueueCampaignSummary = {
+    id: string;
+    name: string;
+    annotation_mode: AnnotationMode;
+    blind_mode: boolean;
+    ai_assistance_enabled: boolean;
+};
+
 export type AnnotationQueueItem = {
     task: {
         id: string;
         text_unit_id: string;
+        campaign_id?: string | null;
         annotator_id: string;
         status: string;
         assigned_at: string;
         completed_at: string | null;
     };
+    campaign?: AnnotationQueueCampaignSummary | null;
+    blind_policy?: AnnotationBlindPolicy | null;
     text_unit: {
         id: string;
         corpus_document_id: string;
@@ -287,6 +362,9 @@ export const RESEARCH_TABS = [
     { slug: "reliability", label: "Reliability" },
     { slug: "analysis", label: "Analysis" },
     { slug: "classification", label: "Classification" },
+    { slug: "models", label: "Model Registry" },
+    { slug: "predictions", label: "Predictions" },
+    { slug: "drift", label: "Drift" },
     { slug: "topics", label: "Topics" },
     { slug: "robustness", label: "Robustness" },
     { slug: "explorer", label: "Explorer" },

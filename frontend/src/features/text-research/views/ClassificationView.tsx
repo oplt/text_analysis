@@ -51,11 +51,11 @@ import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
+import { ClassificationConfigPanel } from "../components/ClassificationConfigPanel";
 import {
-    ClassificationConfigPanel,
     DEFAULT_CLASSIFICATION_TRAIN_CONFIG,
     type ClassificationTrainConfig,
-} from "../components/ClassificationConfigPanel";
+} from "../components/classificationTrainConfig";
 import {
     ClassificationCalibrationPanel,
     ClassificationCurvePanel,
@@ -71,6 +71,10 @@ import {
 } from "../components/ResearchCharts";
 import { ResearchResultsTable } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
+import {
+    ScientificWarnings,
+    collectScientificWarnings,
+} from "../components/ScientificWarnings";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval } from "../runPolling";
@@ -160,6 +164,19 @@ function evaluationCards(metrics: Record<string, unknown> | null, results: Recor
     if (nTrain != null) cards.push({ label: "Train size", value: nTrain });
     if (nTest != null) cards.push({ label: "Test size", value: nTest });
     if (vocab != null) cards.push({ label: "Vocabulary size", value: vocab });
+
+    const featureSpace =
+        asRecord(results?.feature_space) ?? asRecord(metrics?.feature_space) ?? null;
+    if (featureSpace) {
+        const raw = num(featureSpace.raw_vocabulary);
+        const afterDf = num(featureSpace.after_df_pruning);
+        const afterSel = num(featureSpace.after_supervised_selection);
+        const nonzero = num(featureSpace.n_nonzero_coefficients);
+        if (raw != null) cards.push({ label: "Raw vocabulary", value: raw });
+        if (afterDf != null) cards.push({ label: "After DF pruning", value: afterDf });
+        if (afterSel != null) cards.push({ label: "After supervised selection", value: afterSel });
+        if (nonzero != null) cards.push({ label: "Non-zero coefficients", value: nonzero });
+    }
     return cards;
 }
 
@@ -457,6 +474,9 @@ export default function ClassificationView() {
                 minDf,
                 maxDf,
                 maxFeatures,
+                featureSelectionMethod,
+                featureSelectionK,
+                featureSelectionPercentile,
                 classWeight,
                 regularizationC,
                 nbAlpha,
@@ -482,6 +502,16 @@ export default function ClassificationView() {
             const parsedMaxFeatures = maxFeatures.trim()
                 ? Number.parseInt(maxFeatures.trim(), 10)
                 : null;
+            const kTrim = featureSelectionK.trim().toLowerCase();
+            const parsedSelectionK: number | "all" =
+                kTrim === "" || kTrim === "all"
+                    ? "all"
+                    : Number.parseInt(kTrim, 10);
+            const percentileTrim = featureSelectionPercentile.trim();
+            const parsedPercentile =
+                percentileTrim && !Number.isNaN(Number(percentileTrim))
+                    ? Number(percentileTrim)
+                    : null;
             let parsedParamGrid: Record<string, unknown[]> | undefined;
             if (tuneHyperparameters && paramGridText.trim()) {
                 const candidate = JSON.parse(paramGridText) as unknown;
@@ -511,6 +541,12 @@ export default function ClassificationView() {
                     parsedMaxFeatures != null && !Number.isNaN(parsedMaxFeatures)
                         ? parsedMaxFeatures
                         : null,
+                feature_selection_method: featureSelectionMethod,
+                feature_selection_k:
+                    typeof parsedSelectionK === "number" && Number.isNaN(parsedSelectionK)
+                        ? "all"
+                        : parsedSelectionK,
+                feature_selection_percentile: parsedPercentile,
                 class_weight: classWeight === "none" ? null : classWeight,
                 regularization_c: regularizationC,
                 nb_alpha: nbAlpha,
@@ -959,6 +995,14 @@ export default function ClassificationView() {
                 {trainRunQuery.data?.status === "completed" || selectedModel ? (
                     <Stack spacing={2}>
                         {evalCards.length ? <MetricCards items={evalCards} /> : null}
+                        <ScientificWarnings
+                            title="Scientific review signals (not automatic model decisions)."
+                            warnings={collectScientificWarnings(
+                                trainResults,
+                                trainMetrics,
+                                asRecord(selectedModel?.metrics)
+                            )}
+                        />
 
                         {perLabelItems.length ? (
                             <Box>
@@ -1093,7 +1137,19 @@ export default function ClassificationView() {
 
             {tab === "models" ? (
             <>
-            <SectionCard title="Trained models" description="Classifiers saved for this project/corpus.">
+            <SectionCard
+                title="Trained models"
+                description="Classifiers saved for this project/corpus. Use Model Registry for lifecycle and prediction sets."
+                action={
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => navigate(`/research/${ctx.projectId}/models`)}
+                    >
+                        Model Registry
+                    </Button>
+                }
+            >
                 <QueryBoundary
                     isLoading={classifiersQuery.isLoading}
                     isError={classifiersQuery.isError}
@@ -1106,6 +1162,7 @@ export default function ClassificationView() {
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>Name</TableCell>
+                                        <TableCell>Status</TableCell>
                                         <TableCell>Algorithm</TableCell>
                                         <TableCell>Version</TableCell>
                                         <TableCell>Macro F1</TableCell>
@@ -1123,6 +1180,13 @@ export default function ClassificationView() {
                                             >
                                                 <TableCell>
                                                     {model.name ?? model.id.slice(0, 8)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Chip
+                                                        size="small"
+                                                        label={model.lifecycle_status ?? "candidate"}
+                                                        variant="outlined"
+                                                    />
                                                 </TableCell>
                                                 <TableCell>{model.model_family}</TableCell>
                                                 <TableCell>{model.version}</TableCell>

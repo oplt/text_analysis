@@ -247,7 +247,6 @@ _SINGLE_INITIAL_RE = regex.compile(r"^[\p{L}]$", regex.VERSION1)
 _NUMBERED_LIST_PREFIX_RE = regex.compile(r"^\s*\d+$")
 
 
-
 # --- Stopword / negation inventories (small, auditable; not exhaustive) -----
 
 _EN_STOPWORDS = frozenset(
@@ -512,7 +511,6 @@ _ES_STOPWORDS = frozenset(
         "quien",
         "donde",
         "cuando",
-        "como",
         "muy",
         "más",
         "menos",
@@ -903,9 +901,13 @@ def is_false_sentence_boundary(
     period_idx = match_start + period_rel
 
     # Decimal / version-like: digit . digit
-    if period_idx > 0 and period_idx + 1 < len(text):
-        if text[period_idx - 1].isdigit() and text[period_idx + 1].isdigit():
-            return True
+    if (
+        period_idx > 0
+        and period_idx + 1 < len(text)
+        and text[period_idx - 1].isdigit()
+        and text[period_idx + 1].isdigit()
+    ):
+        return True
 
     token_start = _token_start_before(text, period_idx)
     token_end = _token_end_after(text, period_idx + 1)

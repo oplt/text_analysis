@@ -42,6 +42,10 @@ import { queryKeys } from "../../../config/queryKeys";
 import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { AnnotationSetupPanel } from "../components/AnnotationSetupPanel";
+import {
+    isBlindReliabilityCoding,
+    shouldFetchPredictions,
+} from "../annotationPredictions";
 import { useResearchContext } from "../hooks/useResearchContext";
 import type { AnnotationLabel, AnnotationQueueItem } from "../types";
 
@@ -116,11 +120,18 @@ export default function AnnotationView() {
         enabled: Boolean(ctx.selectedCorpusId),
     });
 
-    const contextQuery = useQuery({
-        queryKey: ["text-research", "unit-context", selectedUnitId],
-        queryFn: () => getTextUnitContext(selectedUnitId!, 2),
-        enabled: Boolean(selectedUnitId),
-    });
+    const queueItems = useMemo(() => {
+        const items = (queueQuery.data?.items ?? []).filter((item) => item.text_unit);
+        return items as AnnotationQueueItem[];
+    }, [queueQuery.data]);
+
+    const resolvedSelectedUnitId =
+        selectedUnitId ?? queueItems[0]?.text_unit?.id ?? null;
+
+    const selectedIndex = queueItems.findIndex(
+        (item) => item.text_unit?.id === resolvedSelectedUnitId
+    );
+    const selectedItem = selectedIndex >= 0 ? queueItems[selectedIndex] : null;
 
     const classifiersQuery = useQuery({
         queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
@@ -129,34 +140,47 @@ export default function AnnotationView() {
     });
     const selectedModelId = classifiersQuery.data?.[0]?.id ?? null;
 
-    const predictionsQuery = useQuery({
-        queryKey: ["text-research", "uncertain-predictions", selectedModelId],
-        queryFn: () => listUncertainPredictions(selectedModelId!),
-        enabled: Boolean(selectedModelId),
+    const predictionsEnabled = shouldFetchPredictions({
+        selectedModelId,
+        blindPolicy: selectedItem?.blind_policy,
+        campaign: selectedItem?.campaign,
     });
 
-    const queueItems = useMemo(() => {
-        const items = (queueQuery.data?.items ?? []).filter((item) => item.text_unit);
-        return items as AnnotationQueueItem[];
-    }, [queueQuery.data]);
+    const predictionsQuery = useQuery({
+        queryKey: [
+            "text-research",
+            "uncertain-predictions",
+            selectedModelId,
+            selectedItem?.task.campaign_id,
+            resolvedSelectedUnitId,
+        ],
+        queryFn: () =>
+            listUncertainPredictions(selectedModelId!, {
+                campaignId: selectedItem?.task.campaign_id ?? undefined,
+                textUnitId: resolvedSelectedUnitId ?? undefined,
+            }),
+        enabled: predictionsEnabled,
+    });
 
-    const selectedIndex = queueItems.findIndex((item) => item.text_unit?.id === selectedUnitId);
-    const selectedItem = selectedIndex >= 0 ? queueItems[selectedIndex] : null;
+    const contextQuery = useQuery({
+        queryKey: ["text-research", "unit-context", resolvedSelectedUnitId],
+        queryFn: () => getTextUnitContext(resolvedSelectedUnitId!, 2),
+        enabled: Boolean(resolvedSelectedUnitId),
+    });
+
     const modelPrediction = predictionsQuery.data?.find(
-        (item) => item.text_unit.id === selectedUnitId
+        (item) => item.text_unit.id === resolvedSelectedUnitId
     );
-
-    useEffect(() => {
-        if (!selectedUnitId && queueItems[0]?.text_unit?.id) {
-            setSelectedUnitId(queueItems[0].text_unit.id);
-        }
-    }, [queueItems, selectedUnitId]);
+    const blindCoding = isBlindReliabilityCoding(
+        selectedItem?.blind_policy,
+        selectedItem?.campaign
+    );
 
     useEffect(() => {
         setLabelValues({});
         setComment("");
         setConfidence(0.8);
-    }, [selectedUnitId]);
+    }, [resolvedSelectedUnitId]);
 
     function selectIndex(index: number) {
         const item = queueItems[index];
@@ -165,7 +189,7 @@ export default function AnnotationView() {
 
     const saveMutation = useMutation({
         mutationFn: async (options: { complete: boolean; advance: boolean }) => {
-            if (!selectedUnitId || !ctx.selectedCodebookId) {
+            if (!resolvedSelectedUnitId || !ctx.selectedCodebookId) {
                 throw new Error("Select a text unit and codebook.");
             }
             const values = ctx.labels.map((label) => ({
@@ -175,7 +199,7 @@ export default function AnnotationView() {
                 comment: comment.trim() || undefined,
             }));
             await saveAnnotations({
-                text_unit_id: selectedUnitId,
+                text_unit_id: resolvedSelectedUnitId,
                 codebook_id: ctx.selectedCodebookId,
                 values,
                 mark_task_complete: options.complete,
@@ -367,7 +391,7 @@ export default function AnnotationView() {
                                         key={item.task.id}
                                         size="small"
                                         variant={
-                                            item.text_unit?.id === selectedUnitId
+                                            item.text_unit?.id === resolvedSelectedUnitId
                                                 ? "contained"
                                                 : "outlined"
                                         }
@@ -409,7 +433,7 @@ export default function AnnotationView() {
                                         variant="contained"
                                         startIcon={<SaveIcon />}
                                         disabled={
-                                            !selectedUnitId ||
+                                            !resolvedSelectedUnitId ||
                                             !ctx.selectedCodebookId ||
                                             saveMutation.isPending
                                         }
@@ -474,7 +498,13 @@ export default function AnnotationView() {
                                             </Typography>
                                         ))}
 
-                                        {modelPrediction ? (
+                                        {blindCoding ? (
+                                            <Alert severity="info">
+                                                Blind reliability coding — model suggestions hidden.
+                                            </Alert>
+                                        ) : null}
+
+                                        {!blindCoding && modelPrediction ? (
                                             <Alert severity="warning">
                                                 Model suggestion (not applied):{" "}
                                                 {modelPrediction.prediction.predicted_labels.join(", ") ||

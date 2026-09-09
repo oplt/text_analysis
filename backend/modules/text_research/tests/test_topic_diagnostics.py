@@ -103,9 +103,7 @@ class SeedStabilityTests(unittest.TestCase):
         # (existing guarantee); confirm seed_stability agrees when we feed
         # it two genuinely different seeds that happen to converge similarly
         # is NOT guaranteed, so instead assert structural invariants.
-        result = topic_models.seed_stability(
-            self.texts, [1, 2, 3], algorithm="nmf", n_topics=3
-        )
+        result = topic_models.seed_stability(self.texts, [1, 2, 3], algorithm="nmf", n_topics=3)
         self.assertEqual(len(result["pairwise"]), 3)  # C(3,2)
         self.assertIn("mean_stability_jaccard", result)
         self.assertEqual(result["matching_method"], "hungarian")
