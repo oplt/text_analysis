@@ -107,6 +107,30 @@ class LayeredStageCacheTests(unittest.TestCase):
             assert loaded is not None
             self.assertEqual(loaded["payload"], {"ok": True})
 
+    def test_stale_redis_pointer_is_removed_and_can_be_recomputed(self) -> None:
+        key = self._key(stage="stale-pointer")
+        with (
+            patch.object(stage_cache, "_redis_enabled", return_value=True),
+            patch.object(stage_cache, "_get_sync_redis", return_value=self.fake_redis),
+        ):
+            stage_cache.put_stage(
+                key,
+                meta={"stage_name": "stale-pointer"},
+                payload={"worker": "A"},
+            )
+            stage_cache._l1_delete(key)
+            # Simulate worker A's shared artifact disappearing while its Redis
+            # metadata remains visible to worker B.
+            payload_path = stage_cache._entry_dir(key) / "payload.json"
+            payload_path.unlink()
+            self.assertFalse(stage_cache.has_stage(key))
+            self.assertIsNone(self.fake_redis.get(stage_cache._meta_redis_key(key)))
+            loaded = stage_cache.get_or_compute(
+                key,
+                lambda: ({"stage_name": "stale-pointer"}, {"worker": "B"}),
+            )
+        self.assertEqual(loaded["payload"], {"worker": "B"})
+
     def test_get_or_compute_runs_once_under_contention(self) -> None:
         key = self._key(stage="frequencies")
         calls: list[int] = []
@@ -124,9 +148,7 @@ class LayeredStageCacheTests(unittest.TestCase):
                 patch.object(stage_cache, "_get_sync_redis", return_value=self.fake_redis),
                 patch.object(stage_cache, "_lock_wait", return_value=2.0),
             ):
-                results.append(
-                    stage_cache.get_or_compute(key, factory, payload_format="json")
-                )
+                results.append(stage_cache.get_or_compute(key, factory, payload_format="json"))
 
         threads = [threading.Thread(target=worker) for _ in range(3)]
         for thread in threads:

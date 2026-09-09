@@ -29,7 +29,7 @@ import {
     Science as PredictIcon,
 } from "@mui/icons-material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../../app/snackbarContext";
 import { useAuth } from "../../../hooks/useAuth";
 import {
@@ -71,10 +71,8 @@ import {
 } from "../components/ResearchCharts";
 import { ResearchResultsTable } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
-import {
-    ScientificWarnings,
-    collectScientificWarnings,
-} from "../components/ScientificWarnings";
+import { ScientificWarnings } from "../components/ScientificWarnings";
+import { collectScientificWarnings } from "../components/scientificWarnings";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval } from "../runPolling";
@@ -266,6 +264,7 @@ function activeLearningStepIndex(opts: {
 export default function ClassificationView() {
     const ctx = useResearchContext();
     const navigate = useNavigate();
+    const location = useLocation();
     const client = useQueryClient();
     const { showToast } = useSnackbar();
     const { currentUser } = useAuth();
@@ -274,11 +273,21 @@ export default function ClassificationView() {
     const [minimumAgreement, setMinimumAgreement] = useState(0.66);
     const [selectedAnnotatorId, setSelectedAnnotatorId] = useState("");
     const [snapshotName, setSnapshotName] = useState("Training snapshot");
-    const [snapshotId, setSnapshotId] = useState<string | null>(null);
-
-    const [trainConfig, setTrainConfig] = useState<ClassificationTrainConfig>(
-        DEFAULT_CLASSIFICATION_TRAIN_CONFIG
+    const retrainConfig = location.state?.retrainConfig as
+        | {
+              training_dataset_snapshot_id?: string;
+              algorithm?: ClassificationTrainConfig["algorithm"];
+          }
+        | undefined;
+    const [snapshotId, setSnapshotId] = useState<string | null>(
+        retrainConfig?.training_dataset_snapshot_id ?? null
     );
+
+    const [trainConfig, setTrainConfig] = useState<ClassificationTrainConfig>(() => ({
+        ...DEFAULT_CLASSIFICATION_TRAIN_CONFIG,
+        algorithm: retrainConfig?.algorithm ?? DEFAULT_CLASSIFICATION_TRAIN_CONFIG.algorithm,
+        modelName: retrainConfig ? "Retrained model" : "",
+    }));
 
     const [trainRunId, setTrainRunId] = useState<string | null>(null);
     const [predictRunId, setPredictRunId] = useState<string | null>(null);

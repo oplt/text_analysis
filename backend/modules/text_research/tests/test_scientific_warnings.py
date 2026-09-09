@@ -32,9 +32,7 @@ class ScientificWarningTests(unittest.TestCase):
         self.assertTrue(any("Warning:" in w for w in summary["scientific_warnings"]))
 
     def test_dfm_scientific_warnings_empty_matrix(self) -> None:
-        warnings = dfm_scientific_warnings(
-            unit_count=0, feature_count=0, nnz=0, density=0.0
-        )
+        warnings = dfm_scientific_warnings(unit_count=0, feature_count=0, nnz=0, density=0.0)
         self.assertTrue(any("empty" in w.lower() for w in warnings))
 
     def test_classifier_warnings_never_claim_leakage(self) -> None:

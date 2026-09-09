@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from hashlib import sha256
 from typing import Any
 
 from fastapi import HTTPException
@@ -81,6 +82,20 @@ class ReliabilityService(ResearchAccessMixin):
                 raise HTTPException(
                     status_code=400,
                     detail="codebook_id does not match the campaign codebook",
+                )
+            campaign_status = getattr(campaign, "status", "released")
+            campaign_released = campaign_status == "released" or (
+                getattr(campaign, "reveal_after", "campaign_released") == "campaign_completed"
+                and campaign_status == "completed"
+            )
+            if (
+                campaign.blind_mode
+                and not campaign_released
+                and getattr(campaign, "created_by", None) != user_id
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Campaign reliability remains blind until released",
                 )
 
         labels = await self.repo.list_labels(codebook_id)
@@ -205,6 +220,27 @@ class ReliabilityService(ResearchAccessMixin):
                             [values_by_coder[coder_a][u] for u in shared],
                             [values_by_coder[coder_b][u] for u in shared],
                         )
+                        pairs = [
+                            (values_by_coder[coder_a][unit], values_by_coder[coder_b][unit])
+                            for unit in shared
+                        ]
+
+                        def _pair_stat(sample: list[tuple[str, str]]) -> float | None:
+                            return cohens_kappa(
+                                [left for left, _ in sample],
+                                [right for _, right in sample],
+                            ).get("kappa")
+
+                        pair_kappa = attach_ci(
+                            pair_kappa,
+                            bootstrap_unit_statistic(
+                                pairs,
+                                _pair_stat,
+                                bootstrap_samples=bootstrap_samples,
+                                confidence_level=confidence_level,
+                                random_seed=seed + 10 + i,
+                            ),
+                        )
                         pairwise_cohen[f"{coder_a}|{coder_b}"] = pair_kappa
 
             alpha = krippendorff_alpha_nominal(value_matrix)
@@ -326,11 +362,33 @@ class ReliabilityService(ResearchAccessMixin):
                 for warning in (row.get("scientific_warnings") or [])
             ],
             "labels_with_warnings": sum(
-                1
-                for row in results_by_label.values()
-                if row.get("scientific_warnings")
+                1 for row in results_by_label.values() if row.get("scientific_warnings")
             ),
         }
+
+        overlap_by_unit: dict[str, set[str]] = {}
+        for text_unit_id, _label_id, annotator_id, _value in rows:
+            overlap_by_unit.setdefault(str(text_unit_id), set()).add(str(annotator_id))
+        overlapping_unit_ids = sorted(
+            unit_id for unit_id, coders in overlap_by_unit.items() if len(coders) >= 2
+        )
+        campaign_snapshot = (
+            {
+                "id": campaign.id,
+                "name": campaign.name,
+                "status": getattr(campaign, "status", None),
+                "codebook_id": campaign.codebook_id,
+                "codebook_version": getattr(campaign, "codebook_version", None),
+                "unit_type": campaign.unit_type,
+                "annotator_ids": loads(campaign.annotator_ids_json, []) or [],
+                "assignment_strategy": getattr(campaign, "assignment_strategy", None),
+                "overlap_count": getattr(campaign, "overlap_count", None),
+                "overlap_percent": getattr(campaign, "overlap_percent", None),
+                "metadata": loads(getattr(campaign, "metadata_json", "{}"), {}) or {},
+            }
+            if campaign
+            else None
+        )
 
         parameters = {
             "codebook_id": codebook_id,
@@ -342,6 +400,14 @@ class ReliabilityService(ResearchAccessMixin):
             "bootstrap_samples": bootstrap_samples,
             "confidence_level": confidence_level,
             "random_seed": seed,
+            "campaign_status": getattr(campaign, "status", None) if campaign else None,
+            "campaign_name": campaign.name if campaign else None,
+            "campaign_snapshot": campaign_snapshot,
+            "campaign_snapshot_hash": (
+                sha256(dumps(campaign_snapshot).encode()).hexdigest() if campaign_snapshot else None
+            ),
+            "overlap_unit_ids": overlapping_unit_ids,
+            "overlap_unit_ids_hash": sha256(dumps(overlapping_unit_ids).encode()).hexdigest(),
         }
         from backend.modules.text_research.infrastructure.provenance import attach_provenance
 
@@ -356,6 +422,10 @@ class ReliabilityService(ResearchAccessMixin):
                 "campaign_name": campaign.name if campaign else None,
                 "annotation_mode": campaign.annotation_mode if campaign else None,
                 "blind_mode": campaign.blind_mode if campaign else None,
+                "campaign_status": getattr(campaign, "status", None) if campaign else None,
+                "campaign_snapshot_hash": parameters["campaign_snapshot_hash"],
+                "overlap_unit_ids_hash": parameters["overlap_unit_ids_hash"],
+                "overlap_unit_count": len(overlapping_unit_ids),
                 "bootstrap_samples": bootstrap_samples,
                 "confidence_level": confidence_level,
             },

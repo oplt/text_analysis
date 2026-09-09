@@ -46,6 +46,105 @@ def _aggregate_scores(predictions: list[Any]) -> list[float]:
 
 
 class DriftService(ResearchAccessMixin):
+    async def compare_prediction_sets(
+        self,
+        corpus_id: str,
+        *,
+        user_id: str,
+        mode: str,
+        baseline_prediction_set_id: str,
+        current_prediction_set_id: str,
+    ) -> dict[str, Any]:
+        """Compare complete persisted PredictionSets with explicit causal semantics."""
+        allowed = {"DATA_DRIFT", "PREDICTION_DRIFT", "PERFORMANCE_DRIFT", "MODEL_COMPARISON"}
+        if mode not in allowed:
+            raise HTTPException(status_code=422, detail=f"Unsupported drift mode {mode!r}")
+        corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        baseline_set = await self.get_prediction_set_or_404(
+            baseline_prediction_set_id, user_id=user_id
+        )
+        current_set = await self.get_prediction_set_or_404(
+            current_prediction_set_id, user_id=user_id
+        )
+        if baseline_set.corpus_id != corpus.id or current_set.corpus_id != corpus.id:
+            raise HTTPException(
+                status_code=422, detail="Prediction sets must belong to the requested corpus"
+            )
+        if (
+            mode == "PREDICTION_DRIFT"
+            and baseline_set.trained_model_id != current_set.trained_model_id
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "PREDICTION_DRIFT requires two PredictionSets from the same trained model; "
+                    "use MODEL_COMPARISON instead."
+                ),
+            )
+        baseline = await self._aggregates_from_prediction_set(baseline_set)
+        current = await self._aggregates_from_prediction_set(current_set)
+        report = build_drift_report(baseline=baseline, current=current)
+        report["mode"] = mode
+        report["provenance"] = {
+            "baseline_prediction_set_id": baseline_set.id,
+            "current_prediction_set_id": current_set.id,
+            "baseline_trained_model_id": baseline_set.trained_model_id,
+            "current_trained_model_id": current_set.trained_model_id,
+            "baseline_snapshot_id": baseline_set.dataset_snapshot_id,
+            "current_snapshot_id": current_set.dataset_snapshot_id,
+            "n_baseline": baseline["n"],
+            "n_current": current["n"],
+            "labeled_n": min(baseline.get("labeled_n", 0), current.get("labeled_n", 0)),
+        }
+        if mode == "PERFORMANCE_DRIFT":
+            if not baseline.get("labeled_n") or not current.get("labeled_n"):
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        "PERFORMANCE_DRIFT requires adjudicated gold labels in both PredictionSets."
+                    ),
+                )
+            report["performance"] = {
+                "baseline_accuracy": baseline["gold_accuracy"],
+                "current_accuracy": current["gold_accuracy"],
+                "difference": current["gold_accuracy"] - baseline["gold_accuracy"],
+            }
+        run = await self._persist_report(
+            corpus=corpus,
+            user_id=user_id,
+            baseline_run_id=baseline_set.analysis_run_id,
+            current_run_id=current_set.analysis_run_id,
+            report=report,
+            provenance=report["provenance"],
+        )
+        report["analysis_run_id"] = run.id
+        return report
+
+    async def _aggregates_from_prediction_set(self, prediction_set: Any) -> dict[str, Any]:
+        unit_ids = list(loads(prediction_set.metadata_json, {}).get("unit_ids") or [])
+        predictions = await self.repo.list_predictions_for_units(
+            prediction_set.trained_model_id, unit_ids
+        )
+        adjudications = await self.repo.list_adjudications_for_units(unit_ids)
+        gold_by_unit: dict[str, set[str]] = {}
+        for adjudication in adjudications:
+            gold_by_unit.setdefault(adjudication.text_unit_id, set()).add(adjudication.final_value)
+        correct = 0
+        labeled = 0
+        for prediction in predictions:
+            gold = gold_by_unit.get(prediction.text_unit_id)
+            if gold:
+                labeled += 1
+                if set(str(label) for label in loads(prediction.predicted_labels_json, [])) == gold:
+                    correct += 1
+        return {
+            "label_counts": _aggregate_label_counts(predictions),
+            "scores": _aggregate_scores(predictions),
+            "n": len(predictions),
+            "labeled_n": labeled,
+            "gold_accuracy": correct / labeled if labeled else None,
+        }
+
     async def compare_prediction_runs(
         self,
         corpus_id: str,
@@ -147,6 +246,7 @@ class DriftService(ResearchAccessMixin):
         baseline_run_id: str | None,
         current_run_id: str | None,
         report: dict[str, Any],
+        provenance: dict[str, Any] | None = None,
     ) -> AnalysisRun:
         run = await self.repo.create_run(
             AnalysisRun(
@@ -158,6 +258,7 @@ class DriftService(ResearchAccessMixin):
                     {
                         "baseline_run_id": baseline_run_id,
                         "current_run_id": current_run_id,
+                        **(provenance or {}),
                     }
                 ),
                 metrics_json=dumps(report.get("summary", {})),

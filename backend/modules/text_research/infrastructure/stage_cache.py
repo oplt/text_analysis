@@ -76,6 +76,7 @@ _PROCESS_LOCKS_GUARD = threading.Lock()
 
 _sync_redis: Any | None = None
 _sync_redis_failed = False
+_sync_redis_retry_after = 0.0
 
 
 def _settings():
@@ -100,6 +101,20 @@ def _ttl_seconds() -> int:
         return int(_settings().RESEARCH_STAGE_CACHE_TTL_SECONDS)
     except Exception:
         return 604800
+
+
+def _cache_generation() -> str:
+    try:
+        return str(getattr(_settings(), "RESEARCH_CACHE_GENERATION", "v1"))
+    except Exception:
+        return "v1"
+
+
+def _object_ttl_days() -> int:
+    try:
+        return int(getattr(_settings(), "RESEARCH_STAGE_OBJECT_TTL_DAYS", 7))
+    except Exception:
+        return 7
 
 
 def _lock_ttl() -> int:
@@ -149,7 +164,7 @@ def _l1_put(key: str, meta: dict[str, Any]) -> None:
         _L1[key] = store
         _L1_BYTES += size
         _L1.move_to_end(key)
-        while _L1 and (len(_L1) > max_entries or _L1_BYTES > max_bytes):
+        while _L1 and (len(_L1) > max_entries or max_bytes < _L1_BYTES):
             _, evicted = _L1.popitem(last=False)
             _L1_BYTES -= _estimate_size(evicted)
 
@@ -186,8 +201,8 @@ def _redis_enabled() -> bool:
 
 
 def _get_sync_redis() -> Any | None:
-    global _sync_redis, _sync_redis_failed
-    if not _redis_enabled() or _sync_redis_failed:
+    global _sync_redis, _sync_redis_failed, _sync_redis_retry_after
+    if not _redis_enabled() or (_sync_redis_failed and time.monotonic() < _sync_redis_retry_after):
         return None
     if _sync_redis is not None:
         return _sync_redis
@@ -200,15 +215,17 @@ def _get_sync_redis() -> Any | None:
     except Exception:
         logger.debug("research stage cache: Redis unavailable", exc_info=True)
         _sync_redis_failed = True
+        _sync_redis_retry_after = time.monotonic() + 1.0
         _sync_redis = None
         return None
 
 
 def reset_redis_client_for_tests() -> None:
     """Test helper: drop cached Redis client / failure latch."""
-    global _sync_redis, _sync_redis_failed
+    global _sync_redis, _sync_redis_failed, _sync_redis_retry_after
     _sync_redis = None
     _sync_redis_failed = False
+    _sync_redis_retry_after = 0.0
 
 
 def _meta_redis_key(key: str) -> str:
@@ -285,6 +302,20 @@ def _redis_delete(key: str) -> None:
         logger.debug("stage cache Redis delete failed key=%s", key, exc_info=True)
 
 
+def _redis_clear_stage_pointers() -> None:
+    """Best-effort removal for explicit cache clears; generation handles global expiry."""
+    client = _get_sync_redis()
+    if client is None or not hasattr(client, "scan_iter"):
+        return
+    try:
+        for prefix in (REDIS_META_PREFIX, REDIS_STATUS_PREFIX, REDIS_LOCK_PREFIX):
+            keys = list(client.scan_iter(match=f"{prefix}*"))
+            if keys:
+                client.delete(*keys)
+    except Exception:
+        logger.debug("stage cache Redis clear failed", exc_info=True)
+
+
 @contextmanager
 def distributed_lock(computation_hash: str, *, ttl: int | None = None, wait: float | None = None):
     """Acquire ``research:lock:{hash}``; falls back to process lock if Redis down.
@@ -352,6 +383,7 @@ def stage_cache_key(
         merged_params["preprocessing_config"] = preprocessing_config
     payload = json.dumps(
         {
+            "cache_generation": _cache_generation(),
             "engine_version": engine_version,
             "stage_name": stage_name,
             "input_checksum": input_checksum,
@@ -371,7 +403,11 @@ def compute_identity_lookup(
     engine_version: str,
 ) -> str:
     """Wrap :func:`computation_identity` for prepared-corpus stage lookups."""
-    return computation_identity(spec_hash, corpus_snapshot_hash, engine_version)
+    return computation_identity(
+        spec_hash,
+        corpus_snapshot_hash,
+        f"{engine_version}:cache-generation={_cache_generation()}",
+    )
 
 
 def _stage_cache_root() -> Path:
@@ -472,54 +508,65 @@ def _assert_not_leakage_sensitive(meta: dict[str, Any]) -> None:
         )
 
 
+def _delete_stale_pointer(key: str) -> None:
+    """Forget a pointer whose payload cannot be read from its declared L3."""
+    _l1_delete(key)
+    _redis_delete(key)
+    entry = _entry_dir(key)
+    if entry.exists():
+        shutil.rmtree(entry)
+
+
+def validate_stage_pointer(key: str, meta: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    """Return a usable cache entry, or clear all stale pointers and return ``None``.
+
+    Redis only stores metadata.  It is therefore never evidence of a cache hit
+    until the payload referred to by that metadata can actually be loaded.
+    """
+    candidate = dict(meta) if meta is not None else None
+    if candidate is None:
+        candidate = _l1_get(key) or _redis_get_meta(key)
+    if candidate is None and _meta_path(key).is_file():
+        try:
+            candidate = json.loads(_meta_path(key).read_text(encoding="utf-8"))
+        except Exception:
+            _delete_stale_pointer(key)
+            return None
+    if candidate is None:
+        return None
+    if "payload" in candidate or "payload_format" not in candidate:
+        return candidate
+    payload_format = str(candidate.get("payload_format", "json"))
+    try:
+        if candidate.get("storage_backend") == "object" and candidate.get("object_key"):
+            candidate["payload"] = _load_payload_from_object(
+                candidate["object_key"], payload_format
+            )
+        else:
+            payload_path = Path(str(candidate.get("payload_path") or ""))
+            if not payload_path.is_file():
+                raise FileNotFoundError(payload_path)
+            candidate["payload"] = _load_payload_from_disk(payload_path, payload_format)
+    except Exception:
+        logger.info("stage cache pointer stale; invalidating key=%s", key)
+        _delete_stale_pointer(key)
+        return None
+    return candidate
+
+
 def has_stage(key: str) -> bool:
-    if _l1_get(key) is not None:
-        return True
-    redis_meta = _redis_get_meta(key)
-    if redis_meta is not None:
-        return True
-    return _meta_path(key).is_file()
+    return validate_stage_pointer(key) is not None
 
 
 def get_stage(key: str) -> dict[str, Any] | None:
     """Load stage sidecar metadata; include ``payload`` when available."""
-    cached = _l1_get(key)
-    meta: dict[str, Any] | None = None
-    if cached is not None and "payload" in cached:
-        return cached
-    if cached is not None:
-        meta = dict(cached)
-    else:
-        redis_meta = _redis_get_meta(key)
-        if redis_meta is not None:
-            meta = dict(redis_meta)
-        elif _meta_path(key).is_file():
-            meta = json.loads(_meta_path(key).read_text(encoding="utf-8"))
-
-    if meta is None:
-        return None
-
-    if "payload" not in meta:
-        payload_format = meta.get("payload_format", "json")
-        try:
-            if meta.get("storage_backend") == "object" and meta.get("object_key"):
-                meta["payload"] = _load_payload_from_object(meta["object_key"], payload_format)
-            else:
-                payload_path = meta.get("payload_path")
-                if payload_path:
-                    resolved = Path(payload_path)
-                    if resolved.is_file():
-                        meta["payload"] = _load_payload_from_disk(resolved, payload_format)
-        except Exception:
-            logger.debug("stage cache payload hydrate failed key=%s", key, exc_info=True)
-
-    _l1_put(key, meta)
+    meta = validate_stage_pointer(key)
+    if meta is not None:
+        _l1_put(key, meta)
     return meta
 
 
-def _persist_object_payload(
-    key: str, blob: bytes, payload_format: str
-) -> dict[str, str] | None:
+def _persist_object_payload(key: str, blob: bytes, payload_format: str) -> dict[str, str] | None:
     """Upload payload bytes to shared object storage when configured."""
     if not _object_storage_configured():
         return None
@@ -567,12 +614,14 @@ def put_stage(
     sidecar["cache_key"] = key
     sidecar.setdefault("created_at", datetime.now(UTC).isoformat())
     sidecar.setdefault("cache_layers", ["l1", "l2", "l3"])
+    sidecar.setdefault("cache_generation", _cache_generation())
 
     artifact_path = str(entry)
     object_key: str | None = None
 
     if payload is not None:
         sidecar["payload_format"] = payload_format
+        sidecar["object_lifecycle_ttl_days"] = _object_ttl_days()
         blob = _serialize_payload(payload, payload_format)
         payload_path = entry / f"payload{_payload_extension(payload_format)}"
         payload_path.write_bytes(blob)
@@ -614,6 +663,7 @@ def invalidate(key: str | None = None) -> None:
     """Remove one cached stage or clear the entire stage cache (all layers)."""
     if key is None:
         _l1_delete(None)
+        _redis_clear_stage_pointers()
         root = _stage_cache_root()
         if root.exists():
             shutil.rmtree(root)

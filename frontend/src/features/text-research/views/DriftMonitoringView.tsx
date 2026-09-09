@@ -154,6 +154,7 @@ export default function DriftMonitoringView() {
             const currentTerms = topTermsFromCoefficients(currentCoefs);
 
             const report = await compareClassifierDrift(ctx.selectedCorpusId, {
+                mode: "MODEL_COMPARISON",
                 baseline: {
                     label_counts: baselineAgg.label_counts,
                     scores: baselineAgg.scores,
@@ -206,7 +207,7 @@ export default function DriftMonitoringView() {
         <Stack spacing={2}>
             <SectionCard
                 title="Drift monitoring"
-                description="Compare prediction, prevalence, feature, and labeled-performance signals across models. Distribution shifts are review signals — not proven degradation."
+                description="Model comparison across stored prediction samples. Use the PredictionSet API with an explicit drift mode for deployment/data drift."
                 action={
                     <Button
                         size="small"
@@ -235,6 +236,7 @@ export default function DriftMonitoringView() {
                 >
                     {!models.length ? (
                         <EmptyState
+                            icon={<DriftIcon />}
                             title="No models"
                             description="Train classifiers, run predictions, then compare baseline vs current here."
                             action={
@@ -292,12 +294,11 @@ export default function DriftMonitoringView() {
                                     }
                                     onClick={() => runDriftMutation.mutate()}
                                 >
-                                    Run drift check
+                                    Run model comparison
                                 </Button>
                             </Stack>
                             <Typography variant="caption" color="text.secondary">
-                                Uses stored predictions (label + score aggregates) and coefficient
-                                top-terms when available. Persists an auditable{" "}
+                                This is explicitly a model comparison, not a claim of deployment drift. It persists an auditable{" "}
                                 <code>drift_monitoring</code> analysis run.
                             </Typography>
                         </Stack>

@@ -23,12 +23,16 @@ export function formatMetric(value: number | null | undefined, digits = 3): stri
 /** Map backend lifecycle to registry display labels. */
 export function lifecycleDisplayLabel(status: string | null | undefined): string {
     switch (status) {
-        case "approved":
+        case "production":
             return "Production";
+        case "staging":
+            return "Staging";
         case "deprecated":
             return "Deprecated";
         case "candidate":
             return "Candidate";
+        case "archived":
+            return "Archived";
         default:
             return status?.trim() || "Unknown";
     }
@@ -38,12 +42,16 @@ export function lifecycleChipColor(
     status: string | null | undefined
 ): "success" | "default" | "warning" | "error" {
     switch (status) {
-        case "approved":
+        case "production":
             return "success";
+        case "staging":
+            return "warning";
         case "deprecated":
             return "default";
         case "candidate":
             return "warning";
+        case "archived":
+            return "default";
         default:
             return "default";
     }

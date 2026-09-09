@@ -26,6 +26,7 @@ class AnnotationCampaignStatus(StrEnum):
     DRAFT = "draft"
     ACTIVE = "active"
     COMPLETED = "completed"
+    RELEASED = "released"
     ARCHIVED = "archived"
 
 
@@ -95,8 +96,10 @@ class ModelFamily(StrEnum):
 
 class ModelLifecycleStatus(StrEnum):
     CANDIDATE = "candidate"
-    APPROVED = "approved"
+    STAGING = "staging"
+    PRODUCTION = "production"
     DEPRECATED = "deprecated"
+    ARCHIVED = "archived"
 
 
 class TopicAlgorithm(StrEnum):

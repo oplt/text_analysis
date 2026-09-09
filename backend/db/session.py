@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from contextvars import ContextVar, Token
+from time import monotonic
 from typing import Any, Literal
 
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -90,6 +92,37 @@ def describe_database_pool_policy() -> dict[str, Any]:
 # Primary engine for the API process event loop.
 engine = create_async_engine(settings.DATABASE_URL, **database_engine_kwargs(role="api"))
 
+
+def _observe_pool(role: DatabaseRole) -> None:
+    """Best-effort pool gauges; observability must never affect database I/O."""
+    try:
+        from backend.observability.prometheus_metrics import database_pool_checked_out
+
+        database_pool_checked_out.labels(role=role).set(engine.sync_engine.pool.checkedout())
+    except Exception:
+        pass
+
+
+@event.listens_for(engine.sync_engine, "checkout")
+def _observe_api_pool_checkout(*_args: Any) -> None:
+    _observe_pool("api")
+
+
+@event.listens_for(engine.sync_engine, "checkin")
+def _observe_api_pool_checkin(*_args: Any) -> None:
+    _observe_pool("api")
+
+
+def observe_session_duration(*, role: DatabaseRole, started_at: float) -> None:
+    """Record session lifetime at dependency/task scope boundaries."""
+    try:
+        from backend.observability.prometheus_metrics import database_session_duration_seconds
+
+        database_session_duration_seconds.labels(role=role).observe(monotonic() - started_at)
+    except Exception:
+        pass
+
+
 _default_sessionmaker = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
@@ -113,6 +146,28 @@ class _SessionLocalFactory:
 
 
 SessionLocal = _SessionLocalFactory()
+
+
+@event.listens_for(AsyncSession.sync_session_class, "after_commit")
+def _publish_research_run_events_after_commit(session: Any) -> None:
+    """Publish run events only after their transaction is durable."""
+    events = session.info.pop("research_run_events", [])
+    if not events:
+        return
+    from backend.modules.text_research.infrastructure.run_events import publish_run_event_envelope
+
+    try:
+        loop = __import__("asyncio").get_running_loop()
+    except RuntimeError:
+        return
+    for envelope in events:
+        loop.create_task(publish_run_event_envelope(envelope))
+
+
+@event.listens_for(AsyncSession.sync_session_class, "after_rollback")
+def _discard_research_run_events_after_rollback(session: Any) -> None:
+    """Rolled-back state is never eligible for SSE publication."""
+    session.info.pop("research_run_events", None)
 
 
 def create_worker_sessionmaker() -> tuple[AsyncEngine, async_sessionmaker[AsyncSession]]:

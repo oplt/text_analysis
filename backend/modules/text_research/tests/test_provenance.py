@@ -45,7 +45,10 @@ class ProvenanceBuilderTests(unittest.TestCase):
         self.assertEqual(payload["corpus_snapshot_hash"], "abc")
         self.assertEqual(payload["parent_artifact_checksums"], ["parent-1"])
         self.assertEqual(payload["cleaning_profile"]["id"], "clean-1")
-        self.assertEqual(payload["cleaning_profile"]["config_hash"], provenance.stable_content_hash({"strip_html": True}))
+        self.assertEqual(
+            payload["cleaning_profile"]["config_hash"],
+            provenance.stable_content_hash({"strip_html": True}),
+        )
         self.assertEqual(payload["random_seeds"]["analysis"], 7)
         self.assertIn("numpy", payload["package_versions"])
         self.assertEqual(payload["engine_version"], ENGINE_VERSION)

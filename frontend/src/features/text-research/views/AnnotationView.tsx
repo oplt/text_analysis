@@ -201,6 +201,7 @@ export default function AnnotationView() {
             await saveAnnotations({
                 text_unit_id: resolvedSelectedUnitId,
                 codebook_id: ctx.selectedCodebookId,
+                campaign_id: selectedItem?.task.campaign_id ?? undefined,
                 values,
                 mark_task_complete: options.complete,
             });

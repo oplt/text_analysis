@@ -194,6 +194,11 @@ class Settings(BaseSettings):
     RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD: int = 50
     # Layered stage cache (L1 process / L2 Redis / L3 shared artifacts).
     RESEARCH_STAGE_CACHE_TTL_SECONDS: int = 604800  # 7 days
+    # Bump this value to invalidate research-stage caches without deleting a
+    # shared object-store bucket.  Configure an equivalent lifecycle rule in
+    # S3/MinIO for the research-stage-cache/ prefix.
+    RESEARCH_CACHE_GENERATION: str = "v1"
+    RESEARCH_STAGE_OBJECT_TTL_DAYS: int = 7
     RESEARCH_STAGE_LOCK_TTL_SECONDS: int = 120
     RESEARCH_STAGE_LOCK_WAIT_SECONDS: int = 60
     RESEARCH_STAGE_L1_MAX_ENTRIES: int = 32

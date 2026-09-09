@@ -70,15 +70,18 @@ def dfm_scientific_warnings(
         warnings.append("DFM is empty — no documents or features were retained.")
     if unit_count > 0 and unit_count < 20:
         warnings.append(
-            f"Only {unit_count} DFM documents are available; sparsity and keyness estimates may be unstable."
+            f"Only {unit_count} DFM documents are available; sparsity and keyness "
+            "estimates may be unstable."
         )
     if feature_count > 0 and feature_count < 10:
         warnings.append(
-            f"Only {feature_count} features remain after pruning; interpretive comparisons may be brittle."
+            f"Only {feature_count} features remain after pruning; interpretive "
+            "comparisons may be brittle."
         )
     if sparsity >= 0.995 and nnz > 0:
         warnings.append(
-            f"DFM sparsity is {sparsity:.1%} ({nnz} non-zero cells) — memory and association stats need care."
+            f"DFM sparsity is {sparsity:.1%} ({nnz} non-zero cells) — memory and "
+            "association stats need care."
         )
     if estimated_memory_bytes is not None and estimated_memory_bytes >= 512 * 1024 * 1024:
         mb = estimated_memory_bytes / (1024 * 1024)
@@ -128,13 +131,15 @@ def classifier_scientific_warnings(
         and after_sel > max(50, n_train * 20)
     ):
         warnings.append(
-            f"Selected feature count ({after_sel}) is very large relative to train size ({n_train})."
+            f"Selected feature count ({after_sel}) is very large relative to train "
+            f"size ({n_train})."
         )
     if isinstance(after_sel, int) and after_sel == 0:
         warnings.append("Supervised feature selection retained zero features.")
     if isinstance(n_train, int) and 0 < n_train < 30:
         warnings.append(
-            f"Only {n_train} training units — holdout metrics and feature selection may be unstable."
+            f"Only {n_train} training units — holdout metrics and feature selection "
+            "may be unstable."
         )
     if isinstance(n_test, int) and 0 < n_test < 20:
         warnings.append(f"Only {n_test} test units — reported metrics have high sampling variance.")

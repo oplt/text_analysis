@@ -32,12 +32,16 @@ import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../../app/snackbarContext";
 import {
     computeReliability,
+    computeCampaignReliability,
     getRun,
     getTextUnitContext,
     listAdjudications,
+    listCampaignAdjudications,
     listAnnotationCampaigns,
     listDisagreements,
+    listCampaignDisagreements,
     saveAdjudication,
+    saveCampaignAdjudication,
     type DisagreementItem,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
@@ -48,10 +52,8 @@ import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { MatrixHeatmap, MetricCards, ReliabilityComparisonChart, ResultsInspector } from "../components/ResearchCharts";
-import {
-    ScientificWarnings,
-    collectScientificWarnings,
-} from "../components/ScientificWarnings";
+import { ScientificWarnings } from "../components/ScientificWarnings";
+import { collectScientificWarnings } from "../components/scientificWarnings";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
@@ -619,17 +621,26 @@ export default function ReliabilityView() {
     });
 
     const disagreementsQuery = useQuery({
-        queryKey: queryKeys.textResearch.disagreements(
-            ctx.selectedCorpusId,
-            ctx.selectedCodebookId
-        ),
-        queryFn: () => listDisagreements(ctx.selectedCorpusId, ctx.selectedCodebookId),
+        queryKey: [
+            ...queryKeys.textResearch.disagreements(ctx.selectedCorpusId, ctx.selectedCodebookId),
+            selectedCampaignId || "legacy",
+        ],
+        queryFn: () =>
+            selectedCampaignId
+                ? listCampaignDisagreements(selectedCampaignId, ctx.selectedCodebookId)
+                : listDisagreements(ctx.selectedCorpusId, ctx.selectedCodebookId),
         enabled: Boolean(ctx.selectedCorpusId && ctx.selectedCodebookId),
     });
 
     const adjudicationsQuery = useQuery({
-        queryKey: queryKeys.textResearch.adjudications(ctx.selectedCorpusId),
-        queryFn: () => listAdjudications(ctx.selectedCorpusId),
+        queryKey: [
+            ...queryKeys.textResearch.adjudications(ctx.selectedCorpusId),
+            selectedCampaignId || "legacy",
+        ],
+        queryFn: () =>
+            selectedCampaignId
+                ? listCampaignAdjudications(selectedCampaignId)
+                : listAdjudications(ctx.selectedCorpusId),
         enabled: Boolean(ctx.selectedCorpusId),
     });
 
@@ -686,15 +697,17 @@ export default function ReliabilityView() {
     const reliabilityMutation = useMutation({
         mutationFn: () => {
             const parsedSeed = randomSeed.trim() ? Number(randomSeed) : undefined;
-            return computeReliability(ctx.selectedCorpusId, {
+            const payload = {
                 codebook_id: ctx.selectedCodebookId,
                 label_ids: ctx.labels.map((l) => l.id),
-                campaign_id: selectedCampaignId || undefined,
                 bootstrap_samples: bootstrapSamples,
                 confidence_level: confidenceLevel,
                 random_seed:
                     parsedSeed != null && Number.isFinite(parsedSeed) ? parsedSeed : undefined,
-            });
+            };
+            return selectedCampaignId
+                ? computeCampaignReliability(selectedCampaignId, payload)
+                : computeReliability(ctx.selectedCorpusId, payload);
         },
         onSuccess: (run) => {
             setRunId(run.id);
@@ -714,12 +727,17 @@ export default function ReliabilityView() {
             comment: string;
             disagreement: DisagreementItem;
         }) => {
-            await saveAdjudication({
+            const payload = {
                 text_unit_id: options.disagreement.text_unit_id,
                 label_id: options.disagreement.label_id,
                 final_value: options.finalValue,
                 comment: options.comment.trim() || undefined,
-            });
+            };
+            if (selectedCampaignId) {
+                await saveCampaignAdjudication(selectedCampaignId, payload);
+            } else {
+                await saveAdjudication(payload);
+            }
             return { ...options, saved: options.disagreement };
         },
         onSuccess: (options) => {
@@ -846,7 +864,7 @@ export default function ReliabilityView() {
                                 sx={{ minWidth: 240 }}
                                 disabled={campaignsQuery.isLoading}
                             >
-                                <MenuItem value="">All corpus annotations</MenuItem>
+                                <MenuItem value="">Legacy / unscoped annotations</MenuItem>
                                 {campaigns.map((campaign) => (
                                     <MenuItem key={campaign.id} value={campaign.id}>
                                         {campaign.name}
@@ -968,8 +986,7 @@ export default function ReliabilityView() {
                                     title="Scientific warnings"
                                     warnings={collectScientificWarnings(
                                         metrics,
-                                        runQuery.data.results,
-                                        runQuery.data.summary
+                                        runQuery.data.results
                                     )}
                                 />
 

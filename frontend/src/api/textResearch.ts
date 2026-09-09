@@ -436,6 +436,7 @@ export async function assignCorpusAnnotationTasks(
         annotation_mode?: AnnotationMode;
         blind_mode?: boolean;
         ai_assistance_enabled?: boolean;
+        reveal_after?: string;
     }
 ): Promise<{
     assigned_count: number;
@@ -482,6 +483,7 @@ export async function createAnnotationCampaign(
         annotation_mode?: AnnotationMode;
         blind_mode?: boolean;
         ai_assistance_enabled?: boolean;
+        reveal_after?: string;
         annotator_ids?: string[];
         metadata?: Record<string, unknown>;
     }
@@ -503,6 +505,7 @@ export async function getTextUnitBlindPolicy(textUnitId: string): Promise<Annota
 export async function saveAnnotations(payload: {
     text_unit_id: string;
     codebook_id: string;
+    campaign_id?: string;
     values: Array<{ label_id: string; value: string; confidence?: number; comment?: string }>;
     mark_task_complete?: boolean;
 }): Promise<Annotation[]> {
@@ -522,13 +525,15 @@ export async function listUnitAnnotations(textUnitId: string): Promise<Annotatio
 
 export async function listAnnotationsForUnits(
     corpusId: string,
-    textUnitIds: string[]
+    textUnitIds: string[],
+    campaignId?: string
 ): Promise<Annotation[]> {
     if (!textUnitIds.length) return [];
     const search = new URLSearchParams();
     for (const id of textUnitIds) {
         search.append("text_unit_ids", id);
     }
+    if (campaignId) search.set("campaign_id", campaignId);
     return apiFetch(`${BASE}/corpora/${encodeURIComponent(corpusId)}/annotations?${search}`);
 }
 
@@ -582,6 +587,16 @@ export async function computeReliability(
     });
 }
 
+export async function computeCampaignReliability(
+    campaignId: string,
+    payload: ComputeReliabilityPayload
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/annotation-campaigns/${campaignId}/reliability`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
 export type DisagreementItem = {
     text_unit_id: string;
     label_id: string;
@@ -623,6 +638,30 @@ export async function saveAdjudication(payload: {
 
 export async function listAdjudications(corpusId: string): Promise<AdjudicationRecord[]> {
     return apiFetch(`${BASE}/corpora/${corpusId}/adjudications`);
+}
+
+export async function listCampaignDisagreements(
+    campaignId: string,
+    codebookId?: string
+): Promise<DisagreementItem[]> {
+    const query = codebookId ? `?codebook_id=${encodeURIComponent(codebookId)}` : "";
+    return apiFetch(`${BASE}/annotation-campaigns/${campaignId}/disagreements${query}`);
+}
+
+export async function saveCampaignAdjudication(
+    campaignId: string,
+    payload: Omit<Parameters<typeof saveAdjudication>[0], "campaign_id">
+): Promise<{ id: string }> {
+    return apiFetch(`${BASE}/annotation-campaigns/${campaignId}/adjudications`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function listCampaignAdjudications(
+    campaignId: string
+): Promise<AdjudicationRecord[]> {
+    return apiFetch(`${BASE}/annotation-campaigns/${campaignId}/adjudications`);
 }
 
 // ------------------------------------------------------------------
@@ -869,6 +908,7 @@ export async function previewDataset(payload: {
     annotation_source?: string;
     selected_annotator_id?: string | null;
     minimum_agreement?: number | null;
+    annotation_campaign_id?: string | null;
 }): Promise<DatasetPreview> {
     return apiFetch(`${BASE}/classifiers/dataset-preview`, {
         method: "POST",
@@ -1011,7 +1051,7 @@ export async function getClassifier(modelId: string): Promise<TrainedModel> {
 export async function updateModelLifecycle(
     modelId: string,
     payload: {
-        status: "candidate" | "approved" | "deprecated";
+        status: "candidate" | "staging" | "production" | "deprecated" | "archived";
         notes?: string | null;
         deprecate_others?: boolean;
     }
@@ -1020,6 +1060,22 @@ export async function updateModelLifecycle(
         method: "PATCH",
         body: JSON.stringify(payload),
     });
+}
+
+export type ModelLifecycleEvent = {
+    id: string;
+    model_id: string;
+    from_status: string | null;
+    to_status: string;
+    actor_id: string | null;
+    reason: string | null;
+    run_id: string | null;
+    metadata: Record<string, unknown>;
+    created_at: string;
+};
+
+export async function listModelLifecycleEvents(modelId: string): Promise<ModelLifecycleEvent[]> {
+    return apiFetch(`${BASE}/models/${encodeURIComponent(modelId)}/lifecycle-events`);
 }
 
 export async function cloneClassifierConfig(modelId: string): Promise<Record<string, unknown>> {
@@ -1087,21 +1143,70 @@ export async function getPredictionSet(predictionSetId: string): Promise<{
     return apiFetch(`${BASE}/prediction-sets/${encodeURIComponent(predictionSetId)}`);
 }
 
+export type PredictionSetPredictionPage = {
+    items: Array<{
+        prediction: {
+            id: string;
+            trained_model_id: string;
+            text_unit_id: string;
+            predicted_labels: string[];
+            scores: Record<string, number>;
+            uncertainty: number | null;
+            created_at: string;
+        };
+        human_annotations: Array<{ label_id: string; value: string }>;
+        adjudications: Array<{ label_id: string; final_value: string }>;
+        review_status: "unreviewed" | "annotated" | "adjudicated";
+        human_disagreement: boolean;
+        provenance_layers: Record<string, unknown>;
+    }>;
+    total: number;
+    limit: number;
+    offset: number;
+};
+
+export async function listPredictionSetPredictions(
+    predictionSetId: string,
+    options: {
+        limit?: number;
+        offset?: number;
+        predictedLabel?: string;
+        minConfidence?: number;
+        maxUncertainty?: number;
+        reviewStatus?: string;
+        humanDisagreement?: boolean;
+    } = {}
+): Promise<PredictionSetPredictionPage> {
+    const query = new URLSearchParams({
+        limit: String(options.limit ?? 100),
+        offset: String(options.offset ?? 0),
+    });
+    if (options.predictedLabel) query.set("predicted_label", options.predictedLabel);
+    if (options.minConfidence != null) query.set("min_confidence", String(options.minConfidence));
+    if (options.maxUncertainty != null) query.set("max_uncertainty", String(options.maxUncertainty));
+    if (options.reviewStatus) query.set("review_status", options.reviewStatus);
+    if (options.humanDisagreement) query.set("human_disagreement", "true");
+    return apiFetch(`${BASE}/prediction-sets/${encodeURIComponent(predictionSetId)}/predictions?${query}`);
+}
+
 export async function compareClassifierDrift(
     corpusId: string,
     payload: {
-        baseline: {
+        baseline?: {
             label_counts?: Record<string, number>;
             scores?: number[];
             top_terms?: string[];
         };
-        current: {
+        current?: {
             label_counts?: Record<string, number>;
             scores?: number[];
             top_terms?: string[];
         };
         baseline_run_id?: string | null;
         current_run_id?: string | null;
+        mode?: "DATA_DRIFT" | "PREDICTION_DRIFT" | "PERFORMANCE_DRIFT" | "MODEL_COMPARISON";
+        baseline_prediction_set_id?: string;
+        current_prediction_set_id?: string;
     }
 ): Promise<Record<string, unknown>> {
     return apiFetch(`${BASE}/corpora/${encodeURIComponent(corpusId)}/monitoring/drift`, {

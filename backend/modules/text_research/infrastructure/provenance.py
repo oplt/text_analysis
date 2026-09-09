@@ -143,9 +143,7 @@ def application_version() -> str | None:
 
 
 def python_version() -> str:
-    return (
-        f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-    )
+    return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
 
 
 def package_lock_checksum(*, search_roots: list[Path] | None = None) -> dict[str, Any] | None:
@@ -357,18 +355,19 @@ def build_run_provenance(
         "cleaning_profile": cleaning,
         "preprocessing_profile": prep_profile,
         "preprocessing_profile_id": (prep_profile or {}).get("id") if prep_profile else None,
-        "preprocessing_config": (prep_profile or {}).get("config") if prep_profile else preprocessing_config,
-        "preprocessing_config_hash": (prep_profile or {}).get("config_hash") if prep_profile else (
-            stable_content_hash(preprocessing_config) if preprocessing_config else None
-        ),
+        "preprocessing_config": (prep_profile or {}).get("config")
+        if prep_profile
+        else preprocessing_config,
+        "preprocessing_config_hash": (prep_profile or {}).get("config_hash")
+        if prep_profile
+        else (stable_content_hash(preprocessing_config) if preprocessing_config else None),
         "preprocessing_implementation": runtime["preprocessing_implementation"],
         "preprocessing_implementation_detail": preprocessing_impl,
         "implementation_version": implementation_version
         or runtime["preprocessing_implementation_version"],
         "nlp_model": resolved_nlp,
         # Features / model
-        "feature_configuration": feature_configuration
-        or from_spec.get("feature_configuration"),
+        "feature_configuration": feature_configuration or from_spec.get("feature_configuration"),
         "feature_selection_configuration": feature_selection_configuration
         or from_spec.get("feature_selection_configuration"),
         "algorithm": algorithm or from_spec.get("algorithm"),
@@ -451,7 +450,9 @@ def attach_provenance(
         random_seed=random_seed if random_seed is not None else payload.get("random_seed"),
         nlp_model=nlp_model,
         implementation_version=implementation_version,
-        corpus_snapshot_id=corpus_snapshot_id or payload.get("snapshot_id") or payload.get("corpus_snapshot_id"),
+        corpus_snapshot_id=corpus_snapshot_id
+        or payload.get("snapshot_id")
+        or payload.get("corpus_snapshot_id"),
         corpus_snapshot_hash=corpus_snapshot_hash,
         campaign_id=campaign_id if campaign_id is not None else payload.get("campaign_id"),
         codebook_id=codebook_id if codebook_id is not None else payload.get("codebook_id"),
@@ -490,18 +491,18 @@ def merge_completion_provenance(
 ) -> dict[str, Any]:
     """Deep-merge completion-time fields into an existing provenance block."""
     payload = dict(parameters)
-    existing = (
-        dict(payload["provenance"])
-        if isinstance(payload.get("provenance"), dict)
-        else {}
-    )
+    existing = dict(payload["provenance"]) if isinstance(payload.get("provenance"), dict) else {}
     for key, value in updates.items():
         if value is None:
             continue
         if key == "extra" and isinstance(value, dict):
             prior_extra = existing.get("extra") if isinstance(existing.get("extra"), dict) else {}
             existing["extra"] = {**prior_extra, **value}
-        elif key in {"output_artifact_checksums", "input_artifact_checksums", "parent_artifact_checksums"}:
+        elif key in {
+            "output_artifact_checksums",
+            "input_artifact_checksums",
+            "parent_artifact_checksums",
+        }:
             prior = existing.get(key) if isinstance(existing.get(key), list) else []
             merged = list(prior)
             for item in value if isinstance(value, list) else [value]:
@@ -524,9 +525,7 @@ def enrich_provenance_response(
 ) -> dict[str, Any]:
     """Augment stored provenance for API responses with row lifecycle + results."""
     provenance = (
-        dict(parameters["provenance"])
-        if isinstance(parameters.get("provenance"), dict)
-        else {}
+        dict(parameters["provenance"]) if isinstance(parameters.get("provenance"), dict) else {}
     )
     results = results or {}
 

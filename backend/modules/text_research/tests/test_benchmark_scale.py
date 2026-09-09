@@ -15,12 +15,12 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import resource
 import tempfile
 import time
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 from backend.modules.text_research.application.prediction_service import _prediction_row
 from backend.modules.text_research.domain.models import AnalysisRun
@@ -124,7 +124,14 @@ def _base_row(benchmark: str, **fields: object) -> dict:
         "benchmark": benchmark,
         "engine_version": ENGINE_VERSION,
         "git_sha_env": os.environ.get("GITHUB_SHA") or os.environ.get("GIT_COMMIT"),
+        "machine": {
+            "system": platform.system(),
+            "machine": platform.machine(),
+            "python": platform.python_version(),
+            "cpu_count": os.cpu_count(),
+        },
         "peak_rss_mb": _peak_rss_mb(),
+        "db_query_count": 0,
         **fields,
     }
 
@@ -183,6 +190,7 @@ class ScaleBenchmarkTests(unittest.TestCase):
         row = _base_row(
             "scale_prepare_dfm",
             n_units=n_units,
+            n_documents=n_units,
             prepare_seconds=round(prepare_seconds, 4),
             tokenization_tokens=token_count,
             tokenization_tokens_per_sec=round(tokens_per_sec, 2) if tokens_per_sec else None,
@@ -194,6 +202,9 @@ class ScaleBenchmarkTests(unittest.TestCase):
             corpus_checksum=prepared.corpus_checksum,
             pipeline_checksum=prepared.pipeline_checksum,
             cache_reuse_observed=cache_reuse,
+            cache_hit_ratio=1.0 if cache_reuse else 0.0,
+            artifact_sizes={},
+            algorithm_config={"preprocessing": self.config, "dfm": dfm["vectorizer_mode"]},
             out_of_core=should_use_out_of_core(n_units),
             dfm_units=dfm["dimensions"]["units"],
             dfm_features=dfm["dimensions"]["features"],
@@ -389,19 +400,18 @@ class WorkflowBenchmarkTests(unittest.TestCase):
         started = time.perf_counter()
         previous = None
         names: list[str] = []
-        with patch.object(run_events, "_get_sync_redis", return_value=None):
-            for index in range(n_events):
-                run.progress_stage = f"stage-{index % 20}"
-                name = run_events.publish_run_event(
-                    run,
-                    previous=previous,
-                )
-                names.append(name)
-                previous = {
-                    "status": run.status,
-                    "progress_stage": run.progress_stage,
-                    "artifact_path": run.artifact_path,
-                }
+        for index in range(n_events):
+            run.progress_stage = f"stage-{index % 20}"
+            name, _envelope = run_events.run_event_envelope(
+                run,
+                previous=previous,
+            )
+            names.append(name)
+            previous = {
+                "status": run.status,
+                "progress_stage": run.progress_stage,
+                "artifact_path": run.artifact_path,
+            }
         seconds = time.perf_counter() - started
         _record(
             self.report_path,

@@ -58,10 +58,8 @@ import {
     ReadabilityView,
     SimilarityExplorer,
 } from "../components/AdvancedAnalysisPanels";
-import {
-    ScientificWarnings,
-    collectScientificWarnings,
-} from "../components/ScientificWarnings";
+import { ScientificWarnings } from "../components/ScientificWarnings";
+import { collectScientificWarnings } from "../components/scientificWarnings";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
@@ -580,7 +578,7 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                         {
                             label: "Est. memory",
                             value:
-                                memoryBytes == null
+                                typeof memoryBytes !== "number"
                                     ? "—"
                                     : `${(memoryBytes / (1024 * 1024)).toFixed(1)} MiB`,
                         },
@@ -983,14 +981,18 @@ export default function AnalysisView() {
         readability: overviewMutation,
     } as const;
 
-    const activeMutation = mutationByTab[tab];
+    // statistical / measurement tabs own their mutations in child views.
+    const activeMutation =
+        tab in mutationByTab
+            ? mutationByTab[tab as keyof typeof mutationByTab]
+            : null;
     const selectedDictionary = dictionariesQuery.data?.find((d) => d.id === dictionaryId);
     const resolvedDictionaryTerms = parseCommaTerms(dictionaryTerms);
     const hasDictionaryInput =
         resolvedDictionaryTerms.length > 0 || Boolean(selectedDictionary?.terms?.length);
 
     const canRun = (() => {
-        if (!ctx.selectedCorpusId || activeMutation.isPending) return false;
+        if (!ctx.selectedCorpusId || !activeMutation || activeMutation.isPending) return false;
         if (tab === "kwic") return Boolean(kwicKeyword.trim());
         if (tab === "keyness") return Boolean(keynessA.trim() && keynessB.trim());
         if (tab === "dictionaries") return hasDictionaryInput;
@@ -1011,14 +1013,6 @@ export default function AnalysisView() {
         );
     }
 
-    const advancedPanel =
-        tab === "similarity" ? <SimilarityExplorer basePayload={basePayload} />
-            : tab === "duplicates" ? <DuplicateDetectionView basePayload={basePayload} />
-            : tab === "clustering" ? <ClusterExplorer basePayload={basePayload} />
-            : tab === "dimensionality" ? <DimensionalityReductionView basePayload={basePayload} />
-            : tab === "readability" ? <ReadabilityView basePayload={basePayload} />
-            : null;
-
     if (tab === "statistical" || tab === "measurement") {
         return (
             <Stack spacing={2}>
@@ -1032,6 +1026,14 @@ export default function AnalysisView() {
             </Stack>
         );
     }
+
+    const advancedPanel =
+        tab === "similarity" ? <SimilarityExplorer basePayload={basePayload} />
+            : tab === "duplicates" ? <DuplicateDetectionView basePayload={basePayload} />
+            : tab === "clustering" ? <ClusterExplorer basePayload={basePayload} />
+            : tab === "dimensionality" ? <DimensionalityReductionView basePayload={basePayload} />
+            : tab === "readability" ? <ReadabilityView basePayload={basePayload} />
+            : null;
 
     if (advancedPanel) {
         return (
@@ -1353,7 +1355,7 @@ export default function AnalysisView() {
                     <Button
                         variant="contained"
                         startIcon={<RunIcon />}
-                        onClick={() => activeMutation.mutate()}
+                        onClick={() => activeMutation?.mutate()}
                         disabled={!canRun}
                         sx={{ alignSelf: "flex-start" }}
                     >

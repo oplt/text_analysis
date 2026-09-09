@@ -279,6 +279,7 @@ class AnnotationCampaign(Base):
     blind_mode: Mapped[bool] = mapped_column(default=True)
     ai_assistance_enabled: Mapped[bool] = mapped_column(default=False)
     annotation_mode: Mapped[str] = mapped_column(String(32), default="blind_reliability")
+    reveal_after: Mapped[str] = mapped_column(String(32), default="campaign_released")
     status: Mapped[str] = mapped_column(String(32), default="active", index=True)
     annotator_ids_json: Mapped[str] = mapped_column(Text, default="[]")
     created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
@@ -291,7 +292,12 @@ class AnnotationCampaign(Base):
 class AnnotationTask(Base):
     __tablename__ = "research_annotation_tasks"
     __table_args__ = (
-        UniqueConstraint("text_unit_id", "annotator_id", name="uq_annotation_task_unit_annotator"),
+        UniqueConstraint(
+            "campaign_id",
+            "text_unit_id",
+            "annotator_id",
+            name="uq_annotation_task_campaign_unit_annotator",
+        ),
     )
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
@@ -315,15 +321,22 @@ class Annotation(Base):
     __tablename__ = "research_annotations"
     __table_args__ = (
         UniqueConstraint(
+            "campaign_id",
             "text_unit_id",
             "label_id",
             "annotator_id",
             "codebook_version",
-            name="uq_annotation_unit_label_annotator_version",
+            name="uq_annotation_campaign_unit_label_annotator_version",
         ),
     )
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    # NULL denotes legacy/unscoped evidence; it is never inferred into a campaign.
+    campaign_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_annotation_campaigns.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     text_unit_id: Mapped[str] = mapped_column(
         ForeignKey("research_text_units.id", ondelete="CASCADE"), index=True
     )
@@ -346,10 +359,22 @@ class Annotation(Base):
 class Adjudication(Base):
     __tablename__ = "research_adjudications"
     __table_args__ = (
-        UniqueConstraint("text_unit_id", "label_id", name="uq_adjudication_unit_label"),
+        UniqueConstraint(
+            "campaign_id",
+            "text_unit_id",
+            "label_id",
+            "codebook_version",
+            name="uq_adjudication_campaign_unit_label_version",
+        ),
     )
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    # NULL denotes a legacy/unscoped adjudication and is not assigned retroactively.
+    campaign_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_annotation_campaigns.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     text_unit_id: Mapped[str] = mapped_column(
         ForeignKey("research_text_units.id", ondelete="CASCADE"), index=True
     )
@@ -383,6 +408,16 @@ class TrainingDatasetSnapshot(Base):
     codebook_version: Mapped[str] = mapped_column(String(64))
     annotation_source: Mapped[str] = mapped_column(String(64))
     minimum_agreement: Mapped[float | None] = mapped_column(Float, nullable=True)
+    annotation_campaign_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_annotation_campaigns.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    annotation_campaign_snapshot_hash: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    adjudication_policy: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    gold_source: Mapped[str | None] = mapped_column(String(64), nullable=True)
     unit_ids_json: Mapped[str] = mapped_column(Text)
     document_ids_json: Mapped[str] = mapped_column(Text)
     labels_json: Mapped[str] = mapped_column(Text)
@@ -403,6 +438,7 @@ class AnalysisRun(Base):
     )
     run_type: Mapped[str] = mapped_column(String(64), index=True)
     status: Mapped[str] = mapped_column(String(32), default="queued", index=True)
+    run_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     progress_stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
     parameters_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     metrics_json: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -452,6 +488,28 @@ class TrainedModel(Base):
         DateTime(timezone=True), nullable=True
     )
     created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class ModelLifecycleEvent(Base):
+    """Append-only audit trail for trained-model lifecycle transitions."""
+
+    __tablename__ = "research_model_lifecycle_events"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    model_id: Mapped[str] = mapped_column(
+        ForeignKey("research_trained_models.id", ondelete="CASCADE"), index=True
+    )
+    from_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    to_status: Mapped[str] = mapped_column(String(32))
+    actor_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    run_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_analysis_runs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    metadata_json: Mapped[str] = mapped_column(Text, default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 

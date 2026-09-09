@@ -59,6 +59,7 @@ export type AnalysisRun = {
     corpus_id: string | null;
     run_type: string;
     status: string;
+    run_version?: number;
     progress_stage: string | null;
     parameters: Record<string, unknown> | null;
     metrics: Record<string, unknown> | null;
@@ -86,14 +87,14 @@ export type TrainedModel = {
     metrics: Record<string, unknown>;
     version: number;
     name: string | null;
-    lifecycle_status: "candidate" | "approved" | "deprecated" | string;
+    lifecycle_status: "candidate" | "staging" | "production" | "deprecated" | "archived" | string;
     lifecycle_notes: string | null;
     lifecycle_updated_at: string | null;
     created_by: string;
     created_at: string;
 };
 
-export type ModelLifecycleStatus = "candidate" | "approved" | "deprecated";
+export type ModelLifecycleStatus = "candidate" | "staging" | "production" | "deprecated" | "archived";
 
 export type PredictionSetSummary = {
     id: string;
@@ -147,6 +148,10 @@ export type TrainingDatasetSnapshot = {
     codebook_version: string;
     annotation_source: string;
     minimum_agreement: number | null;
+    annotation_campaign_id?: string | null;
+    annotation_campaign_snapshot_hash?: string | null;
+    adjudication_policy?: string | null;
+    gold_source?: string | null;
     created_by: string;
     created_at: string;
 };
@@ -217,6 +222,7 @@ export type Annotation = {
     confidence: number | null;
     comment: string | null;
     codebook_version: string;
+    campaign_id?: string | null;
     created_at: string;
     updated_at: string;
 };
@@ -240,6 +246,7 @@ export type AnnotationCampaign = {
     blind_mode: boolean;
     ai_assistance_enabled: boolean;
     annotation_mode: AnnotationMode;
+    reveal_after: string;
     status: string;
     annotator_ids: string[];
     created_by: string;
@@ -254,6 +261,8 @@ export type AnnotationBlindPolicy = {
     hide_model_predictions: boolean;
     hide_peer_annotations?: boolean;
     hide_adjudications?: boolean;
+    reveal_after?: string;
+    released?: boolean;
     ai_assistance_enabled: boolean;
 };
 

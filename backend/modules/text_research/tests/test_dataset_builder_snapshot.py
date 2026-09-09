@@ -57,6 +57,21 @@ class BuildSnapshotMetadataTests(unittest.TestCase):
         self.assertEqual(metadata["minimum_agreement"], 0.75)
         self.assertEqual(metadata["frozen_at"], frozen_at.isoformat())
 
+    def test_captures_campaign_scoped_gold_provenance(self):
+        metadata = build_snapshot_metadata(
+            codebook_version="2.0",
+            annotation_source="adjudicated_only",
+            selected_annotator_id=None,
+            minimum_agreement=None,
+            annotation_campaign_id="campaign-1",
+            annotation_campaign_snapshot_hash="a" * 64,
+            adjudication_policy="adjudicated_only",
+            gold_source="campaign_adjudication",
+        )
+        self.assertEqual(metadata["annotation_campaign_id"], "campaign-1")
+        self.assertEqual(metadata["annotation_campaign_snapshot_hash"], "a" * 64)
+        self.assertEqual(metadata["gold_source"], "campaign_adjudication")
+
 
 class SnapshotAccessorTests(unittest.TestCase):
     """Static accessors read straight from a persisted snapshot's JSON payload."""

@@ -38,7 +38,7 @@ def _model(*, model_id: str = "model-1", status: str = "candidate") -> TrainedMo
 
 
 class ModelLifecycleTransitionTests(unittest.IsolatedAsyncioTestCase):
-    async def test_candidate_to_approved_to_deprecated(self) -> None:
+    async def test_candidate_to_production_to_deprecated(self) -> None:
         model = _model()
         service = ModelLifecycleService(MagicMock())
         service.get_model_or_404 = AsyncMock(return_value=model)
@@ -46,8 +46,8 @@ class ModelLifecycleTransitionTests(unittest.IsolatedAsyncioTestCase):
         service.db.flush = AsyncMock()
         service.db.commit = AsyncMock()
 
-        approved = await service.set_status("model-1", user_id="user-1", status="approved")
-        self.assertEqual(approved.lifecycle_status, "approved")
+        approved = await service.set_status("model-1", user_id="user-1", status="production")
+        self.assertEqual(approved.lifecycle_status, "production")
 
         deprecated = await service.set_status(
             "model-1", user_id="user-1", status="deprecated", notes="retired"
@@ -59,7 +59,7 @@ class ModelLifecycleTransitionTests(unittest.IsolatedAsyncioTestCase):
         service = ModelLifecycleService(MagicMock())
         service.get_model_or_404 = AsyncMock(return_value=_model())
         with self.assertRaises(HTTPException) as ctx:
-            await service.set_status("model-1", user_id="user-1", status="archived")
+            await service.set_status("model-1", user_id="user-1", status="unknown")
         self.assertEqual(ctx.exception.status_code, 422)
 
 

@@ -16,15 +16,14 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
+import { Science as PredictionIcon } from "@mui/icons-material";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
     getClassifier,
-    getPredictionSet,
-    listAdjudications,
-    listAnnotationsForUnits,
     listModels,
     listPredictionSets,
+    listPredictionSetPredictions,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
@@ -36,11 +35,10 @@ import { formatMetric, modelDisplayName, num } from "../modelRegistryUtils";
 import {
     DEFAULT_PREDICTION_SET_FILTERS,
     PREDICTION_LAYER_LABELS,
-    buildPredictionRows,
-    filterPredictionRows,
     type PredictionSetFilters,
     type ReviewStatus,
 } from "../predictionSetFilters";
+import type { TrainedModel } from "../types";
 
 function scoresSummary(scores: Record<string, number>): string {
     const entries = Object.entries(scores).sort((a, b) => b[1] - a[1]);
@@ -59,6 +57,7 @@ export default function PredictionSetsView() {
 
     const [modelFilter, setModelFilter] = useState("");
     const [filters, setFilters] = useState<PredictionSetFilters>(DEFAULT_PREDICTION_SET_FILTERS);
+    const [pageOffset, setPageOffset] = useState(0);
 
     const setsQuery = useQuery({
         queryKey: queryKeys.textResearch.predictionSets(ctx.selectedCorpusId),
@@ -73,13 +72,13 @@ export default function PredictionSetsView() {
         enabled: Boolean(ctx.projectId),
     });
 
-    const modelsById = useMemo(() => {
-        const map = new Map<string, (typeof modelsQuery.data)[number]>();
+    const modelsById = (() => {
+        const map = new Map<string, TrainedModel>();
         for (const model of modelsQuery.data ?? []) {
             map.set(model.id, model);
         }
         return map;
-    }, [modelsQuery.data]);
+    })();
 
     const sets = useMemo(() => {
         const all = setsQuery.data ?? [];
@@ -87,62 +86,48 @@ export default function PredictionSetsView() {
         return all.filter((item) => item.trained_model_id === modelFilter);
     }, [setsQuery.data, modelFilter]);
 
-    const detailQuery = useQuery({
-        queryKey: queryKeys.textResearch.predictionSet(selectedSetId),
-        queryFn: () => getPredictionSet(selectedSetId),
+    const selectedSet = (setsQuery.data ?? []).find((item) => item.id === selectedSetId) ?? null;
+    const pageQuery = useQuery({
+        queryKey: ["text-research", "prediction-set-page", selectedSetId, pageOffset, filters],
+        queryFn: () =>
+            listPredictionSetPredictions(selectedSetId, {
+                limit: 100,
+                offset: pageOffset,
+                predictedLabel: filters.predictedLabel || undefined,
+                minConfidence: filters.minConfidence ? Number(filters.minConfidence) : undefined,
+                maxUncertainty: filters.maxUncertainty ? Number(filters.maxUncertainty) : undefined,
+                reviewStatus: filters.reviewStatus || undefined,
+                humanDisagreement: filters.humanDisagreementOnly || undefined,
+            }),
         enabled: Boolean(selectedSetId),
     });
 
-    const detail = detailQuery.data ?? null;
-    const unitIds = useMemo(
-        () => [...new Set((detail?.predictions ?? []).map((row) => row.text_unit_id))],
-        [detail?.predictions]
-    );
-
-    const annotationsQuery = useQuery({
-        queryKey: [
-            "text-research",
-            "prediction-set-annotations",
-            detail?.corpus_id,
-            selectedSetId,
-            unitIds.length,
-        ],
-        queryFn: () => listAnnotationsForUnits(detail!.corpus_id, unitIds),
-        enabled: Boolean(detail?.corpus_id && unitIds.length),
-    });
-
-    const adjudicationsQuery = useQuery({
-        queryKey: queryKeys.textResearch.adjudications(detail?.corpus_id ?? ""),
-        queryFn: () => listAdjudications(detail!.corpus_id),
-        enabled: Boolean(detail?.corpus_id),
-    });
-
     const sourceModelQuery = useQuery({
-        queryKey: queryKeys.textResearch.model(detail?.trained_model_id ?? ""),
-        queryFn: () => getClassifier(detail!.trained_model_id),
-        enabled: Boolean(detail?.trained_model_id),
+        queryKey: queryKeys.textResearch.model(selectedSet?.trained_model_id ?? ""),
+        queryFn: () => getClassifier(selectedSet!.trained_model_id),
+        enabled: Boolean(selectedSet?.trained_model_id),
     });
 
-    const rows = useMemo(
-        () =>
-            buildPredictionRows({
-                predictions: detail?.predictions ?? [],
-                annotations: annotationsQuery.data ?? [],
-                adjudications: (adjudicationsQuery.data ?? []).filter((row) =>
-                    unitIds.includes(row.text_unit_id)
-                ),
-            }),
-        [detail?.predictions, annotationsQuery.data, adjudicationsQuery.data, unitIds]
-    );
-
-    const filteredRows = useMemo(
-        () => filterPredictionRows(rows, filters),
-        [rows, filters]
-    );
+    const rows = useMemo(() => (pageQuery.data?.items ?? []).map((item) => {
+        const humanValues = [...new Set(item.human_annotations.map((row) => row.value))].sort();
+        const goldValues = [...new Set(item.adjudications.map((row) => row.final_value))].sort();
+        const predicted = new Set(item.prediction.predicted_labels);
+        const gold = new Set(goldValues);
+        return {
+            ...item.prediction,
+            human_values: humanValues,
+            gold_values: goldValues,
+            review_status: item.review_status,
+            human_disagreement: item.human_disagreement,
+            model_vs_gold_disagreement: gold.size > 0 &&
+                (predicted.size !== gold.size || [...predicted].some((label) => !gold.has(label))),
+        };
+    }), [pageQuery.data]);
 
     const openSet = (id: string) => {
         setSearchParams(id ? { set: id } : {});
         setFilters(DEFAULT_PREDICTION_SET_FILTERS);
+        setPageOffset(0);
     };
 
     if (!ctx.projectId) {
@@ -200,8 +185,9 @@ export default function PredictionSetsView() {
                         >
                             {!sets.length ? (
                                 <EmptyState
+                                    icon={<PredictionIcon />}
                                     title="No prediction sets"
-                                    description="Run Predict on an approved or candidate model to create a prediction set."
+                                    description="Run Predict on a candidate, staging, or production model to create a prediction set."
                                     action={
                                         <Button
                                             variant="contained"
@@ -300,12 +286,12 @@ export default function PredictionSetsView() {
                     }
                 >
                     <QueryBoundary
-                        isLoading={detailQuery.isLoading}
-                        isError={detailQuery.isError}
-                        error={detailQuery.error}
-                        onRetry={() => void detailQuery.refetch()}
+                        isLoading={pageQuery.isLoading}
+                        isError={pageQuery.isError}
+                        error={pageQuery.error}
+                        onRetry={() => void pageQuery.refetch()}
                     >
-                        {detail ? (
+                        {selectedSet ? (
                             <Stack spacing={2}>
                                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                                     <Chip
@@ -331,14 +317,14 @@ export default function PredictionSetsView() {
                                         Source model:{" "}
                                         {sourceModelQuery.data
                                             ? modelDisplayName(sourceModelQuery.data)
-                                            : detail.trained_model_id}{" "}
-                                        (v{detail.model_version})
+                                            : selectedSet.trained_model_id}{" "}
+                                        (v{selectedSet.model_version})
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
                                         Corpus snapshot:{" "}
-                                        {detail.dataset_snapshot_id ?? "—"} · Created{" "}
-                                        {new Date(detail.created_at).toLocaleString()} · Run{" "}
-                                        {detail.analysis_run_id.slice(0, 8)}…
+                                        {selectedSet.dataset_snapshot_id ?? "—"} · Created{" "}
+                                        {new Date(selectedSet.created_at).toLocaleString()} · Run{" "}
+                                        {selectedSet.analysis_run_id.slice(0, 8)}…
                                     </Typography>
                                 </Box>
 
@@ -432,10 +418,7 @@ export default function PredictionSetsView() {
                                 </Stack>
 
                                 <Typography variant="caption" color="text.secondary">
-                                    Showing {filteredRows.length} of {rows.length} predictions
-                                    {annotationsQuery.isLoading || adjudicationsQuery.isLoading
-                                        ? " (loading human/gold layers…)"
-                                        : ""}
+                                    Showing {pageOffset + 1}–{pageOffset + rows.length} of {pageQuery.data?.total ?? 0} predictions
                                 </Typography>
 
                                 <Box sx={{ overflowX: "auto" }}>
@@ -459,7 +442,7 @@ export default function PredictionSetsView() {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {filteredRows.slice(0, 200).map((row) => (
+                                            {rows.map((row) => (
                                                 <TableRow key={row.id}>
                                                     <TableCell>
                                                         <Typography
@@ -522,14 +505,19 @@ export default function PredictionSetsView() {
                                     </Table>
                                 </Box>
 
+                                <Stack direction="row" spacing={1}>
+                                    <Button size="small" disabled={pageOffset === 0} onClick={() => setPageOffset((offset) => Math.max(0, offset - 100))}>Previous</Button>
+                                    <Button size="small" disabled={pageOffset + rows.length >= (pageQuery.data?.total ?? 0)} onClick={() => setPageOffset((offset) => offset + 100)}>Next</Button>
+                                </Stack>
+
                                 <ResultsInspector
                                     title="prediction set metadata"
                                     data={{
-                                        id: detail.id,
-                                        trained_model_id: detail.trained_model_id,
-                                        dataset_snapshot_id: detail.dataset_snapshot_id,
-                                        analysis_run_id: detail.analysis_run_id,
-                                        metadata: detail.metadata,
+                                        id: selectedSet.id,
+                                        trained_model_id: selectedSet.trained_model_id,
+                                        dataset_snapshot_id: selectedSet.dataset_snapshot_id,
+                                        analysis_run_id: selectedSet.analysis_run_id,
+                                        metadata: selectedSet.metadata,
                                         note: "Predictions listed above are model outputs only; human/gold columns are joined for review and never written back as gold.",
                                     }}
                                 />

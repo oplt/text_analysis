@@ -26,6 +26,7 @@ from backend.modules.text_research.domain.models import (
     ContextualObservation,
     CorpusDocument,
     DictionaryDefinition,
+    ModelLifecycleEvent,
     ModelPrediction,
     PredictionSet,
     PreprocessingProfile,
@@ -827,19 +828,36 @@ class ResearchRepository:
     # AnnotationTask
     # ------------------------------------------------------------------
 
-    async def get_task(self, text_unit_id: str, annotator_id: str) -> AnnotationTask | None:
-        result = await self.db.execute(
-            select(AnnotationTask).where(
-                AnnotationTask.text_unit_id == text_unit_id,
-                AnnotationTask.annotator_id == annotator_id,
-            )
+    async def get_task(
+        self,
+        text_unit_id: str,
+        annotator_id: str,
+        *,
+        campaign_id: str | None = None,
+    ) -> AnnotationTask | None:
+        stmt = select(AnnotationTask).where(
+            AnnotationTask.text_unit_id == text_unit_id,
+            AnnotationTask.annotator_id == annotator_id,
         )
+        if campaign_id is not None:
+            stmt = stmt.where(AnnotationTask.campaign_id == campaign_id)
+        result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
     async def create_task(
-        self, *, text_unit_id: str, annotator_id: str, status: str = "assigned"
+        self,
+        *,
+        text_unit_id: str,
+        annotator_id: str,
+        status: str = "assigned",
+        campaign_id: str | None = None,
     ) -> AnnotationTask:
-        row = AnnotationTask(text_unit_id=text_unit_id, annotator_id=annotator_id, status=status)
+        row = AnnotationTask(
+            text_unit_id=text_unit_id,
+            annotator_id=annotator_id,
+            status=status,
+            campaign_id=campaign_id,
+        )
         self.db.add(row)
         await self.db.flush()
         return row
@@ -854,9 +872,8 @@ class ResearchRepository:
         """Create missing tasks for (text_unit_id, annotator_id) pairs in bulk.
 
         Uses PostgreSQL ``ON CONFLICT DO NOTHING`` against the unique
-        (text_unit_id, annotator_id) constraint so concurrent assigners never
-        collide and we avoid per-pair existence lookups. When ``campaign_id``
-        is set, existing rows for those pairs are tagged with the campaign.
+        (campaign_id, text_unit_id, annotator_id) constraint so concurrent
+        assigners never collide and separate campaigns remain independent.
         """
         if not pairs:
             return []
@@ -893,23 +910,11 @@ class ResearchRepository:
             stmt = (
                 pg_insert(AnnotationTask)
                 .values(list(batch))
-                .on_conflict_do_nothing(constraint="uq_annotation_task_unit_annotator")
+                .on_conflict_do_nothing(constraint="uq_annotation_task_campaign_unit_annotator")
                 .returning(AnnotationTask)
             )
             result = await self.db.execute(stmt)
             created.extend(result.scalars().all())
-
-        if campaign_id is not None:
-            unit_ids = [unit_id for unit_id, _ in unique_pairs]
-            annotator_ids = {annotator_id for _, annotator_id in unique_pairs}
-            existing = await self.list_tasks_for_units(unit_ids)
-            wanted = set(unique_pairs)
-            for task in existing:
-                if (
-                    task.text_unit_id,
-                    task.annotator_id,
-                ) in wanted and task.annotator_id in annotator_ids:
-                    task.campaign_id = campaign_id
 
         await self.db.flush()
         return created
@@ -1002,6 +1007,29 @@ class ResearchRepository:
         )
         return {row.id: row for row in result.scalars().all()}
 
+    async def blind_policies_for_units(
+        self, annotator_id: str, text_unit_ids: list[str]
+    ) -> dict[str, AnnotationCampaign]:
+        """Load an annotator's campaign policies for a unit batch in one query."""
+        if not text_unit_ids:
+            return {}
+        result = await self.db.execute(
+            select(AnnotationTask.text_unit_id, AnnotationCampaign)
+            .join(AnnotationCampaign, AnnotationCampaign.id == AnnotationTask.campaign_id)
+            .where(
+                AnnotationTask.annotator_id == annotator_id,
+                AnnotationTask.text_unit_id.in_(text_unit_ids),
+            )
+            .order_by(AnnotationCampaign.created_at.desc())
+        )
+        policies: dict[str, AnnotationCampaign] = {}
+        for text_unit_id, campaign in result.all():
+            # A still-blind campaign wins if a unit happens to occur in rounds.
+            existing = policies.get(str(text_unit_id))
+            if existing is None or (campaign.blind_mode and not existing.blind_mode):
+                policies[str(text_unit_id)] = campaign
+        return policies
+
     async def count_annotation_tasks_for_corpus(self, corpus_id: str) -> dict[str, int]:
         stmt = (
             select(AnnotationTask.status, func.count())
@@ -1079,12 +1107,15 @@ class ResearchRepository:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_tasks_for_units(self, text_unit_ids: list[str]) -> list[AnnotationTask]:
+    async def list_tasks_for_units(
+        self, text_unit_ids: list[str], *, campaign_id: str | None = None
+    ) -> list[AnnotationTask]:
         if not text_unit_ids:
             return []
-        result = await self.db.execute(
-            select(AnnotationTask).where(AnnotationTask.text_unit_id.in_(text_unit_ids))
-        )
+        stmt = select(AnnotationTask).where(AnnotationTask.text_unit_id.in_(text_unit_ids))
+        if campaign_id is not None:
+            stmt = stmt.where(AnnotationTask.campaign_id == campaign_id)
+        result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
     async def update_task_status(self, task: AnnotationTask, status: str) -> AnnotationTask:
@@ -1105,6 +1136,7 @@ class ResearchRepository:
         label_id: str,
         annotator_id: str,
         codebook_version: str,
+        campaign_id: str | None = None,
     ) -> Annotation | None:
         result = await self.db.execute(
             select(Annotation).where(
@@ -1112,6 +1144,7 @@ class ResearchRepository:
                 Annotation.label_id == label_id,
                 Annotation.annotator_id == annotator_id,
                 Annotation.codebook_version == codebook_version,
+                Annotation.campaign_id == campaign_id,
             )
         )
         return result.scalar_one_or_none()
@@ -1123,6 +1156,7 @@ class ResearchRepository:
         label_id: str,
         annotator_id: str,
         codebook_version: str,
+        campaign_id: str | None = None,
         value: str,
         confidence: float | None = None,
         comment: str | None = None,
@@ -1133,6 +1167,7 @@ class ResearchRepository:
             label_id=label_id,
             annotator_id=annotator_id,
             codebook_version=codebook_version,
+            campaign_id=campaign_id,
         )
         if existing is not None:
             existing.value = value
@@ -1146,6 +1181,7 @@ class ResearchRepository:
             label_id=label_id,
             annotator_id=annotator_id,
             codebook_version=codebook_version,
+            campaign_id=campaign_id,
             value=value,
             confidence=confidence,
             comment=comment,
@@ -1154,30 +1190,41 @@ class ResearchRepository:
         await self.db.flush()
         return row
 
-    async def list_annotations_for_unit(self, text_unit_id: str) -> list[Annotation]:
-        result = await self.db.execute(
-            select(Annotation).where(Annotation.text_unit_id == text_unit_id)
-        )
+    async def list_annotations_for_unit(
+        self, text_unit_id: str, *, campaign_id: str | None = None
+    ) -> list[Annotation]:
+        stmt = select(Annotation).where(Annotation.text_unit_id == text_unit_id)
+        if campaign_id is not None:
+            stmt = stmt.where(Annotation.campaign_id == campaign_id)
+        result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_annotations_for_units(self, text_unit_ids: list[str]) -> list[Annotation]:
+    async def list_annotations_for_units(
+        self, text_unit_ids: list[str], *, campaign_id: str | None = None
+    ) -> list[Annotation]:
         if not text_unit_ids:
             return []
         rows: list[Annotation] = []
         for batch in iter_item_batches(list(text_unit_ids), _IN_CLAUSE_BATCH):
-            result = await self.db.execute(
-                select(Annotation).where(Annotation.text_unit_id.in_(batch))
-            )
+            stmt = select(Annotation).where(Annotation.text_unit_id.in_(batch))
+            if campaign_id is not None:
+                stmt = stmt.where(Annotation.campaign_id == campaign_id)
+            result = await self.db.execute(stmt)
             rows.extend(result.scalars().all())
         return rows
 
-    async def list_annotations_for_corpus(self, corpus_id: str) -> list[Annotation]:
-        result = await self.db.execute(
+    async def list_annotations_for_corpus(
+        self, corpus_id: str, *, campaign_id: str | None = None
+    ) -> list[Annotation]:
+        stmt = (
             select(Annotation)
             .join(TextUnit, TextUnit.id == Annotation.text_unit_id)
             .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
             .where(CorpusDocument.corpus_id == corpus_id)
         )
+        if campaign_id is not None:
+            stmt = stmt.where(Annotation.campaign_id == campaign_id)
+        result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
     async def list_annotated_text_unit_ids(self, corpus_id: str) -> set[str]:
@@ -1205,8 +1252,8 @@ class ResearchRepository:
 
         Returns ORM rows with ``text_unit_id``, ``label_id``, ``annotator_id``,
         ``value`` (and optionally ``codebook_version``) — not full Annotation graphs.
-        When ``campaign_id`` is set, only annotations that match a campaign task
-        for the same ``(text_unit_id, annotator_id)`` are included.
+        When ``campaign_id`` is set, only evidence explicitly created in that
+        campaign is included; task reassignment cannot change prior evidence.
         """
         stmt = (
             select(
@@ -1229,15 +1276,7 @@ class ResearchRepository:
         if annotator_ids:
             stmt = stmt.where(Annotation.annotator_id.in_(annotator_ids))
         if campaign_id:
-            stmt = stmt.where(
-                select(AnnotationTask.id)
-                .where(
-                    AnnotationTask.text_unit_id == Annotation.text_unit_id,
-                    AnnotationTask.annotator_id == Annotation.annotator_id,
-                    AnnotationTask.campaign_id == campaign_id,
-                )
-                .exists()
-            )
+            stmt = stmt.where(Annotation.campaign_id == campaign_id)
         result = await self.db.execute(stmt)
         return list(result.all())
 
@@ -1266,13 +1305,22 @@ class ResearchRepository:
     # Adjudication
     # ------------------------------------------------------------------
 
-    async def get_adjudication(self, *, text_unit_id: str, label_id: str) -> Adjudication | None:
-        result = await self.db.execute(
-            select(Adjudication).where(
-                Adjudication.text_unit_id == text_unit_id,
-                Adjudication.label_id == label_id,
-            )
+    async def get_adjudication(
+        self,
+        *,
+        text_unit_id: str,
+        label_id: str,
+        campaign_id: str | None = None,
+        codebook_version: str | None = None,
+    ) -> Adjudication | None:
+        stmt = select(Adjudication).where(
+            Adjudication.text_unit_id == text_unit_id,
+            Adjudication.label_id == label_id,
+            Adjudication.campaign_id == campaign_id,
         )
+        if codebook_version is not None:
+            stmt = stmt.where(Adjudication.codebook_version == codebook_version)
+        result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
     async def upsert_adjudication(
@@ -1281,11 +1329,17 @@ class ResearchRepository:
         text_unit_id: str,
         label_id: str,
         codebook_version: str,
+        campaign_id: str | None = None,
         final_value: str,
         adjudicator_id: str,
         comment: str | None = None,
     ) -> Adjudication:
-        existing = await self.get_adjudication(text_unit_id=text_unit_id, label_id=label_id)
+        existing = await self.get_adjudication(
+            text_unit_id=text_unit_id,
+            label_id=label_id,
+            campaign_id=campaign_id,
+            codebook_version=codebook_version,
+        )
         if existing is not None:
             existing.codebook_version = codebook_version
             existing.final_value = final_value
@@ -1296,6 +1350,7 @@ class ResearchRepository:
         row = Adjudication(
             text_unit_id=text_unit_id,
             label_id=label_id,
+            campaign_id=campaign_id,
             codebook_version=codebook_version,
             final_value=final_value,
             adjudicator_id=adjudicator_id,
@@ -1305,21 +1360,29 @@ class ResearchRepository:
         await self.db.flush()
         return row
 
-    async def list_adjudications_for_units(self, text_unit_ids: list[str]) -> list[Adjudication]:
+    async def list_adjudications_for_units(
+        self, text_unit_ids: list[str], *, campaign_id: str | None = None
+    ) -> list[Adjudication]:
         if not text_unit_ids:
             return []
-        result = await self.db.execute(
-            select(Adjudication).where(Adjudication.text_unit_id.in_(text_unit_ids))
-        )
+        stmt = select(Adjudication).where(Adjudication.text_unit_id.in_(text_unit_ids))
+        if campaign_id is not None:
+            stmt = stmt.where(Adjudication.campaign_id == campaign_id)
+        result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_adjudications_for_corpus(self, corpus_id: str) -> list[Adjudication]:
-        result = await self.db.execute(
+    async def list_adjudications_for_corpus(
+        self, corpus_id: str, *, campaign_id: str | None = None
+    ) -> list[Adjudication]:
+        stmt = (
             select(Adjudication)
             .join(TextUnit, TextUnit.id == Adjudication.text_unit_id)
             .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
             .where(CorpusDocument.corpus_id == corpus_id)
         )
+        if campaign_id is not None:
+            stmt = stmt.where(Adjudication.campaign_id == campaign_id)
+        result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
     # ------------------------------------------------------------------
@@ -1365,9 +1428,9 @@ class ResearchRepository:
     async def create_run(self, run: AnalysisRun) -> AnalysisRun:
         self.db.add(run)
         await self.db.flush()
-        from backend.modules.text_research.infrastructure.run_events import publish_run_event
+        from backend.modules.text_research.infrastructure.run_events import queue_run_event
 
-        publish_run_event(run, previous=None)
+        queue_run_event(self.db, run, previous=None)
         return run
 
     async def get_run(self, run_id: str) -> AnalysisRun | None:
@@ -1376,15 +1439,16 @@ class ResearchRepository:
 
     async def update_run(self, run: AnalysisRun, **fields: Any) -> AnalysisRun:
         from backend.modules.text_research.infrastructure.run_events import (
-            publish_run_event,
+            queue_run_event,
             snapshot_fields,
         )
 
         previous = snapshot_fields(run)
         for key, value in fields.items():
             setattr(run, key, value)
+        run.run_version = int(getattr(run, "run_version", 1) or 1) + 1
         await self.db.flush()
-        publish_run_event(run, previous=previous)
+        queue_run_event(self.db, run, previous=previous)
         return run
 
     async def list_runs(
@@ -1450,6 +1514,19 @@ class ResearchRepository:
     async def get_model(self, model_id: str) -> TrainedModel | None:
         result = await self.db.execute(select(TrainedModel).where(TrainedModel.id == model_id))
         return result.scalar_one_or_none()
+
+    async def create_model_lifecycle_event(self, event: ModelLifecycleEvent) -> ModelLifecycleEvent:
+        self.db.add(event)
+        await self.db.flush()
+        return event
+
+    async def list_model_lifecycle_events(self, model_id: str) -> list[ModelLifecycleEvent]:
+        result = await self.db.execute(
+            select(ModelLifecycleEvent)
+            .where(ModelLifecycleEvent.model_id == model_id)
+            .order_by(ModelLifecycleEvent.created_at.asc())
+        )
+        return list(result.scalars().all())
 
     async def list_models(
         self,

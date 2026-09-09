@@ -23,7 +23,7 @@ from backend.modules.text_research.infrastructure.drift_monitoring import (
 class ModelLifecycleEnumTests(unittest.TestCase):
     def test_lifecycle_enum_values(self) -> None:
         self.assertEqual(ModelLifecycleStatus.CANDIDATE.value, "candidate")
-        self.assertEqual(ModelLifecycleStatus.APPROVED.value, "approved")
+        self.assertEqual(ModelLifecycleStatus.PRODUCTION.value, "production")
         self.assertEqual(ModelLifecycleStatus.DEPRECATED.value, "deprecated")
 
     def test_trained_model_has_lifecycle_fields(self) -> None:
@@ -184,10 +184,10 @@ class ModelLifecycleServiceTests(unittest.IsolatedAsyncioTestCase):
         updated = await service.set_status(
             "model-1",
             user_id="user-1",
-            status="approved",
+            status="production",
             notes="ready for production",
         )
-        self.assertEqual(updated.lifecycle_status, "approved")
+        self.assertEqual(updated.lifecycle_status, "production")
         self.assertEqual(updated.lifecycle_notes, "ready for production")
         self.assertIsNotNone(updated.lifecycle_updated_at)
 

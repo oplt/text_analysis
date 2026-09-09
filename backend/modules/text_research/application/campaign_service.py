@@ -55,6 +55,7 @@ class AnnotationCampaignService(ResearchAccessMixin):
         annotation_mode: str | None = None,
         blind_mode: bool | None = None,
         ai_assistance_enabled: bool | None = None,
+        reveal_after: str = "campaign_released",
         annotator_ids: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> AnnotationCampaign:
@@ -90,6 +91,7 @@ class AnnotationCampaignService(ResearchAccessMixin):
             blind_mode=is_blind,
             ai_assistance_enabled=ai_enabled,
             annotation_mode=mode,
+            reveal_after=reveal_after,
             status=AnnotationCampaignStatus.ACTIVE.value,
             annotator_ids=annotator_ids or [],
             created_by=user_id,
@@ -136,6 +138,7 @@ class AnnotationCampaignService(ResearchAccessMixin):
         annotation_mode: str | None = None,
         blind_mode: bool | None = None,
         ai_assistance_enabled: bool | None = None,
+        reveal_after: str | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> AnnotationCampaign:
         campaign = await self.get_campaign(campaign_id, user_id=user_id)
@@ -176,6 +179,10 @@ class AnnotationCampaignService(ResearchAccessMixin):
             existing = loads(campaign.metadata_json, {}) or {}
             existing.update(metadata)
             campaign.metadata_json = dumps(existing)
+        if reveal_after is not None:
+            if reveal_after not in {"campaign_completed", "campaign_released"}:
+                raise HTTPException(status_code=422, detail="Invalid campaign reveal policy")
+            campaign.reveal_after = reveal_after
         await self.db.commit()
         await self.db.refresh(campaign)
         return campaign
@@ -237,6 +244,13 @@ class AnnotationCampaignService(ResearchAccessMixin):
         progress["campaign_id"] = campaign.id
         progress["annotation_mode"] = campaign.annotation_mode
         progress["blind_mode"] = campaign.blind_mode
+        released = campaign.status == AnnotationCampaignStatus.RELEASED.value or (
+            campaign.reveal_after == "campaign_completed"
+            and campaign.status == AnnotationCampaignStatus.COMPLETED.value
+        )
+        if campaign.blind_mode and not released and campaign.created_by != user_id:
+            # Progress remains useful without disclosing any coder's work.
+            progress["by_annotator"] = {}
         return progress
 
     async def campaign_payload(self, campaign: AnnotationCampaign) -> dict[str, Any]:
@@ -257,6 +271,7 @@ class AnnotationCampaignService(ResearchAccessMixin):
             "blind_mode": campaign.blind_mode,
             "ai_assistance_enabled": campaign.ai_assistance_enabled,
             "annotation_mode": campaign.annotation_mode,
+            "reveal_after": campaign.reveal_after,
             "status": campaign.status,
             "annotator_ids": loads(campaign.annotator_ids_json, []) or [],
             "created_by": campaign.created_by,
@@ -292,8 +307,20 @@ class AnnotationCampaignService(ResearchAccessMixin):
                 "campaign_id": task.campaign_id,
                 "annotation_mode": None,
             }
-        incomplete = task.status != AnnotationTaskStatus.COMPLETED.value
-        hide = bool(campaign.blind_mode and incomplete)
+        campaign_status = getattr(campaign, "status", None)
+        # Compatibility for pre-release persisted records/tests: only a
+        # completed individual task is considered released when no campaign
+        # lifecycle state exists. Real campaigns always have a status.
+        released = (
+            campaign_status == AnnotationCampaignStatus.RELEASED.value
+            or (
+                getattr(campaign, "reveal_after", "campaign_released") == "campaign_completed"
+                and campaign_status == AnnotationCampaignStatus.COMPLETED.value
+            )
+            if campaign_status is not None
+            else task.status == AnnotationTaskStatus.COMPLETED.value
+        )
+        hide = bool(campaign.blind_mode and not released)
         return {
             "blind_mode": campaign.blind_mode,
             "ai_assistance_enabled": campaign.ai_assistance_enabled and not campaign.blind_mode,
@@ -303,4 +330,6 @@ class AnnotationCampaignService(ResearchAccessMixin):
             "campaign_id": campaign.id,
             "annotation_mode": campaign.annotation_mode,
             "task_status": task.status,
+            "reveal_after": getattr(campaign, "reveal_after", "campaign_released"),
+            "released": released,
         }

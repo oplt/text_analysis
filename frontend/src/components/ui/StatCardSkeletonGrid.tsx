@@ -6,11 +6,7 @@ export function StatCardSkeletonGrid() {
             sx={{
                 display: "grid",
                 gap: 2,
-                gridTemplateColumns: {
-                    xs: "1fr",
-                    sm: "repeat(2, minmax(0, 1fr))",
-                    xl: "repeat(4, minmax(0, 1fr))",
-                },
+                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
             }}
         >
             {Array.from({ length: 4 }).map((_, index) => (

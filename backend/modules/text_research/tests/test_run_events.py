@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import unittest
 from datetime import UTC, datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from backend.modules.text_research.api.routes import _run_event_name
 from backend.modules.text_research.api.schemas import AnalysisRunResponse
@@ -68,7 +68,7 @@ class RunEventNamingTests(unittest.TestCase):
         )
 
 
-class RunEventPublishTests(unittest.TestCase):
+class RunEventPublishTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         run_events.reset_run_events_redis_for_tests()
 
@@ -88,26 +88,41 @@ class RunEventPublishTests(unittest.TestCase):
         self.assertIn("parameters", payload)
         self.assertIn("created_at", payload)
 
-    def test_publish_uses_redis_channel(self):
-        client = MagicMock()
+    async def test_publish_uses_async_redis_channel(self):
+        client = AsyncMock()
         run = _orm_run(status="running", progress_stage="saving")
-        with patch.object(run_events, "_get_sync_redis", return_value=client):
-            name = run_events.publish_run_event(
-                run,
-                previous={"status": "running", "progress_stage": "training", "artifact_path": None},
-            )
+        name, envelope = run_events.run_event_envelope(
+            run,
+            previous={"status": "running", "progress_stage": "training", "artifact_path": None},
+        )
+        with patch("backend.core.cache.redis_client", client):
+            await run_events.publish_run_event_envelope(envelope)
         self.assertEqual(name, "progress")
-        client.publish.assert_called_once()
+        client.publish.assert_awaited_once()
         channel, raw = client.publish.call_args.args
         self.assertEqual(channel, "research:run:run-1:events")
         envelope = json.loads(raw)
         self.assertEqual(envelope["event"], "progress")
         self.assertEqual(envelope["run"]["progress_stage"], "saving")
 
-    def test_publish_without_redis_still_returns_event_name(self):
-        with patch.object(run_events, "_get_sync_redis", return_value=None):
-            name = run_events.publish_run_event(_orm_run(status="completed"), previous=None)
+    def test_publish_without_an_event_loop_only_serializes(self):
+        name = run_events.publish_run_event(_orm_run(status="completed"), previous=None)
         self.assertEqual(name, "completed")
+
+    async def test_rollback_discards_queued_event_and_commit_publishes_it(self):
+        from backend.db import session as db_session
+
+        fake_session = MagicMock()
+        fake_session.info = {}
+        run_events.queue_run_event(fake_session, _orm_run(status="completed"), previous=None)
+        db_session._discard_research_run_events_after_rollback(fake_session)
+        self.assertNotIn("research_run_events", fake_session.info)
+
+        run_events.queue_run_event(fake_session, _orm_run(status="completed"), previous=None)
+        with patch.object(run_events, "publish_run_event_envelope", new=AsyncMock()) as publish:
+            db_session._publish_research_run_events_after_commit(fake_session)
+            await __import__("asyncio").sleep(0)
+        publish.assert_awaited_once()
 
 
 class RunEventStreamFallbackTests(unittest.IsolatedAsyncioTestCase):

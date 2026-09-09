@@ -48,7 +48,10 @@ export function useRunEvents(runId: string | null, projectId: string) {
             const message = event as MessageEvent<string>;
             const run = typeof message.data === "string" ? parseRunPayload(message.data) : null;
             if (run) {
-                queryClient.setQueryData(queryKeys.textResearch.run(run.id), run);
+                queryClient.setQueryData<AnalysisRun>(queryKeys.textResearch.run(run.id), (cached) => {
+                    if (cached && (run.run_version ?? 1) < (cached.run_version ?? 1)) return cached;
+                    return run;
+                });
             } else {
                 void queryClient.invalidateQueries({ queryKey: queryKeys.textResearch.run(runId) });
             }

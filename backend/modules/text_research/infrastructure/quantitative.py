@@ -1147,9 +1147,7 @@ def dfm_summary(result: dict[str, Any]) -> dict[str, Any]:
     feature_count = int(dimensions.get("features", 0) or 0)
     nnz = int(result.get("nnz", sparse.get("nnz", 0)) or 0)
     density = float(result.get("density", 0.0) or 0.0)
-    memory = estimate_dfm_memory_bytes(
-        unit_count=unit_count, feature_count=feature_count, nnz=nnz
-    )
+    memory = estimate_dfm_memory_bytes(unit_count=unit_count, feature_count=feature_count, nnz=nnz)
     summary = {
         "unit_count": unit_count,
         "feature_count": feature_count,

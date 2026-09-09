@@ -138,9 +138,7 @@ class AnnotationCampaignServiceTests(unittest.IsolatedAsyncioTestCase):
         service.db.commit = AsyncMock()
         service.db.refresh = AsyncMock()
 
-        updated = await service.patch_campaign(
-            "camp-1", user_id="user-1", status="completed"
-        )
+        updated = await service.patch_campaign("camp-1", user_id="user-1", status="completed")
         self.assertEqual(updated.status, AnnotationCampaignStatus.COMPLETED.value)
         self.assertIsNotNone(updated.completed_at)
 

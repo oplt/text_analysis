@@ -12,6 +12,8 @@ Envelope::
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import json
 import logging
 from datetime import UTC, datetime
@@ -25,42 +27,13 @@ TERMINAL_RUN_STATUSES = frozenset({"completed", "failed", "cancelled"})
 RUN_EVENT_CHANNEL_PREFIX = "research:run:"
 RUN_EVENT_CHANNEL_SUFFIX = ":events"
 
-_sync_redis: Any | None = None
-_sync_redis_failed = False
-
 
 def run_events_channel(run_id: str) -> str:
     return f"{RUN_EVENT_CHANNEL_PREFIX}{run_id}{RUN_EVENT_CHANNEL_SUFFIX}"
 
 
 def reset_run_events_redis_for_tests() -> None:
-    global _sync_redis, _sync_redis_failed
-    _sync_redis = None
-    _sync_redis_failed = False
-
-
-def _get_sync_redis() -> Any | None:
-    global _sync_redis, _sync_redis_failed
-    if _sync_redis_failed:
-        return None
-    if _sync_redis is not None:
-        return _sync_redis
-    try:
-        import redis
-
-        from backend.core.config import settings
-
-        if not getattr(settings, "CACHE_ENABLED", True):
-            _sync_redis_failed = True
-            return None
-        client = redis.from_url(settings.REDIS_URL, decode_responses=True)
-        client.ping()
-        _sync_redis = client
-        return _sync_redis
-    except Exception:
-        logger.debug("run events: Redis unavailable", exc_info=True)
-        _sync_redis_failed = True
-        return None
+    """Compatibility hook for tests; the async Redis client is stateless here."""
 
 
 def serialize_run(run: AnalysisRun) -> dict[str, Any]:
@@ -79,6 +52,7 @@ def serialize_run(run: AnalysisRun) -> dict[str, Any]:
         "corpus_id": run.corpus_id,
         "run_type": run.run_type,
         "status": run.status,
+        "run_version": int(getattr(run, "run_version", 1) or 1),
         "progress_stage": run.progress_stage,
         "parameters": loads(run.parameters_json),
         "metrics": loads(run.metrics_json),
@@ -112,13 +86,13 @@ def run_event_name(
     return "progress"
 
 
-def publish_run_event(
+def run_event_envelope(
     run: AnalysisRun,
     *,
     previous: dict[str, Any] | None = None,
     event: str | None = None,
-) -> str | None:
-    """Publish a run snapshot to Redis. Returns event name, or None if skipped."""
+) -> tuple[str, dict[str, Any]]:
+    """Create a post-commit-safe SSE envelope without performing I/O."""
     event_name = event or run_event_name(
         status=run.status,
         progress_stage=run.progress_stage,
@@ -130,15 +104,47 @@ def publish_run_event(
         "run": serialize_run(run),
         "published_at": datetime.now(UTC).isoformat(),
     }
-    client = _get_sync_redis()
-    if client is None:
-        return event_name
-    channel = run_events_channel(run.id)
+    return event_name, envelope
+
+
+async def publish_run_event_envelope(envelope: dict[str, Any]) -> None:
+    """Publish through the async Redis client; failures leave DB reconciliation intact."""
     try:
-        client.publish(channel, json.dumps(envelope, ensure_ascii=True, default=str))
+        from backend.core.cache import redis_client
+        from backend.core.config import settings
+
+        if not getattr(settings, "CACHE_ENABLED", True):
+            return
+        run_id = str((envelope.get("run") or {}).get("id") or "")
+        if not run_id:
+            return
+        await redis_client.publish(
+            run_events_channel(run_id),
+            json.dumps(envelope, ensure_ascii=True, default=str),
+        )
     except Exception:
-        logger.debug("run events: publish failed run_id=%s", run.id, exc_info=True)
+        # Do not latch failures: the next durable commit retries Redis, while
+        # SSE clients continue to reconcile from PostgreSQL.
+        logger.debug("run events: async publish failed", exc_info=True)
+
+
+def publish_run_event(
+    run: AnalysisRun,
+    *,
+    previous: dict[str, Any] | None = None,
+    event: str | None = None,
+) -> str:
+    """Schedule asynchronous publication when called from an event loop."""
+    event_name, envelope = run_event_envelope(run, previous=previous, event=event)
+    with contextlib.suppress(RuntimeError):
+        asyncio.get_running_loop().create_task(publish_run_event_envelope(envelope))
     return event_name
+
+
+def queue_run_event(session: Any, run: AnalysisRun, *, previous: dict[str, Any] | None) -> None:
+    """Queue a snapshot for the SQLAlchemy session's post-commit hook."""
+    _event_name, envelope = run_event_envelope(run, previous=previous)
+    session.info.setdefault("research_run_events", []).append(envelope)
 
 
 def snapshot_fields(run: AnalysisRun) -> dict[str, Any]:

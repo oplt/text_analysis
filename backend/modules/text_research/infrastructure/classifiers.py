@@ -18,13 +18,15 @@ unambiguous (see §27).
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import asdict, dataclass, replace
 from dataclasses import fields as dataclass_fields
+from functools import partial
 from typing import Any
 
 import numpy as np
 from sklearn import metrics as skmetrics
-from sklearn.isotonic import IsotonicRegression
 from sklearn.feature_selection import (
     SelectFromModel,
     SelectKBest,
@@ -32,6 +34,7 @@ from sklearn.feature_selection import (
     chi2,
     mutual_info_classif,
 )
+from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.model_selection import GroupKFold, ParameterGrid, ParameterSampler
 from sklearn.multiclass import OneVsRestClassifier
@@ -414,30 +417,38 @@ class FeatureSelectionConfig:
         return self.method != "none"
 
 
-def _multilabel_score_func(score_func):
+def _multilabel_score(X, y, *, score_func: Any):
     """Reduce multilabel targets to a single score vector (max across labels)."""
+    y_arr = np.asarray(y)
+    if y_arr.ndim == 1:
+        return score_func(X, y_arr)
+    scores = []
+    pvals = []
+    for col in range(y_arr.shape[1]):
+        out = score_func(X, y_arr[:, col])
+        if isinstance(out, tuple):
+            s, p = out
+        else:
+            s, p = out, None
+        scores.append(s)
+        if p is not None:
+            pvals.append(p)
+    merged_scores = np.nanmax(np.vstack(scores), axis=0)
+    if pvals:
+        return merged_scores, np.nanmin(np.vstack(pvals), axis=0)
+    return merged_scores
 
-    def _scored(X, y):
-        y_arr = np.asarray(y)
-        if y_arr.ndim == 1:
-            return score_func(X, y_arr)
-        scores = []
-        pvals = []
-        for col in range(y_arr.shape[1]):
-            out = score_func(X, y_arr[:, col])
-            if isinstance(out, tuple):
-                s, p = out
-            else:
-                s, p = out, None
-            scores.append(s)
-            if p is not None:
-                pvals.append(p)
-        merged_scores = np.nanmax(np.vstack(scores), axis=0)
-        if pvals:
-            return merged_scores, np.nanmin(np.vstack(pvals), axis=0)
-        return merged_scores
 
-    return _scored
+def _mutual_info_score(X, y, *, random_seed: int):
+    """Pickle-safe mutual-information scorer for single- and multilabel targets."""
+    y_arr = np.asarray(y)
+    if y_arr.ndim == 1:
+        return mutual_info_classif(X, y_arr, random_state=random_seed)
+    scores = [
+        mutual_info_classif(X, y_arr[:, col], random_state=random_seed)
+        for col in range(y_arr.shape[1])
+    ]
+    return np.nanmax(np.vstack(scores), axis=0)
 
 
 class ClampedSelectKBest(SelectKBest):
@@ -462,20 +473,11 @@ def build_feature_selector(
         return None
 
     if cfg.method == "mutual_info":
-
-        def _mi(X, y):
-            y_arr = np.asarray(y)
-            if y_arr.ndim == 1:
-                return mutual_info_classif(X, y_arr, random_state=random_seed)
-            scores = [
-                mutual_info_classif(X, y_arr[:, col], random_state=random_seed)
-                for col in range(y_arr.shape[1])
-            ]
-            return np.nanmax(np.vstack(scores), axis=0)
-
-        score_func = _mi
+        score_func = partial(_mutual_info_score, random_seed=random_seed)
     elif cfg.method == "chi2":
-        score_func = _multilabel_score_func(chi2) if task_type == "multilabel" else chi2
+        score_func = (
+            partial(_multilabel_score, score_func=chi2) if task_type == "multilabel" else chi2
+        )
     else:
         # L1-based SelectFromModel (optional)
         estimator = LogisticRegression(
@@ -557,10 +559,20 @@ def feature_space_summary(
     if coef is not None:
         n_nonzero = int(np.count_nonzero(coef))
 
+    # ``get_feature_names_out`` on the fitted selector returns the final
+    # vocabulary, i.e. after supervised selection.  Keeping both the names
+    # and a stable digest makes a saved model auditable without re-fitting it.
+    selected_feature_names = [str(name) for name in feature_pipeline.get_feature_names_out()]
+    selected_feature_hash = hashlib.sha256(
+        json.dumps(selected_feature_names, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
     return {
         "raw_vocabulary": int(raw_vocabulary) if raw_vocabulary is not None else after_df,
         "after_df_pruning": after_df,
         "after_supervised_selection": after_sel,
+        "selected_feature_names": selected_feature_names,
+        "selected_feature_hash": selected_feature_hash,
         "n_nonzero_coefficients": n_nonzero,
         "selection_step": method,
     }
@@ -1485,6 +1497,7 @@ def hyperparameter_search(
             return _score_metric(y_ev_enc, y_pred, scoring)
         except (ValueError, IndexError):
             return None
+
     results: list[dict[str, Any]] = []
 
     if X_val_texts:
@@ -1900,7 +1913,7 @@ def _fit_classifier_and_evaluate(
     if task_type == "multilabel":
         train_prevalence = class_prevalence(
             [[str(label) for label in row] for row in y_train]
-            if y_train and isinstance(y_train[0], (list, tuple, set))
+            if y_train and isinstance(y_train[0], list | tuple | set)
             else [[str(label)] for label in y_train]
         )
     else:
@@ -2106,6 +2119,7 @@ def fit_text_classifier(
         result["vectorizer"], result["model"], raw_vocabulary=raw_vocab
     )
     return result
+
 
 def extract_linear_coefficients(
     model: Any,

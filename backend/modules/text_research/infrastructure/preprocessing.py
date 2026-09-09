@@ -14,6 +14,7 @@ from __future__ import annotations
 import unicodedata
 from collections import Counter
 from dataclasses import asdict, dataclass, field
+from functools import partial
 from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
@@ -440,11 +441,21 @@ def preview_preprocessing(
     }
 
 
+def _tokenize_with_config(doc: str, config: dict[str, Any]) -> list[str]:
+    """Pickle-safe adapter for sklearn vectorizers saved as model artifacts."""
+    return tokenize(doc, config)
+
+
+def _identity_text(doc: str) -> str:
+    """Pickle-safe no-op preprocessor; tokenization owns normalization."""
+    return doc
+
+
 def _vectorizer_kwargs(config: dict[str, Any] | None) -> dict[str, Any]:
     cfg = _merge_config(config)
     return {
-        "tokenizer": lambda doc: tokenize(doc, cfg),
-        "preprocessor": lambda doc: doc,
+        "tokenizer": partial(_tokenize_with_config, config=cfg),
+        "preprocessor": _identity_text,
         "lowercase": False,
         "token_pattern": None,
         "ngram_range": (int(cfg.get("ngram_min", 1)), int(cfg.get("ngram_max", 1))),

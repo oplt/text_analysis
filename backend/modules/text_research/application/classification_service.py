@@ -539,6 +539,15 @@ class ClassificationService(ResearchAccessMixin):
                             **config,
                             "feature_config": fit_result["feature_config"],
                             "feature_selection": fit_result.get("feature_selection"),
+                            "feature_space": fit_result.get("feature_space"),
+                            "training_snapshot_provenance": {
+                                "annotation_campaign_id": snapshot.annotation_campaign_id,
+                                "annotation_campaign_snapshot_hash": (
+                                    snapshot.annotation_campaign_snapshot_hash
+                                ),
+                                "adjudication_policy": snapshot.adjudication_policy,
+                                "gold_source": snapshot.gold_source,
+                            },
                         }
                     ),
                     training_config_json=dumps(params),
@@ -576,9 +585,7 @@ class ClassificationService(ResearchAccessMixin):
                         ],
                         split_hashes={
                             "train": partition_hash(sorted(set(split["groups_train"]))),
-                            "validation": partition_hash(
-                                sorted(set(split.get("groups_val", [])))
-                            ),
+                            "validation": partition_hash(sorted(set(split.get("groups_val", [])))),
                             "test": partition_hash(sorted(set(split["groups_test"]))),
                         },
                         feature_configuration=fit_result.get("feature_config"),
@@ -588,6 +595,14 @@ class ClassificationService(ResearchAccessMixin):
                         or params.get("model_hyperparameters"),
                         validation_strategy=params.get("split_strategy")
                         or "grouped_by_source_document",
+                        campaign_id=snapshot.annotation_campaign_id,
+                        extra={
+                            "training_snapshot_campaign_hash": (
+                                snapshot.annotation_campaign_snapshot_hash
+                            ),
+                            "adjudication_policy": snapshot.adjudication_policy,
+                            "gold_source": snapshot.gold_source,
+                        },
                     )
                 ),
                 results_json=dumps(

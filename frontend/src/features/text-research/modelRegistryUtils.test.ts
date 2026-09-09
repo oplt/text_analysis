@@ -10,7 +10,7 @@ import {
 
 describe("modelRegistryUtils", () => {
     it("maps lifecycle statuses to registry labels", () => {
-        expect(lifecycleDisplayLabel("approved")).toBe("Production");
+        expect(lifecycleDisplayLabel("production")).toBe("Production");
         expect(lifecycleDisplayLabel("deprecated")).toBe("Deprecated");
         expect(lifecycleDisplayLabel("candidate")).toBe("Candidate");
     });

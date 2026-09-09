@@ -82,10 +82,13 @@ from backend.modules.text_research.api.schemas import (
     KwicRequest,
     MeasurementComparisonRequest,
     MetadataImportResponse,
+    ModelLifecycleEventResponse,
     ModelLifecycleUpdateRequest,
     ModelPredictionItemResponse,
     NgramRequest,
     PredictionSetDetailResponse,
+    PredictionSetPredictionRowResponse,
+    PredictionSetPredictionsPageResponse,
     PredictionSetResponse,
     PreprocessingPreviewRequest,
     PreprocessingPreviewResponse,
@@ -208,6 +211,7 @@ def _run_response(run: AnalysisRun) -> AnalysisRunResponse:
         corpus_id=run.corpus_id,
         run_type=run.run_type,
         status=run.status,
+        run_version=int(getattr(run, "run_version", 1) or 1),
         progress_stage=run.progress_stage,
         parameters=_loads(run.parameters_json),
         metrics=_loads(run.metrics_json),
@@ -1020,6 +1024,7 @@ async def assign_corpus_annotation_tasks(
         annotation_mode=body.annotation_mode,
         blind_mode=body.blind_mode,
         ai_assistance_enabled=body.ai_assistance_enabled,
+        reveal_after=body.reveal_after,
         codebook_id=body.codebook_id,
     )
 
@@ -1052,6 +1057,7 @@ async def create_annotation_campaign(
         annotation_mode=body.annotation_mode,
         blind_mode=body.blind_mode,
         ai_assistance_enabled=body.ai_assistance_enabled,
+        reveal_after=body.reveal_after,
         annotator_ids=body.annotator_ids,
         metadata=body.metadata,
     )
@@ -1109,6 +1115,7 @@ async def patch_annotation_campaign(
         annotation_mode=body.annotation_mode,
         blind_mode=body.blind_mode,
         ai_assistance_enabled=body.ai_assistance_enabled,
+        reveal_after=body.reveal_after,
         metadata=body.metadata,
     )
     return await service.campaign_payload(campaign)
@@ -1185,6 +1192,7 @@ async def save_annotations(
         text_unit_id=body.text_unit_id,
         codebook_id=body.codebook_id,
         values=body.values,
+        campaign_id=body.campaign_id,
         mark_task_complete=body.mark_task_complete,
     )
     return [AnnotationResponse.model_validate(a) for a in annotations]
@@ -1202,11 +1210,12 @@ async def annotation_progress(
 @router.get("/text-units/{text_unit_id}/annotations")
 async def list_unit_annotations(
     text_unit_id: str,
+    campaign_id: str | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     annotations = await AnnotationService(db).list_annotations_for_unit(
-        text_unit_id, user_id=current_user.id
+        text_unit_id, user_id=current_user.id, campaign_id=campaign_id
     )
     return [AnnotationResponse.model_validate(a) for a in annotations]
 
@@ -1218,6 +1227,7 @@ async def list_unit_annotations(
 async def list_corpus_annotations_for_units(
     corpus_id: str,
     text_unit_ids: list[str] = Query(default=[]),
+    campaign_id: str | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -1227,7 +1237,10 @@ async def list_corpus_annotations_for_units(
     MODEL PREDICTION / HUMAN ANNOTATION / ADJUDICATED GOLD layers separate.
     """
     annotations = await AnnotationService(db).list_annotations_for_units(
-        corpus_id, user_id=current_user.id, text_unit_ids=text_unit_ids
+        corpus_id,
+        user_id=current_user.id,
+        text_unit_ids=text_unit_ids,
+        campaign_id=campaign_id,
     )
     return [AnnotationResponse.model_validate(a) for a in annotations]
 
@@ -1328,6 +1341,7 @@ async def save_adjudication(
         label_id=body.label_id,
         final_value=body.final_value,
         comment=body.comment,
+        campaign_id=body.campaign_id,
     )
     return {"id": adjudication.id}
 
@@ -1335,10 +1349,66 @@ async def save_adjudication(
 @router.get("/corpora/{corpus_id}/adjudications")
 async def list_adjudications(
     corpus_id: str,
+    campaign_id: str | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await AdjudicationService(db).list_adjudications(corpus_id, user_id=current_user.id)
+    return await AdjudicationService(db).list_adjudications(
+        corpus_id, user_id=current_user.id, campaign_id=campaign_id
+    )
+
+
+@router.get("/annotation-campaigns/{campaign_id}/disagreements")
+async def list_campaign_disagreements(
+    campaign_id: str,
+    codebook_id: str | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    campaign = await AnnotationCampaignService(db).get_campaign(
+        campaign_id, user_id=current_user.id
+    )
+    resolved_codebook_id = codebook_id or campaign.codebook_id
+    if not resolved_codebook_id:
+        raise HTTPException(status_code=422, detail="Campaign has no codebook")
+    return await AdjudicationService(db).list_disagreements(
+        campaign.corpus_id,
+        user_id=current_user.id,
+        codebook_id=resolved_codebook_id,
+        campaign_id=campaign_id,
+    )
+
+
+@router.post("/annotation-campaigns/{campaign_id}/adjudications", status_code=201)
+async def save_campaign_adjudication(
+    campaign_id: str,
+    body: AdjudicationSaveRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    adjudication = await AdjudicationService(db).save_adjudication(
+        user_id=current_user.id,
+        text_unit_id=body.text_unit_id,
+        label_id=body.label_id,
+        final_value=body.final_value,
+        comment=body.comment,
+        campaign_id=campaign_id,
+    )
+    return {"id": adjudication.id}
+
+
+@router.get("/annotation-campaigns/{campaign_id}/adjudications")
+async def list_campaign_adjudications(
+    campaign_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    campaign = await AnnotationCampaignService(db).get_campaign(
+        campaign_id, user_id=current_user.id
+    )
+    return await AdjudicationService(db).list_adjudications(
+        campaign.corpus_id, user_id=current_user.id, campaign_id=campaign_id
+    )
 
 
 # ------------------------------------------------------------------
@@ -1811,6 +1881,7 @@ async def dataset_preview(
         annotation_source=body.annotation_source,
         selected_annotator_id=body.selected_annotator_id,
         minimum_agreement=body.minimum_agreement,
+        annotation_campaign_id=body.annotation_campaign_id,
     )
 
 
@@ -1834,6 +1905,7 @@ async def freeze_dataset(
         annotation_source=body.annotation_source,
         selected_annotator_id=body.selected_annotator_id,
         minimum_agreement=body.minimum_agreement,
+        annotation_campaign_id=body.annotation_campaign_id,
     )
     return _snapshot_response(snapshot)
 
@@ -1970,6 +2042,32 @@ async def update_model_lifecycle(
     return _model_response(model)
 
 
+@router.get(
+    "/models/{model_id}/lifecycle-events",
+    response_model=list[ModelLifecycleEventResponse],
+)
+async def list_model_lifecycle_events(
+    model_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    events = await ModelLifecycleService(db).list_events(model_id, user_id=current_user.id)
+    return [
+        ModelLifecycleEventResponse(
+            id=event.id,
+            model_id=event.model_id,
+            from_status=event.from_status,
+            to_status=event.to_status,
+            actor_id=event.actor_id,
+            reason=event.reason,
+            run_id=event.run_id,
+            metadata=_loads(event.metadata_json, {}),
+            created_at=event.created_at,
+        )
+        for event in events
+    ]
+
+
 @router.get("/classifiers/{model_id}", response_model=TrainedModelResponse)
 async def get_classifier(
     model_id: str,
@@ -2022,6 +2120,19 @@ async def compare_classifier_drift(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if body.baseline_prediction_set_id and body.current_prediction_set_id:
+        return await DriftService(db).compare_prediction_sets(
+            corpus_id,
+            user_id=current_user.id,
+            mode=body.mode,
+            baseline_prediction_set_id=body.baseline_prediction_set_id,
+            current_prediction_set_id=body.current_prediction_set_id,
+        )
+    if body.baseline is None or body.current is None:
+        raise HTTPException(
+            status_code=422,
+            detail="baseline/current aggregates or both PredictionSet IDs are required",
+        )
     report = await DriftService(db).compare_distributions(
         corpus_id,
         user_id=current_user.id,
@@ -2062,6 +2173,76 @@ async def get_prediction_set(
         predictions=[
             _prediction_item_response(prediction) for prediction in payload["predictions"]
         ],
+    )
+
+
+@router.get(
+    "/prediction-sets/{prediction_set_id}/predictions",
+    response_model=PredictionSetPredictionsPageResponse,
+)
+async def browse_prediction_set_predictions(
+    prediction_set_id: str,
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    predicted_label: str | None = None,
+    min_confidence: float | None = None,
+    max_confidence: float | None = None,
+    min_uncertainty: float | None = None,
+    max_uncertainty: float | None = None,
+    review_status: str | None = Query(default=None, pattern="^(unreviewed|annotated|adjudicated)$"),
+    human_disagreement: bool | None = None,
+    campaign_id: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    page = await PredictionSetService(db).browse_predictions(
+        prediction_set_id,
+        user_id=current_user.id,
+        limit=limit,
+        offset=offset,
+        predicted_label=predicted_label,
+        min_confidence=min_confidence,
+        max_confidence=max_confidence,
+        min_uncertainty=min_uncertainty,
+        max_uncertainty=max_uncertainty,
+        review_status=review_status,
+        human_disagreement=human_disagreement,
+        campaign_id=campaign_id,
+    )
+    return PredictionSetPredictionsPageResponse(
+        items=[
+            PredictionSetPredictionRowResponse(
+                prediction=_prediction_item_response(row["prediction"]),
+                human_annotations=[
+                    {
+                        "id": annotation.id,
+                        "text_unit_id": annotation.text_unit_id,
+                        "label_id": annotation.label_id,
+                        "value": annotation.value,
+                        "annotator_id": annotation.annotator_id,
+                        "campaign_id": annotation.campaign_id,
+                    }
+                    for annotation in row["human_annotations"]
+                ],
+                adjudications=[
+                    {
+                        "id": adjudication.id,
+                        "text_unit_id": adjudication.text_unit_id,
+                        "label_id": adjudication.label_id,
+                        "final_value": adjudication.final_value,
+                        "campaign_id": adjudication.campaign_id,
+                    }
+                    for adjudication in row["adjudications"]
+                ],
+                review_status=row["review_status"],
+                human_disagreement=row["human_disagreement"],
+                provenance_layers=row["provenance_layers"],
+            )
+            for row in page["items"]
+        ],
+        total=page["total"],
+        limit=limit,
+        offset=offset,
     )
 
 
@@ -2575,18 +2756,14 @@ async def stream_run_events(
                     try:
                         envelope = json.loads(raw) if isinstance(raw, str) else raw
                         run_payload = envelope.get("run") if isinstance(envelope, dict) else None
-                        redis_event = (
-                            envelope.get("event") if isinstance(envelope, dict) else None
-                        )
+                        redis_event = envelope.get("event") if isinstance(envelope, dict) else None
                     except (TypeError, json.JSONDecodeError):
                         run_payload = None
                         redis_event = None
 
                     if isinstance(run_payload, dict):
                         current = AnalysisRunResponse.model_validate(run_payload)
-                        payload = json.dumps(
-                            current.model_dump(mode="json"), separators=(",", ":")
-                        )
+                        payload = json.dumps(current.model_dump(mode="json"), separators=(",", ":"))
                         if current.artifact_path and (
                             previous is None or current.artifact_path != previous.artifact_path
                         ):
@@ -2594,7 +2771,9 @@ async def stream_run_events(
                         name = redis_event or _run_event_name(current, previous)
                         if name != "artifact-created":
                             yield f"event: {name}\ndata: {payload}\n\n"
-                        elif previous is not None and current.artifact_path == previous.artifact_path:
+                        elif (
+                            previous is not None and current.artifact_path == previous.artifact_path
+                        ):
                             # Redis said artifact-created but path unchanged — treat as progress.
                             yield f"event: progress\ndata: {payload}\n\n"
                         previous = current
@@ -2604,14 +2783,14 @@ async def stream_run_events(
 
                 now = asyncio.get_running_loop().time()
                 # Rare DB reconcile (missed publish / Redis down) — not 1Hz polling.
-                should_reconcile = (not use_redis) or (now - last_db_reconcile >= db_reconcile_every)
+                should_reconcile = (not use_redis) or (
+                    now - last_db_reconcile >= db_reconcile_every
+                )
                 if should_reconcile:
                     last_db_reconcile = now
                     current = await _load_response()
                     if previous != current:
-                        payload = json.dumps(
-                            current.model_dump(mode="json"), separators=(",", ":")
-                        )
+                        payload = json.dumps(current.model_dump(mode="json"), separators=(",", ":"))
                         if current.artifact_path and (
                             previous is None or current.artifact_path != previous.artifact_path
                         ):

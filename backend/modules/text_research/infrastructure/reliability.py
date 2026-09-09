@@ -548,7 +548,8 @@ def reliability_diagnostics(
     elif pairable_unit_count < small_n_threshold:
         if n_coders == 2:
             warnings.append(
-                f"Only {pairable_unit_count} overlapping annotations are available for Cohen's kappa."
+                f"Only {pairable_unit_count} overlapping annotations are available "
+                "for Cohen's kappa."
             )
         else:
             warnings.append(
@@ -562,9 +563,7 @@ def reliability_diagnostics(
 
     share = dominant_category_share(class_prevalence or {})
     if share is not None and share >= dominant_share_threshold and pairable_unit_count > 0:
-        warnings.append(
-            f"{share:.0%} of annotations use one category. Kappa may be unstable."
-        )
+        warnings.append(f"{share:.0%} of annotations use one category. Kappa may be unstable.")
 
     for label, payload in (
         ("Cohen's κ", kappa),

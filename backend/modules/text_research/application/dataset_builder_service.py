@@ -38,6 +38,7 @@ from backend.modules.text_research.domain.models import (
     dumps,
     loads,
 )
+from backend.modules.text_research.infrastructure.provenance import stable_content_hash
 
 
 def _utcnow() -> datetime:
@@ -63,6 +64,10 @@ def build_snapshot_metadata(
     annotation_source: str,
     selected_annotator_id: str | None,
     minimum_agreement: float | None,
+    annotation_campaign_id: str | None = None,
+    annotation_campaign_snapshot_hash: str | None = None,
+    adjudication_policy: str | None = None,
+    gold_source: str | None = None,
     frozen_at: datetime | None = None,
 ) -> dict[str, Any]:
     """Pure builder for the ``metadata`` block stored in a frozen snapshot."""
@@ -71,6 +76,10 @@ def build_snapshot_metadata(
         "annotation_resolution_strategy": annotation_source,
         "selected_annotator_id": selected_annotator_id,
         "minimum_agreement": minimum_agreement,
+        "annotation_campaign_id": annotation_campaign_id,
+        "annotation_campaign_snapshot_hash": annotation_campaign_snapshot_hash,
+        "adjudication_policy": adjudication_policy,
+        "gold_source": gold_source,
         "frozen_at": (frozen_at or _utcnow()).isoformat(),
     }
 
@@ -86,15 +95,31 @@ class DatasetBuilderService(ResearchAccessMixin):
         annotation_source: str,
         selected_annotator_id: str | None = None,
         minimum_agreement: float | None = None,
+        annotation_campaign_id: str | None = None,
     ) -> tuple[dict[str, dict[str, str]], list[dict[str, Any]], list[dict[str, Any]]]:
         codebook = await self.get_codebook_or_404(codebook_id, user_id=user_id)
-        annotations = await self.repo.list_annotations_for_corpus(corpus_id)
+        campaign = None
+        if annotation_campaign_id:
+            campaign = await self.repo.get_annotation_campaign(annotation_campaign_id)
+            if (
+                campaign is None
+                or campaign.corpus_id != corpus_id
+                or campaign.codebook_id != codebook_id
+            ):
+                raise HTTPException(
+                    status_code=422, detail="Campaign does not match the corpus/codebook"
+                )
+        annotations = await self.repo.list_annotations_for_corpus(
+            corpus_id, campaign_id=annotation_campaign_id
+        )
         annotations = [
             a
             for a in annotations
             if a.codebook_version == codebook.version and a.label_id in label_ids
         ]
-        adjudications = await self.repo.list_adjudications_for_corpus(corpus_id)
+        adjudications = await self.repo.list_adjudications_for_corpus(
+            corpus_id, campaign_id=annotation_campaign_id
+        )
         adjudication_lookup = {(a.text_unit_id, a.label_id): a.final_value for a in adjudications}
 
         # label_id -> unit_id -> annotator_id -> value
@@ -158,8 +183,10 @@ class DatasetBuilderService(ResearchAccessMixin):
         annotation_source: str,
         selected_annotator_id: str | None = None,
         minimum_agreement: float | None = None,
+        annotation_campaign_id: str | None = None,
     ) -> dict[str, Any]:
         await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        codebook = await self.get_codebook_or_404(codebook_id, user_id=user_id)
         if not label_ids:
             raise HTTPException(status_code=400, detail="At least one label is required")
 
@@ -171,6 +198,7 @@ class DatasetBuilderService(ResearchAccessMixin):
             annotation_source=annotation_source,
             selected_annotator_id=selected_annotator_id,
             minimum_agreement=minimum_agreement,
+            annotation_campaign_id=annotation_campaign_id,
         )
 
         fully_labeled_unit_ids = (
@@ -219,8 +247,26 @@ class DatasetBuilderService(ResearchAccessMixin):
                 warnings.append(f"Label '{label_name}' has very few positive ('yes') examples.")
 
         annotator_ids: set[str] = set()
-        for per_unit in await self.repo.list_annotations_for_units(unit_ids) if unit_ids else []:
+        for per_unit in (
+            await self.repo.list_annotations_for_units(unit_ids, campaign_id=annotation_campaign_id)
+            if unit_ids
+            else []
+        ):
             annotator_ids.add(per_unit.annotator_id)
+
+        campaign_snapshot_hash = (
+            stable_content_hash(
+                {
+                    "campaign_id": annotation_campaign_id,
+                    "codebook_version": codebook.version,
+                    "annotation_source": annotation_source,
+                    "unit_labels": unit_labels,
+                    "unit_ids": unit_ids,
+                }
+            )
+            if annotation_campaign_id
+            else None
+        )
 
         return {
             "unit_count": len(unit_ids),
@@ -236,6 +282,16 @@ class DatasetBuilderService(ResearchAccessMixin):
             "text_hashes": text_hashes,
             "corpus_checksums": corpus_checksums,
             "corpus_checksum_aggregate": corpus_checksum_aggregate,
+            "annotation_campaign_id": annotation_campaign_id,
+            "annotation_campaign_snapshot_hash": campaign_snapshot_hash,
+            "adjudication_policy": annotation_source,
+            "gold_source": (
+                "campaign_adjudication"
+                if annotation_campaign_id and annotation_source == "adjudicated_only"
+                else "campaign_annotations"
+                if annotation_campaign_id
+                else "legacy_annotations"
+            ),
         }
 
     async def freeze(
@@ -250,6 +306,7 @@ class DatasetBuilderService(ResearchAccessMixin):
         annotation_source: str,
         selected_annotator_id: str | None = None,
         minimum_agreement: float | None = None,
+        annotation_campaign_id: str | None = None,
     ) -> TrainingDatasetSnapshot:
         corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
         codebook = await self.get_codebook_or_404(codebook_id, user_id=user_id)
@@ -262,6 +319,7 @@ class DatasetBuilderService(ResearchAccessMixin):
             annotation_source=annotation_source,
             selected_annotator_id=selected_annotator_id,
             minimum_agreement=minimum_agreement,
+            annotation_campaign_id=annotation_campaign_id,
         )
         if preview["unit_count"] == 0:
             raise HTTPException(
@@ -279,6 +337,10 @@ class DatasetBuilderService(ResearchAccessMixin):
                 codebook_version=codebook.version,
                 annotation_source=annotation_source,
                 minimum_agreement=minimum_agreement,
+                annotation_campaign_id=annotation_campaign_id,
+                annotation_campaign_snapshot_hash=preview["annotation_campaign_snapshot_hash"],
+                adjudication_policy=preview["adjudication_policy"],
+                gold_source=preview["gold_source"],
                 unit_ids_json=dumps(preview["unit_ids"]),
                 document_ids_json=dumps(preview["document_ids"]),
                 labels_json=dumps(label_ids),
@@ -294,6 +356,12 @@ class DatasetBuilderService(ResearchAccessMixin):
                             annotation_source=annotation_source,
                             selected_annotator_id=selected_annotator_id,
                             minimum_agreement=minimum_agreement,
+                            annotation_campaign_id=annotation_campaign_id,
+                            annotation_campaign_snapshot_hash=preview[
+                                "annotation_campaign_snapshot_hash"
+                            ],
+                            adjudication_policy=preview["adjudication_policy"],
+                            gold_source=preview["gold_source"],
                         ),
                     }
                 ),

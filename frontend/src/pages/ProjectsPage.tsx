@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,6 +8,8 @@ import {
     Box,
     Button,
     CircularProgress,
+    Drawer,
+    IconButton,
     Paper,
     Skeleton,
     Stack,
@@ -14,9 +17,11 @@ import {
     Typography,
 } from "@mui/material";
 import {
+    Add as AddIcon,
     AddCircleOutline as AddCircleOutlineIcon,
     FolderOpen as FolderOpenIcon,
     ArrowForward as ArrowForwardIcon,
+    Close as CloseIcon,
 } from "@mui/icons-material";
 import { alpha } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
@@ -42,6 +47,7 @@ export default function ProjectsPage() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { showToast } = useSnackbar();
+    const [createDrawerOpen, setCreateDrawerOpen] = useState(false);
     const { data: platformMetadata } = usePlatformMetadata();
     const { data: projects, isLoading, isError, error, refetch } = useQuery({
         queryKey: queryKeys.projects.all,
@@ -59,6 +65,7 @@ export default function ProjectsPage() {
         onSuccess: async (project) => {
             await queryClient.invalidateQueries({ queryKey: queryKeys.projects.all });
             reset();
+            setCreateDrawerOpen(false);
             showToast({ message: "Project created successfully.", severity: "success" });
             navigate(`/projects/${project.id}`);
         },
@@ -67,154 +74,232 @@ export default function ProjectsPage() {
     const coreDomainSingular = platformMetadata?.core_domain_singular ?? "Project";
     const coreDomainPlural = platformMetadata?.core_domain_plural ?? "Projects";
 
+    function openCreateDrawer() {
+        mutation.reset();
+        setCreateDrawerOpen(true);
+    }
+
+    function closeCreateDrawer() {
+        setCreateDrawerOpen(false);
+    }
+
+    const createForm = (
+        <Box component="form" onSubmit={handleSubmit((values) => mutation.mutate(values))}>
+            <Stack spacing={2}>
+                <TextField
+                    label={`${coreDomainSingular} name`}
+                    placeholder={`Acme ${coreDomainSingular}`}
+                    {...register("name")}
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                    fullWidth
+                />
+                <TextField
+                    label="Description"
+                    placeholder={`What is this ${coreDomainSingular.toLowerCase()} for?`}
+                    {...register("description")}
+                    error={!!errors.description}
+                    helperText={errors.description?.message}
+                    fullWidth
+                    multiline
+                    minRows={4}
+                />
+                {mutation.isError && (
+                    <Alert severity="error">
+                        {mutation.error instanceof Error
+                            ? mutation.error.message
+                            : `Failed to create ${coreDomainSingular.toLowerCase()}.`}
+                    </Alert>
+                )}
+                <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={mutation.isPending}
+                    startIcon={
+                        mutation.isPending ? (
+                            <CircularProgress size={16} />
+                        ) : (
+                            <AddCircleOutlineIcon />
+                        )
+                    }
+                >
+                    {mutation.isPending ? "Creating..." : `Create ${coreDomainSingular}`}
+                </Button>
+            </Stack>
+        </Box>
+    );
+
     return (
         <PageShell width="wide">
             <PageHeader
                 title={coreDomainPlural}
                 description={`Create and open ${coreDomainPlural.toLowerCase()} for research workspaces.`}
             />
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: { xs: "1fr", lg: "minmax(280px, 360px) minmax(0, 1fr)" },
-                    alignItems: "start",
-                }}
-            >
-                <SectionCard
-                    title={`Create ${coreDomainSingular}`}
-                    description={`Start a new ${coreDomainSingular.toLowerCase()} with a clear name and optional context.`}
-                >
-                    <Box component="form" onSubmit={handleSubmit((values) => mutation.mutate(values))}>
-                        <Stack spacing={2}>
-                            <TextField
-                                label={`${coreDomainSingular} name`}
-                                placeholder={`Acme ${coreDomainSingular}`}
-                                {...register("name")}
-                                error={!!errors.name}
-                                helperText={errors.name?.message}
-                                fullWidth
-                            />
-                            <TextField
-                                label="Description"
-                                placeholder={`What is this ${coreDomainSingular.toLowerCase()} for?`}
-                                {...register("description")}
-                                error={!!errors.description}
-                                helperText={errors.description?.message}
-                                fullWidth
-                                multiline
-                                minRows={4}
-                            />
-                            {mutation.isError && (
-                                <Alert severity="error">
-                                    {mutation.error instanceof Error
-                                        ? mutation.error.message
-                                        : `Failed to create ${coreDomainSingular.toLowerCase()}.`}
-                                </Alert>
-                            )}
-                            <Button
-                                type="submit"
-                                variant="contained"
-                                disabled={mutation.isPending}
-                                startIcon={mutation.isPending ? <CircularProgress size={16} /> : <AddCircleOutlineIcon />}
-                            >
-                                {mutation.isPending ? "Creating..." : `Create ${coreDomainSingular}`}
-                            </Button>
-                        </Stack>
-                    </Box>
-                </SectionCard>
 
-                <SectionCard
-                    title={`Your ${coreDomainPlural}`}
-                    description={`Browse the current ${coreDomainPlural.toLowerCase()} and scan for missing descriptions or naming gaps.`}
-                >
-                    <QueryBoundary
-                        isLoading={isLoading}
-                        isError={isError}
-                        error={error}
-                        errorFallback={`Failed to load ${coreDomainPlural.toLowerCase()}.`}
-                        onRetry={() => void refetch()}
-                        loadingFallback={
-                            <Box
-                                sx={{
-                                    display: "grid",
-                                    gap: 1.5,
-                                    gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
-                                }}
-                            >
-                                {Array.from({ length: 4 }).map((_, index) => (
-                                    <Skeleton key={index} variant="rounded" height={162} sx={{ borderRadius: 4 }} />
-                                ))}
-                            </Box>
-                        }
-                        isEmpty={!projects || projects.length === 0}
-                        emptyFallback={
-                            <EmptyState
-                                icon={<FolderOpenIcon />}
-                                title={`No ${coreDomainPlural.toLowerCase()} yet`}
-                                description={`Create the first ${coreDomainSingular.toLowerCase()} to give the workspace structure and momentum.`}
-                            />
-                        }
+            <SectionCard
+                title={`Your ${coreDomainPlural}`}
+                description={`Browse the current ${coreDomainPlural.toLowerCase()} and scan for missing descriptions or naming gaps.`}
+                action={
+                    <Button
+                        variant="contained"
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={openCreateDrawer}
                     >
+                        New {coreDomainSingular.toLowerCase()}
+                    </Button>
+                }
+            >
+                <QueryBoundary
+                    isLoading={isLoading}
+                    isError={isError}
+                    error={error}
+                    errorFallback={`Failed to load ${coreDomainPlural.toLowerCase()}.`}
+                    onRetry={() => void refetch()}
+                    loadingFallback={
                         <Box
                             sx={{
                                 display: "grid",
                                 gap: 1.5,
-                                gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
+                                gridTemplateColumns: {
+                                    xs: "1fr",
+                                    md: "repeat(2, minmax(0, 1fr))",
+                                },
                             }}
                         >
-                            {projects?.map((project) => (
-                                <Paper
-                                    key={project.id}
-                                    sx={(theme) => ({
-                                        p: 2.5,
-                                        borderRadius: 4,
-                                        border: `1px solid ${theme.palette.divider}`,
-                                        backgroundColor: theme.palette.background.paper,
-                                    })}
-                                >
-                                    <Stack spacing={1.25}>
-                                        <Stack direction="row" spacing={1.25} alignItems="center">
-                                            <Box
-                                                sx={(theme) => ({
-                                                    width: 42,
-                                                    height: 42,
-                                                    borderRadius: 3,
-                                                    display: "grid",
-                                                    placeItems: "center",
-                                                    color: "primary.main",
-                                                    backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.16 : 0.1),
-                                                })}
-                                            >
-                                                <FolderOpenIcon />
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="subtitle1">{project.name}</Typography>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    Created {formatDate(project.created_at)}
-                                                </Typography>
-                                            </Box>
-                                        </Stack>
-                                        <Typography variant="body2" color="text.secondary">
-                                            {project.description || `No description yet for this ${coreDomainSingular.toLowerCase()}.`}
-                                        </Typography>
-                                        <Box>
-                                            <Button
-                                                variant="text"
-                                                endIcon={<ArrowForwardIcon />}
-                                                onClick={() => navigate(`/projects/${project.id}`)}
-                                                sx={{ px: 0 }}
-                                            >
-                                                Open workspace
-                                            </Button>
-                                        </Box>
-                                    </Stack>
-                                </Paper>
+                            {Array.from({ length: 4 }).map((_, index) => (
+                                <Skeleton
+                                    key={index}
+                                    variant="rounded"
+                                    height={162}
+                                    sx={{ borderRadius: 4 }}
+                                />
                             ))}
                         </Box>
-                    </QueryBoundary>
-                </SectionCard>
-            </Box>
+                    }
+                    isEmpty={!projects || projects.length === 0}
+                    emptyFallback={
+                        <EmptyState
+                            icon={<FolderOpenIcon />}
+                            title={`No ${coreDomainPlural.toLowerCase()} yet`}
+                            description={`Create the first ${coreDomainSingular.toLowerCase()} to give the workspace structure and momentum.`}
+                            action={
+                                <Button
+                                    variant="contained"
+                                    startIcon={<AddIcon />}
+                                    onClick={openCreateDrawer}
+                                >
+                                    New {coreDomainSingular.toLowerCase()}
+                                </Button>
+                            }
+                        />
+                    }
+                >
+                    <Box
+                        sx={{
+                            display: "grid",
+                            gap: 1.5,
+                            gridTemplateColumns: {
+                                xs: "1fr",
+                                md: "repeat(2, minmax(0, 1fr))",
+                            },
+                        }}
+                    >
+                        {projects?.map((project) => (
+                            <Paper
+                                key={project.id}
+                                sx={(theme) => ({
+                                    p: 2.5,
+                                    borderRadius: 4,
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    backgroundColor: theme.palette.background.paper,
+                                })}
+                            >
+                                <Stack spacing={1.25}>
+                                    <Stack direction="row" spacing={1.25} alignItems="center">
+                                        <Box
+                                            sx={(theme) => ({
+                                                width: 42,
+                                                height: 42,
+                                                borderRadius: 3,
+                                                display: "grid",
+                                                placeItems: "center",
+                                                color: "primary.main",
+                                                backgroundColor: alpha(
+                                                    theme.palette.primary.main,
+                                                    theme.palette.mode === "dark" ? 0.16 : 0.1
+                                                ),
+                                            })}
+                                        >
+                                            <FolderOpenIcon />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="subtitle1">
+                                                {project.name}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Created {formatDate(project.created_at)}
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {project.description ||
+                                            `No description yet for this ${coreDomainSingular.toLowerCase()}.`}
+                                    </Typography>
+                                    <Box>
+                                        <Button
+                                            variant="text"
+                                            endIcon={<ArrowForwardIcon />}
+                                            onClick={() => navigate(`/projects/${project.id}`)}
+                                            sx={{ px: 0 }}
+                                        >
+                                            Open workspace
+                                        </Button>
+                                    </Box>
+                                </Stack>
+                            </Paper>
+                        ))}
+                    </Box>
+                </QueryBoundary>
+            </SectionCard>
+
+            <Drawer
+                anchor="right"
+                open={createDrawerOpen}
+                onClose={closeCreateDrawer}
+                PaperProps={{
+                    sx: {
+                        width: { xs: "100%", sm: 420 },
+                    },
+                }}
+            >
+                <Box
+                    sx={{
+                        p: 2.5,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                        height: "100%",
+                        overflow: "auto",
+                    }}
+                >
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                        <Typography variant="h6">Create {coreDomainSingular}</Typography>
+                        <IconButton
+                            aria-label="Close create project"
+                            onClick={closeCreateDrawer}
+                            edge="end"
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary">
+                        Start a new {coreDomainSingular.toLowerCase()} with a clear name and
+                        optional context.
+                    </Typography>
+                    {createForm}
+                </Box>
+            </Drawer>
         </PageShell>
     );
 }

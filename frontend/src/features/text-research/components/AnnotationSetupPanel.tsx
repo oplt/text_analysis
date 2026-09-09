@@ -97,6 +97,7 @@ export function AnnotationSetupPanel() {
                 annotation_mode: annotationMode,
                 campaign_name: campaignName.trim() || undefined,
                 codebook_id: ctx.selectedCodebookId || undefined,
+                reveal_after: "campaign_released",
             }),
         onSuccess: (result) => {
             ctx.setUnitType(unitType);
@@ -218,8 +219,8 @@ export function AnnotationSetupPanel() {
                 </RadioGroup>
                 {annotationMode === "blind_reliability" ? (
                     <Alert severity="info">
-                        Blind reliability coding hides model suggestions and peer annotations until
-                        tasks are complete, supporting independent double coding.
+                        Blind reliability coding hides peer codes, gold labels, and AI/model suggestions
+                        until the campaign is explicitly released.
                     </Alert>
                 ) : (
                     <Alert severity="info">

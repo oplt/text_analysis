@@ -301,6 +301,7 @@ class CorpusAnnotationAssignRequest(BaseModel):
     )
     blind_mode: bool | None = None
     ai_assistance_enabled: bool | None = None
+    reveal_after: str = "campaign_released"
 
 
 class CorpusAnnotationAssignResponse(BaseModel):
@@ -315,6 +316,7 @@ class CorpusAnnotationAssignResponse(BaseModel):
     annotation_mode: str | None = None
     blind_mode: bool | None = None
     ai_assistance_enabled: bool | None = None
+    reveal_after: str | None = None
 
 
 class AnnotationCampaignCreate(BaseModel):
@@ -331,6 +333,7 @@ class AnnotationCampaignCreate(BaseModel):
     annotation_mode: str = Field(default="blind_reliability")
     blind_mode: bool | None = None
     ai_assistance_enabled: bool | None = None
+    reveal_after: str = "campaign_released"
     annotator_ids: list[str] | None = None
     metadata: dict[str, Any] | None = None
 
@@ -342,6 +345,7 @@ class AnnotationCampaignUpdate(BaseModel):
     annotation_mode: str | None = None
     blind_mode: bool | None = None
     ai_assistance_enabled: bool | None = None
+    reveal_after: str | None = None
     metadata: dict[str, Any] | None = None
 
 
@@ -362,6 +366,7 @@ class AnnotationCampaignResponse(BaseModel):
     blind_mode: bool
     ai_assistance_enabled: bool
     annotation_mode: str
+    reveal_after: str
     status: str
     annotator_ids: list[str]
     created_by: str
@@ -396,6 +401,7 @@ class TextUnitContextResponse(BaseModel):
 class AnnotationSaveRequest(BaseModel):
     text_unit_id: str
     codebook_id: str
+    campaign_id: str | None = None
     values: list[dict[str, Any]]
     mark_task_complete: bool = True
 
@@ -409,6 +415,7 @@ class AnnotationResponse(BaseModel):
     confidence: float | None
     comment: str | None
     codebook_version: str
+    campaign_id: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -431,6 +438,7 @@ class AdjudicationSaveRequest(BaseModel):
     label_id: str
     final_value: str
     comment: str | None = None
+    campaign_id: str | None = None
 
 
 class DatasetPreviewRequest(BaseModel):
@@ -441,6 +449,7 @@ class DatasetPreviewRequest(BaseModel):
     annotation_source: str = "adjudicated_only"
     selected_annotator_id: str | None = None
     minimum_agreement: float | None = None
+    annotation_campaign_id: str | None = None
 
 
 class DatasetFreezeRequest(DatasetPreviewRequest):
@@ -461,6 +470,10 @@ class DatasetPreviewResponse(BaseModel):
     text_hashes: dict[str, str] = {}
     corpus_checksums: dict[str, str | None] = {}
     corpus_checksum_aggregate: str | None = None
+    annotation_campaign_id: str | None = None
+    annotation_campaign_snapshot_hash: str | None = None
+    adjudication_policy: str | None = None
+    gold_source: str | None = None
 
 
 class TrainingDatasetSnapshotResponse(BaseModel):
@@ -473,6 +486,10 @@ class TrainingDatasetSnapshotResponse(BaseModel):
     codebook_version: str
     annotation_source: str
     minimum_agreement: float | None
+    annotation_campaign_id: str | None = None
+    annotation_campaign_snapshot_hash: str | None = None
+    adjudication_policy: str | None = None
+    gold_source: str | None = None
     created_by: str
     created_at: datetime
 
@@ -863,6 +880,22 @@ class PredictionSetDetailResponse(PredictionSetResponse):
     predictions: list[ModelPredictionItemResponse]
 
 
+class PredictionSetPredictionRowResponse(BaseModel):
+    prediction: ModelPredictionItemResponse
+    human_annotations: list[dict[str, Any]]
+    adjudications: list[dict[str, Any]]
+    review_status: str
+    human_disagreement: bool
+    provenance_layers: dict[str, Any]
+
+
+class PredictionSetPredictionsPageResponse(BaseModel):
+    items: list[PredictionSetPredictionRowResponse]
+    total: int
+    limit: int
+    offset: int
+
+
 class ActiveLearningAssignRequest(BaseModel):
     """Assign uncertainty-ranked predictions to one or more annotators."""
 
@@ -897,6 +930,18 @@ class ModelLifecycleUpdateRequest(BaseModel):
     deprecate_others: bool = False
 
 
+class ModelLifecycleEventResponse(BaseModel):
+    id: str
+    model_id: str
+    from_status: str | None
+    to_status: str
+    actor_id: str | None
+    reason: str | None
+    run_id: str | None
+    metadata: dict[str, Any]
+    created_at: datetime
+
+
 class DriftDistributionPayload(BaseModel):
     label_counts: dict[str, int] | None = None
     scores: list[float] | None = None
@@ -904,10 +949,13 @@ class DriftDistributionPayload(BaseModel):
 
 
 class DriftMonitoringRequest(BaseModel):
-    baseline: DriftDistributionPayload
-    current: DriftDistributionPayload
+    baseline: DriftDistributionPayload | None = None
+    current: DriftDistributionPayload | None = None
     baseline_run_id: str | None = None
     current_run_id: str | None = None
+    mode: str = "MODEL_COMPARISON"
+    baseline_prediction_set_id: str | None = None
+    current_prediction_set_id: str | None = None
 
 
 class TopicTrainRequest(CorpusFilters):
@@ -1090,6 +1138,7 @@ class AnalysisRunResponse(BaseModel):
     corpus_id: str | None
     run_type: str
     status: str
+    run_version: int = 1
     progress_stage: str | None
     parameters: dict[str, Any] | None = None
     metrics: dict[str, Any] | None = None

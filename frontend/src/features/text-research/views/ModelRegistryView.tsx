@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
     Alert,
     Box,
@@ -67,8 +67,10 @@ import type { UnitType } from "../types";
 const LIFECYCLE_FILTERS = [
     { value: "", label: "All statuses" },
     { value: "candidate", label: "Candidate" },
-    { value: "approved", label: "Production" },
+    { value: "staging", label: "Staging" },
+    { value: "production", label: "Production" },
     { value: "deprecated", label: "Deprecated" },
+    { value: "archived", label: "Archived" },
 ] as const;
 
 export default function ModelRegistryView() {
@@ -82,7 +84,7 @@ export default function ModelRegistryView() {
     const [compareIds, setCompareIds] = useState<string[]>([]);
     const [driftPeerId, setDriftPeerId] = useState("");
     const [predictUnitType, setPredictUnitType] = useState<UnitType>(
-        (ctx.selectedUnitType as UnitType) || "paragraph"
+        ctx.unitType || "paragraph"
     );
     const [clonedConfig, setClonedConfig] = useState<Record<string, unknown> | null>(null);
     const [driftReport, setDriftReport] = useState<Record<string, unknown> | null>(null);
@@ -133,11 +135,10 @@ export default function ModelRegistryView() {
         enabled: Boolean(selectedModel?.corpus_id),
     });
 
-    const modelPredictionSets = useMemo(() => {
-        const all = predictionSetsQuery.data ?? [];
-        if (!selectedModelIdSafe) return all;
-        return all.filter((item) => item.trained_model_id === selectedModelIdSafe);
-    }, [predictionSetsQuery.data, selectedModelIdSafe]);
+    const predictionSets = predictionSetsQuery.data ?? [];
+    const modelPredictionSets = selectedModelIdSafe
+        ? predictionSets.filter((item) => item.trained_model_id === selectedModelIdSafe)
+        : predictionSets;
 
     const invalidateModels = async () => {
         await queryClient.invalidateQueries({
@@ -155,7 +156,7 @@ export default function ModelRegistryView() {
 
     const lifecycleMutation = useMutation({
         mutationFn: (payload: {
-            status: "candidate" | "approved" | "deprecated";
+            status: "candidate" | "staging" | "production" | "deprecated" | "archived";
             notes?: string;
             deprecate_others?: boolean;
         }) => updateModelLifecycle(selectedModelIdSafe!, payload),
@@ -178,14 +179,6 @@ export default function ModelRegistryView() {
         mutationFn: () => cloneClassifierConfig(selectedModelIdSafe!),
         onSuccess: (config) => {
             setClonedConfig(config);
-            try {
-                sessionStorage.setItem(
-                    "text-research:cloned-classifier-config",
-                    JSON.stringify(config)
-                );
-            } catch {
-                /* ignore quota */
-            }
             showToast({ message: "Training config cloned.", severity: "success" });
         },
         onError: (error) =>
@@ -323,6 +316,7 @@ export default function ModelRegistryView() {
                 >
                     {!models.length ? (
                         <EmptyState
+                            icon={<DriftIcon />}
                             title="No trained models"
                             description="Train a classifier from Classification, then manage lifecycle here."
                             action={
@@ -385,7 +379,7 @@ export default function ModelRegistryView() {
                                                             model.lifecycle_status
                                                         )}
                                                         variant={
-                                                            model.lifecycle_status === "approved"
+                                                            model.lifecycle_status === "production"
                                                                 ? "filled"
                                                                 : "outlined"
                                                         }
@@ -474,11 +468,11 @@ export default function ModelRegistryView() {
                                     startIcon={<PromoteIcon />}
                                     disabled={
                                         lifecycleMutation.isPending ||
-                                        selectedModel.lifecycle_status === "approved"
+                                        selectedModel.lifecycle_status === "production"
                                     }
                                     onClick={() =>
                                         lifecycleMutation.mutate({
-                                            status: "approved",
+                                            status: "production",
                                             notes: "Promoted to production from Model Registry",
                                             deprecate_others: true,
                                         })
@@ -508,11 +502,11 @@ export default function ModelRegistryView() {
                                     startIcon={<ArchiveIcon />}
                                     disabled={
                                         lifecycleMutation.isPending ||
-                                        selectedModel.lifecycle_status === "deprecated"
+                                        selectedModel.lifecycle_status === "archived"
                                     }
                                     onClick={() =>
                                         lifecycleMutation.mutate({
-                                            status: "deprecated",
+                                            status: "archived",
                                             notes: "Archived from Model Registry",
                                         })
                                     }
@@ -542,9 +536,19 @@ export default function ModelRegistryView() {
                                     size="small"
                                     variant="outlined"
                                     onClick={() =>
-                                        navigate(
-                                            `/research/${ctx.projectId}/classification?tab=train`
-                                        )
+                                        cloneClassifierConfig(selectedModel.id)
+                                            .then((config) =>
+                                                navigate(
+                                                    `/research/${ctx.projectId}/classification?tab=train`,
+                                                    { state: { retrainConfig: config } }
+                                                )
+                                            )
+                                            .catch((error: unknown) =>
+                                                showToast({
+                                                    message: getQueryErrorMessage(error, "Retrain setup failed."),
+                                                    severity: "error",
+                                                })
+                                            )
                                     }
                                 >
                                     Retrain
