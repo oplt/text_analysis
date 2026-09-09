@@ -21,7 +21,7 @@ import ftfy
 import regex
 import simplemma
 import snowballstemmer
-from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.feature_extraction.text import CountVectorizer, HashingVectorizer, TfidfVectorizer
 
 from backend.modules.text_research.infrastructure import language_processing as lang
 from backend.modules.text_research.infrastructure.language_processing import (
@@ -35,10 +35,13 @@ from backend.modules.text_research.infrastructure.language_processing import (
 )
 
 PREPROCESSING_IMPLEMENTATION = "text_research.preprocessing"
-PREPROCESSING_IMPLEMENTATION_VERSION = "2"
+PREPROCESSING_IMPLEMENTATION_VERSION = "3"
 
 DEFAULT_PREPROCESSING_CONFIG: dict[str, Any] = {
     "language": "en",
+    "language_mode": "manual",  # manual | auto | per_unit
+    "auto_detect_language": False,
+    "multilingual": False,
     "unicode_normalization": "NFC",  # None | NFC | NFKC | NFD | NFKD
     "fix_encoding": False,
     "lowercase": True,
@@ -48,6 +51,11 @@ DEFAULT_PREPROCESSING_CONFIG: dict[str, Any] = {
     "preserve_negation": True,
     "stemming": False,
     "lemmatization": False,
+    "pos_lemmatization": False,
+    "spacy_model": "en_core_web_sm",
+    "enable_ner": False,
+    "entity_masking": False,
+    "phrase_detection": False,
     "ngram_min": 1,
     "ngram_max": 1,
     "min_df": 1,
@@ -88,6 +96,9 @@ class PreprocessingConfig:
     """Serializable preprocessing profile used by analysis services."""
 
     language: str = "en"
+    language_mode: str = "manual"
+    auto_detect_language: bool = False
+    multilingual: bool = False
     unicode_normalization: str | None = "NFC"
     fix_encoding: bool = False
     lowercase: bool = True
@@ -97,6 +108,11 @@ class PreprocessingConfig:
     preserve_negation: bool = True
     stemming: bool = False
     lemmatization: bool = False
+    pos_lemmatization: bool = False
+    spacy_model: str = "en_core_web_sm"
+    enable_ner: bool = False
+    entity_masking: bool = False
+    phrase_detection: bool = False
     ngram_min: int = 1
     ngram_max: int = 1
     min_df: int | float = 1
@@ -119,9 +135,24 @@ class PreprocessingConfig:
                 )
             merged["unicode_normalization"] = form
         merged["language"] = normalize_language_code(merged.get("language") or "en")
+        mode = str(merged.get("language_mode") or "manual").strip().lower()
+        if mode not in {"manual", "auto", "per_unit"}:
+            raise ValueError("language_mode must be one of: manual, auto, per_unit")
+        merged["language_mode"] = mode
+        if merged.get("auto_detect_language") and mode == "manual":
+            merged["language_mode"] = "auto"
+        if merged.get("multilingual"):
+            merged["language_mode"] = "per_unit"
         merged["custom_stopwords"] = list(merged.get("custom_stopwords") or [])
+        merged["spacy_model"] = str(merged.get("spacy_model") or "en_core_web_sm").strip()
         if merged.get("stemming") and merged.get("lemmatization"):
             raise ValueError("Enable either stemming or lemmatization, not both.")
+        if merged.get("pos_lemmatization") and (
+            merged.get("stemming") or merged.get("lemmatization")
+        ):
+            raise ValueError(
+                "pos_lemmatization uses spaCy lemmas; disable stemming/lemmatization first."
+            )
         if merged.get("stemming") and not stemming_available(merged["language"]):
             raise ValueError(
                 f"Stemming requested but no Snowball stemmer is available for "
@@ -132,6 +163,8 @@ class PreprocessingConfig:
                 f"Lemmatization requested but no lemmatizer resources are available for "
                 f"language={merged['language']!r}."
             )
+        # spaCy-backed options are validated at tokenize/preview time so profiles
+        # can be authored before optional NLP extras are installed.
         field_names = {item.name for item in cls.__dataclass_fields__.values()}
         return cls(**{key: merged[key] for key in field_names if key in merged})
 
@@ -150,31 +183,57 @@ def describe_implementation(config: PreprocessingConfig | dict[str, Any] | None 
     profile = resolve_language(lang_code)
     stem_algo = snowball_algorithm_for_language(lang_code) if cfg.stemming else None
     lemma_name = "simplemma" if cfg.lemmatization else None
+    if cfg.pos_lemmatization:
+        lemma_name = f"spacy:{cfg.spacy_model}"
+    from backend.modules.text_research.infrastructure.nlp_preprocessing import (
+        describe_spacy_provenance,
+        spacy_available,
+    )
+
+    spacy_meta = describe_spacy_provenance(cfg.spacy_model)
     return {
         "preprocessing_implementation": PREPROCESSING_IMPLEMENTATION,
         "preprocessing_implementation_version": PREPROCESSING_IMPLEMENTATION_VERSION,
         "language": lang_code,
+        "language_mode": cfg.language_mode,
+        "auto_detect_language": bool(cfg.auto_detect_language),
+        "multilingual": bool(cfg.multilingual),
         "language_profile": profile.to_dict(),
-        "tokenizer": "unicode_regex",
-        "tokenizer_pattern": _UNICODE_TOKEN_RE.pattern,
+        "tokenizer": "spacy_pos" if cfg.pos_lemmatization else "unicode_regex",
+        "tokenizer_pattern": None if cfg.pos_lemmatization else _UNICODE_TOKEN_RE.pattern,
         "unicode_normalization": cfg.unicode_normalization,
         "fix_encoding": bool(cfg.fix_encoding),
         "stemmer": f"snowball_{stem_algo}" if stem_algo else None,
         "stemmer_package": "snowballstemmer" if cfg.stemming else None,
         "stemmer_package_version": _pkg_version("snowballstemmer") if cfg.stemming else None,
         "lemmatizer": lemma_name,
-        "lemmatizer_package": "simplemma" if cfg.lemmatization else None,
-        "lemmatizer_package_version": _pkg_version("simplemma") if cfg.lemmatization else None,
-        "model_name": None,
-        "model_version": None,
+        "lemmatizer_package": (
+            "spacy"
+            if cfg.pos_lemmatization
+            else ("simplemma" if cfg.lemmatization else None)
+        ),
+        "lemmatizer_package_version": (
+            spacy_meta.get("package_version")
+            if cfg.pos_lemmatization
+            else (_pkg_version("simplemma") if cfg.lemmatization else None)
+        ),
+        "model_name": cfg.spacy_model if (cfg.pos_lemmatization or cfg.entity_masking or cfg.phrase_detection or cfg.enable_ner) else None,
+        "model_version": spacy_meta.get("model_version") if (cfg.pos_lemmatization or cfg.entity_masking or cfg.phrase_detection or cfg.enable_ner) else None,
+        "spacy": spacy_meta,
+        "entity_masking": bool(cfg.entity_masking),
+        "phrase_detection": bool(cfg.phrase_detection),
+        "enable_ner": bool(cfg.enable_ner),
+        "pos_lemmatization": bool(cfg.pos_lemmatization),
         "package_versions": {
             "regex": _pkg_version("regex"),
             "ftfy": _pkg_version("ftfy"),
             "snowballstemmer": _pkg_version("snowballstemmer"),
             "simplemma": _pkg_version("simplemma"),
+            "spacy": spacy_meta.get("package_version"),
         },
         "stemming_available": stemming_available(lang_code),
         "lemmatization_available": lemmatization_available(lang_code),
+        "spacy_available": spacy_available(cfg.spacy_model),
         "stemming_requested": bool(cfg.stemming),
         "lemmatization_requested": bool(cfg.lemmatization),
         "degraded": profile.degraded,
@@ -251,20 +310,38 @@ def tokenize(text: str, config: dict[str, Any] | None = None) -> list[str]:
     negation_words = (
         negation_words_for(language) if cfg.get("preserve_negation", True) else frozenset()
     )
+    model_name = str(cfg.get("spacy_model") or "en_core_web_sm")
 
     working = text
     if cfg.get("fix_encoding"):
         working = ftfy.fix_text(working)
     working = apply_unicode_normalization(working, cfg.get("unicode_normalization"))
     working = normalize_whitespace(working)
-    if cfg.get("lowercase", True):
-        # Use lower() (not casefold) for stable research reproducibility across profiles.
-        working = working.lower()
 
-    if cfg.get("remove_punctuation", True):
-        tokens = _UNICODE_TOKEN_RE.findall(working)
+    if cfg.get("entity_masking"):
+        from backend.modules.text_research.infrastructure.nlp_preprocessing import (
+            mask_named_entities,
+        )
+
+        working = mask_named_entities(working, model_name=model_name)
+
+    if cfg.get("pos_lemmatization"):
+        from backend.modules.text_research.infrastructure.nlp_preprocessing import (
+            pos_aware_lemmas,
+        )
+
+        tokens = pos_aware_lemmas(working, model_name=model_name)
+        if cfg.get("lowercase", True):
+            tokens = [t.lower() for t in tokens]
     else:
-        tokens = [t for t in working.split(" ") if t]
+        if cfg.get("lowercase", True):
+            # Use lower() (not casefold) for stable research reproducibility across profiles.
+            working = working.lower()
+
+        if cfg.get("remove_punctuation", True):
+            tokens = _UNICODE_TOKEN_RE.findall(working)
+        else:
+            tokens = [t for t in working.split(" ") if t]
 
     if cfg.get("remove_numbers", False):
         tokens = [t for t in tokens if t in negation_words or not _is_number_token(t)]
@@ -273,14 +350,24 @@ def tokenize(text: str, config: dict[str, Any] | None = None) -> list[str]:
         stop_set = _stopword_set(cfg)
         tokens = [t for t in tokens if t in negation_words or t not in stop_set]
 
-    if cfg.get("lemmatization"):
-        tokens = [
-            t if t in negation_words else lemmatize_token(t, language) for t in tokens
-        ]
-    elif cfg.get("stemming"):
-        tokens = [
-            t if t in negation_words else snowball_stem(t, language) for t in tokens
-        ]
+    if not cfg.get("pos_lemmatization"):
+        if cfg.get("lemmatization"):
+            tokens = [
+                t if t in negation_words else lemmatize_token(t, language) for t in tokens
+            ]
+        elif cfg.get("stemming"):
+            tokens = [
+                t if t in negation_words else snowball_stem(t, language) for t in tokens
+            ]
+
+    if cfg.get("phrase_detection"):
+        from backend.modules.text_research.infrastructure.nlp_preprocessing import (
+            merge_phrase_tokens,
+            noun_chunk_phrases,
+        )
+
+        phrases = noun_chunk_phrases(text, model_name=model_name)
+        tokens = merge_phrase_tokens(tokens, phrases)
 
     return tokens
 
@@ -348,6 +435,7 @@ def preview_preprocessing(
         "config": cfg,
         "stemmer": impl["stemmer"] or ("snowball_english" if stemming_available("en") else None),
         "lemmatization_supported": impl["lemmatization_available"],
+        "spacy_available": impl.get("spacy_available", False),
         "implementation": impl,
     }
 
@@ -382,6 +470,34 @@ def build_tfidf_vectorizer(
     kwargs = _vectorizer_kwargs(config)
     kwargs.update(overrides)
     return TfidfVectorizer(**kwargs)
+
+
+def build_hashing_vectorizer(
+    config: dict[str, Any] | None = None,
+    *,
+    n_features: int = 2**18,
+    alternate_sign: bool = True,
+    norm: str | None = None,
+    **overrides: Any,
+) -> HashingVectorizer:
+    """Build a ``HashingVectorizer`` for huge exploratory corpora (no vocabulary).
+
+    HashingVectorizer does not support ``min_df`` / ``max_df`` / ``max_features``
+    the same way CountVectorizer does — those keys are dropped deliberately.
+    """
+    kwargs = _vectorizer_kwargs(config)
+    for key in ("min_df", "max_df", "max_features"):
+        kwargs.pop(key, None)
+    kwargs.update(
+        {
+            "n_features": int(n_features),
+            "alternate_sign": alternate_sign,
+            "norm": norm,
+            "dtype": "float64",
+        }
+    )
+    kwargs.update(overrides)
+    return HashingVectorizer(**kwargs)
 
 
 def _char_vectorizer_kwargs(

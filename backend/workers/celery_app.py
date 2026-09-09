@@ -5,6 +5,12 @@ from backend.core.logging import setup_logging
 
 setup_logging()
 
+# Cap BLAS/OpenMP early in the worker parent process (children re-apply on
+# worker_process_init). Safe no-op when RESEARCH_APPLY_THREAD_LIMITS=false.
+from backend.workers.parallelism import configure_worker_parallelism  # noqa: E402
+
+configure_worker_parallelism(force=False, overwrite_env=False)
+
 celery_app = Celery(
     "app_backend",
     broker=settings.celery_broker_url,
@@ -22,11 +28,27 @@ celery_app.conf.update(
         "backend.workers.tasks.run_ai_evaluation_task": {
             "queue": settings.CELERY_TASK_DEFAULT_QUEUE
         },
-        "backend.workers.tasks.research_segmentation_task": {"queue": "research_io"},
-        "backend.workers.tasks.research_classifier_training_task": {"queue": "research_cpu"},
-        "backend.workers.tasks.research_topic_model_training_task": {"queue": "research_cpu"},
-        "backend.workers.tasks.research_robustness_sweep_task": {"queue": "research_cpu"},
-        "backend.workers.tasks.research_prediction_task": {"queue": "research_cpu"},
+        "backend.workers.tasks.research_segmentation_task": {
+            "queue": settings.RESEARCH_QUEUE_IO
+        },
+        "backend.workers.tasks.research_classifier_training_task": {
+            "queue": settings.RESEARCH_QUEUE_CPU
+        },
+        "backend.workers.tasks.research_topic_model_training_task": {
+            "queue": settings.RESEARCH_QUEUE_GPU
+        },
+        "backend.workers.tasks.research_topic_k_sweep_task": {
+            "queue": settings.RESEARCH_QUEUE_GPU
+        },
+        "backend.workers.tasks.research_topic_seed_stability_task": {
+            "queue": settings.RESEARCH_QUEUE_GPU
+        },
+        "backend.workers.tasks.research_robustness_sweep_task": {
+            "queue": settings.RESEARCH_QUEUE_CPU
+        },
+        "backend.workers.tasks.research_prediction_task": {
+            "queue": settings.RESEARCH_QUEUE_CPU
+        },
     },
     task_serializer="json",
     accept_content=["json"],

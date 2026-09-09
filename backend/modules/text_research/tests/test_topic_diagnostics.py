@@ -1,9 +1,7 @@
 """Tests for topic-model diagnostics: NPMI coherence, K-sweep, seed stability,
 and the classical-engine plug-in protocol (§40-42).
 
-Pure scikit-learn/numpy — no DB/FastAPI dependency:
-
-    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest backend/modules/text_research/tests/test_topic_diagnostics.py
+Pure scikit-learn/numpy — no DB/FastAPI dependency.
 """
 
 from __future__ import annotations
@@ -11,6 +9,7 @@ from __future__ import annotations
 import unittest
 
 from backend.modules.text_research.infrastructure import topic_models
+from backend.modules.text_research.infrastructure.topic_engines import get_topic_engine
 
 
 class TopicCoherenceTests(unittest.TestCase):
@@ -109,10 +108,21 @@ class SeedStabilityTests(unittest.TestCase):
         )
         self.assertEqual(len(result["pairwise"]), 3)  # C(3,2)
         self.assertIn("mean_stability_jaccard", result)
+        self.assertEqual(result["matching_method"], "hungarian")
         for pair in result["pairwise"]:
             self.assertGreaterEqual(pair["mean_best_match_jaccard"], 0.0)
             self.assertLessEqual(pair["mean_best_match_jaccard"], 1.0)
             self.assertEqual(len(pair["matching"]), 3)
+            self.assertEqual(pair["matching_method"], "hungarian")
+
+    def test_match_topics_hungarian_one_to_one(self):
+        terms_a = [{"alpha", "beta"}, {"gamma", "delta"}]
+        terms_b = [{"beta", "alpha", "extra"}, {"gamma", "delta", "omega"}]
+        matching, mean_jaccard = topic_models.match_topics_hungarian(terms_a, terms_b)
+        self.assertEqual(len(matching), 2)
+        self.assertGreater(mean_jaccard, 0.5)
+        matched_pairs = {(m["topic_a"], m["topic_b"]) for m in matching}
+        self.assertEqual(matched_pairs, {(0, 0), (1, 1)})
 
     def test_requires_at_least_two_seeds(self):
         with self.assertRaises(ValueError):
@@ -130,6 +140,19 @@ class ClassicalTopicModelEngineTests(unittest.TestCase):
         result = engine.fit(texts, n_topics=2, config=None, random_seed=5)
         self.assertEqual(result["algorithm"], "nmf")
         self.assertEqual(len(result["topics"]), 2)
+
+    def test_registered_engine_infers_unseen_text_after_fit(self):
+        texts = [
+            "market economy trade liberty freedom",
+            "market trade economy investment growth",
+            "equality solidarity cohesion community welfare",
+            "community welfare equality solidarity support",
+        ]
+        engine = get_topic_engine("nmf")
+        engine.fit(texts, n_topics=2, random_seed=5)
+        inferred = engine.transform(["market trade growth", "community welfare support"])
+        self.assertEqual(len(inferred["dominant_topics"]), 2)
+        self.assertEqual(len(inferred["doc_topic_distribution"]), 2)
 
     def test_engine_rejects_unknown_algorithm(self):
         with self.assertRaises(ValueError):

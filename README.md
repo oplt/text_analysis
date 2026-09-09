@@ -221,4 +221,4 @@ See [docs/text-research.md](docs/text-research.md) for methods, Celery tasks, an
 
 ## License
 
-Proprietary / project license — update this section to match your organization’s terms.
+See [`LICENSE`](LICENSE) (MIT). Community docs: [`CONTRIBUTING.md`](CONTRIBUTING.md), [`SECURITY.md`](SECURITY.md), [`CITATION.cff`](CITATION.cff), [`CHANGELOG.md`](CHANGELOG.md).

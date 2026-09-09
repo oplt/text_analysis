@@ -134,6 +134,52 @@ export type PreprocessingProfile = {
     updated_at: string;
 };
 
+export type CleaningProfile = {
+    id: string;
+    project_id: string;
+    name: string;
+    description: string | null;
+    version: string;
+    config: Record<string, unknown>;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+};
+
+export type CleaningPreview = {
+    rows: Array<{
+        raw_preview: string;
+        cleaned_preview: string;
+        chars_raw: number;
+        chars_cleaned: number;
+        raw_checksum: string;
+        cleaned_checksum: string;
+        steps: Array<{
+            name: string;
+            discarded_chars: number;
+            details: Record<string, unknown>;
+        }>;
+    }>;
+    config: Record<string, unknown>;
+    engine: string;
+    engine_version: string;
+    profile_name: string | null;
+    profile_version: string | null;
+};
+
+export type IngestionQaDocument = {
+    document_id: string;
+    title: string | null;
+    language: string | null;
+    findings: Array<{
+        code: string;
+        severity: "error" | "warning" | "info" | string;
+        message: string;
+        details: Record<string, unknown>;
+    }>;
+    metrics: Record<string, unknown>;
+};
+
 export type Annotation = {
     id: string;
     text_unit_id: string;

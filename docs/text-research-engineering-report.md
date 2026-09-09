@@ -176,3 +176,17 @@ Be explicit:
 → `export reproducibility manifest`
 
 The platform is intended as a **general-purpose** computational text-analysis environment: changing substantive concepts, metadata fields, labels, or dictionaries should not require source-code changes.
+
+---
+
+## Follow-up: architecture gap closure (2026-09-09)
+
+See `docs/text-research-gap-implementation-status.md`.
+
+Added: `PreparedCorpusArtifact` shared prepare path; AnalysisSpecification v2 +
+PipelineCompiler; artifact registry; stratified SplitPlanner; language detection;
+TextTransform compose; Hungarian topic stability; topic `group_by`; threshold
+objectives + abstention; error analysis; hashing embeddings + embedding classifier;
+optional BERTopic/spaCy engines; AnalysisTask contract; pipeline property tests;
+MIT LICENSE + community docs.
+

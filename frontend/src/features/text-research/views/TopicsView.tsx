@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Alert,
     Button,
+    Checkbox,
+    FormControlLabel,
     MenuItem,
     Stack,
     TextField,
@@ -11,10 +13,14 @@ import { PlayArrow as TrainIcon } from "@mui/icons-material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSnackbar } from "../../../app/snackbarContext";
 import {
+    compareRuns,
     getRun,
     listPreprocessingProfiles,
+    listRuns,
     listTopicLabels,
     nameTopic,
+    runTopicKSweep,
+    runTopicSeedStability,
     trainTopicModel,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
@@ -34,10 +40,28 @@ import {
 } from "../components/ResearchCharts";
 import { ResearchResultsTable } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
+import {
+    DEFAULT_TOPIC_FILTERS,
+    TopicComparisonView,
+    TopicDocumentExplorer,
+    TopicKSweepView,
+    TopicSeedStabilityView,
+    type SharedTopicFilters,
+} from "../components/TopicDiagnosticsPanels";
 import { useResearchContext } from "../hooks/useResearchContext";
+import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 
-const TOPIC_TABS = ["setup", "topics", "distribution", "metadata", "documents"] as const;
+const TOPIC_TABS = [
+    "setup",
+    "topics",
+    "distribution",
+    "metadata",
+    "documents",
+    "ksweep",
+    "stability",
+    "compare",
+] as const;
 type TopicTab = (typeof TOPIC_TABS)[number];
 
 const TOPIC_TAB_ITEMS: Array<{ value: TopicTab; label: string }> = [
@@ -46,11 +70,13 @@ const TOPIC_TAB_ITEMS: Array<{ value: TopicTab; label: string }> = [
     { value: "distribution", label: "Distribution" },
     { value: "metadata", label: "Metadata" },
     { value: "documents", label: "Documents" },
+    { value: "ksweep", label: "K sweep" },
+    { value: "stability", label: "Seed stability" },
+    { value: "compare", label: "Compare" },
 ];
 
 type TopicTerm = { term?: string; weight?: number };
 type TopicRow = { topic_id?: number | string; top_terms?: TopicTerm[] };
-type RepresentativeUnit = { document_title?: string | null; text?: string; weight?: number };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
     return value && typeof value === "object" && !Array.isArray(value)
@@ -84,12 +110,6 @@ function parseTopicPrevalence(results: unknown): Array<{ label: string; value: n
         .sort((a, b) => Number(a.label.replace(/\D/g, "")) - Number(b.label.replace(/\D/g, "")));
 }
 
-function parseRepresentatives(results: unknown, topicId: string): RepresentativeUnit[] {
-    const representatives = asRecord(asRecord(results)?.representative_units);
-    const units = representatives?.[topicId];
-    return Array.isArray(units) ? (units as RepresentativeUnit[]) : [];
-}
-
 function parseMetadataBreakdowns(results: unknown): Record<string, Record<string, Record<string, number>>> {
     const raw = asRecord(asRecord(results)?.metadata_breakdowns);
     if (!raw) return {};
@@ -105,7 +125,7 @@ function parseMetadataBreakdowns(results: unknown): Record<string, Record<string
 function diagnosticCards(metrics: unknown): Array<{ label: string; value: string | number }> {
     const data = asRecord(metrics);
     if (!data) return [];
-    const keys = ["n_topics", "topic_diversity", "top_term_overlap", "perplexity"] as const;
+    const keys = ["n_topics", "topic_diversity", "top_term_overlap", "perplexity", "coherence"] as const;
     return keys
         .filter((key) => data[key] != null)
         .map((key) => {
@@ -125,26 +145,50 @@ function optionalText(value: string): string | undefined {
     return trimmed ? trimmed : undefined;
 }
 
+function filterArgs(filters: SharedTopicFilters) {
+    return {
+        organization: optionalText(filters.organization),
+        language: optionalText(filters.language),
+        region: optionalText(filters.region),
+        cultural_sphere: optionalText(filters.culturalSphere),
+        publication_year_min: filters.publicationYearMin
+            ? Number(filters.publicationYearMin)
+            : undefined,
+        publication_year_max: filters.publicationYearMax
+            ? Number(filters.publicationYearMax)
+            : undefined,
+    };
+}
+
 export default function TopicsView() {
     const ctx = useResearchContext();
     const { showToast } = useSnackbar();
     const queryClient = useQueryClient();
 
-    const [algorithm, setAlgorithm] = useState<"lda" | "nmf">("lda");
+    const [algorithm, setAlgorithm] = useState<"lda" | "nmf" | "semantic_stack" | "bertopic">("lda");
     const [nTopics, setNTopics] = useState(5);
     const [maxIterations, setMaxIterations] = useState(20);
     const [randomSeed, setRandomSeed] = useState(42);
     const [profileId, setProfileId] = useState("");
-    const [organization, setOrganization] = useState("");
-    const [language, setLanguage] = useState("");
-    const [region, setRegion] = useState("");
-    const [culturalSphere, setCulturalSphere] = useState("");
-    const [publicationYearMin, setPublicationYearMin] = useState("");
-    const [publicationYearMax, setPublicationYearMax] = useState("");
+    const [holdoutFraction, setHoldoutFraction] = useState("");
+    const [groupByText, setGroupByText] = useState("publication_year,organization");
+    const [embeddingProvider, setEmbeddingProvider] = useState<"hashing" | "sentence_transformers">(
+        "hashing"
+    );
+    const [embeddingModelName, setEmbeddingModelName] = useState("all-MiniLM-L6-v2");
+    const [persistEmbeddings, setPersistEmbeddings] = useState(true);
+    const [filters, setFilters] = useState<SharedTopicFilters>(DEFAULT_TOPIC_FILTERS);
     const [runId, setRunId] = useState<string | null>(null);
+    const [kSweepRunId, setKSweepRunId] = useState<string | null>(null);
+    const [stabilityRunId, setStabilityRunId] = useState<string | null>(null);
+    const [compareAId, setCompareAId] = useState("");
+    const [compareBId, setCompareBId] = useState("");
     const [selectedTopicId, setSelectedTopicId] = useState<string>("0");
     const [draftNames, setDraftNames] = useState<Record<string, string>>({});
     const [tab, setTab] = useTabQueryParam(TOPIC_TABS, "setup");
+    const sseConnected = useRunEvents(runId, ctx.projectId);
+    const kSweepSse = useRunEvents(kSweepRunId, ctx.projectId);
+    const stabilitySse = useRunEvents(stabilityRunId, ctx.projectId);
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
@@ -156,7 +200,50 @@ export default function TopicsView() {
         queryKey: queryKeys.textResearch.run(runId ?? ""),
         queryFn: () => getRun(runId!),
         enabled: Boolean(runId),
-        refetchInterval: activeRunRefetchInterval,
+        refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
+    });
+
+    const kSweepQuery = useQuery({
+        queryKey: queryKeys.textResearch.run(kSweepRunId ?? ""),
+        queryFn: () => getRun(kSweepRunId!),
+        enabled: Boolean(kSweepRunId),
+        refetchInterval: (query) => activeRunRefetchInterval(query, kSweepSse),
+    });
+
+    const stabilityQuery = useQuery({
+        queryKey: queryKeys.textResearch.run(stabilityRunId ?? ""),
+        queryFn: () => getRun(stabilityRunId!),
+        enabled: Boolean(stabilityRunId),
+        refetchInterval: (query) => activeRunRefetchInterval(query, stabilitySse),
+    });
+
+    const topicRunsQuery = useQuery({
+        queryKey: queryKeys.textResearch.runs(ctx.projectId, ctx.selectedCorpusId, "topic_model"),
+        queryFn: () =>
+            listRuns(ctx.projectId, {
+                corpus_id: ctx.selectedCorpusId || undefined,
+                run_type: "topic_model",
+                limit: 50,
+            }),
+        enabled: Boolean(ctx.projectId) && (tab === "compare" || tab === "ksweep" || tab === "stability"),
+    });
+
+    const compareAQuery = useQuery({
+        queryKey: queryKeys.textResearch.run(compareAId),
+        queryFn: () => getRun(compareAId),
+        enabled: Boolean(compareAId),
+    });
+
+    const compareBQuery = useQuery({
+        queryKey: queryKeys.textResearch.run(compareBId),
+        queryFn: () => getRun(compareBId),
+        enabled: Boolean(compareBId),
+    });
+
+    const compareQuery = useQuery({
+        queryKey: ["text-research", "topic-compare", compareAId, compareBId],
+        queryFn: () => compareRuns(compareAId, compareBId),
+        enabled: Boolean(compareAId && compareBId && compareAId !== compareBId),
     });
 
     const completed = runQuery.data?.status === "completed";
@@ -164,6 +251,15 @@ export default function TopicsView() {
     const dominantCounts = parseDominantCounts(runQuery.data?.results);
     const topicPrevalence = parseTopicPrevalence(runQuery.data?.results);
     const cards = diagnosticCards(runQuery.data?.metrics);
+    const resultsRecord = asRecord(runQuery.data?.results);
+    const topicFamily =
+        typeof resultsRecord?.family === "string" ? resultsRecord.family : null;
+    const topicNotes = Array.isArray(resultsRecord?.notes)
+        ? resultsRecord.notes.filter((n): n is string => typeof n === "string")
+        : typeof resultsRecord?.notes === "string"
+          ? [resultsRecord.notes]
+          : [];
+    const metadataBreakdowns = parseMetadataBreakdowns(runQuery.data?.results);
 
     const labelsQuery = useQuery({
         queryKey: queryKeys.textResearch.topicLabels(runId ?? ""),
@@ -172,32 +268,92 @@ export default function TopicsView() {
     });
 
     const trainMutation = useMutation({
-        mutationFn: () =>
-            trainTopicModel(ctx.selectedCorpusId, {
+        mutationFn: () => {
+            const holdout = holdoutFraction.trim() ? Number(holdoutFraction) : undefined;
+            const groupBy = groupByText
+                .split(/[,\s]+/)
+                .map((part) => part.trim())
+                .filter(Boolean);
+            return trainTopicModel(ctx.selectedCorpusId, {
                 unit_type: ctx.unitType,
                 algorithm,
                 n_topics: nTopics,
                 max_iterations: maxIterations,
                 random_seed: randomSeed,
                 preprocessing_profile_id: profileId || undefined,
-                organization: optionalText(organization),
-                language: optionalText(language),
-                region: optionalText(region),
-                cultural_sphere: optionalText(culturalSphere),
-                publication_year_min: publicationYearMin ? Number(publicationYearMin) : undefined,
-                publication_year_max: publicationYearMax ? Number(publicationYearMax) : undefined,
+                holdout_fraction:
+                    holdout != null && !Number.isNaN(holdout) ? holdout : undefined,
+                group_by: groupBy.length ? groupBy : undefined,
+                embedding_provider:
+                    algorithm === "semantic_stack" || algorithm === "bertopic"
+                        ? embeddingProvider
+                        : undefined,
+                embedding_model_name:
+                    (algorithm === "semantic_stack" || algorithm === "bertopic") &&
+                    embeddingProvider === "sentence_transformers"
+                        ? embeddingModelName.trim() || undefined
+                        : undefined,
+                persist_embedding_artifacts:
+                    algorithm === "semantic_stack" || algorithm === "bertopic"
+                        ? persistEmbeddings
+                        : undefined,
+                ...filterArgs(filters),
                 run_async: true,
-            }),
+            });
+        },
         onSuccess: (run) => {
             setRunId(run.id);
             setSelectedTopicId("0");
             setDraftNames({});
             setTab("topics");
+            void queryClient.invalidateQueries({
+                queryKey: queryKeys.textResearch.runs(
+                    ctx.projectId,
+                    ctx.selectedCorpusId,
+                    "topic_model"
+                ),
+            });
             showToast({ message: "Topic model training started.", severity: "success" });
         },
         onError: (error) =>
             showToast({
                 message: getQueryErrorMessage(error, "Failed to train topic model."),
+                severity: "error",
+            }),
+    });
+
+    const kSweepMutation = useMutation({
+        mutationFn: (payload: Parameters<typeof runTopicKSweep>[1]) =>
+            runTopicKSweep(ctx.selectedCorpusId, {
+                unit_type: ctx.unitType,
+                ...payload,
+                run_async: true,
+            }),
+        onSuccess: (run) => {
+            setKSweepRunId(run.id);
+            showToast({ message: "Topic K sweep started.", severity: "success" });
+        },
+        onError: (error) =>
+            showToast({
+                message: getQueryErrorMessage(error, "Failed to start K sweep."),
+                severity: "error",
+            }),
+    });
+
+    const stabilityMutation = useMutation({
+        mutationFn: (payload: Parameters<typeof runTopicSeedStability>[1]) =>
+            runTopicSeedStability(ctx.selectedCorpusId, {
+                unit_type: ctx.unitType,
+                ...payload,
+                run_async: true,
+            }),
+        onSuccess: (run) => {
+            setStabilityRunId(run.id);
+            showToast({ message: "Seed stability run started.", severity: "success" });
+        },
+        onError: (error) =>
+            showToast({
+                message: getQueryErrorMessage(error, "Failed to start seed stability."),
                 severity: "error",
             }),
     });
@@ -221,8 +377,10 @@ export default function TopicsView() {
             }),
     });
 
-    const labelByTopic = new Map(
-        (labelsQuery.data ?? []).map((label) => [String(label.topic_id), label.human_name])
+    const labelByTopic = useMemo(
+        () =>
+            new Map((labelsQuery.data ?? []).map((label) => [String(label.topic_id), label.human_name])),
+        [labelsQuery.data]
     );
 
     const selectedTopic =
@@ -232,16 +390,18 @@ export default function TopicsView() {
             label: term.term ?? "",
             value: typeof term.weight === "number" ? term.weight : 0,
         })) ?? [];
-    const representativeUnits = parseRepresentatives(
-        runQuery.data?.results,
-        String(selectedTopic?.topic_id ?? selectedTopicId)
-    );
-    const metadataBreakdowns = parseMetadataBreakdowns(runQuery.data?.results);
 
     const topicDisplayName = (topicId: number | string | undefined) => {
         const key = String(topicId ?? "");
         return labelByTopic.get(key) || `Topic ${key}`;
     };
+
+    const profileOptions = (profilesQuery.data ?? []).map((profile) => ({
+        id: profile.id,
+        name: profile.name,
+    }));
+
+    const resultTabs = new Set(["topics", "distribution", "metadata", "documents"]);
 
     return (
         <Stack spacing={2}>
@@ -264,11 +424,17 @@ export default function TopicsView() {
                                 size="small"
                                 label="Algorithm"
                                 value={algorithm}
-                                onChange={(e) => setAlgorithm(e.target.value as "lda" | "nmf")}
-                                sx={{ minWidth: 140 }}
+                                onChange={(e) =>
+                                    setAlgorithm(
+                                        e.target.value as "lda" | "nmf" | "semantic_stack" | "bertopic"
+                                    )
+                                }
+                                sx={{ minWidth: 180 }}
                             >
-                                <MenuItem value="lda">LDA</MenuItem>
-                                <MenuItem value="nmf">NMF</MenuItem>
+                                <MenuItem value="lda">LDA (classical)</MenuItem>
+                                <MenuItem value="nmf">NMF (classical)</MenuItem>
+                                <MenuItem value="semantic_stack">Semantic stack</MenuItem>
+                                <MenuItem value="bertopic">BERTopic (optional)</MenuItem>
                             </TextField>
                             <TextField
                                 size="small"
@@ -311,29 +477,104 @@ export default function TopicsView() {
                                     </MenuItem>
                                 ))}
                             </TextField>
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Holdout fraction"
+                                value={holdoutFraction}
+                                onChange={(e) => setHoldoutFraction(e.target.value)}
+                                inputProps={{ min: 0, max: 0.5, step: 0.05 }}
+                                sx={{ width: 150 }}
+                                helperText="Optional LDA perplexity"
+                            />
+                            <TextField
+                                size="small"
+                                label="group_by fields"
+                                value={groupByText}
+                                onChange={(e) => setGroupByText(e.target.value)}
+                                sx={{ minWidth: 240 }}
+                                helperText="Comma-separated metadata fields"
+                            />
                         </Stack>
+                        {algorithm === "semantic_stack" || algorithm === "bertopic" ? (
+                            <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={2}
+                                flexWrap="wrap"
+                                useFlexGap
+                            >
+                                <Alert severity="info" sx={{ width: "100%" }}>
+                                    Semantic topics keep LDA/NMF available. UMAP/HDBSCAN are used when
+                                    installed; otherwise TruncatedSVD + KMeans with explicit notes.
+                                </Alert>
+                                <TextField
+                                    select
+                                    size="small"
+                                    label="Embedding provider"
+                                    value={embeddingProvider}
+                                    onChange={(e) =>
+                                        setEmbeddingProvider(
+                                            e.target.value as "hashing" | "sentence_transformers"
+                                        )
+                                    }
+                                    sx={{ minWidth: 220 }}
+                                >
+                                    <MenuItem value="hashing">Hashing (lexical baseline)</MenuItem>
+                                    <MenuItem value="sentence_transformers">
+                                        Sentence transformers (optional)
+                                    </MenuItem>
+                                </TextField>
+                                {embeddingProvider === "sentence_transformers" ? (
+                                    <TextField
+                                        size="small"
+                                        label="ST model name"
+                                        value={embeddingModelName}
+                                        onChange={(e) => setEmbeddingModelName(e.target.value)}
+                                        sx={{ minWidth: 220 }}
+                                    />
+                                ) : null}
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={persistEmbeddings}
+                                            onChange={(_, checked) => setPersistEmbeddings(checked)}
+                                        />
+                                    }
+                                    label="Cache embeddings as artifacts"
+                                />
+                            </Stack>
+                        ) : null}
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
                             <TextField
                                 size="small"
                                 label="Organization filter"
-                                value={organization}
-                                onChange={(e) => setOrganization(e.target.value)}
+                                value={filters.organization}
+                                onChange={(e) =>
+                                    setFilters((prev) => ({ ...prev, organization: e.target.value }))
+                                }
                                 placeholder="Optional"
                                 sx={{ minWidth: 180 }}
                             />
                             <TextField
                                 size="small"
                                 label="Language filter"
-                                value={language}
-                                onChange={(e) => setLanguage(e.target.value)}
+                                value={filters.language}
+                                onChange={(e) =>
+                                    setFilters((prev) => ({ ...prev, language: e.target.value }))
+                                }
                                 placeholder="Optional"
                                 sx={{ minWidth: 180 }}
                             />
                             <TextField
                                 size="small"
                                 label="Cultural sphere filter"
-                                value={culturalSphere}
-                                onChange={(e) => setCulturalSphere(e.target.value)}
+                                value={filters.culturalSphere}
+                                onChange={(e) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        culturalSphere: e.target.value,
+                                    }))
+                                }
                                 placeholder="Optional"
                                 sx={{ minWidth: 180 }}
                             />
@@ -341,23 +582,35 @@ export default function TopicsView() {
                                 size="small"
                                 type="number"
                                 label="Publication year from"
-                                value={publicationYearMin}
-                                onChange={(e) => setPublicationYearMin(e.target.value)}
+                                value={filters.publicationYearMin}
+                                onChange={(e) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        publicationYearMin: e.target.value,
+                                    }))
+                                }
                                 sx={{ width: 180 }}
                             />
                             <TextField
                                 size="small"
                                 type="number"
                                 label="Publication year to"
-                                value={publicationYearMax}
-                                onChange={(e) => setPublicationYearMax(e.target.value)}
+                                value={filters.publicationYearMax}
+                                onChange={(e) =>
+                                    setFilters((prev) => ({
+                                        ...prev,
+                                        publicationYearMax: e.target.value,
+                                    }))
+                                }
                                 sx={{ width: 160 }}
                             />
                             <TextField
                                 size="small"
                                 label="Region filter"
-                                value={region}
-                                onChange={(e) => setRegion(e.target.value)}
+                                value={filters.region}
+                                onChange={(e) =>
+                                    setFilters((prev) => ({ ...prev, region: e.target.value }))
+                                }
                                 placeholder="Optional"
                                 sx={{ minWidth: 160 }}
                             />
@@ -377,7 +630,74 @@ export default function TopicsView() {
                 </SectionCard>
             ) : null}
 
-            {tab !== "setup" && !runId ? (
+            {tab === "ksweep" ? (
+                <SectionCard
+                    title="Topic K sweep"
+                    description="Compare diagnostics across candidate topic counts without auto-selecting a winner."
+                >
+                    <TopicKSweepView
+                        corpusId={ctx.selectedCorpusId}
+                        unitType={ctx.unitType}
+                        profiles={profileOptions}
+                        filters={filters}
+                        onFiltersChange={setFilters}
+                        onSubmit={(payload) => kSweepMutation.mutate(payload)}
+                        isPending={kSweepMutation.isPending}
+                        run={kSweepQuery.data}
+                    />
+                </SectionCard>
+            ) : null}
+
+            {tab === "stability" ? (
+                <SectionCard
+                    title="Seed stability"
+                    description="Measure topic solution sensitivity to random initialization."
+                >
+                    <TopicSeedStabilityView
+                        corpusId={ctx.selectedCorpusId}
+                        unitType={ctx.unitType}
+                        profiles={profileOptions}
+                        filters={filters}
+                        onFiltersChange={setFilters}
+                        onSubmit={(payload) => stabilityMutation.mutate(payload)}
+                        isPending={stabilityMutation.isPending}
+                        run={stabilityQuery.data}
+                    />
+                </SectionCard>
+            ) : null}
+
+            {tab === "compare" ? (
+                <SectionCard
+                    title="Topic comparison across runs"
+                    description="Diff parameters/metrics and inspect top terms side-by-side for two training runs."
+                >
+                    <QueryBoundary
+                        isLoading={topicRunsQuery.isLoading}
+                        isError={topicRunsQuery.isError}
+                        error={topicRunsQuery.error}
+                        onRetry={() => void topicRunsQuery.refetch()}
+                    >
+                        <TopicComparisonView
+                            runs={topicRunsQuery.data?.items ?? []}
+                            runA={compareAQuery.data}
+                            runB={compareBQuery.data}
+                            selectedAId={compareAId}
+                            selectedBId={compareBId}
+                            onSelectA={setCompareAId}
+                            onSelectB={setCompareBId}
+                            compare={compareQuery.data}
+                            compareLoading={compareQuery.isLoading}
+                            compareError={
+                                compareQuery.isError
+                                    ? getQueryErrorMessage(compareQuery.error, "Compare failed.")
+                                    : null
+                            }
+                        />
+                    </QueryBoundary>
+                </SectionCard>
+            ) : null}
+
+            {resultTabs.has(tab) && !runId ? (
                 <EmptyState
                     icon={<TrainIcon fontSize="large" />}
                     title="No topic model yet"
@@ -390,7 +710,7 @@ export default function TopicsView() {
                 />
             ) : null}
 
-            {runId && tab !== "setup" ? (
+            {runId && resultTabs.has(tab) ? (
                 <SectionCard title="Topic model results" description="Diagnostics stay visible while you switch result views.">
                     <QueryBoundary
                         isLoading={runQuery.isLoading && !runQuery.data}
@@ -409,6 +729,14 @@ export default function TopicsView() {
 
                                 {completed && topics.length ? (
                                     <>
+                                        {topicFamily || topicNotes.length ? (
+                                            <Alert severity="info">
+                                                {topicFamily ? `Family: ${topicFamily}. ` : null}
+                                                {topicNotes.length
+                                                    ? topicNotes.join(" ")
+                                                    : "Classical LDA/NMF remain available alongside semantic algorithms."}
+                                            </Alert>
+                                        ) : null}
                                         {cards.length ? <MetricCards items={cards} /> : null}
 
                                         {tab === "topics" ? (
@@ -457,14 +785,28 @@ export default function TopicsView() {
                                                             dominant: asRecord(
                                                                 asRecord(runQuery.data?.results)?.dominant_topic_counts
                                                             )?.[key],
-                                                            terms: topic.top_terms?.map((term) => term.term).filter(Boolean).join(", ") ?? "",
+                                                            terms:
+                                                                topic.top_terms
+                                                                    ?.map((term) => term.term)
+                                                                    .filter(Boolean)
+                                                                    .join(", ") ?? "",
                                                         };
                                                     })}
                                                     columns={[
                                                         { id: "topic", label: "Topic ID", value: (row) => row.topicId },
                                                         { id: "name", label: "Human name", value: (row) => row.name },
-                                                        { id: "prevalence", label: "Prevalence", value: (row) => row.prevalence as number | null, align: "right" },
-                                                        { id: "dominant", label: "Dominant units", value: (row) => row.dominant as number | null, align: "right" },
+                                                        {
+                                                            id: "prevalence",
+                                                            label: "Prevalence",
+                                                            value: (row) => row.prevalence as number | null,
+                                                            align: "right",
+                                                        },
+                                                        {
+                                                            id: "dominant",
+                                                            label: "Dominant units",
+                                                            value: (row) => row.dominant as number | null,
+                                                            align: "right",
+                                                        },
                                                         { id: "terms", label: "Top terms", value: (row) => row.terms },
                                                     ]}
                                                 />
@@ -559,79 +901,87 @@ export default function TopicsView() {
                                             <Stack spacing={2}>
                                                 {Object.keys(metadataBreakdowns).length ? (
                                                     <>
-                                                        <Typography variant="subtitle2">Topic prevalence by metadata</Typography>
-                                                        {Object.entries(metadataBreakdowns).map(([field, values]) => (
-                                                            <Stack key={field} spacing={0.5}>
-                                                                <Typography variant="body2" color="text.secondary">{field}</Typography>
-                                                                <MatrixHeatmap
-                                                                    rowLabels={Object.keys(values)}
-                                                                    colLabels={topics.map((topic) => topicDisplayName(topic.topic_id))}
-                                                                    values={Object.values(values).map((counts) =>
-                                                                        topics.map((topic) => Number(counts[String(topic.topic_id ?? "")] ?? 0))
-                                                                    )}
-                                                                    formatCell={(value) => value == null ? "—" : String(value)}
-                                                                />
-                                                                {field === "publication_year" ? (
-                                                                    <ScientificLineChart
-                                                                        series={topics.map((topic) => ({
-                                                                            label: topicDisplayName(topic.topic_id),
-                                                                            points: Object.entries(values)
-                                                                                .map(([year, counts]) => ({ x: Number(year), y: Number(counts[String(topic.topic_id ?? "")] ?? 0) }))
-                                                                                .filter((point) => Number.isFinite(point.x))
-                                                                                .sort((a, b) => a.x - b.x),
-                                                                        }))}
+                                                        <Typography variant="subtitle2">
+                                                            Topic prevalence by metadata
+                                                        </Typography>
+                                                        {Object.entries(metadataBreakdowns).map(
+                                                            ([field, values]) => (
+                                                                <Stack key={field} spacing={0.5}>
+                                                                    <Typography
+                                                                        variant="body2"
+                                                                        color="text.secondary"
+                                                                    >
+                                                                        {field}
+                                                                    </Typography>
+                                                                    <MatrixHeatmap
+                                                                        rowLabels={Object.keys(values)}
+                                                                        colLabels={topics.map((topic) =>
+                                                                            topicDisplayName(topic.topic_id)
+                                                                        )}
+                                                                        values={Object.values(values).map(
+                                                                            (counts) =>
+                                                                                topics.map((topic) =>
+                                                                                    Number(
+                                                                                        counts[
+                                                                                            String(
+                                                                                                topic.topic_id ?? ""
+                                                                                            )
+                                                                                        ] ?? 0
+                                                                                    )
+                                                                                )
+                                                                        )}
+                                                                        formatCell={(value) =>
+                                                                            value == null ? "—" : String(value)
+                                                                        }
                                                                     />
-                                                                ) : null}
-                                                            </Stack>
-                                                        ))}
+                                                                    {field === "publication_year" ? (
+                                                                        <ScientificLineChart
+                                                                            series={topics.map((topic) => ({
+                                                                                label: topicDisplayName(
+                                                                                    topic.topic_id
+                                                                                ),
+                                                                                points: Object.entries(values)
+                                                                                    .map(([year, counts]) => ({
+                                                                                        x: Number(year),
+                                                                                        y: Number(
+                                                                                            counts[
+                                                                                                String(
+                                                                                                    topic.topic_id ??
+                                                                                                        ""
+                                                                                                )
+                                                                                            ] ?? 0
+                                                                                        ),
+                                                                                    }))
+                                                                                    .filter((point) =>
+                                                                                        Number.isFinite(point.x)
+                                                                                    )
+                                                                                    .sort((a, b) => a.x - b.x),
+                                                                            }))}
+                                                                        />
+                                                                    ) : null}
+                                                                </Stack>
+                                                            )
+                                                        )}
                                                     </>
                                                 ) : (
                                                     <Typography variant="body2" color="text.secondary">
-                                                        No metadata breakdowns available for this run.
+                                                        No metadata breakdowns available for this run. Set
+                                                        group_by fields in Setup and retrain.
                                                     </Typography>
                                                 )}
                                             </Stack>
                                         ) : null}
 
                                         {tab === "documents" ? (
-                                            <Stack spacing={2}>
-                                                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-                                                    <TextField
-                                                        select
-                                                        size="small"
-                                                        label="Selected topic"
-                                                        value={String(selectedTopic?.topic_id ?? selectedTopicId)}
-                                                        onChange={(e) => setSelectedTopicId(e.target.value)}
-                                                        sx={{ minWidth: 220 }}
-                                                    >
-                                                        {topics.map((topic) => (
-                                                            <MenuItem
-                                                                key={String(topic.topic_id)}
-                                                                value={String(topic.topic_id)}
-                                                            >
-                                                                {topicDisplayName(topic.topic_id)}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </TextField>
-                                                </Stack>
-                                                <Typography variant="subtitle2">
-                                                    Representative units — {topicDisplayName(selectedTopic?.topic_id)}
-                                                </Typography>
-                                                <Stack spacing={1}>
-                                                    {representativeUnits.length ? (
-                                                        representativeUnits.map((unit, index) => (
-                                                            <Typography key={index} variant="body2">
-                                                                <strong>{unit.document_title || "Untitled document"}</strong>
-                                                                {" · "}{Number(unit.weight || 0).toFixed(3)} — {unit.text}
-                                                            </Typography>
-                                                        ))
-                                                    ) : (
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            No representative units for this topic.
-                                                        </Typography>
-                                                    )}
-                                                </Stack>
-                                            </Stack>
+                                            <TopicDocumentExplorer
+                                                results={runQuery.data.results}
+                                                topics={topics}
+                                                selectedTopicId={String(
+                                                    selectedTopic?.topic_id ?? selectedTopicId
+                                                )}
+                                                onSelectTopic={setSelectedTopicId}
+                                                topicDisplayName={topicDisplayName}
+                                            />
                                         ) : null}
                                     </>
                                 ) : isActiveRunStatus(runQuery.data.status) ? (

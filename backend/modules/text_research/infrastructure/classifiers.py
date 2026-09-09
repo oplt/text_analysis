@@ -48,6 +48,10 @@ ALGORITHMS = (
     "complement_nb",
     "sgd_classifier",
 )
+EMBEDDING_ALGORITHM_ALIASES = {
+    "embedding_logistic": "logistic_regression",
+    "embedding_svm": "linear_svm",
+}
 # Algorithms whose scikit-learn estimator has no native `class_weight`
 # constructor parameter. When a caller requests class weighting for one of
 # these, we translate it into per-sample weights at `.fit()` time instead.
@@ -121,6 +125,7 @@ def grouped_train_val_test_split(
     test_size: float = 0.2,
     val_size: float = 0.2,
     random_seed: int = 42,
+    prefer_stratified_groups: bool = True,
 ) -> dict[str, Any]:
     """Split by ``groups`` into train/validation/test with no group leakage.
 
@@ -130,13 +135,15 @@ def grouped_train_val_test_split(
     for a VALIDATION partition (intended for threshold tuning / model
     selection later — never for final reported metrics).
 
+    When ``prefer_stratified_groups`` is true, :mod:`split_planner` attempts
+    a stratified grouped holdout first and falls back to ``GroupShuffleSplit``
+    when stratification is infeasible (backward compatible).
+
     Guarantees no group appears in more than one partition. If too few
     groups remain after the test split to carve out a non-trivial
     validation partition, validation is skipped (empty) rather than raising,
     and a human-readable note is returned under ``"notes"``.
     """
-    from sklearn.model_selection import GroupShuffleSplit
-
     if not (len(X_texts) == len(y) == len(groups)):
         raise ValueError("X_texts, y, and groups must have the same length")
 
@@ -144,42 +151,69 @@ def grouped_train_val_test_split(
     if n_unique_groups < 2:
         raise ValueError("grouped_train_val_test_split requires at least 2 distinct groups")
 
-    indices = np.arange(len(X_texts))
-    test_splitter = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_seed)
-    train_val_idx, test_idx = next(test_splitter.split(indices, groups=groups))
-
     def _select(seq: list[Any], idx: np.ndarray) -> list[Any]:
         return [seq[i] for i in idx]
 
     notes: list[str] = []
-    train_val_groups = _select(groups, train_val_idx)
-    n_remaining_groups = len(set(train_val_groups))
+    split_meta: dict[str, Any] = {}
 
-    val_idx: np.ndarray = np.array([], dtype=int)
-    train_idx: np.ndarray = train_val_idx
-    if val_size and val_size > 0:
-        if n_remaining_groups >= 2:
-            val_splitter = GroupShuffleSplit(
-                n_splits=1, test_size=val_size, random_state=random_seed
-            )
-            try:
-                rel_train_idx, rel_val_idx = next(
-                    val_splitter.split(train_val_idx, groups=train_val_groups)
+    if prefer_stratified_groups:
+        from backend.modules.text_research.infrastructure.split_planner import plan_grouped_splits
+
+        planned = plan_grouped_splits(
+            y,
+            groups,
+            test_size=test_size,
+            val_size=val_size,
+            random_seed=random_seed,
+            prefer_stratified=True,
+        )
+        train_idx = np.asarray(planned["train_index"], dtype=int)
+        val_idx = np.asarray(planned["val_index"], dtype=int)
+        test_idx = np.asarray(planned["test_index"], dtype=int)
+        notes.extend(planned.get("notes") or [])
+        split_meta = {
+            "split_strategy": planned.get("strategy"),
+            "split_feasibility": planned.get("feasibility"),
+        }
+    else:
+        from sklearn.model_selection import GroupShuffleSplit
+
+        indices = np.arange(len(X_texts))
+        test_splitter = GroupShuffleSplit(
+            n_splits=1, test_size=test_size, random_state=random_seed
+        )
+        train_val_idx, test_idx = next(test_splitter.split(indices, groups=groups))
+
+        train_val_groups = _select(groups, train_val_idx)
+        n_remaining_groups = len(set(train_val_groups))
+
+        val_idx = np.array([], dtype=int)
+        train_idx = train_val_idx
+        if val_size and val_size > 0:
+            if n_remaining_groups >= 2:
+                val_splitter = GroupShuffleSplit(
+                    n_splits=1, test_size=val_size, random_state=random_seed
                 )
-                train_idx = train_val_idx[rel_train_idx]
-                val_idx = train_val_idx[rel_val_idx]
-            except ValueError:
-                train_idx = train_val_idx
-                val_idx = np.array([], dtype=int)
+                try:
+                    rel_train_idx, rel_val_idx = next(
+                        val_splitter.split(train_val_idx, groups=train_val_groups)
+                    )
+                    train_idx = train_val_idx[rel_train_idx]
+                    val_idx = train_val_idx[rel_val_idx]
+                except ValueError:
+                    train_idx = train_val_idx
+                    val_idx = np.array([], dtype=int)
+                    notes.append(
+                        "Validation split skipped: too few groups remained after "
+                        "the test split to form a non-empty train/validation pair."
+                    )
+            else:
                 notes.append(
-                    "Validation split skipped: too few groups remained after "
-                    "the test split to form a non-empty train/validation pair."
+                    "Validation split skipped: fewer than 2 distinct groups remained "
+                    "after the test split."
                 )
-        else:
-            notes.append(
-                "Validation split skipped: fewer than 2 distinct groups remained "
-                "after the test split."
-            )
+        split_meta = {"split_strategy": "group_shuffle"}
 
     train_groups_final = {groups[i] for i in train_idx}
     val_groups_final = {groups[i] for i in val_idx}
@@ -205,6 +239,7 @@ def grouped_train_val_test_split(
         "groups_val": _select(groups, val_idx),
         "groups_test": _select(groups, test_idx),
         "notes": notes,
+        **split_meta,
     }
 
 
@@ -468,6 +503,97 @@ def _predict_proba_matrix(model: Any, X: Any) -> np.ndarray | None:
 # ---------------------------------------------------------------------------
 
 _THRESHOLD_CANDIDATES = np.linspace(0.05, 0.95, 19)
+_THRESHOLD_OBJECTIVES_PER_LABEL = frozenset({"f1", "precision", "recall"})
+_THRESHOLD_OBJECTIVES_BINARY_ONLY = frozenset(
+    {"balanced_accuracy", "youden_j", "expected_cost", "custom_utility"}
+)
+_THRESHOLD_OBJECTIVES = _THRESHOLD_OBJECTIVES_PER_LABEL | _THRESHOLD_OBJECTIVES_BINARY_ONLY
+ABSTENTION_MARKER = "__NEEDS_REVIEW__"
+
+
+def _threshold_objective_score(
+    y_true_col: np.ndarray,
+    proba_col: np.ndarray,
+    threshold: float,
+    objective: str,
+    *,
+    cost_fp: float = 1.0,
+    cost_fn: float = 1.0,
+    utility_tp: float = 1.0,
+    utility_tn: float = 1.0,
+    utility_fp: float = -1.0,
+    utility_fn: float = -1.0,
+) -> float:
+    """Score a candidate threshold; higher is better except for ``expected_cost``."""
+    pred = (proba_col >= threshold).astype(int)
+    y_true_col = np.asarray(y_true_col).astype(int)
+    if objective == "f1":
+        return float(skmetrics.f1_score(y_true_col, pred, zero_division=0))
+    if objective == "precision":
+        return float(skmetrics.precision_score(y_true_col, pred, zero_division=0))
+    if objective == "recall":
+        return float(skmetrics.recall_score(y_true_col, pred, zero_division=0))
+    if objective == "balanced_accuracy":
+        return float(skmetrics.balanced_accuracy_score(y_true_col, pred))
+    if objective == "youden_j":
+        cm = skmetrics.confusion_matrix(y_true_col, pred, labels=[0, 1])
+        if cm.shape != (2, 2):
+            return 0.0
+        tn, fp, fn, tp = cm.ravel()
+        tpr = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        fpr = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+        return float(tpr - fpr)
+    if objective == "expected_cost":
+        cm = skmetrics.confusion_matrix(y_true_col, pred, labels=[0, 1])
+        if cm.shape != (2, 2):
+            return float("inf")
+        _tn, fp, fn, _tp = cm.ravel()
+        return float(cost_fp * fp + cost_fn * fn)
+    if objective == "custom_utility":
+        cm = skmetrics.confusion_matrix(y_true_col, pred, labels=[0, 1])
+        if cm.shape != (2, 2):
+            return float("-inf")
+        tn, fp, fn, tp = cm.ravel()
+        return float(
+            utility_tp * tp + utility_tn * tn + utility_fp * fp + utility_fn * fn
+        )
+    raise ValueError(f"Unsupported threshold objective: {objective!r}")
+
+
+def _best_threshold(
+    y_true_col: np.ndarray,
+    proba_col: np.ndarray,
+    objective: str,
+    *,
+    cost_fp: float = 1.0,
+    cost_fn: float = 1.0,
+    utility_tp: float = 1.0,
+    utility_tn: float = 1.0,
+    utility_fp: float = -1.0,
+    utility_fn: float = -1.0,
+) -> tuple[float, float]:
+    higher_is_better = objective not in {"expected_cost"}
+    best_t = 0.5
+    best_score = -1.0 if higher_is_better else float("inf")
+    for t in _THRESHOLD_CANDIDATES:
+        score = _threshold_objective_score(
+            y_true_col,
+            proba_col,
+            float(t),
+            objective,
+            cost_fp=cost_fp,
+            cost_fn=cost_fn,
+            utility_tp=utility_tp,
+            utility_tn=utility_tn,
+            utility_fp=utility_fp,
+            utility_fn=utility_fn,
+        )
+        if higher_is_better:
+            if score > best_score:
+                best_t, best_score = float(t), score
+        elif score < best_score:
+            best_t, best_score = float(t), score
+    return best_t, best_score
 
 
 def optimize_thresholds(
@@ -476,41 +602,79 @@ def optimize_thresholds(
     task_type: str,
     classes: list[Any],
     objective: str = "f1",
+    *,
+    cost_fp: float = 1.0,
+    cost_fn: float = 1.0,
+    utility_tp: float = 1.0,
+    utility_tn: float = 1.0,
+    utility_fp: float = -1.0,
+    utility_fn: float = -1.0,
 ) -> dict[str, Any]:
     """Optimize decision thresholds on VALIDATION predictions only (§33).
 
-    - ``binary``: a single scalar threshold on the positive-class
-      probability that maximizes F1 on the validation labels.
-    - ``multilabel``: one threshold per label, each independently
-      maximizing that label's F1 on the validation labels.
-    - ``multiclass``: not supported (no single meaningful binary decision
-      threshold per class without renormalization); returns a note instead.
+    Supported objectives:
+
+    - ``f1``, ``precision``, ``recall``: per-label for multilabel; positive-class
+      metrics for binary.
+    - ``balanced_accuracy``, ``youden_j``, ``expected_cost``: binary only.
+      ``expected_cost`` minimizes ``cost_fp * FP + cost_fn * FN`` (defaults 1.0).
+
+    - ``binary``: a single scalar threshold on the positive-class probability.
+    - ``multilabel``: one threshold per label, each independently optimized.
+    - ``multiclass``: not supported; returns a note instead.
 
     Never uses test labels — this function only ever sees whatever
     ``y_val_true_enc``/``y_val_proba`` the caller passes in, and the caller
     (``_fit_classifier_and_evaluate``) only ever passes validation data.
     """
-    if objective != "f1":
-        raise ValueError(f"Unsupported threshold objective: {objective!r}; expected 'f1'")
+    normalized_objective = str(objective).strip().lower()
+    if normalized_objective not in _THRESHOLD_OBJECTIVES:
+        supported = ", ".join(sorted(_THRESHOLD_OBJECTIVES))
+        raise ValueError(
+            f"Unsupported threshold objective: {objective!r}; expected one of: {supported}"
+        )
+    if normalized_objective in _THRESHOLD_OBJECTIVES_BINARY_ONLY and task_type != "binary":
+        raise ValueError(
+            f"Threshold objective {objective!r} is only supported for binary tasks; "
+            f"got task_type={task_type!r}."
+        )
 
-    def _best_threshold(y_true_col: np.ndarray, proba_col: np.ndarray) -> tuple[float, float]:
-        best_t, best_score = 0.5, -1.0
-        for t in _THRESHOLD_CANDIDATES:
-            pred = (proba_col >= t).astype(int)
-            score = float(skmetrics.f1_score(y_true_col, pred, zero_division=0))
-            if score > best_score:
-                best_t, best_score = float(t), score
-        return best_t, best_score
+    def _score_result(score: float) -> dict[str, Any]:
+        out: dict[str, Any] = {"val_score": score}
+        if normalized_objective == "f1":
+            out["val_f1"] = score
+        return out
 
     if task_type == "binary":
         proba_positive = y_val_proba[:, 1] if y_val_proba.ndim == 2 else y_val_proba
-        threshold, score = _best_threshold(np.asarray(y_val_true_enc), proba_positive)
+        threshold, score = _best_threshold(
+            np.asarray(y_val_true_enc),
+            proba_positive,
+            normalized_objective,
+            cost_fp=cost_fp,
+            cost_fn=cost_fn,
+            utility_tp=utility_tp,
+            utility_tn=utility_tn,
+            utility_fp=utility_fp,
+            utility_fn=utility_fn,
+        )
+        extra: dict[str, Any] = {}
+        if normalized_objective == "expected_cost":
+            extra = {"cost_fp": cost_fp, "cost_fn": cost_fn}
+        elif normalized_objective == "custom_utility":
+            extra = {
+                "utility_tp": utility_tp,
+                "utility_tn": utility_tn,
+                "utility_fp": utility_fp,
+                "utility_fn": utility_fn,
+            }
         return {
             "task_type": "binary",
-            "objective": objective,
+            "objective": normalized_objective,
             "threshold": threshold,
-            "val_f1": score,
+            **_score_result(score),
             "default_threshold": 0.5,
+            **extra,
         }
 
     if task_type == "multilabel":
@@ -518,25 +682,124 @@ def optimize_thresholds(
         thresholds: dict[str, float] = {}
         val_scores: dict[str, float] = {}
         for i, label in enumerate(classes):
-            t, score = _best_threshold(y_true_arr[:, i], y_val_proba[:, i])
+            t, score = _best_threshold(y_true_arr[:, i], y_val_proba[:, i], normalized_objective)
             thresholds[str(label)] = t
             val_scores[str(label)] = score
-        return {
+        result: dict[str, Any] = {
             "task_type": "multilabel",
-            "objective": objective,
+            "objective": normalized_objective,
             "thresholds": thresholds,
-            "val_f1": val_scores,
+            "val_score": val_scores,
             "default_threshold": 0.5,
         }
+        if normalized_objective == "f1":
+            result["val_f1"] = val_scores
+        return result
 
     return {
         "task_type": task_type,
-        "objective": objective,
+        "objective": normalized_objective,
         "note": (
             "Threshold tuning is only supported for binary/multilabel tasks "
             "(§33); skipped for multiclass."
         ),
     }
+
+
+def apply_abstention(
+    y_proba: np.ndarray,
+    *,
+    confidence_threshold: float,
+    task_type: str,
+) -> dict[str, Any]:
+    """Mark low-confidence predictions for human review.
+
+    Samples whose maximum predicted probability is below
+    ``confidence_threshold`` are abstained. Returns thresholded predictions
+    with ``"__NEEDS_REVIEW__"`` (binary/multiclass) or ``None`` (multilabel)
+    markers, plus a parallel ``abstained`` boolean mask and per-sample
+    ``confidence`` scores.
+    """
+    if task_type not in TASK_TYPES:
+        raise ValueError(f"Unsupported task_type: {task_type!r}; expected one of {TASK_TYPES}")
+    if y_proba is None:
+        raise ValueError("apply_abstention requires y_proba")
+
+    proba = np.asarray(y_proba, dtype=float)
+    if task_type == "binary":
+        confidence = np.maximum(proba[:, 1], proba[:, 0]) if proba.ndim == 2 else np.maximum(proba, 1.0 - proba)
+        raw_pred = (proba[:, 1] >= 0.5).astype(int) if proba.ndim == 2 else (proba >= 0.5).astype(int)
+    elif task_type == "multiclass":
+        confidence = np.max(proba, axis=1)
+        raw_pred = np.argmax(proba, axis=1)
+    else:
+        confidence = np.max(proba, axis=1)
+        raw_pred = (proba >= 0.5).astype(int)
+
+    abstained = confidence < confidence_threshold
+    predictions: list[Any] = []
+    for i in range(len(confidence)):
+        if abstained[i]:
+            predictions.append(None if task_type == "multilabel" else ABSTENTION_MARKER)
+        elif task_type == "multilabel":
+            predictions.append(raw_pred[i].tolist())
+        else:
+            predictions.append(int(raw_pred[i]))
+
+    return {
+        "predictions": predictions,
+        "abstained": abstained.tolist(),
+        "confidence": confidence.tolist(),
+        "confidence_threshold": confidence_threshold,
+        "task_type": task_type,
+    }
+
+
+def abstention_summary(
+    y_true: np.ndarray | list[Any],
+    y_pred: np.ndarray | list[Any],
+    abstained_mask: np.ndarray | list[bool],
+) -> dict[str, Any]:
+    """Summarize abstention coverage and scored-set performance."""
+    abstained = np.asarray(abstained_mask, dtype=bool)
+    y_true_arr = np.asarray(y_true)
+    y_pred_arr = np.asarray(y_pred, dtype=object)
+    n_total = len(abstained)
+    n_abstained = int(abstained.sum())
+    n_scored = n_total - n_abstained
+
+    summary: dict[str, Any] = {
+        "n_total": n_total,
+        "n_abstained": n_abstained,
+        "abstention_rate": float(n_abstained / n_total) if n_total else 0.0,
+        "n_scored": n_scored,
+    }
+
+    if n_scored <= 0:
+        summary["scored_accuracy"] = None
+        return summary
+
+    scored_idx = ~abstained
+    y_true_scored = y_true_arr[scored_idx]
+    y_pred_scored = y_pred_arr[scored_idx]
+    valid_mask = np.array(
+        [p is not None and p != ABSTENTION_MARKER for p in y_pred_scored],
+        dtype=bool,
+    )
+    if not valid_mask.any():
+        summary["scored_accuracy"] = None
+        return summary
+
+    y_true_valid = y_true_scored[valid_mask]
+    y_pred_valid = np.asarray([p for p in y_pred_scored[valid_mask]], dtype=int)
+    if y_true_valid.ndim == 2:
+        summary["scored_subset_accuracy"] = float(skmetrics.accuracy_score(y_true_valid, y_pred_valid))
+        summary["scored_hamming_loss"] = float(skmetrics.hamming_loss(y_true_valid, y_pred_valid))
+    else:
+        summary["scored_accuracy"] = float(
+            skmetrics.accuracy_score(np.asarray(y_true_valid, dtype=int), y_pred_valid)
+        )
+    return summary
 
 
 def apply_thresholds(
@@ -1218,6 +1481,18 @@ def _classification_metrics(
     return metrics_out
 
 
+def resolve_classifier_algorithm(algorithm: str) -> tuple[str, str]:
+    """Return ``(resolved_algorithm, feature_family)`` for sparse or embedding paths."""
+    if algorithm == "transformer":
+        raise ValueError(
+            "algorithm='transformer' is optional and not implemented for training runs; "
+            "use fit_transformer_classifier directly after installing '.[transformers]'."
+        )
+    if algorithm in EMBEDDING_ALGORITHM_ALIASES:
+        return EMBEDDING_ALGORITHM_ALIASES[algorithm], "embedding"
+    return algorithm, "sparse"
+
+
 def _fit_classifier_and_evaluate(
     vectorizer: Any,
     X_train_texts: list[str],
@@ -1237,6 +1512,10 @@ def _fit_classifier_and_evaluate(
     groups_test: list[Any] | None = None,
     tune_thresholds: bool = True,
     threshold_objective: str = "f1",
+    threshold_utility_tp: float = 1.0,
+    threshold_utility_tn: float = 1.0,
+    threshold_utility_fp: float = -1.0,
+    threshold_utility_fn: float = -1.0,
     n_bootstrap: int = 200,
     ci_confidence_level: float = 0.95,
     ci_metrics: tuple[str, ...] = ("f1_macro",),
@@ -1317,7 +1596,15 @@ def _fit_classifier_and_evaluate(
             }
         else:
             threshold_result = optimize_thresholds(
-                y_val_enc, y_proba_val, task_type, classes, objective=threshold_objective
+                y_val_enc,
+                y_proba_val,
+                task_type,
+                classes,
+                objective=threshold_objective,
+                utility_tp=threshold_utility_tp,
+                utility_tn=threshold_utility_tn,
+                utility_fp=threshold_utility_fp,
+                utility_fn=threshold_utility_fn,
             )
             if y_proba_test is not None:
                 y_pred_final = apply_thresholds(
@@ -1380,6 +1667,11 @@ def _fit_classifier_and_evaluate(
         "n_val": len(X_val_texts) if X_val_texts else 0,
         "n_test": len(X_test_texts),
         "vocabulary_size": len(vectorizer.get_feature_names_out()),
+        "evaluation": {
+            "y_true": _to_native(y_test_enc),
+            "y_pred": _to_native(y_pred_final),
+            "y_proba": _to_native(y_proba_test) if y_proba_test is not None else None,
+        },
     }
 
 
@@ -1472,6 +1764,10 @@ def fit_text_classifier(
     groups_test: list[Any] | None = None,
     tune_thresholds: bool = True,
     threshold_objective: str = "f1",
+    threshold_utility_tp: float = 1.0,
+    threshold_utility_tn: float = 1.0,
+    threshold_utility_fp: float = -1.0,
+    threshold_utility_fn: float = -1.0,
     n_bootstrap: int = 200,
     ci_confidence_level: float = 0.95,
     ci_metrics: tuple[str, ...] = ("f1_macro",),
@@ -1523,6 +1819,10 @@ def fit_text_classifier(
         groups_test=groups_test,
         tune_thresholds=tune_thresholds,
         threshold_objective=threshold_objective,
+        threshold_utility_tp=threshold_utility_tp,
+        threshold_utility_tn=threshold_utility_tn,
+        threshold_utility_fp=threshold_utility_fp,
+        threshold_utility_fn=threshold_utility_fn,
         n_bootstrap=n_bootstrap,
         ci_confidence_level=ci_confidence_level,
         ci_metrics=ci_metrics,
@@ -1745,3 +2045,227 @@ def save_classifier(vectorizer: Any, model: Any, vectorizer_path: str, model_pat
 def load_classifier(vectorizer_path: str, model_path: str) -> tuple[Any, Any]:
     """Load a previously persisted vectorizer + classifier pair."""
     return load_joblib(vectorizer_path), load_joblib(model_path)
+
+
+class _EmbeddingVectorizer:
+    """Persistable wrapper around a fitted embedding provider."""
+
+    def __init__(self, provider: Any) -> None:
+        self.provider = provider
+        self.name = getattr(provider, "name", "embedding")
+
+    def fit(self, texts: list[str], y: Any = None) -> _EmbeddingVectorizer:
+        return self
+
+    def fit_transform(self, texts: list[str]) -> np.ndarray:
+        return np.asarray(self.provider.embed_texts(texts), dtype=float)
+
+    def transform(self, texts: list[str]) -> np.ndarray:
+        return np.asarray(self.provider.embed_texts(texts), dtype=float)
+
+    def get_feature_names_out(self) -> np.ndarray:
+        n = getattr(self.provider, "n_features", None)
+        if n is None:
+            return np.array([])
+        return np.array([f"emb_{index}" for index in range(int(n))])
+
+
+def fit_embedding_text_classifier(
+    X_train_texts: list[str],
+    y_train: list[Any],
+    X_test_texts: list[str],
+    y_test: list[Any],
+    task_type: str,
+    algorithm: str = "embedding_logistic",
+    *,
+    embedding_provider: str = "hashing",
+    label_names: list[str] | None = None,
+    class_weight: str | dict | None = None,
+    C: float = 1.0,
+    random_seed: int = 42,
+    X_val_texts: list[str] | None = None,
+    y_val: list[Any] | None = None,
+    groups_test: list[Any] | None = None,
+    tune_thresholds: bool = True,
+    threshold_objective: str = "f1",
+    threshold_utility_tp: float = 1.0,
+    threshold_utility_tn: float = 1.0,
+    threshold_utility_fp: float = -1.0,
+    threshold_utility_fn: float = -1.0,
+    n_bootstrap: int = 200,
+    ci_confidence_level: float = 0.95,
+    calibration_method: str = "sigmoid",
+    **embedding_kwargs: Any,
+) -> dict[str, Any]:
+    """Fit a dense-embedding linear classifier using an optional provider."""
+    resolved, _family = resolve_classifier_algorithm(algorithm)
+    from backend.modules.text_research.infrastructure.embeddings import get_embedding_provider
+
+    provider = get_embedding_provider(embedding_provider, **embedding_kwargs)
+    vectorizer = _EmbeddingVectorizer(provider)
+    return _fit_classifier_and_evaluate(
+        vectorizer,
+        X_train_texts,
+        y_train,
+        X_test_texts,
+        y_test,
+        task_type,
+        resolved,
+        label_names,
+        class_weight,
+        C,
+        random_seed,
+        "log_loss",
+        X_val_texts=X_val_texts,
+        y_val=y_val,
+        groups_test=groups_test,
+        tune_thresholds=tune_thresholds,
+        threshold_objective=threshold_objective,
+        threshold_utility_tp=threshold_utility_tp,
+        threshold_utility_tn=threshold_utility_tn,
+        threshold_utility_fp=threshold_utility_fp,
+        threshold_utility_fn=threshold_utility_fn,
+        n_bootstrap=n_bootstrap,
+        ci_confidence_level=ci_confidence_level,
+        calibration_method=calibration_method,
+    )
+
+
+def nested_grouped_cv_evaluation(
+    texts: list[str],
+    y: list[Any],
+    groups: list[Any],
+    *,
+    task_type: str,
+    algorithm: str,
+    feature_config: FeatureConfig | dict[str, Any] | None,
+    preprocessing_config: dict[str, Any] | None,
+    label_names: list[str] | None,
+    class_weight: str | dict | None,
+    C: float,
+    random_seed: int = 42,
+    outer_splits: int = 5,
+    inner_splits: int = 3,
+    tune_hyperparameters: bool = False,
+    hyperparameter_param_grid: dict[str, list[Any]] | None = None,
+    hyperparameter_scoring: str = "f1_macro",
+    embedding_provider: str | None = None,
+) -> dict[str, Any]:
+    """Run nested grouped CV and return outer-fold metrics."""
+    from backend.modules.text_research.infrastructure.split_planner import (
+        nested_grouped_cv_indices,
+    )
+
+    resolved, family = resolve_classifier_algorithm(algorithm)
+    folds = nested_grouped_cv_indices(
+        y,
+        groups,
+        outer_splits=outer_splits,
+        inner_splits=inner_splits,
+        random_seed=random_seed,
+    )
+    outer_rows: list[dict[str, Any]] = []
+    for fold_index, fold in enumerate(folds):
+        outer_train = fold["outer_train"]
+        outer_test = fold["outer_test"]
+        best_params: dict[str, Any] = {}
+        if tune_hyperparameters and fold.get("inner_folds"):
+            inner_scores: list[tuple[float, dict[str, Any]]] = []
+            for inner in fold["inner_folds"]:
+                inner_train = inner["train"]
+                inner_val = inner["val"]
+                search = hyperparameter_search(
+                    [texts[i] for i in inner_train],
+                    [y[i] for i in inner_train],
+                    [groups[i] for i in inner_train],
+                    [texts[i] for i in inner_val],
+                    [y[i] for i in inner_val],
+                    task_type=task_type,
+                    algorithm=resolved,
+                    feature_config=feature_config,
+                    preprocessing_config=preprocessing_config,
+                    label_names=label_names,
+                    class_weight=class_weight,
+                    C=C,
+                    random_seed=random_seed,
+                    param_grid=hyperparameter_param_grid,
+                    scoring=hyperparameter_scoring,
+                )
+                score = search.get("best_score")
+                if score is not None:
+                    inner_scores.append((float(score), search.get("best_params") or {}))
+            if inner_scores:
+                best_params = max(inner_scores, key=lambda item: item[0])[1]
+
+        train_texts = [texts[i] for i in outer_train]
+        test_texts = [texts[i] for i in outer_test]
+        train_y = [y[i] for i in outer_train]
+        test_y = [y[i] for i in outer_test]
+        test_groups = [groups[i] for i in outer_test]
+        combo_c = best_params.get("C", C)
+
+        if family == "embedding":
+            fit_result = fit_embedding_text_classifier(
+                train_texts,
+                train_y,
+                test_texts,
+                test_y,
+                task_type,
+                algorithm=algorithm,
+                embedding_provider=embedding_provider or "hashing",
+                label_names=label_names,
+                class_weight=best_params.get("class_weight", class_weight),
+                C=combo_c,
+                random_seed=random_seed,
+                groups_test=test_groups,
+                tune_thresholds=False,
+            )
+        else:
+            fc = FeatureConfig.from_dict(feature_config)
+            for key, value in best_params.items():
+                if hasattr(fc, key):
+                    setattr(fc, key, value)
+            fit_result = fit_text_classifier(
+                train_texts,
+                train_y,
+                test_texts,
+                test_y,
+                task_type=task_type,
+                algorithm=resolved,
+                feature_config=fc,
+                preprocessing_config=preprocessing_config,
+                label_names=label_names,
+                class_weight=best_params.get("class_weight", class_weight),
+                C=combo_c,
+                random_seed=random_seed,
+                groups_test=test_groups,
+                tune_thresholds=False,
+            )
+
+        outer_rows.append(
+            {
+                "fold": fold_index,
+                "outer_strategy": fold.get("outer_strategy"),
+                "n_train": len(outer_train),
+                "n_test": len(outer_test),
+                "best_inner_params": best_params,
+                "metrics": fit_result.get("metrics", {}),
+            }
+        )
+
+    metric_keys = ("accuracy", "f1_macro", "f1_micro")
+    aggregates: dict[str, float | None] = {}
+    for key in metric_keys:
+        values = [
+            float(row["metrics"][key])
+            for row in outer_rows
+            if isinstance(row.get("metrics"), dict) and row["metrics"].get(key) is not None
+        ]
+        aggregates[f"mean_{key}"] = float(np.mean(values)) if values else None
+
+    return {
+        "strategy": "nested_grouped_cv",
+        "outer_splits": len(outer_rows),
+        "folds": outer_rows,
+        "aggregate_metrics": aggregates,
+    }

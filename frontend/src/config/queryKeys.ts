@@ -76,6 +76,7 @@ export const queryKeys = {
         runs: (projectId: string, corpusId?: string, runType?: string) =>
             ["text-research", projectId, "runs", corpusId ?? "all", runType ?? "all"] as const,
         run: (runId: string) => ["text-research", "run", runId] as const,
+        runProvenance: (runId: string) => ["text-research", "run", runId, "provenance"] as const,
         classifiers: (projectId: string, corpusId?: string) =>
             ["text-research", projectId, "classifiers", corpusId ?? "all"] as const,
         datasetSnapshots: (projectId: string, corpusId?: string) =>
@@ -84,6 +85,8 @@ export const queryKeys = {
             ["text-research", "corpus", corpusId, "export-manifest"] as const,
         preprocessingProfiles: (projectId: string) =>
             ["text-research", projectId, "preprocessing-profiles"] as const,
+        cleaningProfiles: (projectId: string) =>
+            ["text-research", projectId, "cleaning-profiles"] as const,
         dictionaries: (projectId: string) =>
             ["text-research", projectId, "dictionaries"] as const,
         disagreements: (corpusId: string, codebookId: string) =>

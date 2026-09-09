@@ -5,12 +5,37 @@ from __future__ import annotations
 import logging
 
 from backend.core.config import settings
+from backend.modules.text_research.domain.analysis_task import resource_class_for
 from backend.workers.async_dispatch import (
     dispatch_background_sync_job,
     run_async_in_sync_context,
 )
 
 logger = logging.getLogger(__name__)
+
+_RESOURCE_CLASS_QUEUES = {
+    "research_light": lambda: settings.RESEARCH_QUEUE_LIGHT,
+    "research_cpu": lambda: settings.RESEARCH_QUEUE_CPU,
+    "research_io": lambda: settings.RESEARCH_QUEUE_IO,
+    "research_nlp": lambda: settings.RESEARCH_QUEUE_NLP,
+    "research_memory": lambda: settings.RESEARCH_QUEUE_MEMORY,
+    "research_gpu": lambda: settings.RESEARCH_QUEUE_GPU,
+}
+
+
+def queue_for_resource_class(resource_class: str) -> str:
+    """Resolve Celery queue name for a worker resource class."""
+    resolver = _RESOURCE_CLASS_QUEUES.get(resource_class)
+    if resolver is None:
+        return settings.CELERY_TASK_DEFAULT_QUEUE
+    return resolver()
+
+
+def _ensure_worker_parallelism() -> None:
+    """Apply thread caps for Celery workers and eager in-process research jobs."""
+    from backend.workers.parallelism import configure_worker_parallelism
+
+    configure_worker_parallelism(force=False)
 
 
 def _run_with_session(coro_factory):
@@ -20,6 +45,7 @@ def _run_with_session(coro_factory):
         async with SessionLocal() as db:
             await coro_factory(db)
 
+    _ensure_worker_parallelism()
     run_async_in_sync_context(_run())
 
 
@@ -71,6 +97,28 @@ def topic_model_training_sync(*, run_id: str, user_id: str) -> None:
         raise
 
 
+def topic_k_sweep_sync(*, run_id: str, user_id: str) -> None:
+    from backend.modules.text_research.application.topic_model_service import TopicModelService
+
+    async def _execute(db):
+        await TopicModelService(db).execute_k_sweep(run_id)
+
+    logger.info("Topic K sweep started run=%s user=%s", run_id, user_id)
+    _run_with_session(_execute)
+    logger.info("Topic K sweep completed run=%s", run_id)
+
+
+def topic_seed_stability_sync(*, run_id: str, user_id: str) -> None:
+    from backend.modules.text_research.application.topic_model_service import TopicModelService
+
+    async def _execute(db):
+        await TopicModelService(db).execute_seed_stability(run_id)
+
+    logger.info("Topic seed stability started run=%s user=%s", run_id, user_id)
+    _run_with_session(_execute)
+    logger.info("Topic seed stability completed run=%s", run_id)
+
+
 def robustness_sweep_sync(*, run_id: str, user_id: str) -> None:
     from backend.modules.text_research.application.robustness_service import RobustnessService
 
@@ -99,12 +147,12 @@ def prediction_sync(*, run_id: str, user_id: str) -> None:
 def queue_segmentation(*, run_id: str, user_id: str) -> None:
     from backend.workers.tasks import research_segmentation_task
 
-    dispatch_background_sync_job(
+    return dispatch_background_sync_job(
         target=segmentation_sync,
         kwargs={"run_id": run_id, "user_id": user_id},
         celery_task=research_segmentation_task,
         celery_kwargs={"run_id": run_id, "user_id": user_id},
-        queue=settings.CELERY_TASK_DEFAULT_QUEUE,
+        queue=queue_for_resource_class("research_io"),
         job_name="research-segmentation",
     )
 
@@ -112,12 +160,12 @@ def queue_segmentation(*, run_id: str, user_id: str) -> None:
 def queue_classifier_training(*, run_id: str, user_id: str) -> None:
     from backend.workers.tasks import research_classifier_training_task
 
-    dispatch_background_sync_job(
+    return dispatch_background_sync_job(
         target=classifier_training_sync,
         kwargs={"run_id": run_id, "user_id": user_id},
         celery_task=research_classifier_training_task,
         celery_kwargs={"run_id": run_id, "user_id": user_id},
-        queue=settings.CELERY_TASK_DEFAULT_QUEUE,
+        queue=queue_for_resource_class(resource_class_for("classification")),
         job_name="research-classifier-training",
     )
 
@@ -125,25 +173,51 @@ def queue_classifier_training(*, run_id: str, user_id: str) -> None:
 def queue_topic_model_training(*, run_id: str, user_id: str) -> None:
     from backend.workers.tasks import research_topic_model_training_task
 
-    dispatch_background_sync_job(
+    return dispatch_background_sync_job(
         target=topic_model_training_sync,
         kwargs={"run_id": run_id, "user_id": user_id},
         celery_task=research_topic_model_training_task,
         celery_kwargs={"run_id": run_id, "user_id": user_id},
-        queue=settings.CELERY_TASK_DEFAULT_QUEUE,
+        queue=queue_for_resource_class(resource_class_for("topic_model")),
         job_name="research-topic-model",
+    )
+
+
+def queue_topic_k_sweep(*, run_id: str, user_id: str) -> None:
+    from backend.workers.tasks import research_topic_k_sweep_task
+
+    return dispatch_background_sync_job(
+        target=topic_k_sweep_sync,
+        kwargs={"run_id": run_id, "user_id": user_id},
+        celery_task=research_topic_k_sweep_task,
+        celery_kwargs={"run_id": run_id, "user_id": user_id},
+        queue=queue_for_resource_class(resource_class_for("topic_model")),
+        job_name="research-topic-k-sweep",
+    )
+
+
+def queue_topic_seed_stability(*, run_id: str, user_id: str) -> None:
+    from backend.workers.tasks import research_topic_seed_stability_task
+
+    return dispatch_background_sync_job(
+        target=topic_seed_stability_sync,
+        kwargs={"run_id": run_id, "user_id": user_id},
+        celery_task=research_topic_seed_stability_task,
+        celery_kwargs={"run_id": run_id, "user_id": user_id},
+        queue=queue_for_resource_class(resource_class_for("topic_model")),
+        job_name="research-topic-seed-stability",
     )
 
 
 def queue_robustness_sweep(*, run_id: str, user_id: str) -> None:
     from backend.workers.tasks import research_robustness_sweep_task
 
-    dispatch_background_sync_job(
+    return dispatch_background_sync_job(
         target=robustness_sweep_sync,
         kwargs={"run_id": run_id, "user_id": user_id},
         celery_task=research_robustness_sweep_task,
         celery_kwargs={"run_id": run_id, "user_id": user_id},
-        queue=settings.CELERY_TASK_DEFAULT_QUEUE,
+        queue=queue_for_resource_class(resource_class_for("classification")),
         job_name="research-robustness-sweep",
     )
 
@@ -151,4 +225,29 @@ def queue_robustness_sweep(*, run_id: str, user_id: str) -> None:
 def queue_prediction(*, run_id: str, user_id: str) -> None:
     from backend.workers.tasks import research_prediction_task
 
-    dispatch_background_sync_job(target=prediction_sync, kwargs={"run_id": run_id, "user_id": user_id}, celery_task=research_prediction_task, celery_kwargs={"run_id": run_id, "user_id": user_id}, queue="research_cpu", job_name="research-prediction")
+    return dispatch_background_sync_job(
+        target=prediction_sync,
+        kwargs={"run_id": run_id, "user_id": user_id},
+        celery_task=research_prediction_task,
+        celery_kwargs={"run_id": run_id, "user_id": user_id},
+        queue=queue_for_resource_class(resource_class_for("classification")),
+        job_name="research-prediction",
+    )
+
+
+def queue_research_operation(*, operation: str, run_id: str, user_id: str) -> str | None:
+    """Dispatch a named persisted operation through the shared worker boundary."""
+    dispatchers = {
+        "segmentation": queue_segmentation,
+        "classification": queue_classifier_training,
+        "topic_training": queue_topic_model_training,
+        "topic_k_sweep": queue_topic_k_sweep,
+        "topic_seed_stability": queue_topic_seed_stability,
+        "robustness": queue_robustness_sweep,
+        "prediction": queue_prediction,
+    }
+    try:
+        dispatcher = dispatchers[operation]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported research operation {operation!r}") from exc
+    return dispatcher(run_id=run_id, user_id=user_id)

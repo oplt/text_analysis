@@ -815,6 +815,8 @@ def build_dfm_matrix(
     max_preview: int = 10,
     dense_export_limit: int = 5000,
     force_sparse_only: bool = False,
+    vectorizer_mode: str = "count",
+    hashing_n_features: int = 2**18,
     k1: float | None = None,
     b: float | None = None,
     smooth_idf: bool | None = None,
@@ -822,22 +824,26 @@ def build_dfm_matrix(
 ) -> dict[str, Any]:
     """Build a sparse document/text-unit × feature matrix (DFM).
 
-    Always fits a **count** vocabulary first; the selected weighting scheme
-    (count, binary, tf, tfidf, sublinear_tf, log_count, bm25) is applied by
-    :func:`apply_weighting` so tokenization stays independent of weighting.
+    Default path fits a **count** vocabulary first; the selected weighting
+    scheme is applied by :func:`apply_weighting`. For huge exploratory corpora
+    set ``vectorizer_mode="hashing"`` (or ``"auto"``) to use HashingVectorizer
+    and keep CSR without materializing a vocabulary.
     """
+    from backend.modules.text_research.infrastructure.out_of_core import (
+        dense_preview,
+        recommend_vectorizer_mode,
+        should_force_sparse_only,
+        should_use_out_of_core,
+        sparse_payload_from_matrix,
+    )
+
     scheme = resolve_weighting_scheme(mode, k1=k1, b=b, smooth_idf=smooth_idf)
     weighting = scheme.name
     if unit_ids is not None and len(unit_ids) != len(tokenized):
         raise ValueError("unit_ids must align 1:1 with tokenized units")
 
     documents = [" ".join(tokens) for tokens in tokenized]
-    base_kwargs: dict[str, Any] = {
-        "tokenizer": str.split,
-        "preprocessor": lambda doc: doc,
-        "lowercase": False,
-        "token_pattern": None,
-    }
+    resolved_vectorizer = recommend_vectorizer_mode(len(documents), vectorizer_mode)
     trim_config = vectorizer_kwargs.pop("trim", None)
     for key in (
         "unit_ids",
@@ -845,41 +851,94 @@ def build_dfm_matrix(
         "max_preview",
         "dense_export_limit",
         "force_sparse_only",
+        "vectorizer_mode",
+        "hashing_n_features",
         "trim",
         "k1",
         "b",
         "smooth_idf",
     ):
         vectorizer_kwargs.pop(key, None)
-    base_kwargs.update(vectorizer_kwargs)
 
-    vectorizer = build_count_vectorizer(config=None, **base_kwargs)
-    count_matrix = vectorizer.fit_transform(documents)
-    matrix = apply_weighting(count_matrix, scheme)
+    out_of_core_notes: list[str] = []
+    from scipy import sparse as _sparse
+
+    if resolved_vectorizer == "hashing":
+        from backend.modules.text_research.infrastructure.out_of_core import (
+            ensure_csr,
+            iter_item_batches,
+            resolve_batch_size,
+        )
+        from backend.modules.text_research.infrastructure.preprocessing import (
+            build_hashing_vectorizer,
+        )
+
+        # Hashing path: IDF-style schemes need a fixed vocab — fall back to count.
+        if weighting not in {"count", "binary", "tf", "log_count"}:
+            out_of_core_notes.append(
+                f"HashingVectorizer exploratory path cannot apply {weighting!r}; "
+                "using count weights on hashed features."
+            )
+            weighting = "count"
+            scheme = resolve_weighting_scheme("count")
+        # Documents are already space-joined tokens — split only, do not re-tokenize.
+        vectorizer = build_hashing_vectorizer(
+            None,
+            n_features=hashing_n_features,
+            tokenizer=str.split,
+            preprocessor=lambda doc: doc,
+            lowercase=False,
+            token_pattern=None,
+        )
+        size = resolve_batch_size(len(documents))
+        blocks = [
+            ensure_csr(vectorizer.transform(list(batch)))
+            for batch in iter_item_batches(documents, size)
+        ]
+        count_matrix = blocks[0] if len(blocks) == 1 else _sparse.vstack(blocks, format="csr")
+        matrix = apply_weighting(count_matrix, scheme) if weighting != "count" else count_matrix
+        feature_names = []
+        out_of_core_notes.append(
+            f"Used HashingVectorizer (n_features={hashing_n_features}); "
+            "feature names are omitted (hash buckets, not vocabulary terms)."
+        )
+    else:
+        base_kwargs: dict[str, Any] = {
+            "tokenizer": str.split,
+            "preprocessor": lambda doc: doc,
+            "lowercase": False,
+            "token_pattern": None,
+        }
+        base_kwargs.update(vectorizer_kwargs)
+        vectorizer = build_count_vectorizer(config=None, **base_kwargs)
+        count_matrix = vectorizer.fit_transform(documents)
+        matrix = apply_weighting(count_matrix, scheme)
+        feature_names = list(vectorizer.get_feature_names_out())
+
+    if _sparse.issparse(matrix):
+        matrix = matrix.tocsr()
 
     n_units, n_features = matrix.shape
     nnz = int(matrix.nnz)
     density = (nnz / (n_units * n_features)) if (n_units and n_features) else 0.0
-    feature_names = list(vectorizer.get_feature_names_out())
 
     preview_rows = min(max_preview, n_units)
     preview_cols = min(max_preview, n_features)
-    preview_values = (
-        matrix[:preview_rows, :preview_cols].toarray().tolist() if preview_rows and preview_cols else []
+    preview_values = dense_preview(matrix, max_rows=preview_rows, max_cols=preview_cols)
+
+    sparse_payload = sparse_payload_from_matrix(matrix)
+    auto_sparse = should_force_sparse_only(
+        n_units,
+        n_features,
+        dense_export_limit=dense_export_limit,
+        force_sparse_only=force_sparse_only,
     )
+    include_dense = not auto_sparse and n_units * n_features > 0
+    if auto_sparse and not force_sparse_only and should_use_out_of_core(n_units):
+        out_of_core_notes.append(
+            "Dense export skipped for large corpus; storage remains scipy CSR / COO."
+        )
 
-    coo = matrix.tocoo()
-    sparse_payload = {
-        "format": "coo",
-        "row": coo.row.tolist(),
-        "col": coo.col.tolist(),
-        "data": [float(v) for v in coo.data.tolist()],
-        "shape": [n_units, n_features],
-        "nnz": nnz,
-    }
-
-    cells = n_units * n_features
-    include_dense = not force_sparse_only and cells <= dense_export_limit and cells > 0
     cfg_payload = _config_dict(preprocessing_config) if preprocessing_config is not None else None
     weighting_meta = describe_weighting(scheme)
 
@@ -887,7 +946,7 @@ def build_dfm_matrix(
         "dimensions": {"units": n_units, "features": n_features},
         "density": density,
         "nnz": nnz,
-        "feature_names": feature_names,
+        "feature_names": feature_names if resolved_vectorizer != "hashing" else [],
         "unit_ids": list(unit_ids) if unit_ids is not None else [str(i) for i in range(n_units)],
         "preprocessing_config": cfg_payload,
         "mode": weighting,
@@ -897,27 +956,37 @@ def build_dfm_matrix(
         "sparse": sparse_payload,
         "storage": "sparse+dense" if include_dense else "sparse",
         "dense_export_limit": dense_export_limit,
+        "vectorizer_mode": resolved_vectorizer,
         "preview": {
             "rows": preview_rows,
             "cols": preview_cols,
-            "feature_names": feature_names[:preview_cols],
+            "feature_names": (
+                feature_names[:preview_cols]
+                if resolved_vectorizer != "hashing"
+                else [f"hash_{i}" for i in range(preview_cols)]
+            ),
             "unit_ids": (list(unit_ids) if unit_ids is not None else [str(i) for i in range(n_units)])[
                 :preview_rows
             ],
             "values": preview_values,
         },
     }
+    if out_of_core_notes:
+        result["out_of_core_notes"] = out_of_core_notes
     if include_dense:
         result["dense_matrix"] = matrix.toarray().tolist()
     if trim_config:
-        result = dfm_trim(
-            result,
-            max_preview=max_preview,
-            dense_export_limit=dense_export_limit,
-            force_sparse_only=force_sparse_only,
-            **trim_config,
-        )
-        result["weighting_scheme"] = weighting_meta
+        if resolved_vectorizer == "hashing":
+            result["trim_skipped"] = "trim requires a vocabulary; ignored for hashing DFM"
+        else:
+            result = dfm_trim(
+                result,
+                max_preview=max_preview,
+                dense_export_limit=dense_export_limit,
+                force_sparse_only=auto_sparse,
+                **trim_config,
+            )
+            result["weighting_scheme"] = weighting_meta
     return result
 
 

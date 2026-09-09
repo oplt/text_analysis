@@ -158,13 +158,29 @@ class PredictionService(ResearchAccessMixin):
             for start in range(0, len(rows), 500):
                 await self.repo.bulk_upsert_predictions(rows[start : start + 500])
 
+            from backend.modules.text_research.application.prediction_set_service import (
+                PredictionSetService,
+            )
+
+            prediction_set = await PredictionSetService(self.db).create_from_run(
+                run=run,
+                model=model,
+                unit_ids=[unit.id for unit in units],
+                created_by=run.created_by,
+            )
+
             await self.repo.update_run(
                 run,
                 status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 completed_at=_utcnow(),
                 metrics_json=dumps({"units_predicted": len(units)}),
-                results_json=dumps({"unit_count": len(units)}),
+                results_json=dumps(
+                    {
+                        "unit_count": len(units),
+                        "prediction_set_id": prediction_set.id,
+                    }
+                ),
             )
             await self.db.commit()
         except Exception as exc:  # noqa: BLE001

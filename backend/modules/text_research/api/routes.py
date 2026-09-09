@@ -3,14 +3,19 @@
 
 from __future__ import annotations
 
+import asyncio
+import csv
+import io
+import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps.auth import get_current_user
 from backend.api.deps.db import get_db
+from backend.db.session import SessionLocal
 from backend.core.pagination import (
     PaginatedResponse,
     PaginationParams,
@@ -93,10 +98,17 @@ from backend.modules.text_research.api.schemas import (
     TopicLabelRequest,
     TopicSeedStabilityRequest,
     TopicTrainRequest,
+    DriftMonitoringRequest,
+    ModelLifecycleUpdateRequest,
+    ModelPredictionItemResponse,
+    PredictionSetDetailResponse,
+    PredictionSetResponse,
     TrainedModelResponse,
     TrainingDatasetSnapshotResponse,
 )
 from backend.modules.text_research.application.active_learning_service import ActiveLearningService
+from backend.modules.text_research.application.drift_service import DriftService
+from backend.modules.text_research.application.model_lifecycle_service import ModelLifecycleService
 from backend.modules.text_research.application.adjudication_service import AdjudicationService
 from backend.modules.text_research.application.annotation_service import AnnotationService
 from backend.modules.text_research.application.classification_service import ClassificationService
@@ -122,6 +134,7 @@ from backend.modules.text_research.application.export_service import ExportServi
 from backend.modules.text_research.application.ingestion_qa_service import IngestionQaService
 from backend.modules.text_research.application.cleaning_service import CleaningProfileService
 from backend.modules.text_research.application.prediction_service import PredictionService
+from backend.modules.text_research.application.prediction_set_service import PredictionSetService
 from backend.modules.text_research.application.preprocessing_service import (
     PreprocessingProfileService,
 )
@@ -133,6 +146,7 @@ from backend.modules.text_research.application.robustness_service import Robustn
 from backend.modules.text_research.application.run_service import RunService
 from backend.modules.text_research.application.segmentation_service import SegmentationService
 from backend.modules.text_research.application.topic_model_service import TopicModelService
+from backend.modules.text_research.api.corpora import router as corpora_router
 from backend.modules.text_research.domain.models import (
     AnalysisRun,
     AnnotationLabel,
@@ -140,6 +154,7 @@ from backend.modules.text_research.domain.models import (
     CorpusDocument,
     DictionaryDefinition,
     PreprocessingProfile,
+    PredictionSet,
     ResearchCorpus,
     TrainedModel,
     TrainingDatasetSnapshot,
@@ -147,6 +162,7 @@ from backend.modules.text_research.domain.models import (
 )
 
 router = APIRouter()
+router.include_router(corpora_router)
 
 
 def _loads(value: str | None, default: Any = None) -> Any:
@@ -199,6 +215,23 @@ def _run_response(run: AnalysisRun) -> AnalysisRunResponse:
         error_message=run.error_message,
         created_at=run.created_at,
     )
+
+
+_TERMINAL_RUN_STATUSES = {"completed", "failed", "cancelled"}
+
+
+def _run_event_name(
+    current: AnalysisRunResponse,
+    previous: AnalysisRunResponse | None,
+) -> str:
+    """Return the SSE event that describes the newest persisted run state."""
+    if previous is None or current.status != previous.status:
+        if current.status in _TERMINAL_RUN_STATUSES | {"queued"}:
+            return current.status
+        return "started" if current.status in {"running", "pending"} else "progress"
+    if current.artifact_path and current.artifact_path != previous.artifact_path:
+        return "artifact-created"
+    return "progress"
 
 
 def _profile_response(profile: PreprocessingProfile) -> PreprocessingProfileResponse:
@@ -267,6 +300,33 @@ def _snapshot_response(snapshot: TrainingDatasetSnapshot) -> TrainingDatasetSnap
     return TrainingDatasetSnapshotResponse.model_validate(snapshot)
 
 
+def _prediction_item_response(prediction) -> ModelPredictionItemResponse:
+    return ModelPredictionItemResponse(
+        id=prediction.id,
+        trained_model_id=prediction.trained_model_id,
+        text_unit_id=prediction.text_unit_id,
+        predicted_labels=_loads(prediction.predicted_labels_json, []),
+        scores=_loads(prediction.scores_json, {}),
+        uncertainty=prediction.uncertainty,
+        created_at=prediction.created_at,
+    )
+
+
+def _prediction_set_response(prediction_set: PredictionSet) -> PredictionSetResponse:
+    return PredictionSetResponse(
+        id=prediction_set.id,
+        project_id=prediction_set.project_id,
+        corpus_id=prediction_set.corpus_id,
+        trained_model_id=prediction_set.trained_model_id,
+        model_version=prediction_set.model_version,
+        dataset_snapshot_id=prediction_set.dataset_snapshot_id,
+        analysis_run_id=prediction_set.analysis_run_id,
+        created_by=prediction_set.created_by,
+        created_at=prediction_set.created_at,
+        metadata=PredictionSetService.metadata(prediction_set),
+    )
+
+
 def _model_response(model: TrainedModel) -> TrainedModelResponse:
     return TrainedModelResponse(
         id=model.id,
@@ -282,6 +342,9 @@ def _model_response(model: TrainedModel) -> TrainedModelResponse:
         metrics=_loads(model.metrics_json, {}),
         version=model.version,
         name=model.name,
+        lifecycle_status=model.lifecycle_status,
+        lifecycle_notes=model.lifecycle_notes,
+        lifecycle_updated_at=model.lifecycle_updated_at,
         created_by=model.created_by,
         created_at=model.created_at,
     )
@@ -377,35 +440,6 @@ async def delete_corpus(
 # ------------------------------------------------------------------
 # Corpus documents
 # ------------------------------------------------------------------
-
-
-@router.get("/corpora/{corpus_id}/facets")
-async def corpus_metadata_facets(
-    corpus_id: str,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Distinct metadata values and document counts for controlled research filters."""
-    service = CorpusService(db)
-    await service.get_corpus_or_404(corpus_id, user_id=current_user.id)
-    documents = await service.repo.list_documents(corpus_id)
-    fields = (
-        "organization",
-        "organization_type",
-        "publication_year",
-        "country",
-        "region",
-        "cultural_sphere",
-        "language",
-        "publication_type",
-    )
-    return {
-        field: [
-            {"value": value, "count": sum(1 for document in documents if str(getattr(document, field)) == value)}
-            for value in sorted({str(getattr(document, field)) for document in documents if getattr(document, field) is not None})
-        ]
-        for field in fields
-    }
 
 
 @router.post(
@@ -1661,6 +1695,15 @@ async def train_classifier(
         n_bootstrap=body.n_bootstrap,
         ci_confidence_level=body.ci_confidence_level,
         calibration_method=body.calibration_method,
+        validation_strategy=body.validation_strategy,
+        nested_cv_outer_splits=body.nested_cv_outer_splits,
+        nested_cv_inner_splits=body.nested_cv_inner_splits,
+        embedding_provider=body.embedding_provider,
+        threshold_objective=body.threshold_objective,
+        threshold_utility_tp=body.threshold_utility_tp,
+        threshold_utility_tn=body.threshold_utility_tn,
+        threshold_utility_fp=body.threshold_utility_fp,
+        threshold_utility_fn=body.threshold_utility_fn,
         name=body.name,
         run_async=body.run_async,
     )
@@ -1671,13 +1714,51 @@ async def train_classifier(
 async def list_classifiers(
     project_id: str,
     corpus_id: str | None = None,
+    lifecycle_status: str | None = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     models = await ClassificationService(db).list_models(
-        project_id=project_id, user_id=current_user.id, corpus_id=corpus_id
+        project_id=project_id,
+        user_id=current_user.id,
+        corpus_id=corpus_id,
+        lifecycle_status=lifecycle_status,
     )
     return [_model_response(m) for m in models]
+
+
+@router.get("/projects/{project_id}/models", response_model=list[TrainedModelResponse])
+async def list_models(
+    project_id: str,
+    corpus_id: str | None = None,
+    lifecycle_status: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    models = await ModelLifecycleService(db).list_by_status(
+        project_id,
+        user_id=current_user.id,
+        status=lifecycle_status,
+        corpus_id=corpus_id,
+    )
+    return [_model_response(m) for m in models]
+
+
+@router.patch("/models/{model_id}/lifecycle", response_model=TrainedModelResponse)
+async def update_model_lifecycle(
+    model_id: str,
+    body: ModelLifecycleUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    model = await ModelLifecycleService(db).set_status(
+        model_id,
+        user_id=current_user.id,
+        status=body.status,
+        notes=body.notes,
+        deprecate_others=body.deprecate_others,
+    )
+    return _model_response(model)
 
 
 @router.get("/classifiers/{model_id}", response_model=TrainedModelResponse)
@@ -1725,6 +1806,24 @@ async def predict_classifier(
     return _run_response(run)
 
 
+@router.post("/corpora/{corpus_id}/monitoring/drift")
+async def compare_classifier_drift(
+    corpus_id: str,
+    body: DriftMonitoringRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    report = await DriftService(db).compare_distributions(
+        corpus_id,
+        user_id=current_user.id,
+        baseline=body.baseline.model_dump(exclude_none=True),
+        current=body.current.model_dump(exclude_none=True),
+        baseline_run_id=body.baseline_run_id,
+        current_run_id=body.current_run_id,
+    )
+    return report
+
+
 @router.get("/classifiers/{model_id}/predictions")
 async def list_predictions(
     model_id: str,
@@ -1736,6 +1835,45 @@ async def list_predictions(
     return await PredictionService(db).list_predictions(
         model_id, user_id=current_user.id, limit=limit, offset=offset
     )
+
+
+@router.get("/prediction-sets/{prediction_set_id}", response_model=PredictionSetDetailResponse)
+async def get_prediction_set(
+    prediction_set_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    payload = await PredictionSetService(db).get(
+        prediction_set_id,
+        user_id=current_user.id,
+    )
+    prediction_set = payload["prediction_set"]
+    return PredictionSetDetailResponse(
+        **_prediction_set_response(prediction_set).model_dump(),
+        predictions=[
+            _prediction_item_response(prediction) for prediction in payload["predictions"]
+        ],
+    )
+
+
+@router.get(
+    "/corpora/{corpus_id}/prediction-sets",
+    response_model=list[PredictionSetResponse],
+)
+async def list_prediction_sets(
+    corpus_id: str,
+    limit: int = Query(default=50, le=200),
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    items, _total = await PredictionSetService(db).list(
+        corpus_id,
+        user_id=current_user.id,
+        limit=limit,
+        offset=offset,
+    )
+    return [_prediction_set_response(item) for item in items]
 
 
 @router.get("/classifiers/{model_id}/active-learning/queue")
@@ -1820,6 +1958,12 @@ def _topic_filters(body: TopicTrainRequest) -> dict[str, Any]:
             "preprocessing_profile_id",
             "max_iterations",
             "random_seed",
+            "group_by",
+            "holdout_fraction",
+            "holdout_unit_ids",
+            "embedding_provider",
+            "embedding_model_name",
+            "persist_embedding_artifacts",
             "run_async",
         }
         and v is not None
@@ -1844,6 +1988,12 @@ async def train_topic_model(
         preprocessing_profile_id=body.preprocessing_profile_id,
         max_iterations=body.max_iterations,
         random_seed=body.random_seed,
+        group_by=body.group_by,
+        holdout_fraction=body.holdout_fraction,
+        holdout_unit_ids=body.holdout_unit_ids,
+        embedding_provider=body.embedding_provider,
+        embedding_model_name=body.embedding_model_name,
+        persist_embedding_artifacts=body.persist_embedding_artifacts,
         run_async=body.run_async,
         **_topic_filters(body),
     )
@@ -1854,13 +2004,24 @@ def _topic_ksweep_filters(body: TopicKSweepRequest) -> dict[str, Any]:
     return {
         k: v
         for k, v in body.model_dump().items()
-        if k not in {"unit_type", "algorithm", "k_values", "preprocessing_profile_id", "max_iterations", "random_seed"}
+        if k
+        not in {
+            "unit_type",
+            "algorithm",
+            "k_values",
+            "preprocessing_profile_id",
+            "max_iterations",
+            "random_seed",
+            "holdout_fraction",
+            "holdout_unit_ids",
+            "run_async",
+        }
         and v is not None
     }
 
 
 @router.post(
-    "/corpora/{corpus_id}/topics/k-sweep", response_model=AnalysisRunResponse, status_code=201
+    "/corpora/{corpus_id}/topics/k-sweep", response_model=AnalysisRunResponse, status_code=202
 )
 async def topic_k_sweep(
     corpus_id: str,
@@ -1877,6 +2038,9 @@ async def topic_k_sweep(
         preprocessing_profile_id=body.preprocessing_profile_id,
         max_iterations=body.max_iterations,
         random_seed=body.random_seed,
+        holdout_fraction=body.holdout_fraction,
+        holdout_unit_ids=body.holdout_unit_ids,
+        run_async=body.run_async,
         **_topic_ksweep_filters(body),
     )
     return _run_response(run)
@@ -1886,13 +2050,22 @@ def _topic_seed_stability_filters(body: TopicSeedStabilityRequest) -> dict[str, 
     return {
         k: v
         for k, v in body.model_dump().items()
-        if k not in {"unit_type", "algorithm", "n_topics", "seeds", "preprocessing_profile_id", "max_iterations"}
+        if k
+        not in {
+            "unit_type",
+            "algorithm",
+            "n_topics",
+            "seeds",
+            "preprocessing_profile_id",
+            "max_iterations",
+            "run_async",
+        }
         and v is not None
     }
 
 
 @router.post(
-    "/corpora/{corpus_id}/topics/seed-stability", response_model=AnalysisRunResponse, status_code=201
+    "/corpora/{corpus_id}/topics/seed-stability", response_model=AnalysisRunResponse, status_code=202
 )
 async def topic_seed_stability(
     corpus_id: str,
@@ -1909,6 +2082,7 @@ async def topic_seed_stability(
         seeds=body.seeds,
         preprocessing_profile_id=body.preprocessing_profile_id,
         max_iterations=body.max_iterations,
+        run_async=body.run_async,
         **_topic_seed_stability_filters(body),
     )
     return _run_response(run)
@@ -2107,6 +2281,41 @@ async def get_run(
     return _run_response(run)
 
 
+@router.get("/runs/{run_id}/events")
+async def stream_run_events(
+    run_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """Stream persisted run state changes, with a client-side polling fallback."""
+
+    async def events():
+        previous: AnalysisRunResponse | None = None
+        while True:
+            async with SessionLocal() as session:
+                run = await RunService(session).get_run(run_id, user_id=current_user.id)
+                current = _run_response(run)
+
+            if previous != current:
+                payload = json.dumps(current.model_dump(mode="json"), separators=(",", ":"))
+                if current.artifact_path and (
+                    previous is None or current.artifact_path != previous.artifact_path
+                ):
+                    yield f"event: artifact-created\ndata: {payload}\n\n"
+                event_name = _run_event_name(current, previous)
+                yield f"event: {event_name}\ndata: {payload}\n\n"
+                previous = current
+
+            if current.status in _TERMINAL_RUN_STATUSES:
+                return
+            await asyncio.sleep(1)
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @router.get("/runs/{run_id}/clone-parameters")
 async def clone_run_parameters(
     run_id: str,
@@ -2116,6 +2325,16 @@ async def clone_run_parameters(
     return await RunService(db).clone_parameters(run_id, user_id=current_user.id)
 
 
+@router.get("/runs/{run_id}/provenance")
+async def get_run_provenance(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Full provenance block + one-click reproduce payload for a persisted run."""
+    return await RunService(db).get_provenance(run_id, user_id=current_user.id)
+
+
 @router.post("/runs/{run_id}/rerun", response_model=AnalysisRunResponse, status_code=202)
 async def rerun(
     run_id: str,
@@ -2123,6 +2342,7 @@ async def rerun(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """One-click reproducible re-execution of a prior analysis run."""
     run = await RunService(db).rerun(run_id, user_id=current_user.id, run_async=run_async)
     return _run_response(run)
 
@@ -2205,15 +2425,17 @@ async def export_quanteda_script(
     return QuantedaScriptResponse(script=script)
 
 
-@router.get("/corpora/{corpus_id}/export/units.csv", response_class=PlainTextResponse)
+@router.get("/corpora/{corpus_id}/export/units.csv")
 async def export_units_csv(
     corpus_id: str,
     unit_type: str = Query(default="paragraph"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await ExportService(db).export_units_csv(
-        corpus_id, user_id=current_user.id, unit_type=unit_type
+    return StreamingResponse(
+        ExportService(db).iter_units_csv(corpus_id, user_id=current_user.id, unit_type=unit_type),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{corpus_id}-units.csv"'},
     )
 
 
@@ -2333,15 +2555,14 @@ async def import_contextual_csv(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    payload = await file.read()
     try:
-        csv_text = payload.decode("utf-8-sig")
-    except UnicodeDecodeError as exc:
+        reader = csv.DictReader(io.TextIOWrapper(file.file, encoding="utf-8-sig", newline=""))
+    except UnicodeError as exc:
         raise HTTPException(status_code=422, detail="CSV must be UTF-8 encoded.") from exc
     result = await ContextualDatasetService(db).import_csv(
         dataset_id,
         user_id=current_user.id,
-        csv_text=csv_text,
+        reader=reader,
         replace_existing=replace_existing,
     )
     return ContextualImportResponse.model_validate(result)

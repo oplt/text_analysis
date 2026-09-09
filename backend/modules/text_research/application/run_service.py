@@ -37,14 +37,48 @@ class RunService(ResearchAccessMixin):
         return await self.get_run_or_404(run_id, user_id=user_id)
 
     async def clone_parameters(self, run_id: str, *, user_id: str) -> dict[str, Any]:
+        from backend.modules.text_research.infrastructure.provenance import (
+            extract_reproduce_request,
+        )
+
         run = await self.get_run_or_404(run_id, user_id=user_id)
+        parameters = loads(run.parameters_json, {})
+        reproduce = extract_reproduce_request(
+            parameters, run_type=run.run_type, run_id=run.id
+        )
         return {
             "run_type": run.run_type,
             "corpus_id": run.corpus_id,
-            "parameters": loads(run.parameters_json, {}),
+            "parameters": parameters,
+            "reproduce": reproduce,
+            "analysis_specification": reproduce.get("analysis_specification"),
+            "analysis_spec_hash": reproduce.get("analysis_spec_hash"),
+        }
+
+    async def get_provenance(self, run_id: str, *, user_id: str) -> dict[str, Any]:
+        from backend.modules.text_research.infrastructure.provenance import (
+            extract_reproduce_request,
+            runtime_environment,
+        )
+
+        run = await self.get_run_or_404(run_id, user_id=user_id)
+        parameters = loads(run.parameters_json, {})
+        provenance = parameters.get("provenance") if isinstance(parameters.get("provenance"), dict) else {}
+        return {
+            "run_id": run.id,
+            "run_type": run.run_type,
+            "status": run.status,
+            "random_seed": run.random_seed,
+            "artifact_path": run.artifact_path,
+            "provenance": provenance,
+            "reproduce": extract_reproduce_request(
+                parameters, run_type=run.run_type, run_id=run.id
+            ),
+            "runtime_now": runtime_environment(),
         }
 
     async def rerun(self, run_id: str, *, user_id: str, run_async: bool = False) -> AnalysisRun:
+        """One-click reproducible re-execution using the original run parameters."""
         run = await self.get_run_or_404(run_id, user_id=user_id)
         params = loads(run.parameters_json, {})
         inner_filters = dict(params.get("filters") or {})
@@ -269,6 +303,7 @@ class RunService(ResearchAccessMixin):
                 preprocessing_profile_id=params.get("preprocessing_profile_id"),
                 max_iterations=params.get("max_iterations", 25),
                 random_seed=params.get("random_seed", 42),
+                group_by=params.get("group_by"),
                 run_async=run_async,
                 **inner_filters,
             )
@@ -373,10 +408,19 @@ class RunService(ResearchAccessMixin):
         await self.repo.update_run(
             run,
             status=AnalysisRunStatus.CANCELLED.value,
+            cancellation_requested=True,
             progress_stage="cancelled",
             completed_at=datetime.now(UTC),
             error_message="Cancelled by user",
         )
+        if run.artifact_namespace:
+            from backend.modules.text_research.infrastructure.model_storage import ARTIFACT_ROOT
+
+            namespace = ARTIFACT_ROOT / run.artifact_namespace
+            if namespace.is_dir():
+                import shutil
+
+                shutil.rmtree(namespace)
         await self.db.commit()
         refreshed = await self.repo.get_run(run.id)
         assert refreshed is not None

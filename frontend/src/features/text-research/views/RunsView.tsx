@@ -25,6 +25,7 @@ import {
     cloneRunParameters,
     compareRuns,
     getRun,
+    getRunProvenance,
     listRuns,
     researchExportUrl,
     rerunRun,
@@ -37,6 +38,7 @@ import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { ResultsInspector } from "../components/ResearchCharts";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
+import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 
 function formatValue(value: unknown): string {
@@ -58,6 +60,7 @@ export default function RunsView() {
     const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
     const [compareIds, setCompareIds] = useState<string[]>([]);
     const [clonedParams, setClonedParams] = useState<ClonedRunParameters | null>(null);
+    const sseConnected = useRunEvents(selectedRunId, ctx.projectId);
 
     const runsQuery = useQuery({
         queryKey: queryKeys.textResearch.runs(ctx.projectId, ctx.selectedCorpusId),
@@ -73,7 +76,13 @@ export default function RunsView() {
         queryKey: queryKeys.textResearch.run(selectedRunId ?? ""),
         queryFn: () => getRun(selectedRunId!),
         enabled: Boolean(selectedRunId),
-        refetchInterval: activeRunRefetchInterval,
+        refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
+    });
+
+    const provenanceQuery = useQuery({
+        queryKey: queryKeys.textResearch.runProvenance(selectedRunId ?? ""),
+        queryFn: () => getRunProvenance(selectedRunId!),
+        enabled: Boolean(selectedRunId),
     });
 
     const compareReady = compareIds.length === 2;
@@ -94,11 +103,11 @@ export default function RunsView() {
         onSuccess: async (run) => {
             setSelectedRunId(run.id);
             await invalidateRuns();
-            showToast({ message: "Rerun started.", severity: "success" });
+            showToast({ message: "Reproducible rerun started.", severity: "success" });
         },
         onError: (error) =>
             showToast({
-                message: getQueryErrorMessage(error, "Rerun failed."),
+                message: getQueryErrorMessage(error, "Reproduce failed."),
                 severity: "error",
             }),
     });
@@ -161,7 +170,7 @@ export default function RunsView() {
         <Stack spacing={2}>
             <SectionCard
                 title="Runs & provenance"
-                description="Inspect, rerun, clone, cancel, and compare persisted research operations."
+                description="Inspect, reproduce, clone, cancel, and compare persisted research operations."
             >
                 <QueryBoundary
                     isLoading={runsQuery.isLoading}
@@ -238,7 +247,7 @@ export default function RunsView() {
                                                             rerunMutation.mutate(run.id)
                                                         }
                                                     >
-                                                        Rerun
+                                                        Reproduce
                                                     </Button>
                                                     <Button
                                                         size="small"
@@ -325,7 +334,7 @@ export default function RunsView() {
                                                 rerunMutation.mutate(selectedRun.id)
                                             }
                                         >
-                                            Rerun
+                                            Reproduce
                                         </Button>
                                         {isActiveRunStatus(selectedRun.status) ? (
                                             <Button
@@ -357,6 +366,45 @@ export default function RunsView() {
                                 </Typography>
                                 {selectedRun.error_message ? (
                                     <Alert severity="error">{selectedRun.error_message}</Alert>
+                                ) : null}
+
+                                <Alert severity="info">
+                                    Use <strong>Reproduce</strong> for one-click re-execution with the
+                                    original parameters, seeds, and analysis specification.
+                                </Alert>
+
+                                {provenanceQuery.data ? (
+                                    <ResultsInspector
+                                        title="provenance"
+                                        data={{
+                                            corpus_checksum:
+                                                provenanceQuery.data.provenance?.corpus_checksum,
+                                            pipeline_checksum:
+                                                provenanceQuery.data.provenance?.pipeline_checksum,
+                                            analysis_spec_hash:
+                                                provenanceQuery.data.reproduce?.analysis_spec_hash,
+                                            git_commit:
+                                                provenanceQuery.data.provenance?.git_commit,
+                                            container_image_digest:
+                                                provenanceQuery.data.provenance
+                                                    ?.container_image_digest,
+                                            package_versions:
+                                                provenanceQuery.data.provenance?.package_versions,
+                                            nlp_model: provenanceQuery.data.provenance?.nlp_model,
+                                            implementation_version:
+                                                provenanceQuery.data.provenance
+                                                    ?.implementation_version,
+                                            random_seeds:
+                                                provenanceQuery.data.provenance?.random_seeds,
+                                            parent_artifact_checksums:
+                                                provenanceQuery.data.provenance
+                                                    ?.parent_artifact_checksums,
+                                            analysis_specification:
+                                                provenanceQuery.data.reproduce
+                                                    ?.analysis_specification,
+                                            reproduce: provenanceQuery.data.reproduce,
+                                        }}
+                                    />
                                 ) : null}
 
                                 <ResultsInspector

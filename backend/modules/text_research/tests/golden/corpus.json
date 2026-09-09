@@ -1,0 +1,60 @@
+{
+  "preprocessing_config": {
+    "language": "en",
+    "unicode_normalization": "NFC",
+    "fix_encoding": false,
+    "lowercase": true,
+    "remove_punctuation": true,
+    "remove_numbers": false,
+    "remove_stopwords": false,
+    "preserve_negation": true,
+    "stemming": false,
+    "lemmatization": false,
+    "ngram_min": 1,
+    "ngram_max": 1,
+    "min_df": 1,
+    "max_df": 1.0,
+    "max_features": null,
+    "custom_stopwords": []
+  },
+  "documents": [
+    {
+      "id": "en-1",
+      "language": "en",
+      "text": "The policy debate continues in Parliament.",
+      "group": "doc-en-1"
+    },
+    {
+      "id": "en-2",
+      "language": "en",
+      "text": "Education reform and universal healthcare matter.",
+      "group": "doc-en-2"
+    },
+    {
+      "id": "de-1",
+      "language": "de",
+      "text": "Die Regierung diskutiert Bildungspolitik und Gesundheit.",
+      "group": "doc-de-1"
+    },
+    {
+      "id": "fr-1",
+      "language": "fr",
+      "text": "Le débat politique continue au Parlement.",
+      "group": "doc-fr-1"
+    },
+    {
+      "id": "tr-1",
+      "language": "tr",
+      "text": "Eğitim reformu ve sağlık hizmetleri önemlidir.",
+      "group": "doc-tr-1"
+    }
+  ],
+  "dfm_dimensions": {
+    "units": 5,
+    "features": 30
+  },
+  "checksums": {
+    "pipeline_checksum": "cbded3aaa48ca5ebc222aee3a3a40e97cfd0326310507572e76f43290708f738",
+    "corpus_checksum": "b13d3df60c774352485b2adf4e3357a03effd1d601064461905fea76c43147ed"
+  }
+}

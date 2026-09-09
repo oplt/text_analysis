@@ -37,13 +37,27 @@ def test_run_async_in_sync_context_installs_isolated_sessionmaker() -> None:
     assert db_session._sessionmaker_override.get() is None
 
 
-@patch("backend.workers.async_dispatch.threading.Thread")
+def test_run_async_in_sync_context_reuses_one_worker_runtime() -> None:
+    first = async_dispatch._get_worker_runtime()
+
+    async def _work() -> None:
+        return None
+
+    async_dispatch.run_async_in_sync_context(_work())
+    assert async_dispatch._get_worker_runtime() is first
+
+
 @patch("backend.workers.async_dispatch.settings.CELERY_TASK_ALWAYS_EAGER", True)
-def test_dispatch_background_sync_job_uses_daemon_thread_when_eager(
-    mock_thread_cls: MagicMock,
+@patch("backend.workers.async_dispatch._eager_executor_for_settings")
+def test_dispatch_background_sync_job_uses_bounded_executor_when_eager(
+    mock_executor_for_settings: MagicMock,
 ) -> None:
-    mock_thread = MagicMock()
-    mock_thread_cls.return_value = mock_thread
+    executor = MagicMock()
+    slots = MagicMock()
+    slots.acquire.return_value = True
+    mock_future = MagicMock()
+    executor.submit.return_value = mock_future
+    mock_executor_for_settings.return_value = (executor, slots)
     celery_task = MagicMock()
     target = MagicMock()
 
@@ -56,21 +70,13 @@ def test_dispatch_background_sync_job_uses_daemon_thread_when_eager(
         job_name="rag-indexing",
     )
 
-    mock_thread_cls.assert_called_once_with(
-        target=target,
-        kwargs={"document_id": "doc-1"},
-        name="eager-rag-indexing",
-        daemon=True,
-    )
-    mock_thread.start.assert_called_once()
+    executor.submit.assert_called_once_with(target, document_id="doc-1")
+    mock_future.add_done_callback.assert_called_once()
     celery_task.apply_async.assert_not_called()
 
 
-@patch("backend.workers.async_dispatch.threading.Thread")
 @patch("backend.workers.async_dispatch.settings.CELERY_TASK_ALWAYS_EAGER", False)
-def test_dispatch_background_sync_job_uses_celery_when_not_eager(
-    mock_thread_cls: MagicMock,
-) -> None:
+def test_dispatch_background_sync_job_uses_celery_when_not_eager() -> None:
     celery_task = MagicMock()
 
     async_dispatch.dispatch_background_sync_job(
@@ -82,11 +88,30 @@ def test_dispatch_background_sync_job_uses_celery_when_not_eager(
         job_name="rag-indexing",
     )
 
-    mock_thread_cls.assert_not_called()
     celery_task.apply_async.assert_called_once_with(
         kwargs={"document_id": "doc-1", "user_id": "user-1"},
         queue="default",
     )
+
+
+@patch("backend.workers.async_dispatch.settings.CELERY_TASK_ALWAYS_EAGER", True)
+@patch("backend.workers.async_dispatch._eager_executor_for_settings")
+def test_eager_dispatch_rejects_when_capacity_is_exhausted(
+    mock_executor_for_settings: MagicMock,
+) -> None:
+    slots = MagicMock()
+    slots.acquire.return_value = False
+    mock_executor_for_settings.return_value = (MagicMock(), slots)
+
+    with pytest.raises(RuntimeError, match="capacity is exhausted"):
+        async_dispatch.dispatch_background_sync_job(
+            target=MagicMock(),
+            kwargs={},
+            celery_task=MagicMock(),
+            celery_kwargs={},
+            queue="default",
+            job_name="research-test",
+        )
 
 
 @patch("backend.workers.async_dispatch.logger")

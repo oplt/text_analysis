@@ -7,6 +7,8 @@ import type {
     AnnotationQueueItem,
     Codebook,
     CorpusDocument,
+    CleaningPreview,
+    CleaningProfile,
     DashboardSummary,
     DatasetPreview,
     ExportManifest,
@@ -14,11 +16,133 @@ import type {
     ResearchCorpus,
     TrainedModel,
     TrainingDatasetSnapshot,
+    IngestionQaDocument,
     UnitType,
     UncertainPrediction,
 } from "../features/text-research/types";
 
 const BASE = "/research";
+
+export async function runIngestionQa(corpusId: string): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/ingestion-qa`, { method: "POST" });
+}
+
+export async function getDocumentIngestionQa(
+    documentId: string,
+    runId?: string
+): Promise<IngestionQaDocument & { run_id: string }> {
+    const query = runId ? `?run_id=${encodeURIComponent(runId)}` : "";
+    return apiFetch(`${BASE}/documents/${documentId}/ingestion-qa${query}`);
+}
+
+export async function listCleaningProfiles(projectId: string): Promise<CleaningProfile[]> {
+    return apiFetch(`${BASE}/projects/${projectId}/cleaning-profiles`);
+}
+
+export async function createCleaningProfile(
+    projectId: string,
+    payload: { name: string; description?: string; version?: string; config: Record<string, unknown> }
+): Promise<CleaningProfile> {
+    return apiFetch(`${BASE}/projects/${projectId}/cleaning-profiles`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function updateCleaningProfile(
+    profileId: string,
+    payload: Partial<{ name: string; description: string; version: string; config: Record<string, unknown> }>
+): Promise<CleaningProfile> {
+    return apiFetch(`${BASE}/cleaning-profiles/${profileId}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function deleteCleaningProfile(profileId: string): Promise<void> {
+    await apiFetch(`${BASE}/cleaning-profiles/${profileId}`, { method: "DELETE" });
+}
+
+export async function previewCleaning(payload: {
+    project_id?: string;
+    texts?: string[];
+    document_id?: string;
+    config?: Record<string, unknown>;
+    cleaning_profile_id?: string;
+}): Promise<CleaningPreview> {
+    return apiFetch(`${BASE}/cleaning/preview`, { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function applyCleaning(
+    corpusId: string,
+    payload: { cleaning_profile_id: string; document_ids?: string[] }
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/clean`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+type StandardAnalysisPayload = {
+    unit_type: UnitType;
+    preprocessing_profile_id?: string;
+    [key: string]: unknown;
+};
+
+export async function runSimilarity(
+    corpusId: string,
+    payload: StandardAnalysisPayload & {
+        method?: "tfidf_cosine" | "jaccard";
+        mode?: "pairwise" | "query" | "group_centroid";
+        top_k?: number;
+        min_score?: number;
+        group_by?: string;
+        query_text?: string;
+    }
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/analysis/similarity`, { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function runDuplicateDetection(
+    corpusId: string,
+    payload: StandardAnalysisPayload & {
+        methods?: string[];
+        lexical_threshold?: number;
+        char_ngram_size?: number;
+        use_minhash?: boolean;
+        max_pairs?: number;
+    }
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/analysis/duplicate-detection`, { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function runClustering(
+    corpusId: string,
+    payload: StandardAnalysisPayload & {
+        n_clusters?: number;
+        algorithm?: "kmeans" | "minibatch_kmeans";
+        use_svd?: boolean;
+        n_svd_components?: number;
+        top_terms?: number;
+        random_seed?: number;
+    }
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/analysis/clustering`, { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function runDimensionalityReduction(
+    corpusId: string,
+    payload: StandardAnalysisPayload & { method?: "svd" | "pca"; n_components?: number; random_seed?: number }
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/analysis/dimensionality-reduction`, { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function runReadability(
+    corpusId: string,
+    payload: StandardAnalysisPayload
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/analysis/readability`, { method: "POST", body: JSON.stringify(payload) });
+}
 
 // ------------------------------------------------------------------
 // Corpora
@@ -471,7 +595,22 @@ export async function runNgrams(
 
 export async function runDfm(
     corpusId: string,
-    payload: AnalysisBasePayload & { weighting?: "count" | "binary" | "tfidf" }
+    payload: AnalysisBasePayload & {
+        weighting?: "count" | "binary" | "tf" | "tfidf" | "sublinear_tf" | "log_count" | "bm25";
+        k1?: number;
+        b?: number;
+        smooth_idf?: boolean;
+        force_sparse_only?: boolean;
+        trim?: {
+            min_term_frequency?: number;
+            max_term_frequency?: number;
+            term_frequency_type?: "count" | "prop" | "rank" | "quantile";
+            min_document_frequency?: number;
+            max_document_frequency?: number;
+            document_frequency_type?: "count" | "prop" | "rank" | "quantile";
+            top_n?: number;
+        };
+    }
 ): Promise<AnalysisRun> {
     return apiFetch(`${BASE}/corpora/${corpusId}/analysis/dfm`, {
         method: "POST",
@@ -661,17 +800,45 @@ export async function previewDataset(payload: {
 export async function trainClassifier(payload: {
     snapshot_id: string;
     algorithm?: string;
+    task_type?: "binary" | "multiclass" | "multilabel";
     name?: string;
     run_async?: boolean;
     preprocessing_profile_id?: string;
+    vectorizer?: "tfidf" | "count";
+    use_word_ngrams?: boolean;
+    ngram_min?: number;
     ngram_max?: number;
+    use_char_ngrams?: boolean;
+    char_ngram_min?: number;
+    char_ngram_max?: number;
     min_df?: number;
     max_df?: number;
     max_features?: number | null;
     class_weight?: string | null;
     regularization_c?: number;
+    nb_alpha?: number;
+    sgd_loss?: string;
     test_size?: number;
+    val_size?: number;
     random_seed?: number;
+    tune_hyperparameters?: boolean;
+    hyperparameter_search_type?: "grid" | "random";
+    hyperparameter_param_grid?: Record<string, unknown[]>;
+    hyperparameter_n_iter?: number;
+    hyperparameter_scoring?: string;
+    tune_thresholds?: boolean;
+    threshold_objective?: string;
+    threshold_utility_tp?: number;
+    threshold_utility_tn?: number;
+    threshold_utility_fp?: number;
+    threshold_utility_fn?: number;
+    n_bootstrap?: number;
+    ci_confidence_level?: number;
+    calibration_method?: "sigmoid" | "isotonic";
+    validation_strategy?: "holdout" | "nested_grouped_cv";
+    nested_cv_outer_splits?: number;
+    nested_cv_inner_splits?: number;
+    embedding_provider?: string;
 }): Promise<AnalysisRun> {
     return apiFetch(`${BASE}/classifiers/train`, {
         method: "POST",
@@ -768,11 +935,17 @@ export async function trainTopicModel(
     corpusId: string,
     payload: {
         unit_type: UnitType;
-        algorithm?: "lda" | "nmf" | string;
+        algorithm?: "lda" | "nmf" | "semantic_stack" | "bertopic" | string;
         n_topics?: number;
         max_iterations?: number;
         random_seed?: number;
         preprocessing_profile_id?: string;
+        holdout_fraction?: number;
+        holdout_unit_ids?: string[];
+        group_by?: string[];
+        embedding_provider?: "hashing" | "sentence_transformers" | string;
+        embedding_model_name?: string;
+        persist_embedding_artifacts?: boolean;
         run_async?: boolean;
         organization?: string;
         region?: string;
@@ -783,6 +956,65 @@ export async function trainTopicModel(
     }
 ): Promise<AnalysisRun> {
     return apiFetch(`${BASE}/corpora/${corpusId}/topics/train`, {
+        method: "POST",
+        body: JSON.stringify({
+            algorithm: "lda",
+            n_topics: 5,
+            run_async: true,
+            ...payload,
+        }),
+    });
+}
+
+export async function runTopicKSweep(
+    corpusId: string,
+    payload: {
+        unit_type: UnitType;
+        algorithm?: "lda" | "nmf" | string;
+        k_values: number[];
+        max_iterations?: number;
+        random_seed?: number;
+        preprocessing_profile_id?: string;
+        holdout_fraction?: number;
+        holdout_unit_ids?: string[];
+        run_async?: boolean;
+        organization?: string;
+        region?: string;
+        cultural_sphere?: string;
+        language?: string;
+        publication_year_min?: number;
+        publication_year_max?: number;
+    }
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/topics/k-sweep`, {
+        method: "POST",
+        body: JSON.stringify({
+            algorithm: "lda",
+            run_async: true,
+            ...payload,
+        }),
+    });
+}
+
+export async function runTopicSeedStability(
+    corpusId: string,
+    payload: {
+        unit_type: UnitType;
+        algorithm?: "lda" | "nmf" | string;
+        n_topics?: number;
+        seeds: number[];
+        max_iterations?: number;
+        preprocessing_profile_id?: string;
+        run_async?: boolean;
+        organization?: string;
+        region?: string;
+        cultural_sphere?: string;
+        language?: string;
+        publication_year_min?: number;
+        publication_year_max?: number;
+    }
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/topics/seed-stability`, {
         method: "POST",
         body: JSON.stringify({
             algorithm: "lda",
@@ -862,6 +1094,47 @@ export async function runComparativePrevalence(
     });
 }
 
+export async function fitStatisticalModel(
+    corpusId: string,
+    payload: {
+        model?: "ols" | "logistic" | string;
+        dependent_var: string;
+        independent_vars: string[];
+        rows: Array<Record<string, unknown>>;
+        add_intercept?: boolean;
+    }
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/analysis/statistical-model`, {
+        method: "POST",
+        body: JSON.stringify({
+            model: "ols",
+            add_intercept: true,
+            ...payload,
+        }),
+    });
+}
+
+export async function compareMeasurements(
+    corpusId: string,
+    payload: {
+        source_a: string;
+        values_a: unknown[];
+        source_b: string;
+        values_b: unknown[];
+        ids?: string[];
+        value_kind?: "categorical" | "continuous" | string;
+        subgroup?: string[];
+    }
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/analysis/measurement-comparison`, {
+        method: "POST",
+        body: JSON.stringify({
+            value_kind: "categorical",
+            ...payload,
+        }),
+    });
+}
+
 // ------------------------------------------------------------------
 // Dashboard & runs
 // ------------------------------------------------------------------
@@ -891,10 +1164,28 @@ export type ClonedRunParameters = {
     run_type: string;
     corpus_id: string | null;
     parameters: Record<string, unknown>;
+    reproduce?: Record<string, unknown>;
+    analysis_specification?: Record<string, unknown> | null;
+    analysis_spec_hash?: string | null;
 };
 
 export async function cloneRunParameters(runId: string): Promise<ClonedRunParameters> {
     return apiFetch(`${BASE}/runs/${runId}/clone-parameters`);
+}
+
+export type RunProvenance = {
+    run_id: string;
+    run_type: string;
+    status: string;
+    random_seed: number | null;
+    artifact_path: string | null;
+    provenance: Record<string, unknown>;
+    reproduce: Record<string, unknown>;
+    runtime_now: Record<string, unknown>;
+};
+
+export async function getRunProvenance(runId: string): Promise<RunProvenance> {
+    return apiFetch(`${BASE}/runs/${runId}/provenance`);
 }
 
 export async function rerunRun(runId: string, run_async = true): Promise<AnalysisRun> {
@@ -963,6 +1254,12 @@ export async function listPreprocessingProfiles(projectId: string): Promise<Prep
 }
 
 export type PreprocessingConfigPayload = {
+    language?: string;
+    language_mode?: "manual" | "auto" | "per_unit" | string;
+    auto_detect_language?: boolean;
+    multilingual?: boolean;
+    unicode_normalization?: string | null;
+    fix_encoding?: boolean;
     lowercase?: boolean;
     remove_punctuation?: boolean;
     remove_numbers?: boolean;
@@ -970,6 +1267,11 @@ export type PreprocessingConfigPayload = {
     preserve_negation?: boolean;
     stemming?: boolean;
     lemmatization?: boolean;
+    pos_lemmatization?: boolean;
+    spacy_model?: string;
+    enable_ner?: boolean;
+    entity_masking?: boolean;
+    phrase_detection?: boolean;
     ngram_min?: number;
     ngram_max?: number;
     min_df?: number;
@@ -992,6 +1294,8 @@ export type PreprocessingPreview = {
     config: Record<string, unknown>;
     stemmer: string;
     lemmatization_supported: boolean;
+    spacy_available?: boolean;
+    implementation?: Record<string, unknown>;
     profile_name: string | null;
     profile_updated_at: string | null;
 };
@@ -1038,6 +1342,10 @@ export async function previewPreprocessing(payload: {
 export function researchExportUrl(path: string): string {
     const apiBase = import.meta.env.VITE_API_BASE ?? "/api/v1";
     return `${apiBase}${path}`;
+}
+
+export function researchRunEventsUrl(runId: string): string {
+    return researchExportUrl(`${BASE}/runs/${encodeURIComponent(runId)}/events`);
 }
 
 // ------------------------------------------------------------------

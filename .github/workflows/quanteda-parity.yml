@@ -1,0 +1,38 @@
+name: Quanteda R parity (optional)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  quanteda-parity:
+    runs-on: ubuntu-latest
+    container:
+      image: rocker/r-ver:4.4.2
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        run: |
+          apt-get update
+          apt-get install -y python3 python3-pip python3-venv
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip install -e ".[dev]"
+
+      - name: Install quanteda and jsonlite
+        run: |
+          Rscript -e 'install.packages(c("quanteda", "jsonlite"), repos="https://cloud.r-project.org")'
+
+      - name: Run optional R parity test
+        env:
+          QUANTEDA_R_PARITY: "1"
+          PYTHONPATH: ..
+        run: |
+          . .venv/bin/activate
+          python -m pytest modules/text_research/tests/quanteda_parity/test_r_parity_optional.py -q

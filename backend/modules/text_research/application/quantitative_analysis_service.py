@@ -16,13 +16,19 @@ from typing import Any
 from fastapi import HTTPException
 
 from backend.modules.text_research.application.access import ResearchAccessMixin
+from backend.modules.text_research.application.analysis_executor import (
+    attach_run_identity,
+    build_spec_from_request,
+)
 from backend.modules.text_research.application.preprocessing_service import (
     PreprocessingProfileService,
 )
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import AnalysisRun, CorpusDocument, TextUnit, dumps
+from backend.modules.text_research.domain.prepared_corpus import PreparedCorpusArtifact
 from backend.modules.text_research.infrastructure import quantitative
 from backend.modules.text_research.infrastructure.feature_cache import build_cache_key
+from backend.modules.text_research.infrastructure.prepared_corpus_builder import prepare_texts
 from backend.modules.text_research.infrastructure.preprocessing import (
     PreprocessingConfig,
     describe_implementation,
@@ -31,6 +37,69 @@ from backend.modules.text_research.infrastructure.preprocessing import (
 
 def _utcnow() -> datetime:
     return datetime.now(UTC)
+
+
+def _resolve_group_value(doc: Any, group_by: str) -> str:
+    if doc is None:
+        return "unspecified"
+    if hasattr(doc, "get_field_value"):
+        value = doc.get_field_value(group_by)
+    else:
+        value = getattr(doc, group_by, None)
+    if value is None or value == "":
+        return "unspecified"
+    return str(value)
+
+
+def _resolve_group_keys(
+    units: list[TextUnit],
+    documents: list[CorpusDocument],
+    group_by: str | list[str] | None,
+) -> list[str] | None:
+    if not group_by:
+        return None
+    field = group_by[0] if isinstance(group_by, list) else group_by
+    if not field:
+        return None
+    doc_lookup = {d.id: d for d in documents}
+    return [
+        _resolve_group_value(doc_lookup.get(unit.corpus_document_id), field)
+        for unit in units
+    ]
+
+
+def _tokenized_from_prepared(prepared: PreparedCorpusArtifact) -> list[list[str]]:
+    return [list(seq) for seq in prepared.token_sequences]
+
+
+def _prepare_with_identity(
+    *,
+    corpus_id: str,
+    analysis_type: str,
+    texts: list[str],
+    config: PreprocessingConfig,
+    units: list[TextUnit],
+    analysis_parameters: dict[str, Any] | None = None,
+) -> tuple[PreparedCorpusArtifact, dict[str, Any]]:
+    prepared = prepare_texts(
+        texts,
+        config.to_dict(),
+        unit_ids=[u.id for u in units],
+        document_ids=[u.corpus_document_id for u in units],
+    )
+    spec = build_spec_from_request(
+        analysis_type,
+        corpus_id,
+        analysis_parameters=analysis_parameters or {},
+    )
+    identity = attach_run_identity(
+        {
+            "corpus_checksum": prepared.corpus_checksum,
+            "pipeline_checksum": prepared.pipeline_checksum,
+        },
+        spec,
+    )
+    return prepared, identity
 
 
 def _filter_kwargs(filters: dict[str, Any]) -> dict[str, Any]:
@@ -198,6 +267,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         user_id: str,
         unit_type: str,
         preprocessing_profile_id: str | None = None,
+        group_by: list[str] | None = None,
         **filters: Any,
     ) -> AnalysisRun:
         corpus, units, documents = await self._select(
@@ -223,21 +293,30 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
 
         doc_lookup = self._document_lookup(units, documents)
 
-        def group_counts(attr: str) -> dict[str, int]:
+        def group_counts(field: str) -> dict[str, int]:
             counts: dict[str, int] = {}
             for unit in units:
                 doc = doc_lookup.get(unit.corpus_document_id)
-                key = str(getattr(doc, attr, None) or "unspecified") if doc else "unspecified"
+                if doc is None:
+                    key = "unspecified"
+                elif hasattr(doc, "get_field_value"):
+                    value = doc.get_field_value(field)
+                    key = str(value) if value is not None and value != "" else "unspecified"
+                else:
+                    key = str(getattr(doc, field, None) or "unspecified")
                 counts[key] = counts.get(key, 0) + 1
             return counts
 
-        breakdowns = {
-            "by_organization": group_counts("organization"),
-            "by_year": group_counts("publication_year"),
-            "by_region": group_counts("region"),
-            "by_cultural_sphere": group_counts("cultural_sphere"),
-            "by_language": group_counts("language"),
-        }
+        # Generic metadata slicing only — no hardcoded research dimensions.
+        fields = [f for f in (group_by or []) if f]
+        breakdowns = {field: group_counts(field) for field in fields}
+        prepared, identity = _prepare_with_identity(
+            corpus_id=corpus.id,
+            analysis_type="frequencies",
+            texts=texts,
+            config=config,
+            units=units,
+        )
         return await self._persist_run(
             corpus,
             AnalysisRunType.CORPUS_STATS,
@@ -245,7 +324,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             parameters={
                 "unit_type": unit_type,
                 "filters": filters,
+                "group_by": fields,
                 "pipeline_workflow": list(quantitative.PIPELINE_STAGES),
+                **identity,
                 **config_params,
             },
             metrics=stats,
@@ -253,6 +334,8 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "breakdowns": breakdowns,
                 "lexical_diversity": stats.get("lexical_diversity"),
                 "pipeline": stats.get("pipeline"),
+                "corpus_checksum": prepared.corpus_checksum,
+                "pipeline_checksum": prepared.pipeline_checksum,
             },
         )
 
@@ -272,45 +355,22 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
-        cache_key = self._cache_key(
+        texts = [u.text for u in units]
+        prepared, identity = _prepare_with_identity(
             corpus_id=corpus.id,
-            unit_type=unit_type,
-            units=units,
+            analysis_type="frequencies",
+            texts=texts,
             config=config,
-            filters=filters,
-            mode="tokens",
+            units=units,
+            analysis_parameters={"top_n": top_n, "rate_per": rate_per, "group_by": group_by},
         )
-        doc_lookup = self._document_lookup(units, documents)
-        group_keys: list[str] | None = None
-        if group_by:
-            allowed = {
-                "organization",
-                "organization_type",
-                "publication_year",
-                "region",
-                "cultural_sphere",
-                "language",
-                "publication_type",
-                "country",
-            }
-            if group_by not in allowed:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Unsupported group_by {group_by!r}; expected one of {sorted(allowed)}",
-                )
-            group_keys = []
-            for unit in units:
-                doc = doc_lookup.get(unit.corpus_document_id)
-                value = getattr(doc, group_by, None) if doc else None
-                group_keys.append(str(value) if value is not None else "unspecified")
+        group_keys = _resolve_group_keys(units, documents, group_by)
 
         report = await asyncio.to_thread(
-            quantitative.compute_frequencies,
-            [u.text for u in units],
-            config,
+            quantitative.term_frequency_report,
+            _tokenized_from_prepared(prepared),
             top_n=top_n,
             rate_per=rate_per,
-            cache_key=cache_key,
             unit_ids=[u.id for u in units],
             document_ids=[u.corpus_document_id for u in units],
             group_keys=group_keys,
@@ -327,6 +387,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "rate_per": rate_per,
                 "group_by": group_by,
                 "filters": filters,
+                **identity,
                 **config_params,
             },
             metrics={
@@ -336,7 +397,12 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "unique_terms_returned": metadata["terms_returned"],
                 "rate_per": metadata["rate_per"],
             },
-            results={"frequencies": rows, "metadata": metadata},
+            results={
+                "frequencies": rows,
+                "metadata": metadata,
+                "corpus_checksum": prepared.corpus_checksum,
+                "pipeline_checksum": prepared.pipeline_checksum,
+            },
         )
 
     async def ngrams(
@@ -362,23 +428,22 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
-        cache_key = self._cache_key(
+        texts = [u.text for u in units]
+        prepared, identity = _prepare_with_identity(
             corpus_id=corpus.id,
-            unit_type=unit_type,
-            units=units,
+            analysis_type="frequencies",
+            texts=texts,
             config=config,
-            filters=filters,
-            mode="tokens",
+            units=units,
+            analysis_parameters={"n": n, "top_n": top_n, "rate_per": rate_per, "skip": skip},
         )
         report = await asyncio.to_thread(
-            quantitative.compute_ngrams,
-            [u.text for u in units],
-            config,
+            quantitative.ngram_frequency_report,
+            _tokenized_from_prepared(prepared),
             n=n,
             top_n=top_n,
             rate_per=rate_per,
             skip=skip,
-            cache_key=cache_key,
             unit_ids=[u.id for u in units],
             document_ids=[u.corpus_document_id for u in units],
         )
@@ -395,6 +460,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "rate_per": rate_per,
                 "skip": skip,
                 "filters": filters,
+                **identity,
                 **config_params,
             },
             metrics={
@@ -405,7 +471,12 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "n": metadata["n"],
                 "n_label": metadata["n_label"],
             },
-            results={"ngrams": rows, "metadata": metadata},
+            results={
+                "ngrams": rows,
+                "metadata": metadata,
+                "corpus_checksum": prepared.corpus_checksum,
+                "pipeline_checksum": prepared.pipeline_checksum,
+            },
         )
 
     async def dfm(
@@ -432,18 +503,20 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
-        cache_key = self._cache_key(
+        texts = [u.text for u in units]
+        prepared, identity = _prepare_with_identity(
             corpus_id=corpus.id,
-            unit_type=unit_type,
-            units=units,
+            analysis_type="dfm",
+            texts=texts,
             config=config,
-            filters=filters,
-            mode="tokens",
+            units=units,
+            analysis_parameters={"weighting": weighting, "trim": trim},
         )
         build_kwargs: dict[str, Any] = {
             "weighting": weighting,
-            "cache_key": cache_key,
             "force_sparse_only": force_sparse_only,
+            "unit_ids": [u.id for u in units],
+            "preprocessing_config": prepared.preprocessing_profile,
         }
         if k1 is not None:
             build_kwargs["k1"] = k1
@@ -457,9 +530,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         try:
             result = await asyncio.to_thread(
                 quantitative.build_dfm,
-                [u.text for u in units],
-                [u.id for u in units],
-                config,
+                _tokenized_from_prepared(prepared),
                 **build_kwargs,
             )
         except ValueError as exc:
@@ -496,6 +567,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "force_sparse_only": force_sparse_only,
                 "trim": trim,
                 "filters": filters,
+                **identity,
                 **config_params,
             },
             metrics={
@@ -507,7 +579,12 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "mode": summary["mode"],
                 "trim": summary.get("trim"),
             },
-            results={"summary": summary, "dfm": persisted},
+            results={
+                "summary": summary,
+                "dfm": persisted,
+                "corpus_checksum": prepared.corpus_checksum,
+                "pipeline_checksum": prepared.pipeline_checksum,
+            },
         )
 
     async def kwic(
@@ -527,6 +604,15 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
     ) -> AnalysisRun:
         corpus, units, documents = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
+        )
+        config = PreprocessingConfig()
+        prepared, identity = _prepare_with_identity(
+            corpus_id=corpus.id,
+            analysis_type="kwic",
+            texts=[u.text for u in units],
+            config=config,
+            units=units,
+            analysis_parameters={"keyword": keyword},
         )
         doc_lookup = self._document_lookup(units, documents)
         payload = []
@@ -580,9 +666,14 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "token_attribute": token_attribute,
                 "max_matches": max_matches,
                 "filters": filters,
+                **identity,
             },
             metrics={"unit_count": len(units), "match_count": len(matches)},
-            results={"matches": matches},
+            results={
+                "matches": matches,
+                "corpus_checksum": prepared.corpus_checksum,
+                "pipeline_checksum": prepared.pipeline_checksum,
+            },
         )
 
     async def dictionary(
@@ -611,13 +702,14 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
-        cache_key = self._cache_key(
+        texts = [u.text for u in units]
+        prepared, identity = _prepare_with_identity(
             corpus_id=corpus.id,
-            unit_type=unit_type,
-            units=units,
+            analysis_type="dictionary",
+            texts=texts,
             config=config,
-            filters=filters,
-            mode="tokens",
+            units=units,
+            analysis_parameters={"group_by": group_by, "rate_per": rate_per},
         )
         doc_lookup = self._document_lookup(units, documents)
 
@@ -669,12 +761,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 language=dictionary_language,
             )
 
-        group_keys = None
-        if group_by:
-            group_keys = [
-                str(getattr(doc_lookup.get(u.corpus_document_id), group_by, None) or "unspecified")
-                for u in units
-            ]
+        group_keys = _resolve_group_keys(units, documents, group_by)
 
         unit_metadata = []
         for unit in units:
@@ -693,20 +780,30 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 }
             )
 
-        try:
-            result = await asyncio.to_thread(
-                quantitative.dictionary_analysis,
-                [u.text for u in units],
-                [u.id for u in units],
+        from backend.modules.text_research.infrastructure.dictionary_matcher import match_dictionary
+
+        def _run_dictionary() -> dict[str, Any]:
+            result = match_dictionary(
+                _tokenized_from_prepared(prepared),
                 spec,
-                config,
-                group_keys=group_keys,
-                cache_key=cache_key,
+                unit_ids=[u.id for u in units],
                 metadata=unit_metadata,
                 case_sensitive=case_sensitive,
                 rate_per=rate_per,
-                dictionary_meta=dictionary_meta,
             )
+            if dictionary_meta:
+                result["dictionary"] = {**result.get("dictionary", {}), **dictionary_meta}
+            if group_keys is not None:
+                grouped: dict[str, dict[str, float | int]] = {}
+                for group, row in zip(group_keys, result["per_unit"], strict=True):
+                    bucket = grouped.setdefault(group, {"hits": 0, "units": 0})
+                    bucket["hits"] = int(bucket["hits"]) + int(row["hits"])
+                    bucket["units"] = int(bucket["units"]) + 1
+                result["by_group"] = grouped
+            return result
+
+        try:
+            result = await asyncio.to_thread(_run_dictionary)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
@@ -725,6 +822,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "rate_per": rate_per,
                 "group_by": group_by,
                 "filters": filters,
+                **identity,
                 **config_params,
             },
             metrics={
@@ -734,7 +832,11 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "document_prevalence": result["document_prevalence"],
                 "match_count": len(result.get("matches") or []),
             },
-            results=result,
+            results={
+                **result,
+                "corpus_checksum": prepared.corpus_checksum,
+                "pipeline_checksum": prepared.pipeline_checksum,
+            },
         )
 
     async def keyness(
@@ -769,21 +871,23 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 detail="Both comparison groups must contain at least one text unit",
             )
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
-        cache_key_a = self._cache_key(
+        prepared_a, identity = _prepare_with_identity(
             corpus_id=corpus.id,
-            unit_type=unit_type,
+            analysis_type="keyness",
+            texts=[u.text for u in units_a],
+            config=config,
             units=units_a,
-            config=config,
-            filters=filters_a,
-            mode="tokens",
+            analysis_parameters={
+                "method": method,
+                "top_n": top_n,
+                "min_frequency": min_frequency,
+                "correction": correction,
+            },
         )
-        cache_key_b = self._cache_key(
-            corpus_id=corpus.id,
-            unit_type=unit_type,
-            units=units_b,
-            config=config,
-            filters=filters_b,
-            mode="tokens",
+        prepared_b = prepare_texts(
+            [u.text for u in units_b],
+            config.to_dict(),
+            unit_ids=[u.id for u in units_b],
         )
 
         inferred_field = group_field
@@ -795,12 +899,13 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         label_a = ", ".join(f"{k}={v}" for k, v in sorted(filters_a.items()))
         label_b = ", ".join(f"{k}={v}" for k, v in sorted(filters_b.items()))
 
+        from backend.modules.text_research.infrastructure.keyness import keyness_report
+
         try:
             report = await asyncio.to_thread(
-                quantitative.keyness_for_texts,
-                [u.text for u in units_a],
-                [u.text for u in units_b],
-                config,
+                keyness_report,
+                _tokenized_from_prepared(prepared_a),
+                _tokenized_from_prepared(prepared_b),
                 top_n=top_n,
                 method=method,
                 min_frequency=min_frequency,
@@ -808,9 +913,6 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 group_a_label=label_a,
                 group_b_label=label_b,
                 group_field=inferred_field,
-                cache_key_a=cache_key_a,
-                cache_key_b=cache_key_b,
-                as_report=True,
             )
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -829,6 +931,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "correction": report["correction"],
                 "min_frequency": min_frequency,
                 "top_n": top_n,
+                **identity,
                 **config_params,
             },
             metrics={
@@ -839,7 +942,12 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "method": report["method"],
                 "correction": report["correction"],
             },
-            results={"keyness": rows, "report": report},
+            results={
+                "keyness": rows,
+                "report": report,
+                "corpus_checksum": prepared_a.corpus_checksum,
+                "pipeline_checksum": prepared_a.pipeline_checksum,
+            },
         )
 
     async def cooccurrence(
@@ -862,28 +970,31 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
-        cache_key = self._cache_key(
+        prepared, identity = _prepare_with_identity(
             corpus_id=corpus.id,
-            unit_type=unit_type,
-            units=units,
+            analysis_type="cooccurrence",
+            texts=[u.text for u in units],
             config=config,
-            filters=filters,
-            mode="tokens",
+            units=units,
+            analysis_parameters={
+                "window_size": window_size,
+                "top_n": top_n,
+                "association_method": association_method,
+            },
         )
+        from backend.modules.text_research.infrastructure.collocation import collocation_report
+
         try:
             report = await asyncio.to_thread(
-                quantitative.cooccurrence_for_texts,
-                [u.text for u in units],
-                config,
-                window_size=window_size,
+                collocation_report,
+                _tokenized_from_prepared(prepared),
+                window=window_size,
                 top_n=top_n,
                 association_method=association_method,
                 directional=directional,
                 min_frequency=min_frequency,
                 min_count=min_count,
                 include_network=include_network,
-                cache_key=cache_key,
-                as_report=True,
             )
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -904,6 +1015,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "min_count": min_count,
                 "include_network": include_network,
                 "filters": filters,
+                **identity,
                 **config_params,
             },
             metrics={
@@ -920,6 +1032,8 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "cooccurrence": rows,
                 "report": report,
                 "network": network,
+                "corpus_checksum": prepared.corpus_checksum,
+                "pipeline_checksum": prepared.pipeline_checksum,
             },
         )
 
@@ -961,12 +1075,21 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units, documents = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
-        config, config_params = await self._resolve_config(
-            preprocessing_profile_id, user_id=user_id
-        )
 
         ids = [u.id for u in units]
         texts = [u.text for u in units]
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id, user_id=user_id
+        )
+        prepared, identity = _prepare_with_identity(
+            corpus_id=corpus.id,
+            analysis_type="similarity",
+            texts=texts,
+            config=config,
+            units=units,
+            analysis_parameters={"method": canonical_method, "mode": canonical_mode, "group_by": group_by},
+        )
+        tokenized = _tokenized_from_prepared(prepared)
 
         group_keys: list[str] | None = None
         if canonical_mode == "group_centroid":
@@ -975,11 +1098,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                     status_code=422,
                     detail="mode='group_centroid' requires 'group_by' (a document metadata field)",
                 )
-            doc_lookup = self._document_lookup(units, documents)
-            group_keys = [
-                str(getattr(doc_lookup.get(u.corpus_document_id), group_by, None) or "unspecified")
-                for u in units
-            ]
+            group_keys = _resolve_group_keys(units, documents, group_by)
 
         resolved_query_text = query_text
         query_id = "query"
@@ -995,40 +1114,72 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 query_id = query_unit.id
                 keep = [i for i, u in enumerate(units) if u.id != query_unit_id]
                 ids = [ids[i] for i in keep]
-                texts = [texts[i] for i in keep]
+                tokenized = [tokenized[i] for i in keep]
             elif not query_text:
                 raise HTTPException(
                     status_code=422,
                     detail="mode='query' requires 'query_text' or 'query_unit_id'",
                 )
 
-        cache_key = self._cache_key(
-            corpus_id=corpus.id,
-            unit_type=unit_type,
-            units=units,
-            config=config,
-            filters=filters,
-            mode="tokens",
-        )
+        from backend.modules.text_research.infrastructure.preprocessing import tokenize
 
-        try:
-            report = await asyncio.to_thread(
-                quantitative.similarity_for_texts,
-                texts,
+        def _run_similarity() -> dict[str, Any]:
+            if canonical_method == "embedding_cosine":
+                if not embeddings:
+                    raise ValueError(
+                        "method='embedding_cosine' requires an explicit 'embeddings' mapping"
+                    )
+                embed_vectors = [embeddings[item_id] for item_id in ids]
+                if canonical_mode == "pairwise":
+                    return sim_mod.pairwise_similarity(
+                        ids,
+                        method=canonical_method,
+                        embeddings=embed_vectors,
+                        top_k=top_k,
+                        min_score=min_score,
+                    )
+                if canonical_mode == "group_centroid":
+                    return sim_mod.group_centroid_similarity(
+                        ids,
+                        group_keys or [],
+                        method=canonical_method,
+                        embeddings=embed_vectors,
+                        target=centroid_target,
+                        top_k=top_k,
+                        min_score=min_score,
+                    )
+                raise ValueError("query mode with embeddings requires query_embedding")
+            if canonical_mode == "pairwise":
+                return sim_mod.pairwise_similarity(
+                    ids,
+                    method=canonical_method,
+                    tokenized=tokenized,
+                    top_k=top_k,
+                    min_score=min_score,
+                )
+            if canonical_mode == "query":
+                query_tokens = tokenize(resolved_query_text or "", config.to_dict())
+                return sim_mod.query_similarity(
+                    query_id,
+                    ids,
+                    method=canonical_method,
+                    query_tokens=query_tokens,
+                    tokenized=tokenized,
+                    top_k=top_k,
+                    min_score=min_score,
+                )
+            return sim_mod.group_centroid_similarity(
                 ids,
-                config,
+                group_keys or [],
                 method=canonical_method,
-                mode=canonical_mode,
-                group_keys=group_keys,
-                centroid_target=centroid_target,
-                query_text=resolved_query_text,
-                query_id=query_id,
-                embeddings=embeddings,
-                query_embedding=query_embedding,
+                tokenized=tokenized,
+                target=centroid_target,
                 top_k=top_k,
                 min_score=min_score,
-                cache_key=cache_key,
             )
+
+        try:
+            report = await asyncio.to_thread(_run_similarity)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
@@ -1049,6 +1200,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "query_unit_id": query_unit_id,
                 "has_embeddings": bool(embeddings),
                 "filters": filters,
+                **identity,
                 **config_params,
             },
             metrics={
@@ -1057,7 +1209,11 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "item_count": report.get("item_count", len(ids)),
                 "rows_returned": len(result_rows),
             },
-            results=report,
+            results={
+                **report,
+                "corpus_checksum": prepared.corpus_checksum,
+                "pipeline_checksum": prepared.pipeline_checksum,
+            },
         )
 
     async def duplicate_detection(
@@ -1156,14 +1312,26 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
         config, config_params = await self._resolve_config(preprocessing_profile_id, user_id=user_id)
+        prepared, identity = _prepare_with_identity(
+            corpus_id=corpus.id,
+            analysis_type="clustering",
+            texts=[u.text for u in units],
+            config=config,
+            units=units,
+            analysis_parameters={
+                "n_clusters": n_clusters,
+                "algorithm": algorithm,
+                "use_svd": use_svd,
+            },
+        )
         try:
             result = await asyncio.to_thread(
                 run_clustering,
-                [u.text for u in units],
+                list(prepared.texts_joined),
                 [u.id for u in units],
                 n_clusters=n_clusters,
                 algorithm=algorithm,
-                config=config if isinstance(config, dict) else config.to_dict(),
+                config=prepared.preprocessing_profile,
                 use_svd=use_svd,
                 svd_components=n_svd_components,
                 random_seed=random_seed,
@@ -1188,6 +1356,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "top_terms": top_terms,
                 "random_seed": random_seed,
                 "filters": filters,
+                **identity,
                 **config_params,
             },
             metrics={
@@ -1195,7 +1364,11 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "n_clusters": persisted.get("n_clusters"),
                 "silhouette_score": persisted.get("silhouette_score"),
             },
-            results=persisted,
+            results={
+                **persisted,
+                "corpus_checksum": prepared.corpus_checksum,
+                "pipeline_checksum": prepared.pipeline_checksum,
+            },
         )
 
     async def dimensionality_reduction(
@@ -1263,20 +1436,32 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units, _ = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
+        config = PreprocessingConfig()
+        prepared, identity = _prepare_with_identity(
+            corpus_id=corpus.id,
+            analysis_type="readability",
+            texts=[u.text for u in units],
+            config=config,
+            units=units,
+        )
         result = await asyncio.to_thread(
             readability_for_units,
-            [u.text for u in units],
+            list(prepared.original_units),
             [u.id for u in units],
         )
         return await self._persist_run(
             corpus,
             AnalysisRunType.READABILITY,
             user_id=user_id,
-            parameters={"unit_type": unit_type, "filters": filters},
+            parameters={"unit_type": unit_type, "filters": filters, **identity},
             metrics={
                 "unit_count": len(units),
                 "flesch_reading_ease": result["corpus"]["flesch_reading_ease"],
                 "flesch_kincaid_grade": result["corpus"]["flesch_kincaid_grade"],
             },
-            results=result,
+            results={
+                **result,
+                "corpus_checksum": prepared.corpus_checksum,
+                "pipeline_checksum": prepared.pipeline_checksum,
+            },
         )

@@ -1,15 +1,30 @@
 from backend.modules.memory.workers import extract_turn_memories_sync
 from backend.modules.rag.workers import cleanup_document_sync, index_document_sync
+from backend.modules.text_research.infrastructure.execution_policy import retry_policy_for
 from backend.modules.text_research.workers import (
     classifier_training_sync,
     robustness_sweep_sync,
     prediction_sync,
     segmentation_sync,
+    topic_k_sweep_sync,
     topic_model_training_sync,
+    topic_seed_stability_sync,
 )
 from backend.workers.celery_app import celery_app
 from backend.workers.email import send_email_sync
 from backend.workers.evaluation import run_evaluation_sync
+
+
+def _research_task_options(resource_class: str) -> dict:
+    policy = retry_policy_for(resource_class)
+    return {
+        "bind": True,
+        "autoretry_for": (Exception,),
+        "retry_backoff": False,
+        "retry_jitter": False,
+        "max_retries": policy["max_retries"],
+        "default_retry_delay": policy["countdown"],
+    }
 
 
 @celery_app.task(
@@ -111,48 +126,55 @@ def extract_turn_memories_task(
 
 @celery_app.task(
     name="backend.workers.tasks.research_segmentation_task",
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_jitter=True,
-    max_retries=3,
+    **_research_task_options("research_light"),
 )
-def research_segmentation_task(*, run_id: str, user_id: str) -> None:
+def research_segmentation_task(self, *, run_id: str, user_id: str) -> None:
     segmentation_sync(run_id=run_id, user_id=user_id)
 
 
 @celery_app.task(
     name="backend.workers.tasks.research_classifier_training_task",
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_jitter=True,
-    max_retries=2,
+    **_research_task_options("research_cpu"),
 )
-def research_classifier_training_task(*, run_id: str, user_id: str) -> None:
+def research_classifier_training_task(self, *, run_id: str, user_id: str) -> None:
     classifier_training_sync(run_id=run_id, user_id=user_id)
 
 
 @celery_app.task(
     name="backend.workers.tasks.research_topic_model_training_task",
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_jitter=True,
-    max_retries=2,
+    **_research_task_options("research_gpu"),
 )
-def research_topic_model_training_task(*, run_id: str, user_id: str) -> None:
+def research_topic_model_training_task(self, *, run_id: str, user_id: str) -> None:
     topic_model_training_sync(run_id=run_id, user_id=user_id)
 
 
 @celery_app.task(
-    name="backend.workers.tasks.research_robustness_sweep_task",
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_jitter=True,
-    max_retries=2,
+    name="backend.workers.tasks.research_topic_k_sweep_task",
+    **_research_task_options("research_gpu"),
 )
-def research_robustness_sweep_task(*, run_id: str, user_id: str) -> None:
+def research_topic_k_sweep_task(self, *, run_id: str, user_id: str) -> None:
+    topic_k_sweep_sync(run_id=run_id, user_id=user_id)
+
+
+@celery_app.task(
+    name="backend.workers.tasks.research_topic_seed_stability_task",
+    **_research_task_options("research_gpu"),
+)
+def research_topic_seed_stability_task(self, *, run_id: str, user_id: str) -> None:
+    topic_seed_stability_sync(run_id=run_id, user_id=user_id)
+
+
+@celery_app.task(
+    name="backend.workers.tasks.research_robustness_sweep_task",
+    **_research_task_options("research_cpu"),
+)
+def research_robustness_sweep_task(self, *, run_id: str, user_id: str) -> None:
     robustness_sweep_sync(run_id=run_id, user_id=user_id)
 
 
-@celery_app.task(name="backend.workers.tasks.research_prediction_task")
-def research_prediction_task(*, run_id: str, user_id: str) -> None:
+@celery_app.task(
+    name="backend.workers.tasks.research_prediction_task",
+    **_research_task_options("research_cpu"),
+)
+def research_prediction_task(self, *, run_id: str, user_id: str) -> None:
     prediction_sync(run_id=run_id, user_id=user_id)

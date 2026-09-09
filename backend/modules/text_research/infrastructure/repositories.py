@@ -26,6 +26,7 @@ from backend.modules.text_research.domain.models import (
     CorpusDocument,
     DictionaryDefinition,
     ModelPrediction,
+    PredictionSet,
     PreprocessingProfile,
     ResearchCorpus,
     TextUnit,
@@ -74,6 +75,17 @@ class ResearchRepository:
     async def get_corpus(self, corpus_id: str) -> ResearchCorpus | None:
         result = await self.db.execute(
             select(ResearchCorpus).where(ResearchCorpus.id == corpus_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_run_by_execution_key(
+        self, *, project_id: str, execution_key: str
+    ) -> AnalysisRun | None:
+        result = await self.db.execute(
+            select(AnalysisRun).where(
+                AnalysisRun.project_id == project_id,
+                AnalysisRun.execution_key == execution_key,
+            )
         )
         return result.scalar_one_or_none()
 
@@ -361,6 +373,35 @@ class ResearchRepository:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
+    async def list_document_metadata_facets(
+        self, corpus_id: str
+    ) -> dict[str, list[dict[str, str | int]]]:
+        """Aggregate filter facets in SQL without materializing corpus documents."""
+        fields = (
+            "organization",
+            "organization_type",
+            "publication_year",
+            "country",
+            "region",
+            "cultural_sphere",
+            "language",
+            "publication_type",
+        )
+        facets: dict[str, list[dict[str, str | int]]] = {}
+        for field in fields:
+            column = getattr(CorpusDocument, field)
+            statement = (
+                select(column.label("value"), func.count(CorpusDocument.id).label("count"))
+                .where(CorpusDocument.corpus_id == corpus_id, column.is_not(None))
+                .group_by(column)
+                .order_by(column)
+            )
+            rows = (await self.db.execute(statement)).all()
+            facets[field] = [
+                {"value": str(row.value), "count": int(row.count)} for row in rows
+            ]
+        return facets
+
     async def paginate_documents(
         self,
         corpus_id: str,
@@ -429,8 +470,15 @@ class ResearchRepository:
     # ------------------------------------------------------------------
 
     async def bulk_create_text_units(self, rows: list[TextUnit]) -> list[TextUnit]:
-        self.db.add_all(rows)
-        await self.db.flush()
+        from backend.modules.text_research.infrastructure.out_of_core import (
+            iter_item_batches,
+            resolve_batch_size,
+        )
+
+        batch_size = resolve_batch_size(len(rows))
+        for batch in iter_item_batches(rows, batch_size):
+            self.db.add_all(list(batch))
+            await self.db.flush()
         return rows
 
     async def delete_text_units_for_document(
@@ -754,14 +802,22 @@ class ResearchRepository:
             }
             for text_unit_id, annotator_id in unique_pairs
         ]
-        stmt = (
-            pg_insert(AnnotationTask)
-            .values(rows)
-            .on_conflict_do_nothing(constraint="uq_annotation_task_unit_annotator")
-            .returning(AnnotationTask)
+        from backend.modules.text_research.infrastructure.out_of_core import (
+            iter_item_batches,
+            resolve_batch_size,
         )
-        result = await self.db.execute(stmt)
-        created = list(result.scalars().all())
+
+        created: list[AnnotationTask] = []
+        batch_size = resolve_batch_size(len(rows))
+        for batch in iter_item_batches(rows, batch_size):
+            stmt = (
+                pg_insert(AnnotationTask)
+                .values(list(batch))
+                .on_conflict_do_nothing(constraint="uq_annotation_task_unit_annotator")
+                .returning(AnnotationTask)
+            )
+            result = await self.db.execute(stmt)
+            created.extend(result.scalars().all())
         await self.db.flush()
         return created
 
@@ -1128,10 +1184,18 @@ class ResearchRepository:
         result = await self.db.execute(select(TrainedModel).where(TrainedModel.id == model_id))
         return result.scalar_one_or_none()
 
-    async def list_models(self, project_id: str, *, corpus_id: str | None = None):
+    async def list_models(
+        self,
+        project_id: str,
+        *,
+        corpus_id: str | None = None,
+        lifecycle_status: str | None = None,
+    ):
         stmt = select(TrainedModel).where(TrainedModel.project_id == project_id)
         if corpus_id:
             stmt = stmt.where(TrainedModel.corpus_id == corpus_id)
+        if lifecycle_status:
+            stmt = stmt.where(TrainedModel.lifecycle_status == lifecycle_status)
         stmt = stmt.order_by(TrainedModel.created_at.desc())
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
@@ -1241,6 +1305,50 @@ class ResearchRepository:
         )
         return set(result.scalars().all())
 
+    async def list_predictions_for_units(
+        self,
+        trained_model_id: str,
+        text_unit_ids: list[str],
+    ) -> list[ModelPrediction]:
+        if not text_unit_ids:
+            return []
+        result = await self.db.execute(
+            select(ModelPrediction).where(
+                ModelPrediction.trained_model_id == trained_model_id,
+                ModelPrediction.text_unit_id.in_(text_unit_ids),
+            )
+        )
+        return list(result.scalars().all())
+
+    # ------------------------------------------------------------------
+    # PredictionSet
+    # ------------------------------------------------------------------
+
+    async def create_prediction_set(self, prediction_set: PredictionSet) -> PredictionSet:
+        self.db.add(prediction_set)
+        await self.db.flush()
+        return prediction_set
+
+    async def get_prediction_set(self, prediction_set_id: str) -> PredictionSet | None:
+        result = await self.db.execute(
+            select(PredictionSet).where(PredictionSet.id == prediction_set_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def list_prediction_sets_for_corpus(
+        self,
+        corpus_id: str,
+        *,
+        limit: int = DEFAULT_PAGE_LIMIT,
+        offset: int = 0,
+    ) -> tuple[list[PredictionSet], int]:
+        stmt = (
+            select(PredictionSet)
+            .where(PredictionSet.corpus_id == corpus_id)
+            .order_by(PredictionSet.created_at.desc())
+        )
+        return await paginate_scalars(self.db, stmt, limit=limit, offset=offset)
+
     # ------------------------------------------------------------------
     # DictionaryDefinition
     # ------------------------------------------------------------------
@@ -1345,8 +1453,15 @@ class ResearchRepository:
     async def bulk_create_observations(
         self, rows: list[ContextualObservation]
     ) -> list[ContextualObservation]:
-        self.db.add_all(rows)
-        await self.db.flush()
+        from backend.modules.text_research.infrastructure.out_of_core import (
+            iter_item_batches,
+            resolve_batch_size,
+        )
+
+        batch_size = resolve_batch_size(len(rows))
+        for batch in iter_item_batches(rows, batch_size):
+            self.db.add_all(list(batch))
+            await self.db.flush()
         return rows
 
     async def list_observations(self, dataset_id: str) -> list[ContextualObservation]:

@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     CELERY_TASK_DEFAULT_QUEUE: str = "default"
     CELERY_EMAIL_QUEUE: str = "email"
     CELERY_RESULT_EXPIRES_SECONDS: int = 3600
+    EAGER_BACKGROUND_MAX_WORKERS: int = 4
+    EAGER_BACKGROUND_MAX_PENDING: int = 16
 
     JWT_SECRET: str
     JWT_ALGORITHM: str
@@ -178,8 +180,24 @@ class Settings(BaseSettings):
     RESEARCH_ARTIFACT_DIR: str = "var/research_artifacts"
     RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD: int = 50
 
+    # Nested parallelism controls for Celery CPU workers (§22).
+    # Keep BLAS/OpenMP and sklearn/joblib at 1 inside each worker process so
+    # scale-out comes from Celery --concurrency, not threads-within-processes.
+    RESEARCH_APPLY_THREAD_LIMITS: bool = True
+    RESEARCH_WORKER_BLAS_THREADS: int = 1
+    RESEARCH_SKLEARN_N_JOBS: int = 1
+    RESEARCH_JOBLIB_N_JOBS: int = 1
+    # Optional container/image digest stamped into run provenance manifests.
+    RESEARCH_IMAGE_DIGEST: str = ""
+
     # Text research (text research)
     RESEARCH_ARTIFACT_ROOT: str = ""
+    RESEARCH_QUEUE_LIGHT: str = "research_light"
+    RESEARCH_QUEUE_CPU: str = "research_cpu"
+    RESEARCH_QUEUE_IO: str = "research_io"
+    RESEARCH_QUEUE_NLP: str = "research_nlp"
+    RESEARCH_QUEUE_MEMORY: str = "research_memory"
+    RESEARCH_QUEUE_GPU: str = "research_gpu"
 
     CORS_ALLOWED_ORIGINS: Annotated[list[str], NoDecode] = Field(default_factory=list)
 

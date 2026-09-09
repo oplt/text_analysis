@@ -1,0 +1,354 @@
+name: Current-HEAD quality gates
+
+# Always evaluates the commit that triggered the workflow (actions/checkout SHA).
+# Do not treat green results from an older commit as proof that HEAD is healthy.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      include_100k:
+        description: "Run 100k unit benchmark"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONPATH: .
+  PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  identity:
+    name: Record HEAD identity
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.meta.outputs.sha }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: meta
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Evaluating quality gates for commit $(git rev-parse HEAD)"
+
+  backend-lint:
+    name: Backend lint (ruff)
+    needs: identity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.identity.outputs.sha }}
+      - uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.11.2"
+          args: "check backend"
+      - uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.11.2"
+          args: "format --check backend"
+
+  backend-tests:
+    name: Backend unit tests
+    needs: identity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.identity.outputs.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install backend
+        working-directory: backend
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install -e ".[dev]"
+      - name: Pytest (text_research + workers parallelism)
+        run: |
+          backend/.venv/bin/pytest \
+            backend/modules/text_research/tests \
+            -q \
+            --ignore=backend/modules/text_research/tests/test_benchmark_scale.py
+
+  backend-benchmarks:
+    name: Performance-sensitive benchmarks
+    needs: identity
+    runs-on: ubuntu-latest
+    env:
+      BENCHMARK_INCLUDE_10K: "1"
+      BENCHMARK_INCLUDE_100K: ${{ github.event_name == 'workflow_dispatch' && inputs.include_100k == 'true' && '1' || '0' }}
+      BENCHMARK_REPORT_PATH: var/benchmarks/text_research_scale.json
+      GITHUB_SHA: ${{ needs.identity.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.identity.outputs.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install backend
+        working-directory: backend
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install -e ".[dev]"
+      - name: Run 1k / 10k (and optional 100k) benchmarks
+        run: |
+          backend/.venv/bin/pytest \
+            backend/modules/text_research/tests/test_benchmark_scale.py -q -s
+      - name: Upload benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report-${{ needs.identity.outputs.short_sha }}
+          path: var/benchmarks/text_research_scale.json
+          if-no-files-found: warn
+
+  migrations:
+    name: Migration validation
+    needs: identity
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: text_analysis
+          POSTGRES_PASSWORD: text_analysis
+          POSTGRES_DB: text_analysis
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U text_analysis -d text_analysis"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql+asyncpg://text_analysis:text_analysis@localhost:5432/text_analysis
+      REDIS_URL: redis://127.0.0.1:6379/0
+      JWT_SECRET: ci-only-jwt-secret-not-for-production-use-0123456789
+      CELERY_TASK_ALWAYS_EAGER: "true"
+      REQUIRE_EMAIL_VERIFICATION: "false"
+      RESEARCH_ARTIFACT_DIR: var/research_artifacts_ci
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.identity.outputs.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install backend
+        working-directory: backend
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install -e ".[dev]"
+      - name: Alembic upgrade head
+        working-directory: backend
+        run: |
+          . .venv/bin/activate
+          alembic heads
+          alembic upgrade head
+          alembic current
+
+  frontend:
+    name: Frontend lint, tests, TypeScript build
+    needs: identity
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.identity.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: ESLint
+        run: npm run lint
+      - name: Unit tests (vitest)
+        run: npm test
+      - name: TypeScript build
+        run: npm run build
+
+  playwright-research:
+    name: Playwright research workflow
+    needs: [identity, migrations]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: text_analysis
+          POSTGRES_PASSWORD: text_analysis
+          POSTGRES_DB: text_analysis
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U text_analysis -d text_analysis"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql+asyncpg://text_analysis:text_analysis@localhost:5432/text_analysis
+      REDIS_URL: redis://127.0.0.1:6379/0
+      JWT_SECRET: ci-only-jwt-secret-not-for-production-use-0123456789
+      CELERY_TASK_ALWAYS_EAGER: "true"
+      REQUIRE_EMAIL_VERIFICATION: "false"
+      RESEARCH_ARTIFACT_DIR: var/research_artifacts_ci
+      RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD: "50"
+      FRONTEND_URL: http://127.0.0.1:5173
+      CORS_ALLOWED_ORIGINS: http://127.0.0.1:5173,http://localhost:5173
+      E2E_TEST_EMAIL: e2e-ci@example.com
+      E2E_TEST_PASSWORD: CiTestPass123!
+      E2E_API_URL: http://127.0.0.1:8000
+      E2E_BASE_URL: http://127.0.0.1:5173
+      STORAGE_ENDPOINT_URL: ""
+      RAG_ENABLED: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.identity.outputs.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install backend
+        working-directory: backend
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install -e ".[dev]"
+      - name: Migrate database
+        working-directory: backend
+        run: |
+          . .venv/bin/activate
+          alembic upgrade head
+      - name: Install frontend
+        working-directory: frontend
+        run: npm ci
+      - name: Install Playwright browser
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Start API
+        run: |
+          backend/.venv/bin/python -m uvicorn backend.api.main:app \
+            --host 127.0.0.1 --port 8000 > /tmp/api.log 2>&1 &
+          echo $! > /tmp/api.pid
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8000/health/live >/dev/null 2>&1; then
+              echo "API ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "API failed to start"; tail -n 100 /tmp/api.log; exit 1
+      - name: Provision E2E user
+        run: |
+          curl -sf -X POST http://127.0.0.1:8000/api/v1/auth/sign-up \
+            -H 'Content-Type: application/json' \
+            -d "{\"email\":\"${E2E_TEST_EMAIL}\",\"password\":\"${E2E_TEST_PASSWORD}\",\"full_name\":\"CI E2E\"}" \
+            || true
+          curl -sf -X POST http://127.0.0.1:8000/api/v1/auth/sign-in \
+            -H 'Content-Type: application/json' \
+            -d "{\"email\":\"${E2E_TEST_EMAIL}\",\"password\":\"${E2E_TEST_PASSWORD}\"}" \
+            > /tmp/signin.json
+          test -s /tmp/signin.json
+      - name: Start frontend
+        working-directory: frontend
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 5173 > /tmp/frontend.log 2>&1 &
+          echo $! > /tmp/frontend.pid
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:5173 >/dev/null 2>&1; then
+              echo "Frontend ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Frontend failed to start"; tail -n 100 /tmp/frontend.log; exit 1
+      - name: Playwright research workflow
+        working-directory: frontend
+        run: npx playwright test e2e/research-flow.spec.ts --project=chromium
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ needs.identity.outputs.short_sha }}
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+            /tmp/api.log
+            /tmp/frontend.log
+          if-no-files-found: ignore
+
+  quality-gate:
+    name: Current-HEAD gate summary
+    if: always()
+    needs:
+      - identity
+      - backend-lint
+      - backend-tests
+      - backend-benchmarks
+      - migrations
+      - frontend
+      - playwright-research
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all gates green for ${{ needs.identity.outputs.sha }}
+        run: |
+          echo "HEAD ${{ needs.identity.outputs.sha }}"
+          echo "backend-lint=${{ needs.backend-lint.result }}"
+          echo "backend-tests=${{ needs.backend-tests.result }}"
+          echo "backend-benchmarks=${{ needs.backend-benchmarks.result }}"
+          echo "migrations=${{ needs.migrations.result }}"
+          echo "frontend=${{ needs.frontend.result }}"
+          echo "playwright-research=${{ needs.playwright-research.result }}"
+          for result in \
+            "${{ needs.backend-lint.result }}" \
+            "${{ needs.backend-tests.result }}" \
+            "${{ needs.backend-benchmarks.result }}" \
+            "${{ needs.migrations.result }}" \
+            "${{ needs.frontend.result }}" \
+            "${{ needs.playwright-research.result }}"; do
+            if [ "$result" != "success" ]; then
+              echo "Quality gate failed for current HEAD (result=$result)"
+              exit 1
+            fi
+          done
+          echo "All current-HEAD quality gates passed."

@@ -49,7 +49,20 @@ import {
 } from "../components/ResearchCharts";
 import { ChartTableToggle, ResearchResultPanel, ResearchResultsTable } from "../components/ResearchResults";
 import { MetadataFilterBar } from "../components/MetadataFilterBar";
+import {
+    AdvancedDfmPanel,
+    DEFAULT_DFM_CONFIG,
+    type AdvancedDfmConfig,
+} from "../components/AdvancedDfmPanel";
+import {
+    ClusterExplorer,
+    DimensionalityReductionView,
+    DuplicateDetectionView,
+    ReadabilityView,
+    SimilarityExplorer,
+} from "../components/AdvancedAnalysisPanels";
 import { useResearchContext } from "../hooks/useResearchContext";
+import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 import type { AnalysisRun } from "../types";
 
@@ -61,7 +74,12 @@ type AnalysisTab =
     | "dfm"
     | "keyness"
     | "dictionaries"
-    | "cooccurrence";
+    | "cooccurrence"
+    | "similarity"
+    | "duplicates"
+    | "clustering"
+    | "dimensionality"
+    | "readability";
 
 const ANALYSIS_TAB_VALUES = [
     "overview",
@@ -72,9 +90,12 @@ const ANALYSIS_TAB_VALUES = [
     "keyness",
     "dictionaries",
     "cooccurrence",
+    "similarity",
+    "duplicates",
+    "clustering",
+    "dimensionality",
+    "readability",
 ] as const satisfies readonly AnalysisTab[];
-
-type DfmWeighting = "count" | "binary" | "tfidf";
 
 const TABS: Array<{ value: AnalysisTab; label: string }> = [
     { value: "overview", label: "Overview" },
@@ -85,6 +106,11 @@ const TABS: Array<{ value: AnalysisTab; label: string }> = [
     { value: "keyness", label: "Keyness" },
     { value: "dictionaries", label: "Dictionaries" },
     { value: "cooccurrence", label: "Co-occurrence" },
+    { value: "similarity", label: "Similarity" },
+    { value: "duplicates", label: "Duplicates" },
+    { value: "clustering", label: "Clustering" },
+    { value: "dimensionality", label: "Dimensions" },
+    { value: "readability", label: "Readability" },
 ];
 
 const GROUP_BY_OPTIONS = [
@@ -122,6 +148,33 @@ function asArray(value: unknown): unknown[] {
         if (Array.isArray(record[key])) return record[key] as unknown[];
     }
     return [];
+}
+
+function optionalNumber(value: string): number | undefined {
+    if (!value.trim()) return undefined;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function dfmTrimPayload(config: AdvancedDfmConfig) {
+    const minTermFrequency = optionalNumber(config.minTermFrequency);
+    const maxTermFrequency = optionalNumber(config.maxTermFrequency);
+    const minDocumentFrequency = optionalNumber(config.minDocumentFrequency);
+    const maxDocumentFrequency = optionalNumber(config.maxDocumentFrequency);
+    const topN = optionalNumber(config.topN);
+    if (
+        minTermFrequency == null && maxTermFrequency == null &&
+        minDocumentFrequency == null && maxDocumentFrequency == null && topN == null
+    ) return undefined;
+    return {
+        ...(minTermFrequency != null ? { min_term_frequency: minTermFrequency } : {}),
+        ...(maxTermFrequency != null ? { max_term_frequency: maxTermFrequency } : {}),
+        term_frequency_type: config.termFrequencyType,
+        ...(minDocumentFrequency != null ? { min_document_frequency: minDocumentFrequency } : {}),
+        ...(maxDocumentFrequency != null ? { max_document_frequency: maxDocumentFrequency } : {}),
+        document_frequency_type: config.documentFrequencyType,
+        ...(topN != null ? { top_n: topN } : {}),
+    };
 }
 
 function pickString(row: Record<string, unknown>, keys: string[]): string | null {
@@ -716,6 +769,7 @@ export default function AnalysisView() {
 
     const [tab, setTab] = useTabQueryParam(ANALYSIS_TAB_VALUES, "overview");
     const [runId, setRunId] = useState<string | null>(null);
+    const sseConnected = useRunEvents(runId, ctx.projectId);
 
     const [profileId, setProfileId] = useState("");
     const [topN, setTopN] = useState(50);
@@ -724,7 +778,7 @@ export default function AnalysisView() {
     const [kwicWindow, setKwicWindow] = useState(5);
     const [kwicCaseSensitive, setKwicCaseSensitive] = useState(false);
     const [kwicQueryMode, setKwicQueryMode] = useState("auto");
-    const [dfmWeighting, setDfmWeighting] = useState<DfmWeighting>("count");
+    const [dfmConfig, setDfmConfig] = useState<AdvancedDfmConfig>(DEFAULT_DFM_CONFIG);
     const [keynessField, setKeynessField] = useState("organization");
     const [keynessA, setKeynessA] = useState("");
     const [keynessB, setKeynessB] = useState("");
@@ -766,7 +820,7 @@ export default function AnalysisView() {
         queryFn: () => getRun(runId!),
         enabled: Boolean(runId),
         staleTime: QUERY_STALE_TIMES.researchActiveRun,
-        refetchInterval: activeRunRefetchInterval,
+        refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });
 
     const basePayload = {
@@ -828,7 +882,13 @@ export default function AnalysisView() {
         mutationFn: () =>
             runDfm(ctx.selectedCorpusId, {
                 ...basePayload,
-                weighting: dfmWeighting,
+                weighting: dfmConfig.weighting,
+                ...(dfmConfig.weighting === "bm25" ? { k1: dfmConfig.k1, b: dfmConfig.b } : {}),
+                ...((dfmConfig.weighting === "tfidf" || dfmConfig.weighting === "sublinear_tf")
+                    ? { smooth_idf: dfmConfig.smoothIdf }
+                    : {}),
+                force_sparse_only: dfmConfig.forceSparseOnly,
+                ...(dfmTrimPayload(dfmConfig) ? { trim: dfmTrimPayload(dfmConfig) } : {}),
             }),
         onSuccess: (run) => onRunSuccess(run, "DFM build started."),
         onError: (error) => onRunError(error, "Failed to build DFM."),
@@ -890,6 +950,11 @@ export default function AnalysisView() {
         keyness: keynessMutation,
         dictionaries: dictionaryMutation,
         cooccurrence: cooccurrenceMutation,
+        similarity: overviewMutation,
+        duplicates: overviewMutation,
+        clustering: overviewMutation,
+        dimensionality: overviewMutation,
+        readability: overviewMutation,
     } as const;
 
     const activeMutation = mutationByTab[tab];
@@ -917,6 +982,32 @@ export default function AnalysisView() {
                     description="Choose a corpus in the context bar, then run overview stats, frequencies, KWIC, and related tools."
                 />
             </SectionCard>
+        );
+    }
+
+    const advancedPanel =
+        tab === "similarity" ? <SimilarityExplorer basePayload={basePayload} />
+            : tab === "duplicates" ? <DuplicateDetectionView basePayload={basePayload} />
+            : tab === "clustering" ? <ClusterExplorer basePayload={basePayload} />
+            : tab === "dimensionality" ? <DimensionalityReductionView basePayload={basePayload} />
+            : tab === "readability" ? <ReadabilityView basePayload={basePayload} />
+            : null;
+
+    if (advancedPanel) {
+        return (
+            <Stack spacing={2}>
+                <PageTabs value={tab} onChange={setTab} tabs={TABS} ariaLabel="Analysis methods" />
+                <SectionCard title="Analysis selection" description="Apply the same corpus selection and preprocessing profile to this analysis.">
+                    <Stack spacing={1.5}>
+                        <MetadataFilterBar corpusId={ctx.selectedCorpusId} value={metadataFilters} onChange={setMetadataFilters} />
+                        <TextField select size="small" label="Preprocessing profile" value={profileId} onChange={(event) => setProfileId(event.target.value)} sx={{ maxWidth: 300 }}>
+                            <MenuItem value="">Default / none</MenuItem>
+                            {(profilesQuery.data ?? []).map((profile) => <MenuItem key={profile.id} value={profile.id}>{profile.name}</MenuItem>)}
+                        </TextField>
+                    </Stack>
+                </SectionCard>
+                {advancedPanel}
+            </Stack>
         );
     }
 
@@ -1031,18 +1122,7 @@ export default function AnalysisView() {
                     ) : null}
 
                     {tab === "dfm" ? (
-                        <TextField
-                            select
-                            size="small"
-                            label="Weighting"
-                            value={dfmWeighting}
-                            onChange={(event) => setDfmWeighting(event.target.value as DfmWeighting)}
-                            sx={{ minWidth: 180 }}
-                        >
-                            <MenuItem value="count">count</MenuItem>
-                            <MenuItem value="binary">binary</MenuItem>
-                            <MenuItem value="tfidf">tfidf</MenuItem>
-                        </TextField>
+                        <AdvancedDfmPanel config={dfmConfig} onChange={setDfmConfig} />
                     ) : null}
 
                     {tab === "keyness" ? (

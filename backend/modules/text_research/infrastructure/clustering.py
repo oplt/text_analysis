@@ -28,7 +28,7 @@ from sklearn.decomposition import TruncatedSVD
 
 from backend.modules.text_research.infrastructure.preprocessing import build_tfidf_vectorizer
 
-ALGORITHMS = ("kmeans", "minibatch_kmeans")
+ALGORITHMS = ("kmeans", "minibatch_kmeans", "auto", "default")
 
 
 def _to_native(value: Any) -> Any:
@@ -67,8 +67,15 @@ def kmeans_cluster(
     externally supplied embeddings) — this function does not know or care
     where the features came from.
     """
-    algo = algorithm.lower()
-    if algo not in ALGORITHMS:
+    from backend.modules.text_research.infrastructure.out_of_core import (
+        recommend_clustering_algorithm,
+    )
+
+    algo = recommend_clustering_algorithm(
+        int(matrix.shape[0]),
+        algorithm,
+    )
+    if algo not in ("kmeans", "minibatch_kmeans"):
         raise ValueError(f"Unsupported clustering algorithm {algorithm!r}; expected one of {ALGORITHMS}")
 
     n_samples = matrix.shape[0]
@@ -187,6 +194,8 @@ def run_clustering(
     svd_components: int = 50,
     random_seed: int = 42,
     top_n_terms: int = 10,
+    vectorizer_mode: str = "tfidf",
+    hashing_n_features: int = 2**18,
 ) -> dict[str, Any]:
     """End-to-end TF-IDF clustering pipeline (§43): fit → cluster → describe.
 
@@ -194,20 +203,50 @@ def run_clustering(
     the TF-IDF matrix (faster, denoised) but characteristic terms are still
     computed against the original TF-IDF space so results stay interpretable
     in vocabulary terms.
+
+    Large corpora: ``algorithm="auto"`` selects MiniBatchKMeans;
+    ``vectorizer_mode="hashing"`` uses HashingVectorizer (no interpretable terms).
     """
+    from backend.modules.text_research.infrastructure.out_of_core import (
+        build_hashing_matrix,
+        recommend_clustering_algorithm,
+        should_use_out_of_core,
+    )
+
     if len(texts) != len(unit_ids):
         raise ValueError("texts and unit_ids must have the same length")
     if not texts:
         raise ValueError("texts must be non-empty to run clustering")
 
-    tfidf_matrix, feature_names = build_tfidf_matrix(texts, config)
+    resolved_algorithm = recommend_clustering_algorithm(len(texts), algorithm)
+    notes: list[str] = []
+    if resolved_algorithm != algorithm and algorithm.lower() in {"auto", "default"}:
+        notes.append(f"Selected clustering algorithm={resolved_algorithm!r} for n={len(texts)}.")
+
+    use_hashing = vectorizer_mode.lower() == "hashing" or (
+        vectorizer_mode.lower() == "auto" and should_use_out_of_core(len(texts))
+    )
+    if use_hashing:
+        tfidf_matrix = build_hashing_matrix(
+            texts, n_features=hashing_n_features, config=config, norm="l2"
+        )
+        feature_names: list[str] = []
+        notes.append(
+            f"Used HashingVectorizer (n_features={hashing_n_features}); "
+            "top_terms are unavailable without a vocabulary."
+        )
+    else:
+        tfidf_matrix, feature_names = build_tfidf_matrix(texts, config)
+
     if tfidf_matrix.shape[1] == 0:
         raise ValueError("Vocabulary is empty after preprocessing; cannot cluster")
 
     cluster_matrix = tfidf_matrix
     svd_info: dict[str, Any] | None = None
     if use_svd:
-        effective_components = max(1, min(svd_components, tfidf_matrix.shape[1] - 1, tfidf_matrix.shape[0] - 1))
+        effective_components = max(
+            1, min(svd_components, tfidf_matrix.shape[1] - 1, tfidf_matrix.shape[0] - 1)
+        )
         svd = TruncatedSVD(n_components=effective_components, random_state=random_seed)
         cluster_matrix = svd.fit_transform(tfidf_matrix)
         svd_info = {
@@ -217,7 +256,10 @@ def run_clustering(
         }
 
     clustering = kmeans_cluster(
-        cluster_matrix, n_clusters=n_clusters, algorithm=algorithm, random_seed=random_seed
+        cluster_matrix,
+        n_clusters=n_clusters,
+        algorithm=resolved_algorithm,
+        random_seed=random_seed,
     )
     labels = clustering["labels"]
 
@@ -236,6 +278,12 @@ def run_clustering(
     else:
         centers_for_terms = centers
 
+    top_terms = (
+        {}
+        if use_hashing or not feature_names
+        else top_terms_per_cluster(tfidf_matrix, labels, feature_names, top_n=top_n_terms)
+    )
+
     return {
         "algorithm": clustering["algorithm"],
         "n_clusters": clustering["n_clusters"],
@@ -244,13 +292,15 @@ def run_clustering(
         "unit_ids": list(unit_ids),
         "labels": labels,
         "cluster_sizes": cluster_sizes(labels),
-        "top_terms": top_terms_per_cluster(tfidf_matrix, labels, feature_names, top_n=top_n_terms),
+        "top_terms": top_terms,
         "representative_units": representative_units(
             tfidf_matrix, labels, unit_ids, centers_for_terms, top_n=3
         ),
         "inertia": clustering["inertia"],
         "silhouette_score": clustering["silhouette_score"],
         "dimensionality_reduction": {"used_svd": use_svd, **(svd_info or {})},
+        "vectorizer_mode": "hashing" if use_hashing else "tfidf",
+        "out_of_core_notes": notes,
         "note": (
             "Cluster indices are arbitrary and carry no inherent meaning; label them "
             "yourself after inspecting top_terms/representative_units."

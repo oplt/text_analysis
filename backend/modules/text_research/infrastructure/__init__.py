@@ -34,8 +34,39 @@ __all__ = [
     "readability",
     "embeddings",
     "ner",
+    "nlp_preprocessing",
     "linguistic_features",
     "statistical_modeling",
     "measurement_validation",
     "sampling",
+    "prepared_corpus_builder",
+    "artifact_registry",
+    "pipeline_compiler",
+    "split_planner",
+    "language_detection",
+    "text_transforms",
+    "error_analysis",
+    "embedding_classifier",
+    "topic_engines",
+    "spacy_engine",
+    "execution_policy",
+    "plugin_registry",
+    "stage_cache",
+    "stage_runner",
+    "out_of_core",
+    "parquet_artifacts",
+    "drift_monitoring",
 ]
+
+
+def __getattr__(name: str):
+    if name == "plugin_registry":
+        from backend.modules.text_research.infrastructure import plugin_registry as mod
+
+        mod.ensure_builtins_registered()
+        return mod
+    if name in __all__:
+        import importlib
+
+        return importlib.import_module(f"{__name__}.{name}")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

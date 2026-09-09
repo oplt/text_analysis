@@ -705,6 +705,24 @@ class ClassifierTrainRequest(BaseModel):
     # computed on TEST when probabilities are available; this selects the
     # method for the *optional* VAL-fit recalibration step.
     calibration_method: str = "sigmoid"  # "sigmoid" | "isotonic"
+    validation_strategy: str = Field(
+        default="holdout",
+        description="holdout | nested_grouped_cv",
+    )
+    nested_cv_outer_splits: int = Field(default=5, ge=2)
+    nested_cv_inner_splits: int = Field(default=3, ge=2)
+    embedding_provider: str = Field(
+        default="hashing",
+        description="Used when algorithm is embedding_logistic or embedding_svm.",
+    )
+    threshold_objective: str = Field(
+        default="f1",
+        description="f1 | precision | recall | balanced_accuracy | youden_j | expected_cost | custom_utility",
+    )
+    threshold_utility_tp: float = 1.0
+    threshold_utility_tn: float = 1.0
+    threshold_utility_fp: float = -1.0
+    threshold_utility_fn: float = -1.0
     name: str | None = None
     run_async: bool = True
 
@@ -713,6 +731,35 @@ class ClassifierPredictRequest(BaseModel):
     unit_type: str
     only_unannotated: bool = False
     filters: dict[str, Any] | None = None
+
+
+class ModelPredictionItemResponse(BaseModel):
+    id: str
+    trained_model_id: str
+    text_unit_id: str
+    predicted_labels: list[str]
+    scores: dict[str, float]
+    uncertainty: float | None
+    created_at: datetime
+
+
+class PredictionSetResponse(BaseModel):
+    id: str
+    project_id: str
+    corpus_id: str
+    trained_model_id: str
+    model_version: int
+    dataset_snapshot_id: str | None
+    analysis_run_id: str
+    created_by: str
+    created_at: datetime
+    metadata: dict[str, Any]
+
+    model_config = {"from_attributes": True}
+
+
+class PredictionSetDetailResponse(PredictionSetResponse):
+    predictions: list[ModelPredictionItemResponse]
 
 
 class ActiveLearningAssignRequest(BaseModel):
@@ -736,8 +783,30 @@ class TrainedModelResponse(BaseModel):
     metrics: dict[str, Any]
     version: int
     name: str | None
+    lifecycle_status: str = "candidate"
+    lifecycle_notes: str | None = None
+    lifecycle_updated_at: datetime | None = None
     created_by: str
     created_at: datetime
+
+
+class ModelLifecycleUpdateRequest(BaseModel):
+    status: str
+    notes: str | None = None
+    deprecate_others: bool = False
+
+
+class DriftDistributionPayload(BaseModel):
+    label_counts: dict[str, int] | None = None
+    scores: list[float] | None = None
+    top_terms: list[str] | None = None
+
+
+class DriftMonitoringRequest(BaseModel):
+    baseline: DriftDistributionPayload
+    current: DriftDistributionPayload
+    baseline_run_id: str | None = None
+    current_run_id: str | None = None
 
 
 class TopicTrainRequest(CorpusFilters):
@@ -747,6 +816,32 @@ class TopicTrainRequest(CorpusFilters):
     preprocessing_profile_id: str | None = None
     max_iterations: int = 25
     random_seed: int = 42
+    embedding_provider: str | None = Field(
+        default=None,
+        description="For semantic_stack: hashing | sentence_transformers",
+    )
+    embedding_model_name: str | None = Field(
+        default=None,
+        description="Optional sentence-transformer model name.",
+    )
+    persist_embedding_artifacts: bool = Field(
+        default=True,
+        description="Cache embedding vectors as content-addressable artifacts.",
+    )
+    holdout_fraction: float | None = Field(
+        default=None,
+        ge=0.0,
+        lt=1.0,
+        description="Optional fraction of units held out for LDA perplexity diagnostics.",
+    )
+    holdout_unit_ids: list[str] | None = Field(
+        default=None,
+        description="Optional explicit holdout unit ids (overrides holdout_fraction when set).",
+    )
+    group_by: list[str] | None = Field(
+        default=None,
+        description="Optional document metadata fields for dominant-topic breakdowns.",
+    )
     run_async: bool = True
 
 
@@ -762,6 +857,17 @@ class TopicKSweepRequest(CorpusFilters):
     preprocessing_profile_id: str | None = None
     max_iterations: int = 25
     random_seed: int = 42
+    holdout_fraction: float | None = Field(
+        default=None,
+        ge=0.0,
+        lt=1.0,
+        description="Optional fraction of units held out for LDA perplexity diagnostics.",
+    )
+    holdout_unit_ids: list[str] | None = Field(
+        default=None,
+        description="Optional explicit holdout unit ids (overrides holdout_fraction when set).",
+    )
+    run_async: bool = True
 
 
 class TopicSeedStabilityRequest(CorpusFilters):
@@ -771,6 +877,7 @@ class TopicSeedStabilityRequest(CorpusFilters):
     seeds: list[int] = Field(..., min_length=2, description="At least 2 seeds to compare.")
     preprocessing_profile_id: str | None = None
     max_iterations: int = 25
+    run_async: bool = True
 
 
 class RobustnessRequest(BaseModel):

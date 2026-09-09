@@ -37,6 +37,8 @@ import { queryKeys } from "../../../config/queryKeys";
 import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { NoCorpusEmptyState, RunStatusChip } from "../components/ResearchShared";
+import { CleaningPanel } from "../components/CleaningPanel";
+import { IngestionQaPanel } from "../components/IngestionQaPanel";
 import { PreprocessingPanel } from "../components/PreprocessingPanel";
 import { useResearchContext } from "../hooks/useResearchContext";
 import {
@@ -47,11 +49,13 @@ import {
 } from "../segmentationProgress";
 import { UNIT_TYPE_OPTIONS, type UnitType } from "../types";
 
-const PREPARE_TABS = ["segment", "preprocessing"] as const;
+const PREPARE_TABS = ["segment", "ingestion", "cleaning", "preprocessing"] as const;
 type PrepareTab = (typeof PREPARE_TABS)[number];
 
 const PREPARE_TAB_ITEMS: Array<{ value: PrepareTab; label: string }> = [
     { value: "segment", label: "Segment" },
+    { value: "ingestion", label: "Ingestion QA" },
+    { value: "cleaning", label: "Cleaning" },
     { value: "preprocessing", label: "Preprocessing" },
 ];
 
@@ -180,7 +184,7 @@ export default function PrepareView() {
                     tabs={PREPARE_TAB_ITEMS}
                     ariaLabel="Prepare workflow"
                 />
-                {tab === "segment" ? <NoCorpusEmptyState /> : <PreprocessingPanel />}
+                {tab === "preprocessing" ? <PreprocessingPanel /> : tab === "cleaning" ? <CleaningPanel /> : <NoCorpusEmptyState />}
             </Stack>
         );
     }
@@ -210,9 +214,7 @@ export default function PrepareView() {
                             }
                         />
                     </SectionCard>
-                ) : (
-                    <PreprocessingPanel />
-                )}
+                ) : tab === "preprocessing" ? <PreprocessingPanel /> : tab === "cleaning" ? <CleaningPanel /> : <NoCorpusEmptyState />}
             </Stack>
         );
     }
@@ -404,6 +406,8 @@ export default function PrepareView() {
             </>
             ) : null}
 
+            {tab === "ingestion" ? <IngestionQaPanel /> : null}
+            {tab === "cleaning" ? <CleaningPanel /> : null}
             {tab === "preprocessing" ? <PreprocessingPanel /> : null}
         </Stack>
     );

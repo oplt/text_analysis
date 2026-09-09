@@ -16,57 +16,46 @@ from backend.modules.text_research.application.quantitative_analysis_service imp
     _apply_document_filters,
 )
 from backend.modules.text_research.domain.models import dumps, loads
+from backend.modules.text_research.infrastructure.provenance import (
+    container_image_digest,
+    extract_reproduce_request,
+    git_commit_sha,
+    library_versions,
+    runtime_environment,
+)
 
 APP_NAME = "Text Research"
 
 APP_SUBTITLE = "Generic computational text analysis workspace"
 
 
+def _csv_line(row: list[Any]) -> str:
+    buffer = io.StringIO()
+    csv.writer(buffer).writerow(row)
+    return buffer.getvalue()
+
+
 def _utcnow() -> datetime:
     return datetime.now(UTC)
 
 
-def _library_versions() -> dict[str, str | None]:
-    versions: dict[str, str | None] = {}
-    for name in (
-        "numpy",
-        "scipy",
-        "sklearn",
-        "pandas",
-        "ftfy",
-        "regex",
-        "snowballstemmer",
-        "simplemma",
-        "statsmodels",
-        "spacy",
-    ):
-        try:
-            mod = __import__(name if name != "sklearn" else "sklearn")
-            versions[name] = getattr(mod, "__version__", None)
-        except Exception:  # noqa: BLE001
-            versions[name] = None
-    return versions
-
-
-def _git_commit_sha() -> str | None:
-    try:
-        import subprocess
-
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=2,
-        )
-        if result.returncode == 0:
-            return result.stdout.strip() or None
-    except Exception:  # noqa: BLE001
-        return None
-    return None
-
-
 class ExportService(ResearchAccessMixin):
+    async def iter_units_csv(
+        self, corpus_id: str, *, user_id: str, unit_type: str, **filters: Any
+    ):
+        """Yield unit CSV rows incrementally for HTTP streaming exports."""
+        corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        documents = await self.repo.list_documents(corpus_id)
+        filtered_docs = _apply_document_filters(documents, filters or {})
+        doc_lookup = {document.id: document for document in filtered_docs}
+        units = await self.repo.list_text_units_for_corpus(
+            corpus_id, unit_type=unit_type, document_ids=list(doc_lookup) if filters else None
+        )
+        yield _csv_line(["text_unit_id", "corpus_document_id", "document_title", "text"])
+        for unit in units:
+            document = doc_lookup.get(unit.corpus_document_id)
+            yield _csv_line([unit.id, unit.corpus_document_id, document.title if document else "", unit.text])
+
     async def export_units_csv(
         self, corpus_id: str, *, user_id: str, unit_type: str, **filters: Any
     ) -> str:
@@ -225,14 +214,22 @@ class ExportService(ResearchAccessMixin):
         )
         canonical_sources = await self.repo.list_canonical_sources_for_corpus(corpus_id)
         canonical_by_doc = {row.corpus_document_id: row for row in canonical_sources}
+        cleaning_profiles = await self.repo.list_cleaning_profiles(corpus.project_id)
+        runtime = runtime_environment()
 
         return {
             "app": APP_NAME,
             "subtitle": APP_SUBTITLE,
             "generated_at": _utcnow().isoformat(),
             "reproducibility": {
-                "library_versions": _library_versions(),
-                "git_commit": _git_commit_sha(),
+                "library_versions": library_versions(),
+                "git_commit": git_commit_sha(),
+                "container_image_digest": container_image_digest(),
+                "engine_version": runtime["engine_version"],
+                "preprocessing_implementation": runtime["preprocessing_implementation"],
+                "preprocessing_implementation_version": runtime[
+                    "preprocessing_implementation_version"
+                ],
             },
             "corpus": {
                 "id": corpus.id,
@@ -258,6 +255,7 @@ class ExportService(ResearchAccessMixin):
                             "parser_version": canonical_by_doc[d.id].parser_version,
                             "extracted_at": canonical_by_doc[d.id].extracted_at.isoformat(),
                             "original_file_checksum": canonical_by_doc[d.id].original_file_checksum,
+                            "cleaning_profile_id": canonical_by_doc[d.id].cleaning_profile_id,
                         }
                         if d.id in canonical_by_doc
                         else None
@@ -268,6 +266,15 @@ class ExportService(ResearchAccessMixin):
             "codebooks": [
                 {"id": c.id, "name": c.name, "version": c.version, "is_frozen": c.is_frozen}
                 for c in codebooks
+            ],
+            "cleaning_profiles": [
+                {
+                    "id": p.id,
+                    "name": p.name,
+                    "version": p.version,
+                    "config": loads(p.config_json, {}),
+                }
+                for p in cleaning_profiles
             ],
             "preprocessing_profiles": [
                 {"id": p.id, "name": p.name, "config": loads(p.config_json, {})} for p in profiles
@@ -314,6 +321,7 @@ class ExportService(ResearchAccessMixin):
                         "artifact_path": r.artifact_path,
                         "random_seed": r.random_seed,
                         "error_message": r.error_message,
+                        "provenance": (loads(r.parameters_json, {}) or {}).get("provenance"),
                     }
                     for r in runs
                 ],
@@ -322,6 +330,7 @@ class ExportService(ResearchAccessMixin):
 
     async def export_run_json(self, run_id: str, *, user_id: str) -> dict[str, Any]:
         run = await self.get_run_or_404(run_id, user_id=user_id)
+        parameters = loads(run.parameters_json, {})
         return {
             "id": run.id,
             "project_id": run.project_id,
@@ -329,7 +338,7 @@ class ExportService(ResearchAccessMixin):
             "run_type": run.run_type,
             "status": run.status,
             "progress_stage": run.progress_stage,
-            "parameters": loads(run.parameters_json, {}),
+            "parameters": parameters,
             "metrics": loads(run.metrics_json, {}),
             "results": loads(run.results_json, {}),
             "artifact_path": run.artifact_path,
@@ -339,6 +348,11 @@ class ExportService(ResearchAccessMixin):
             "completed_at": run.completed_at.isoformat() if run.completed_at else None,
             "error_message": run.error_message,
             "created_at": run.created_at.isoformat() if run.created_at else None,
+            "provenance": parameters.get("provenance"),
+            "reproduce": extract_reproduce_request(
+                parameters, run_type=run.run_type, run_id=run.id
+            ),
+            "runtime": runtime_environment(),
         }
 
     async def export_codebook_json(self, codebook_id: str, *, user_id: str) -> dict[str, Any]:

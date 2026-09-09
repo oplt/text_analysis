@@ -19,6 +19,7 @@ import {
 } from "../components/ResearchCharts";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
+import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 
 type EvalRow = Record<string, unknown>;
@@ -122,6 +123,7 @@ export default function RobustnessView() {
     const [snapshotId, setSnapshotId] = useState("");
     const [groupField, setGroupField] = useState("organization");
     const [runId, setRunId] = useState<string | null>(null);
+    const sseConnected = useRunEvents(runId, ctx.projectId);
 
     const snapshotsQuery = useQuery({
         queryKey: queryKeys.textResearch.datasetSnapshots(ctx.projectId, ctx.selectedCorpusId),
@@ -133,7 +135,7 @@ export default function RobustnessView() {
         queryKey: queryKeys.textResearch.run(runId ?? ""),
         queryFn: () => getRun(runId!),
         enabled: Boolean(runId),
-        refetchInterval: activeRunRefetchInterval,
+        refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });
 
     const sweepMutation = useMutation({
@@ -176,11 +178,12 @@ export default function RobustnessView() {
     );
 
     const groupOut = asRecord(results?.leave_one_group_out);
-    const groupField = typeof groupOut?.group_field === "string" ? groupOut.group_field : "group";
+    const resultGroupField =
+        typeof groupOut?.group_field === "string" ? groupOut.group_field : "group";
     const groupRows = asRows(groupOut?.runs);
     const groupChart = chartableRows(
         groupRows,
-        (row) => String(row.held_out_value ?? groupField)
+        (row) => String(row.held_out_value ?? resultGroupField)
     );
 
     const temporalOut = asRecord(results?.temporal_holdout);

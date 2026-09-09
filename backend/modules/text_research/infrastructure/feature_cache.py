@@ -72,6 +72,43 @@ def build_cache_key(
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+def set_cached(key: str, value: Any) -> None:
+    global _CACHE_BYTES, _EVICTIONS
+    from backend.modules.text_research.infrastructure.out_of_core import (
+        should_use_out_of_core,
+        spill_token_sequences,
+    )
+
+    spill_meta: dict[str, Any] | None = None
+    stored: Any = value
+    # Spill large tokenized corpora to parquet/JSONL instead of holding them all in RAM.
+    if (
+        isinstance(value, list)
+        and value
+        and isinstance(value[0], list)
+        and should_use_out_of_core(len(value))
+    ):
+        try:
+            spill_meta = spill_token_sequences(key, value)
+            stored = {"__spill__": spill_meta}
+        except Exception:
+            logger.exception("feature_cache spill failed; keeping in-memory entry")
+            spill_meta = None
+            stored = value
+
+    with _LOCK:
+        previous = _CACHE.pop(key, None)
+        if previous is not None:
+            _CACHE_BYTES -= _estimate_size(previous)
+        _CACHE[key] = stored
+        _CACHE_BYTES += _estimate_size(stored)
+        _CACHE.move_to_end(key)
+        while len(_CACHE) > _MAX_ENTRIES or _CACHE_BYTES > _MAX_BYTES:
+            _, evicted = _CACHE.popitem(last=False)
+            _CACHE_BYTES -= _estimate_size(evicted)
+            _EVICTIONS += 1
+
+
 def get_cached(key: str) -> Any | None:
     global _HITS, _MISSES
     with _LOCK:
@@ -81,22 +118,19 @@ def get_cached(key: str) -> Any | None:
             return None
         _HITS += 1
         _CACHE.move_to_end(key)
-        return value
+        stored = value
 
+    if isinstance(stored, dict) and "__spill__" in stored:
+        from backend.modules.text_research.infrastructure.out_of_core import (
+            load_spilled_token_sequences,
+        )
 
-def set_cached(key: str, value: Any) -> None:
-    global _CACHE_BYTES, _EVICTIONS
-    with _LOCK:
-        previous = _CACHE.pop(key, None)
-        if previous is not None:
-            _CACHE_BYTES -= _estimate_size(previous)
-        _CACHE[key] = value
-        _CACHE_BYTES += _estimate_size(value)
-        _CACHE.move_to_end(key)
-        while len(_CACHE) > _MAX_ENTRIES or _CACHE_BYTES > _MAX_BYTES:
-            _, evicted = _CACHE.popitem(last=False)
-            _CACHE_BYTES -= _estimate_size(evicted)
-            _EVICTIONS += 1
+        try:
+            return load_spilled_token_sequences(stored["__spill__"])
+        except Exception:
+            logger.exception("feature_cache spill load failed for key=%s", key)
+            return None
+    return stored
 
 
 def clear_cache() -> None:

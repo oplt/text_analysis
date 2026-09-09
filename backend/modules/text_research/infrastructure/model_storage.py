@@ -116,7 +116,10 @@ def save_artifact_with_metadata(obj: Any, *, category: str) -> tuple[str, dict[s
             directory = ARTIFACT_ROOT / category
             directory.mkdir(parents=True, exist_ok=True)
             path = directory / filename
-            path.write_bytes(payload)
+            with tempfile.NamedTemporaryFile(dir=directory, delete=False) as staged:
+                staged.write(payload)
+                staged_path = Path(staged.name)
+            os.replace(staged_path, path)
             reference = str(path)
             object_key_value = None
 

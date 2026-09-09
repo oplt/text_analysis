@@ -27,6 +27,10 @@ import numpy as np
 from sklearn.model_selection import GroupKFold
 
 from backend.modules.text_research.application.access import ResearchAccessMixin
+from backend.modules.text_research.application.analysis_executor import (
+    attach_run_identity,
+    build_spec_from_request,
+)
 from backend.modules.text_research.application.dataset_builder_service import DatasetBuilderService
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import AnalysisRun, dumps, loads
@@ -184,7 +188,7 @@ class RobustnessService(ResearchAccessMixin):
         transfer_field: str | None = None,
         transfer_train_values: list[str] | None = None,
         transfer_test_values: list[str] | None = None,
-        run_async: bool = False,
+        run_async: bool = True,
     ) -> AnalysisRun:
         snapshot = await self.get_snapshot_or_404(snapshot_id, user_id=user_id)
         params = {
@@ -202,6 +206,15 @@ class RobustnessService(ResearchAccessMixin):
             "transfer_train_values": transfer_train_values,
             "transfer_test_values": transfer_test_values,
         }
+        spec = build_spec_from_request(
+            "classification",
+            snapshot.corpus_id,
+            snapshot_id=snapshot_id,
+            model={"family": algorithm},
+            validation={"strategy": "grouped_cv", "group_field": group_field},
+            analysis_parameters={"mode": "robustness", "cv_folds": cv_folds},
+        )
+        params = attach_run_identity(params, spec)
         run = await self.repo.create_run(
             AnalysisRun(
                 project_id=snapshot.project_id,
@@ -215,9 +228,11 @@ class RobustnessService(ResearchAccessMixin):
         await self.db.commit()
 
         if run_async:
-            from backend.modules.text_research.workers import queue_robustness_sweep
+            from backend.modules.text_research.application.execution_service import ExecutionService
 
-            queue_robustness_sweep(run_id=run.id, user_id=user_id)
+            await ExecutionService.submit(
+                db=self.db, run=run, operation="robustness", user_id=user_id
+            )
         else:
             await self.execute_sweep(run.id)
 
@@ -229,6 +244,8 @@ class RobustnessService(ResearchAccessMixin):
         run = await self.repo.get_run(run_id)
         if run is None:
             raise ValueError(f"AnalysisRun {run_id} not found")
+        if run.status in {AnalysisRunStatus.COMPLETED.value, AnalysisRunStatus.CANCELLED.value}:
+            return run
         params = loads(run.parameters_json, {})
 
         await self.repo.update_run(run, status=AnalysisRunStatus.RUNNING.value, started_at=_utcnow())

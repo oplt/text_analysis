@@ -360,6 +360,10 @@ class AnalysisRun(Base):
     metrics_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     results_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     artifact_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    celery_task_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    execution_key: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    artifact_namespace: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    cancellation_requested: Mapped[bool] = mapped_column(default=False)
     random_seed: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -394,6 +398,11 @@ class TrainedModel(Base):
     vectorizer_artifact_path: Mapped[str] = mapped_column(String(1024))
     version: Mapped[int] = mapped_column(Integer, default=1)
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    lifecycle_status: Mapped[str] = mapped_column(String(32), default="candidate", index=True)
+    lifecycle_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lifecycle_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
@@ -419,6 +428,37 @@ class ModelPrediction(Base):
     scores_json: Mapped[str] = mapped_column(Text)
     uncertainty: Mapped[float | None] = mapped_column(Float, nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class PredictionSet(Base):
+    """Header for a batch of model predictions produced by one analysis run.
+
+    Wraps ``ModelPrediction`` rows without overwriting human annotations.
+    """
+
+    __tablename__ = "research_prediction_sets"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    corpus_id: Mapped[str] = mapped_column(
+        ForeignKey("research_corpora.id", ondelete="CASCADE"), index=True
+    )
+    trained_model_id: Mapped[str] = mapped_column(
+        ForeignKey("research_trained_models.id", ondelete="CASCADE"), index=True
+    )
+    model_version: Mapped[int] = mapped_column(Integer)
+    dataset_snapshot_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_training_dataset_snapshots.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    analysis_run_id: Mapped[str] = mapped_column(
+        ForeignKey("research_analysis_runs.id", ondelete="CASCADE"), index=True
+    )
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    metadata_json: Mapped[str] = mapped_column(Text)
 
 
 class DictionaryDefinition(Base):

@@ -248,14 +248,25 @@ def duplicate_report(
     minhash_use_lsh: bool = True,
     minhash_bands: int = DEFAULT_MINHASH_BANDS,
     max_pairs: int | None = DEFAULT_MAX_PAIRS,
+    force_lexical: bool = False,
 ) -> dict[str, Any]:
     """Run the requested duplicate-detection tiers over ``items``.
 
     ``items``: ``[{"id": str, "text": str}, ...]``. Every tier is
     independently reported; nothing here assumes a specific document type,
     research question, or corpus size.
+
+    On large corpora, the O(n²) lexical tier is skipped unless
+    ``force_lexical=True``; minhash is auto-enabled when needed.
     """
+    from backend.modules.text_research.infrastructure.out_of_core import (
+        duplicate_methods_for_scale,
+    )
+
     resolved_methods = normalize_duplicate_methods(methods)
+    resolved_methods, scale_notes = duplicate_methods_for_scale(
+        resolved_methods, len([i for i in items if i.get("id")]), force_lexical=force_lexical
+    )
     if not 0.0 <= lexical_threshold <= 1.0:
         raise ValueError("lexical_threshold must be between 0 and 1")
     if not 0.0 <= minhash_threshold <= 1.0:
@@ -275,6 +286,7 @@ def duplicate_report(
         "normalized_duplicate_groups": [],
         "lexical_near_duplicates": [],
         "minhash_near_duplicates": [],
+        "out_of_core_notes": scale_notes,
     }
 
     if "exact" in resolved_methods:

@@ -119,11 +119,15 @@ class ContextualDatasetService(ResearchAccessMixin):
         dataset_id: str,
         *,
         user_id: str,
-        csv_text: str,
+        csv_text: str | None = None,
+        reader: csv.DictReader | None = None,
         replace_existing: bool = True,
     ) -> dict[str, Any]:
         dataset = await self.get_contextual_dataset_or_404(dataset_id, user_id=user_id)
-        reader = csv.DictReader(io.StringIO(csv_text))
+        if reader is None:
+            if csv_text is None:
+                raise ValueError("csv_text or reader is required")
+            reader = csv.DictReader(io.StringIO(csv_text))
         if not reader.fieldnames:
             raise HTTPException(status_code=422, detail="CSV must include a header row.")
 

@@ -52,6 +52,17 @@ import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import {
+    ClassificationConfigPanel,
+    DEFAULT_CLASSIFICATION_TRAIN_CONFIG,
+    type ClassificationTrainConfig,
+} from "../components/ClassificationConfigPanel";
+import {
+    ClassificationCalibrationPanel,
+    ClassificationCurvePanel,
+    ClassificationErrorBrowser,
+    ClassificationModelComparison,
+} from "../components/ClassificationEvalPanels";
+import {
     DivergingBarChart,
     MatrixHeatmap,
     MetricCards,
@@ -61,11 +72,10 @@ import {
 import { ResearchResultsTable } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
+import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval } from "../runPolling";
 import type { AnalysisRun, TrainedModel } from "../types";
 
-type Algorithm = "logistic_regression" | "linear_svm";
-type ClassWeight = "none" | "balanced";
 type AnnotationSource = "adjudicated_only" | "majority_vote" | "selected_annotator";
 
 const ACTIVE_LEARNING_STEPS = [
@@ -249,21 +259,16 @@ export default function ClassificationView() {
     const [snapshotName, setSnapshotName] = useState("Training snapshot");
     const [snapshotId, setSnapshotId] = useState<string | null>(null);
 
-    const [algorithm, setAlgorithm] = useState<Algorithm>("logistic_regression");
-    const [profileId, setProfileId] = useState("");
-    const [ngramMax, setNgramMax] = useState(2);
-    const [minDf, setMinDf] = useState(1);
-    const [maxDf, setMaxDf] = useState(1);
-    const [maxFeatures, setMaxFeatures] = useState<string>("");
-    const [classWeight, setClassWeight] = useState<ClassWeight>("balanced");
-    const [regularizationC, setRegularizationC] = useState(1);
-    const [testSize, setTestSize] = useState(0.25);
-    const [randomSeed, setRandomSeed] = useState(42);
-    const [modelName, setModelName] = useState("");
+    const [trainConfig, setTrainConfig] = useState<ClassificationTrainConfig>(
+        DEFAULT_CLASSIFICATION_TRAIN_CONFIG
+    );
 
     const [trainRunId, setTrainRunId] = useState<string | null>(null);
     const [predictRunId, setPredictRunId] = useState<string | null>(null);
+    const trainSseConnected = useRunEvents(trainRunId, ctx.projectId);
+    const predictSseConnected = useRunEvents(predictRunId, ctx.projectId);
     const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+    const [compareModelIds, setCompareModelIds] = useState<string[]>([]);
     const [selectedUncertainIds, setSelectedUncertainIds] = useState<string[]>([]);
     const [assignedOnce, setAssignedOnce] = useState(false);
     const [coefficientLabel, setCoefficientLabel] = useState("");
@@ -332,14 +337,14 @@ export default function ClassificationView() {
         queryKey: queryKeys.textResearch.run(trainRunId ?? ""),
         queryFn: () => getRun(trainRunId!),
         enabled: Boolean(trainRunId),
-        refetchInterval: activeRunRefetchInterval,
+        refetchInterval: (query) => activeRunRefetchInterval(query, trainSseConnected),
     });
 
     const predictRunQuery = useQuery({
         queryKey: queryKeys.textResearch.run(predictRunId ?? ""),
         queryFn: () => getRun(predictRunId!),
         enabled: Boolean(predictRunId),
-        refetchInterval: activeRunRefetchInterval,
+        refetchInterval: (query) => activeRunRefetchInterval(query, predictSseConnected),
     });
 
     const uncertainQuery = useQuery({
@@ -437,17 +442,69 @@ export default function ClassificationView() {
 
     const trainMutation = useMutation({
         mutationFn: () => {
+            const {
+                algorithm,
+                taskType,
+                profileId,
+                modelName,
+                vectorizer,
+                useWordNgrams,
+                ngramMin,
+                ngramMax,
+                useCharNgrams,
+                charNgramMin,
+                charNgramMax,
+                minDf,
+                maxDf,
+                maxFeatures,
+                classWeight,
+                regularizationC,
+                nbAlpha,
+                sgdLoss,
+                testSize,
+                valSize,
+                randomSeed,
+                validationStrategy,
+                nestedOuter,
+                nestedInner,
+                tuneHyperparameters,
+                searchType,
+                paramGridText,
+                searchScoring,
+                hyperparameterNIter,
+                tuneThresholds,
+                thresholdObjective,
+                bootstrapSamples,
+                ciLevel,
+                calibrationMethod,
+                embeddingProvider,
+            } = trainConfig;
             const parsedMaxFeatures = maxFeatures.trim()
                 ? Number.parseInt(maxFeatures.trim(), 10)
                 : null;
+            let parsedParamGrid: Record<string, unknown[]> | undefined;
+            if (tuneHyperparameters && paramGridText.trim()) {
+                const candidate = JSON.parse(paramGridText) as unknown;
+                if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+                    throw new Error("Parameter grid must be a JSON object of parameter arrays.");
+                }
+                parsedParamGrid = candidate as Record<string, unknown[]>;
+            }
             return trainClassifier({
                 snapshot_id: snapshotId!,
                 name:
                     modelName.trim() ||
                     `Classifier ${new Date().toLocaleDateString()} (${algorithm})`,
                 algorithm,
+                task_type: taskType || undefined,
                 preprocessing_profile_id: profileId || undefined,
+                vectorizer,
+                use_word_ngrams: useWordNgrams,
+                ngram_min: ngramMin,
                 ngram_max: ngramMax,
+                use_char_ngrams: useCharNgrams,
+                char_ngram_min: charNgramMin,
+                char_ngram_max: charNgramMax,
                 min_df: minDf,
                 max_df: maxDf,
                 max_features:
@@ -456,8 +513,25 @@ export default function ClassificationView() {
                         : null,
                 class_weight: classWeight === "none" ? null : classWeight,
                 regularization_c: regularizationC,
+                nb_alpha: nbAlpha,
+                sgd_loss: sgdLoss,
                 test_size: testSize,
+                val_size: valSize,
                 random_seed: randomSeed,
+                validation_strategy: validationStrategy,
+                nested_cv_outer_splits: nestedOuter,
+                nested_cv_inner_splits: nestedInner,
+                tune_hyperparameters: tuneHyperparameters,
+                hyperparameter_search_type: searchType,
+                hyperparameter_param_grid: parsedParamGrid,
+                hyperparameter_n_iter: hyperparameterNIter,
+                hyperparameter_scoring: searchScoring,
+                tune_thresholds: tuneThresholds,
+                threshold_objective: thresholdObjective,
+                n_bootstrap: bootstrapSamples,
+                ci_confidence_level: ciLevel,
+                calibration_method: calibrationMethod,
+                embedding_provider: embeddingProvider || undefined,
                 run_async: true,
             });
         },
@@ -830,126 +904,27 @@ export default function ClassificationView() {
             {tab === "train" ? (
             <SectionCard
                 title="Model configuration"
-                description="Configure a linear classifier. Train/test splitting is grouped by source document to prevent leakage."
+                description="Full training controls. Splits are grouped by source document to prevent leakage."
             >
                 <Stack spacing={2}>
                     <Alert severity="warning">
                         Train/test splitting is grouped by source document to prevent leakage.
                     </Alert>
 
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
-                        <TextField
-                            select
-                            size="small"
-                            label="Algorithm"
-                            value={algorithm}
-                            onChange={(e) => setAlgorithm(e.target.value as Algorithm)}
-                            sx={{ minWidth: 200 }}
-                        >
-                            <MenuItem value="logistic_regression">Logistic regression</MenuItem>
-                            <MenuItem value="linear_svm">Linear SVM</MenuItem>
-                        </TextField>
-                        <TextField
-                            select
-                            size="small"
-                            label="Preprocessing profile"
-                            value={profileId}
-                            onChange={(e) => setProfileId(e.target.value)}
-                            sx={{ minWidth: 220 }}
-                        >
-                            <MenuItem value="">Default (none)</MenuItem>
-                            {(profilesQuery.data ?? []).map((profile) => (
-                                <MenuItem key={profile.id} value={profile.id}>
-                                    {profile.name}
-                                </MenuItem>
-                            ))}
-                        </TextField>
-                        <TextField
-                            size="small"
-                            label="Model name"
-                            value={modelName}
-                            onChange={(e) => setModelName(e.target.value)}
-                            sx={{ minWidth: 200 }}
-                            placeholder="Optional"
-                        />
-                    </Stack>
+                    {!snapshotId ? (
+                        <Alert severity="info">
+                            Select or freeze a dataset snapshot on the Dataset tab before training.
+                        </Alert>
+                    ) : null}
 
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="ngram_max"
-                            value={ngramMax}
-                            onChange={(e) => setNgramMax(Number(e.target.value) || 1)}
-                            inputProps={{ min: 1, max: 5, step: 1 }}
-                            sx={{ width: 120 }}
-                        />
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="min_df"
-                            value={minDf}
-                            onChange={(e) => setMinDf(Number(e.target.value) || 1)}
-                            inputProps={{ min: 1, step: 1 }}
-                            sx={{ width: 120 }}
-                        />
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="max_df"
-                            value={maxDf}
-                            onChange={(e) => setMaxDf(Number(e.target.value) || 1)}
-                            inputProps={{ min: 0.01, max: 1, step: 0.01 }}
-                            sx={{ width: 120 }}
-                        />
-                        <TextField
-                            size="small"
-                            label="max_features"
-                            value={maxFeatures}
-                            onChange={(e) => setMaxFeatures(e.target.value)}
-                            placeholder="unlimited"
-                            sx={{ width: 140 }}
-                            helperText="Blank = no cap"
-                        />
-                        <TextField
-                            select
-                            size="small"
-                            label="class_weight"
-                            value={classWeight}
-                            onChange={(e) => setClassWeight(e.target.value as ClassWeight)}
-                            sx={{ width: 150 }}
-                        >
-                            <MenuItem value="none">none</MenuItem>
-                            <MenuItem value="balanced">balanced</MenuItem>
-                        </TextField>
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="C (regularization)"
-                            value={regularizationC}
-                            onChange={(e) => setRegularizationC(Number(e.target.value) || 1)}
-                            inputProps={{ min: 0.001, step: 0.1 }}
-                            sx={{ width: 150 }}
-                        />
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="test_size"
-                            value={testSize}
-                            onChange={(e) => setTestSize(Number(e.target.value) || 0.25)}
-                            inputProps={{ min: 0.05, max: 0.5, step: 0.05 }}
-                            sx={{ width: 120 }}
-                        />
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="random_seed"
-                            value={randomSeed}
-                            onChange={(e) => setRandomSeed(Number(e.target.value) || 0)}
-                            inputProps={{ step: 1 }}
-                            sx={{ width: 130 }}
-                        />
-                    </Stack>
+                    <ClassificationConfigPanel
+                        config={trainConfig}
+                        onChange={setTrainConfig}
+                        profiles={(profilesQuery.data ?? []).map((p) => ({
+                            id: p.id,
+                            name: p.name,
+                        }))}
+                    />
 
                     <Button
                         variant="contained"
@@ -1075,6 +1050,30 @@ export default function ClassificationView() {
                             </Box>
                         ) : null}
 
+                        <Box>
+                            <Typography variant="subtitle2" gutterBottom>
+                                ROC / Precision–Recall
+                            </Typography>
+                            <ClassificationCurvePanel metrics={trainMetrics} />
+                        </Box>
+
+                        <Box>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Calibration
+                            </Typography>
+                            <ClassificationCalibrationPanel
+                                metrics={trainMetrics}
+                                results={trainResults}
+                            />
+                        </Box>
+
+                        <Box>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Error analysis
+                            </Typography>
+                            <ClassificationErrorBrowser results={trainResults} />
+                        </Box>
+
                         <ResultsInspector
                             title="run metrics / results"
                             data={{
@@ -1181,6 +1180,21 @@ export default function ClassificationView() {
                         />
                     )}
                 </QueryBoundary>
+            </SectionCard>
+
+            <SectionCard
+                title="Model comparison"
+                description="Compare holdout metrics across trained classifiers."
+            >
+                <ClassificationModelComparison
+                    models={classifiersQuery.data ?? []}
+                    selectedIds={compareModelIds}
+                    onToggle={(id) =>
+                        setCompareModelIds((ids) =>
+                            ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]
+                        )
+                    }
+                />
             </SectionCard>
 
             <SectionCard

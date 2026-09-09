@@ -19,11 +19,10 @@ Implemented here (see module docstrings on each function for detail):
 * :class:`TopicModelEngine` — a minimal plug-in protocol so a future engine
   (e.g. BERTopic) could be added without changing callers (§41).
 
-Limitation (documented, not hidden): BERTopic/transformer-based topic models
-are **not implemented**. Adding them would pull in ``transformers``/
-``sentence-transformers``/``torch`` as hard dependencies, which the platform
-explicitly avoids for core functionality (§41). LDA/NMF remain the
-dependency-light, reproducible baselines.
+Limitation (documented, not hidden): optional semantic stacks (embedding →
+UMAP/HDBSCAN → c-TF-IDF) and BERTopic are available via ``algorithm=
+"semantic_stack"`` / ``"bertopic"`` when optional packages are installed.
+Classical LDA/NMF remain the dependency-light defaults and are never replaced.
 """
 
 from __future__ import annotations
@@ -35,12 +34,15 @@ from typing import Any, Protocol
 import numpy as np
 from sklearn.decomposition import NMF, LatentDirichletAllocation
 
+from backend.modules.text_research.domain.prepared_corpus import PreparedCorpusArtifact
 from backend.modules.text_research.infrastructure.preprocessing import (
     build_count_vectorizer,
     build_tfidf_vectorizer,
 )
 
 ALGORITHMS = ("lda", "nmf")
+SEMANTIC_ALGORITHMS = ("semantic_stack", "semantic", "bertopic")
+ALL_ALGORITHMS = ALGORITHMS + SEMANTIC_ALGORITHMS
 
 
 def _to_native(value: Any) -> Any:
@@ -169,6 +171,52 @@ def topic_coherence_npmi(
     }
 
 
+def _modeling_texts(
+    texts: list[str],
+    prepared: PreparedCorpusArtifact | None,
+) -> list[str]:
+    """Return space-joined prepared texts or raw texts in caller order."""
+    if prepared is not None:
+        return list(prepared.texts_joined)
+    return texts
+
+
+def _resolve_modeling_config(
+    config: dict[str, Any] | None,
+    prepared: PreparedCorpusArtifact | None,
+) -> dict[str, Any] | None:
+    if prepared is not None:
+        return dict(prepared.preprocessing_profile)
+    return config
+
+
+def transform_topic_model(
+    vectorizer: Any,
+    model: Any,
+    texts_or_prepared: list[str] | PreparedCorpusArtifact,
+    algorithm: str,
+) -> dict[str, Any]:
+    """Infer document-topic distributions for unseen documents."""
+    algorithm = algorithm.lower()
+    if algorithm not in ALGORITHMS:
+        raise ValueError(
+            f"Unsupported topic model algorithm: {algorithm!r}; expected one of {ALGORITHMS}"
+        )
+    if isinstance(texts_or_prepared, PreparedCorpusArtifact):
+        texts = list(texts_or_prepared.texts_joined)
+    else:
+        texts = texts_or_prepared
+    if not texts:
+        raise ValueError("texts must be non-empty to transform a topic model")
+    dtm = vectorizer.transform(texts)
+    doc_topic = model.transform(dtm)
+    dominant_topics = np.argmax(doc_topic, axis=1).tolist()
+    return {
+        "doc_topic_distribution": _to_native(doc_topic),
+        "dominant_topics": dominant_topics,
+    }
+
+
 def train_topic_model(
     texts: list[str],
     algorithm: str = "lda",
@@ -177,42 +225,49 @@ def train_topic_model(
     random_seed: int = 42,
     max_iter: int = 25,
     top_n_terms: int = 10,
+    *,
+    prepared: PreparedCorpusArtifact | None = None,
+    holdout_texts: list[str] | None = None,
+    embedding_provider: str = "hashing",
+    embedding_model_name: str | None = None,
+    persist_embedding_artifacts: bool = True,
 ) -> dict[str, Any]:
-    """Train an LDA or NMF topic model on ``texts``.
+    """Train LDA/NMF or an optional semantic topic family on ``texts``.
 
-    Args:
-        texts: unit/document texts to vectorize and model.
-        algorithm: ``"lda"`` (CountVectorizer + LatentDirichletAllocation) or
-            ``"nmf"`` (TfidfVectorizer + NMF).
-        n_topics: requested number of topics (capped to vocabulary size).
-        config: preprocessing config forwarded to the vectorizer factory.
-        random_seed: fixes vectorizer-independent randomness for
-            reproducibility (LDA's variational init; NMF's ``nndsvda`` init
-            is itself deterministic but the seed is still recorded).
-        max_iter: solver iteration cap.
-        top_n_terms: number of top terms to report per topic.
-
-    Returns:
-        Dict with ``topics`` (id + top_terms with weights),
-        ``doc_topic_distribution``, ``dominant_topics``, ``diagnostics``
-        (``topic_diversity``, ``top_term_overlap``, and ``perplexity`` for
-        LDA), plus the fitted ``vectorizer``/``model`` for persistence.
+    Classical ``lda`` / ``nmf`` remain the default path. ``semantic_stack`` uses
+    the decomposed embedding → reduction → clustering → c-TF-IDF pipeline.
+    ``bertopic`` requires the optional ``bertopic`` package.
     """
     algorithm = algorithm.lower()
+    if algorithm in SEMANTIC_ALGORITHMS:
+        return _train_semantic_topic_model(
+            texts,
+            algorithm=algorithm,
+            n_topics=n_topics,
+            random_seed=random_seed,
+            top_n_terms=top_n_terms,
+            prepared=prepared,
+            embedding_provider=embedding_provider,
+            embedding_model_name=embedding_model_name,
+            persist_embedding_artifacts=persist_embedding_artifacts,
+        )
     if algorithm not in ALGORITHMS:
         raise ValueError(
-            f"Unsupported topic model algorithm: {algorithm!r}; expected one of {ALGORITHMS}"
+            f"Unsupported topic model algorithm: {algorithm!r}; expected one of {ALL_ALGORITHMS}"
         )
 
-    if not texts:
+    modeling_texts = _modeling_texts(texts, prepared)
+    if not modeling_texts:
         raise ValueError("texts must be non-empty to train a topic model")
+
+    config = _resolve_modeling_config(config, prepared)
 
     if algorithm == "lda":
         vectorizer = build_count_vectorizer(config)
     else:
         vectorizer = build_tfidf_vectorizer(config)
 
-    dtm = vectorizer.fit_transform(texts)
+    dtm = vectorizer.fit_transform(modeling_texts)
     feature_names = list(vectorizer.get_feature_names_out())
 
     if dtm.shape[1] == 0:
@@ -245,13 +300,18 @@ def train_topic_model(
     for topic_id in range(effective_n_topics):
         weights = components[topic_id]
         top_indices = np.argsort(-weights)[:top_n_terms]
-        top_terms = [
-            {"term": feature_names[idx], "weight": float(weights[idx])} for idx in top_indices
-        ]
-        topics.append({"topic_id": topic_id, "top_terms": top_terms})
+        topics.append(
+            {
+                "topic_id": topic_id,
+                "top_terms": [
+                    {"term": feature_names[idx], "weight": float(weights[idx])}
+                    for idx in top_indices
+                    if weights[idx] > 0
+                ],
+            }
+        )
 
     dominant_topics = np.argmax(doc_topic, axis=1).tolist()
-
     coherence = topic_coherence_npmi(dtm, topics, feature_names, top_n=top_n_terms)
     diagnostics: dict[str, Any] = {
         "topic_diversity": _topic_diversity(topics, top_n=top_n_terms),
@@ -262,9 +322,13 @@ def train_topic_model(
     }
     if perplexity is not None:
         diagnostics["perplexity"] = perplexity
+        if holdout_texts:
+            holdout_dtm = vectorizer.transform(holdout_texts)
+            diagnostics["holdout_perplexity"] = float(model.perplexity(holdout_dtm))
 
     return {
         "algorithm": algorithm,
+        "family": "classical",
         "n_topics": effective_n_topics,
         "random_seed": random_seed,
         "topics": topics,
@@ -277,6 +341,124 @@ def train_topic_model(
     }
 
 
+def _train_semantic_topic_model(
+    texts: list[str],
+    *,
+    algorithm: str,
+    n_topics: int,
+    random_seed: int,
+    top_n_terms: int,
+    prepared: PreparedCorpusArtifact | None,
+    embedding_provider: str,
+    embedding_model_name: str | None,
+    persist_embedding_artifacts: bool,
+) -> dict[str, Any]:
+    modeling_texts = _modeling_texts(texts, prepared)
+    if not modeling_texts:
+        raise ValueError("texts must be non-empty to train a topic model")
+
+    from backend.modules.text_research.infrastructure.topic_engines import get_topic_engine
+
+    engine_name = "bertopic" if algorithm == "bertopic" else "semantic_stack"
+    engine = get_topic_engine(engine_name)
+    fitted = engine.fit(
+        modeling_texts,
+        n_topics=n_topics,
+        nr_topics=n_topics,
+        random_seed=random_seed,
+        top_n_terms=top_n_terms,
+        embedding_provider=embedding_provider,
+        embedding_model_name=embedding_model_name,
+        persist_embedding_artifacts=persist_embedding_artifacts,
+    )
+
+    if engine_name == "bertopic":
+        labels = [int(x) for x in fitted.get("topics") or []]
+        # BERTopic topic info when available
+        topics: list[dict[str, Any]] = []
+        model = fitted.get("model")
+        if model is not None and hasattr(model, "get_topics"):
+            for topic_id, terms in model.get_topics().items():
+                if int(topic_id) < 0:
+                    continue
+                topics.append(
+                    {
+                        "topic_id": int(topic_id),
+                        "top_terms": [
+                            {"term": str(term), "weight": float(weight)}
+                            for term, weight in list(terms)[:top_n_terms]
+                        ],
+                    }
+                )
+        notes = list(fitted.get("notes") or [])
+        components = {"engine": "bertopic"}
+        availability = {"bertopic": True}
+    else:
+        labels = [int(x) for x in fitted.get("labels") or []]
+        topics = list(fitted.get("topics") or [])
+        notes = list(fitted.get("notes") or [])
+        components = dict(fitted.get("components") or {})
+        availability = dict(fitted.get("availability") or {})
+        model = getattr(engine, "_pipeline", None)
+
+    topic_ids = sorted({int(t.get("topic_id", i)) for i, t in enumerate(topics)})
+    if not topic_ids and labels:
+        topic_ids = sorted({lab for lab in labels if lab >= 0})
+    if not topic_ids:
+        topic_ids = list(range(max(1, n_topics)))
+    id_to_col = {topic_id: index for index, topic_id in enumerate(topic_ids)}
+    n_cols = len(topic_ids)
+    doc_topic = np.zeros((len(modeling_texts), n_cols), dtype=float)
+    dominant: list[int] = []
+    for row, label in enumerate(labels):
+        if label in id_to_col:
+            col = id_to_col[label]
+            doc_topic[row, col] = 1.0
+            dominant.append(col)
+        elif n_cols:
+            doc_topic[row, :] = 1.0 / n_cols
+            dominant.append(int(np.argmax(doc_topic[row])))
+        else:
+            dominant.append(0)
+
+    # Remap topic_id to contiguous indices for UI consistency with LDA/NMF.
+    remapped_topics = []
+    for topic in topics:
+        old_id = int(topic.get("topic_id", 0))
+        remapped_topics.append(
+            {
+                "topic_id": id_to_col.get(old_id, old_id),
+                "top_terms": topic.get("top_terms") or [],
+            }
+        )
+    if not remapped_topics:
+        remapped_topics = [{"topic_id": i, "top_terms": []} for i in range(n_cols)]
+
+    diagnostics = {
+        "topic_diversity": _topic_diversity(remapped_topics, top_n=top_n_terms),
+        "top_term_overlap": _top_term_overlap(remapped_topics, top_n=top_n_terms),
+        "family": "semantic",
+        "components": components,
+        "availability": availability,
+        "notes": notes,
+    }
+    return {
+        "algorithm": algorithm,
+        "family": "semantic",
+        "n_topics": n_cols,
+        "topics": remapped_topics,
+        "doc_topic_distribution": _to_native(doc_topic),
+        "dominant_topics": dominant,
+        "diagnostics": diagnostics,
+        "feature_names": [],
+        "vectorizer": {"type": "semantic_passthrough", "components": components},
+        "model": model if model is not None else fitted,
+        "notes": notes,
+        "components": components,
+    }
+
+
+
 def k_sweep(
     texts: list[str],
     k_values: list[int],
@@ -286,6 +468,8 @@ def k_sweep(
     random_seed: int = 42,
     max_iter: int = 25,
     top_n_terms: int = 10,
+    prepared: PreparedCorpusArtifact | None = None,
+    holdout_texts: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Fit multiple ``n_topics`` values and return a diagnostics table (§40/§42).
 
@@ -308,6 +492,8 @@ def k_sweep(
                 random_seed=random_seed,
                 max_iter=max_iter,
                 top_n_terms=top_n_terms,
+                prepared=prepared,
+                holdout_texts=holdout_texts,
             )
         except ValueError as exc:
             rows.append({"requested_n_topics": k, "status": "not_evaluable", "reason": str(exc)})
@@ -326,20 +512,19 @@ def k_sweep(
     return rows
 
 
+def _jaccard_similarity(a: set[str], b: set[str]) -> float:
+    union = a | b
+    return (len(a & b) / len(union)) if union else 0.0
+
+
 def _greedy_topic_match(
     term_sets_a: list[set[str]], term_sets_b: list[set[str]]
 ) -> tuple[list[dict[str, Any]], float]:
-    """Greedy one-to-one topic matching across two runs by descending Jaccard.
-
-    Not a global optimum (that would be a linear assignment problem), but a
-    fast, auditable approximation adequate for comparing a handful of topics.
-    """
+    """Greedy one-to-one topic matching across two runs by descending Jaccard."""
     candidates: list[tuple[float, int, int]] = []
     for i, a in enumerate(term_sets_a):
         for j, b in enumerate(term_sets_b):
-            union = a | b
-            jaccard = (len(a & b) / len(union)) if union else 0.0
-            candidates.append((jaccard, i, j))
+            candidates.append((_jaccard_similarity(a, b), i, j))
     candidates.sort(key=lambda item: -item[0])
 
     used_a: set[int] = set()
@@ -355,6 +540,109 @@ def _greedy_topic_match(
     return matching, mean_jaccard
 
 
+def _topic_word_vectors(
+    topics: list[dict[str, Any]],
+    *,
+    top_n: int = 10,
+) -> tuple[list[np.ndarray], list[str]]:
+    """Build aligned sparse weight vectors over the union of top terms."""
+    vocab: dict[str, int] = {}
+    for topic in topics:
+        for item in topic.get("top_terms", [])[:top_n]:
+            term = item.get("term")
+            if term and term not in vocab:
+                vocab[term] = len(vocab)
+    if not vocab:
+        return [], []
+
+    vectors: list[np.ndarray] = []
+    for topic in topics:
+        vec = np.zeros(len(vocab), dtype=float)
+        for item in topic.get("top_terms", [])[:top_n]:
+            term = item.get("term")
+            if term in vocab:
+                vec[vocab[term]] = float(item.get("weight", 1.0))
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec = vec / norm
+        vectors.append(vec)
+    return vectors, list(vocab.keys())
+
+
+def _cosine_similarity_vectors(a: np.ndarray, b: np.ndarray) -> float:
+    if a.size == 0 or b.size == 0:
+        return 0.0
+    denom = float(np.linalg.norm(a) * np.linalg.norm(b))
+    if denom == 0:
+        return 0.0
+    return float(np.dot(a, b) / denom)
+
+
+def match_topics_hungarian(
+    terms_a: list[set[str]],
+    terms_b: list[set[str]],
+    *,
+    topic_vectors_a: list[np.ndarray] | None = None,
+    topic_vectors_b: list[np.ndarray] | None = None,
+) -> tuple[list[dict[str, Any]], float]:
+    """One-to-one topic matching via Hungarian assignment on Jaccard distance."""
+    from scipy.optimize import linear_sum_assignment
+
+    n_a = len(terms_a)
+    n_b = len(terms_b)
+    if n_a == 0 or n_b == 0:
+        return [], 0.0
+
+    n = max(n_a, n_b)
+    cost = np.ones((n, n), dtype=float)
+    for i in range(n_a):
+        for j in range(n_b):
+            cost[i, j] = 1.0 - _jaccard_similarity(terms_a[i], terms_b[j])
+
+    row_ind, col_ind = linear_sum_assignment(cost)
+    matching: list[dict[str, Any]] = []
+    for i, j in zip(row_ind, col_ind, strict=False):
+        if i < n_a and j < n_b:
+            entry: dict[str, Any] = {
+                "topic_a": int(i),
+                "topic_b": int(j),
+                "jaccard": float(1.0 - cost[i, j]),
+            }
+            if (
+                topic_vectors_a is not None
+                and topic_vectors_b is not None
+                and i < len(topic_vectors_a)
+                and j < len(topic_vectors_b)
+            ):
+                entry["topic_word_cosine"] = _cosine_similarity_vectors(
+                    topic_vectors_a[i], topic_vectors_b[j]
+                )
+            matching.append(entry)
+    mean_jaccard = float(np.mean([m["jaccard"] for m in matching])) if matching else 0.0
+    return matching, mean_jaccard
+
+
+def document_distribution_similarity(
+    doc_topic_a: np.ndarray,
+    doc_topic_b: np.ndarray,
+    matching: list[dict[str, Any]],
+) -> float | None:
+    """Cosine similarity between mean doc-topic vectors after Hungarian alignment."""
+    if doc_topic_a.size == 0 or doc_topic_b.size == 0 or not matching:
+        return None
+
+    aligned_a = np.zeros_like(doc_topic_a)
+    for pair in matching:
+        i = int(pair["topic_a"])
+        j = int(pair["topic_b"])
+        if i < doc_topic_a.shape[1] and j < doc_topic_b.shape[1]:
+            aligned_a[:, i] = doc_topic_b[:, j]
+
+    mean_a = doc_topic_a.mean(axis=0)
+    mean_b = aligned_a.mean(axis=0)
+    return _cosine_similarity_vectors(mean_a, mean_b)
+
+
 def seed_stability(
     texts: list[str],
     seeds: list[int],
@@ -364,12 +652,13 @@ def seed_stability(
     config: dict[str, Any] | None = None,
     max_iter: int = 25,
     top_n_terms: int = 10,
+    prepared: PreparedCorpusArtifact | None = None,
 ) -> dict[str, Any]:
-    """Multi-seed topic stability (§40): pairwise Jaccard + greedy topic matching.
+    """Multi-seed topic stability (§40): pairwise Jaccard + Hungarian matching.
 
     Trains one model per seed (same texts/algorithm/K/config) and reports,
     for every seed pair, the best-match Jaccard overlap between each run's
-    topics (via :func:`_greedy_topic_match`). A low mean stability score
+    topics (via :func:`match_topics_hungarian`). A low mean stability score
     means the topic solution is sensitive to random initialization — an
     important caveat before treating any single run's topics as "the" model.
     """
@@ -386,22 +675,50 @@ def seed_stability(
             random_seed=seed,
             max_iter=max_iter,
             top_n_terms=top_n_terms,
+            prepared=prepared,
         )
         term_sets = [{t["term"] for t in topic["top_terms"]} for topic in result["topics"]]
-        runs.append({"seed": seed, "term_sets": term_sets, "diagnostics": result["diagnostics"]})
+        topic_vectors, _ = _topic_word_vectors(result["topics"], top_n=top_n_terms)
+        runs.append(
+            {
+                "seed": seed,
+                "term_sets": term_sets,
+                "topic_vectors": topic_vectors,
+                "doc_topic": np.asarray(result["doc_topic_distribution"], dtype=float),
+                "diagnostics": result["diagnostics"],
+            }
+        )
 
     pairwise: list[dict[str, Any]] = []
     for i in range(len(runs)):
         for j in range(i + 1, len(runs)):
-            matching, mean_jaccard = _greedy_topic_match(runs[i]["term_sets"], runs[j]["term_sets"])
-            pairwise.append(
-                {
-                    "seed_a": runs[i]["seed"],
-                    "seed_b": runs[j]["seed"],
-                    "mean_best_match_jaccard": mean_jaccard,
-                    "matching": matching,
-                }
+            matching, mean_jaccard = match_topics_hungarian(
+                runs[i]["term_sets"],
+                runs[j]["term_sets"],
+                topic_vectors_a=runs[i]["topic_vectors"] or None,
+                topic_vectors_b=runs[j]["topic_vectors"] or None,
             )
+            pair_entry: dict[str, Any] = {
+                "seed_a": runs[i]["seed"],
+                "seed_b": runs[j]["seed"],
+                "mean_best_match_jaccard": mean_jaccard,
+                "matching": matching,
+                "matching_method": "hungarian",
+            }
+            if runs[i]["topic_vectors"] and runs[j]["topic_vectors"]:
+                cosines = [
+                    m["topic_word_cosine"]
+                    for m in matching
+                    if "topic_word_cosine" in m
+                ]
+                if cosines:
+                    pair_entry["mean_topic_word_cosine"] = float(np.mean(cosines))
+            doc_sim = document_distribution_similarity(
+                runs[i]["doc_topic"], runs[j]["doc_topic"], matching
+            )
+            if doc_sim is not None:
+                pair_entry["document_distribution_similarity"] = doc_sim
+            pairwise.append(pair_entry)
 
     mean_stability = (
         float(np.mean([p["mean_best_match_jaccard"] for p in pairwise])) if pairwise else None
@@ -412,10 +729,12 @@ def seed_stability(
         "seeds": seeds,
         "pairwise": pairwise,
         "mean_stability_jaccard": mean_stability,
+        "matching_method": "hungarian",
         "per_seed_diagnostics": [{"seed": r["seed"], **r["diagnostics"]} for r in runs],
         "note": (
             "Stability measured as best-match top-term Jaccard overlap across seed "
             "pairs (0 = no seed produced comparable topics, 1 = identical top terms). "
+            "Topic alignment uses Hungarian assignment on Jaccard distance. "
             "This is a stability diagnostic, not evidence that a topic represents a "
             "real-world construct."
         ),

@@ -1,15 +1,14 @@
-"""Deterministic corpus segmentation into `TextUnit`s, tracked via `AnalysisRun`.
-
-Large corpora are segmented asynchronously via Celery; small corpora are
-segmented synchronously within the request so the demo feels immediate.
-"""
+"""Deterministic corpus segmentation into `TextUnit`s, tracked via `AnalysisRun`."""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from backend.core.config import settings
 from backend.modules.text_research.application.access import ResearchAccessMixin
+from backend.modules.text_research.application.analysis_executor import (
+    attach_run_identity,
+    build_spec_from_request,
+)
 from backend.modules.text_research.application.corpus_service import CorpusService
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import AnalysisRun, TextUnit, dumps, loads
@@ -36,11 +35,19 @@ class SegmentationService(ResearchAccessMixin):
                 status=AnalysisRunStatus.QUEUED.value,
                 progress_stage="queued",
                 parameters_json=dumps(
-                    {
-                        "unit_type": unit_type,
-                        "document_count": len(documents),
-                        "language_aware": True,
-                    }
+                    attach_run_identity(
+                        {
+                            "unit_type": unit_type,
+                            "document_count": len(documents),
+                            "language_aware": True,
+                        },
+                        build_spec_from_request(
+                            "frequencies",
+                            corpus_id,
+                            unit_type=unit_type,
+                            analysis_parameters={"mode": "segmentation"},
+                        ),
+                    )
                 ),
                 metrics_json=dumps(
                     {
@@ -55,12 +62,11 @@ class SegmentationService(ResearchAccessMixin):
         )
         await self.db.commit()
 
-        if len(documents) > settings.RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD:
-            from backend.modules.text_research.workers import queue_segmentation
+        from backend.modules.text_research.application.execution_service import ExecutionService
 
-            queue_segmentation(run_id=run.id, user_id=user_id)
-        else:
-            await self.execute_segmentation(run.id)
+        await ExecutionService.submit(
+            db=self.db, run=run, operation="segmentation", user_id=user_id
+        )
 
         refreshed = await self.repo.get_run(run.id)
         assert refreshed is not None
@@ -69,12 +75,13 @@ class SegmentationService(ResearchAccessMixin):
     async def execute_segmentation(self, run_id: str) -> AnalysisRun:
         """Perform the actual segmentation for a queued/running AnalysisRun.
 
-        Safe to call from a Celery worker (its own DB session) or synchronously
-        from `start_segmentation` for small corpora.
+        Called by the background worker using its own DB session.
         """
         run = await self.repo.get_run(run_id)
         if run is None:
             raise ValueError(f"AnalysisRun {run_id} not found")
+        if run.status in {AnalysisRunStatus.COMPLETED.value, AnalysisRunStatus.CANCELLED.value}:
+            return run
 
         params = loads(run.parameters_json, {})
         unit_type = params.get("unit_type")

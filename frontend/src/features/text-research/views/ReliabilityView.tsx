@@ -48,6 +48,7 @@ import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { MatrixHeatmap, MetricCards, ReliabilityComparisonChart, ResultsInspector } from "../components/ResearchCharts";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
+import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval } from "../runPolling";
 import type { AnnotationLabel } from "../types";
 
@@ -269,6 +270,7 @@ export default function ReliabilityView() {
         ["agreement", "adjudication", "history"] as const,
         "agreement"
     );
+    const sseConnected = useRunEvents(runId, ctx.projectId);
 
     const reliabilityReady =
         Boolean(ctx.selectedCorpusId) &&
@@ -279,7 +281,7 @@ export default function ReliabilityView() {
         queryKey: queryKeys.textResearch.run(runId ?? ""),
         queryFn: () => getRun(runId!),
         enabled: Boolean(runId),
-        refetchInterval: activeRunRefetchInterval,
+        refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });
 
     const disagreementsQuery = useQuery({

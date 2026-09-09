@@ -35,6 +35,7 @@ dependencies = [
     "pgvector",
     "numpy",
     "pandas",
+    "pyarrow",
     "scipy",
     "scikit-learn",
     "joblib",
@@ -44,6 +45,14 @@ dependencies = [
     "simplemma",
     "statsmodels",
 ]
+
+[project.optional-dependencies]
+nlp = ["spacy>=3.7"]
+bertopic = ["bertopic", "umap-learn", "hdbscan"]
+transformers = ["torch", "transformers"]
+
+[project.scripts]
+text-research = "backend.modules.text_research.cli:main"
 
 [tool.ruff]
 line-length = 100

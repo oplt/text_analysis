@@ -49,6 +49,7 @@ class AnalysisRunType(StrEnum):
     READABILITY = "readability"
     STATISTICAL_MODEL = "statistical_model"
     MEASUREMENT_VALIDATION = "measurement_validation"
+    DRIFT_MONITORING = "drift_monitoring"
 
 
 class AnalysisRunStatus(StrEnum):
@@ -71,6 +72,12 @@ class ModelFamily(StrEnum):
     MULTINOMIAL_NB = "multinomial_nb"
     COMPLEMENT_NB = "complement_nb"
     SGD_CLASSIFIER = "sgd_classifier"
+
+
+class ModelLifecycleStatus(StrEnum):
+    CANDIDATE = "candidate"
+    APPROVED = "approved"
+    DEPRECATED = "deprecated"
 
 
 class TopicAlgorithm(StrEnum):
@@ -102,3 +109,9 @@ class SamplingLevel(StrEnum):
 
     UNIT = "unit"
     DOCUMENT = "document"
+
+
+class ResearchArtifactKind(StrEnum):
+    """Discriminator for persisted research artifacts that wrap model outputs."""
+
+    PREDICTION_SET = "prediction_set"

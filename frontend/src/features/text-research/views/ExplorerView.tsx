@@ -20,13 +20,27 @@ import {
 } from "../../../api/textResearch";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { PageTabs } from "../../../components/ui/PageTabs";
+import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { MatrixHeatmap, ResultsInspector, ScientificLineChart } from "../components/ResearchCharts";
 import { ResearchResultsTable } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
+import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
+import MeasurementComparisonView from "./MeasurementComparisonView";
+import StatisticalModelView from "./StatisticalModelView";
+
+const EXPLORER_TABS = ["prevalence", "statistical", "measurement"] as const;
+type ExplorerTab = (typeof EXPLORER_TABS)[number];
+
+const EXPLORER_TAB_ITEMS: Array<{ value: ExplorerTab; label: string }> = [
+    { value: "prevalence", label: "Prevalence" },
+    { value: "statistical", label: "Statistical model" },
+    { value: "measurement", label: "Measurement" },
+];
 
 const GROUP_BY_OPTIONS = [
     "organization",
@@ -130,6 +144,8 @@ export default function ExplorerView() {
     const [publicationType, setPublicationType] = useState("");
     const [runId, setRunId] = useState<string | null>(null);
     const [selection, setSelection] = useState<CellSelection | null>(null);
+    const [tab, setTab] = useTabQueryParam(EXPLORER_TABS, "prevalence");
+    const sseConnected = useRunEvents(runId, ctx.projectId);
 
     const classifiersQuery = useQuery({
         queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
@@ -141,7 +157,7 @@ export default function ExplorerView() {
         queryKey: queryKeys.textResearch.run(runId ?? ""),
         queryFn: () => getRun(runId!),
         enabled: Boolean(runId),
-        refetchInterval: activeRunRefetchInterval,
+        refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });
 
     const prevalenceMutation = useMutation({
@@ -207,6 +223,18 @@ export default function ExplorerView() {
 
     return (
         <Stack spacing={2}>
+            <PageTabs
+                value={tab}
+                onChange={setTab}
+                tabs={EXPLORER_TAB_ITEMS}
+                ariaLabel="Explorer workflow"
+            />
+
+            {tab === "statistical" ? <StatisticalModelView /> : null}
+            {tab === "measurement" ? <MeasurementComparisonView /> : null}
+
+            {tab === "prevalence" ? (
+            <>
             <Alert severity="info">
                 This explorer shows prevalence patterns and supporting passages only.
                 Interpretation belongs to the researcher — the tool does not impose comparison
@@ -549,6 +577,8 @@ export default function ExplorerView() {
                     </Stack>
                 ) : null}
             </Drawer>
+            </>
+            ) : null}
         </Stack>
     );
 }

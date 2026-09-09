@@ -61,12 +61,15 @@ def pos_tag_histogram(
 
 
 def describe_linguistic_capabilities() -> dict[str, Any]:
+    from backend.modules.text_research.infrastructure.spacy_engine import SpacyLinguisticEngine
+
     return {
         "pos_available": linguistic_features_available(),
+        "spacy_engine_available": SpacyLinguisticEngine.available(),
         "lemma_via_preprocessing": True,
-        "dependency_frequencies": False,
+        "dependency_frequencies": SpacyLinguisticEngine.available(),
         "notes": [
-            "POS/dependency require optional spaCy.",
+            "POS/dependency require optional spaCy (see SpacyLinguisticEngine).",
             "Lemmatization is available through preprocessing when simplemma supports the language.",
         ],
     }

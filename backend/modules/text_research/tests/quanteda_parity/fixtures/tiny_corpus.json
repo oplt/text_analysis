@@ -1,63 +1,44 @@
 {
+  "corpus": [
+    "alpha beta gamma",
+    "beta delta"
+  ],
   "config": {
+    "language": "en",
+    "unicode_normalization": "NFC",
+    "fix_encoding": false,
     "lowercase": true,
     "remove_punctuation": true,
+    "remove_numbers": false,
     "remove_stopwords": false,
+    "preserve_negation": true,
     "stemming": false,
+    "lemmatization": false,
     "ngram_min": 1,
-    "ngram_max": 1
+    "ngram_max": 1,
+    "min_df": 1,
+    "max_df": 1.0,
+    "max_features": null,
+    "custom_stopwords": []
   },
-  "corpus": [
-    "Education policy shapes schools and learning.",
-    "Schools need learning resources and policy support."
-  ],
   "tokens": [
     [
-      "education",
-      "policy",
-      "shapes",
-      "schools",
-      "and",
-      "learning"
+      "alpha",
+      "beta",
+      "gamma"
     ],
     [
-      "schools",
-      "need",
-      "learning",
-      "resources",
-      "and",
-      "policy",
-      "support"
+      "beta",
+      "delta"
     ]
   ],
   "dfm": {
-    "dimensions": {
-      "units": 2,
-      "features": 9
-    },
-    "n_features": 9,
-    "feature_names": [
-      "and",
-      "education",
-      "learning",
-      "need",
-      "policy",
-      "resources",
-      "schools",
-      "shapes",
-      "support"
-    ],
+    "n_features": 4,
     "vocabulary_sorted": [
-      "and",
-      "education",
-      "learning",
-      "need",
-      "policy",
-      "resources",
-      "schools",
-      "shapes",
-      "support"
-    ],
-    "nnz": 13
+      "alpha",
+      "beta",
+      "delta",
+      "gamma"
+    ]
   }
 }

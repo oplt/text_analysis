@@ -189,6 +189,13 @@ class CorpusService(ResearchAccessMixin):
             offset=offset,
         )
 
+    async def metadata_facets(
+        self, corpus_id: str, *, user_id: str
+    ) -> dict[str, list[dict[str, str | int]]]:
+        """Return SQL-aggregated metadata facets for an accessible corpus."""
+        await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        return await self.repo.list_document_metadata_facets(corpus_id)
+
     async def paginate_documents(
         self,
         corpus_id: str,

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from time import perf_counter
 
-from celery.signals import task_failure, task_postrun, task_prerun, worker_ready
+from celery.signals import task_failure, task_postrun, task_prerun, worker_process_init, worker_ready
 
 from backend.core.config import settings
 from backend.core.logging import setup_logging
@@ -15,10 +15,38 @@ logger = logging.getLogger("backend.worker")
 _task_started_at: dict[str, float] = {}
 
 
+@worker_process_init.connect
+def configure_worker_process(**_kwargs) -> None:
+    """Per-child init: cap BLAS/OpenMP/sklearn/joblib to avoid nested oversubscription."""
+    from backend.workers.parallelism import configure_worker_parallelism
+
+    report = configure_worker_parallelism(force=True)
+    logger.info(
+        "worker_process_init parallelism applied=%s blas=%s sklearn_n_jobs=%s",
+        report.get("applied"),
+        report.get("blas_threads"),
+        report.get("sklearn_n_jobs"),
+    )
+
+
 @worker_ready.connect
 def configure_worker_logging(**_kwargs) -> None:
     setup_logging()
-    logger.info("Celery worker ready broker=%s", settings.celery_broker_url.split("@")[-1])
+    from backend.workers.parallelism import configure_worker_parallelism, describe_parallelism_policy
+
+    # Solo / threads pools may not emit worker_process_init the same way; apply once.
+    configure_worker_parallelism(force=False)
+    policy = describe_parallelism_policy()
+    logger.info(
+        "Celery worker ready broker=%s parallelism=%s",
+        settings.celery_broker_url.split("@")[-1],
+        {
+            "blas_threads": policy["defaults"]["blas_threads"],
+            "sklearn_n_jobs": policy["defaults"]["sklearn_n_jobs"],
+            "joblib_n_jobs": policy["defaults"]["joblib_n_jobs"],
+            "enabled": policy["defaults"]["enabled"],
+        },
+    )
 
 
 @task_prerun.connect

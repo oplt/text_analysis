@@ -131,6 +131,40 @@ Celery tasks in `backend/workers/tasks.py`:
 Triggered when corpora exceed `RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD` (default 50)
 or when `run_async=true` on training endpoints.
 
+### Nested parallelism (CPU workers)
+
+Research CPU work must not nest Celery processes × sklearn/joblib workers ×
+BLAS/OpenMP threads. Defaults keep **one thread per native pool inside each
+worker process**; scale out with Celery `--concurrency` instead.
+
+| Setting | Default | Effect |
+|---------|---------|--------|
+| `RESEARCH_APPLY_THREAD_LIMITS` | `true` | Master switch |
+| `RESEARCH_WORKER_BLAS_THREADS` | `1` | Sets `OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, `MKL_NUM_THREADS`, `NUMEXPR_NUM_THREADS`, `VECLIB_MAXIMUM_THREADS`, `BLIS_NUM_THREADS` |
+| `RESEARCH_SKLEARN_N_JOBS` | `1` | Default/clamp for sklearn `n_jobs` (negative/`-1` clamped) |
+| `RESEARCH_JOBLIB_N_JOBS` | `1` | Default/clamp for joblib + `LOKY_MAX_CPU_COUNT` |
+| `CELERY_CONCURRENCY` | `2` (Procfile.dev) | Worker process count |
+
+Applied on Celery `worker_process_init` / `worker_ready` via
+`backend/workers/parallelism.py`, and again at the start of research sync
+job entrypoints (covers eager in-process runs).
+
+Recommended for a dedicated `research_cpu` worker:
+
+```bash
+CELERY_CONCURRENCY=4          # ≈ physical cores (or slightly below)
+RESEARCH_WORKER_BLAS_THREADS=1
+RESEARCH_SKLEARN_N_JOBS=1
+RESEARCH_JOBLIB_N_JOBS=1
+```
+
+Inspect the active policy:
+
+```python
+from backend.workers.parallelism import describe_parallelism_policy
+print(describe_parallelism_policy())
+```
+
 ## Migrations
 
 `backend/alembic/versions/b4e8c2f1a903_add_text_research_tables.py`
@@ -163,6 +197,21 @@ export E2E_TEST_EMAIL=you@example.com
 export E2E_TEST_PASSWORD=your-password
 export E2E_API_URL=http://localhost:8000
 npm run test:e2e -- e2e/research-flow.spec.ts
+```
+
+CI runs the research Playwright workflow against the **current commit SHA** in
+`.github/workflows/ci.yml` (API + Postgres + Redis + Vite). Quality-gate jobs
+also cover backend lint/tests, frontend lint/tests/build, Alembic upgrade, and
+1k/10k scale benchmarks (100k opt-in via workflow_dispatch).
+
+Local mirrors:
+
+```bash
+make check          # ruff + eslint + tsc
+make test-backend
+make test-frontend
+make bench-1k
+make ci-local       # check + unit tests + 1k bench for $(git rev-parse HEAD)
 ```
 
 `e2e/research-flow.spec.ts` exercises the full pipeline via API (demo seed → segment →

@@ -72,6 +72,6 @@ class MeasurementValidationService(ResearchAccessMixin):
             results_json=dumps(comparison),
             created_by=user_id,
             started_at=_utcnow(),
-            finished_at=_utcnow(),
+            completed_at=_utcnow(),
         )
         return await self.repo.create_run(run)

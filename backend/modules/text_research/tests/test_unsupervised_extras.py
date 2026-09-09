@@ -44,8 +44,14 @@ class ClusteringTests(unittest.TestCase):
 
 
 class EmbeddingStubTests(unittest.TestCase):
-    def test_unavailable_provider_raises(self):
+    def test_default_provider_is_hashing_baseline(self):
         provider = embeddings.get_default_embedding_provider()
+        vectors = provider.embed_texts(["hello world"])
+        self.assertEqual(provider.name, "hashing")
+        self.assertEqual(len(vectors), 1)
+
+    def test_unavailable_provider_raises(self):
+        provider = embeddings.get_embedding_provider("unavailable")
         with self.assertRaises(ValueError):
             provider.embed_texts(["hello"])
 

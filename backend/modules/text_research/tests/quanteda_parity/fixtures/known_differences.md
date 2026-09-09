@@ -1,13 +1,30 @@
-# Quanteda parity — known differences
+# Quanteda parity: known differences
 
-Production remains Python-native. Fixtures store Python reference outputs for
-the research tokenizer/DFM path (regression parity). R is not required in CI.
+## Intentional differences
 
-Intentional differences vs R `quanteda` when compared externally:
+- Python tokenizer uses a Unicode-aware regex (`unicode_regex`) rather than
+  quanteda's `tokens()` defaults; punctuation and hyphen handling may diverge
+  on edge cases.
+- Stopword lists come from language profiles in this codebase, not quanteda's
+  built-in `stopwords()` objects.
+- Stemming/lemmatization backends differ (Snowball/simplemma vs quanteda's
+  optional backends).
 
-* Unicode / punctuation class handling may differ from `tokens()`.
-* Stopword lists come from research language profiles, not quanteda defaults.
-* Stemming uses `snowballstemmer` and can diverge on edge cases.
-* TF-IDF follows our weighting module / sklearn-compatible smooth IDF unless configured.
-* Dictionary matching is hierarchical user-defined; quanteda wildcards are not fully mirrored.
-* Compare floating-point weights with tolerances; bit-identical matrices are not required.
+## Tolerances
+
+Document acceptable drift tolerances here when R and Python disagree on edge cases.
+
+- Golden Python fixtures in `tiny_corpus.json` are the CI source of truth for
+  default preprocessing.
+- Optional R parity (`QUANTEDA_R_PARITY=1`) compares regenerated quanteda
+  tokens/DFM JSON against the Python fixtures and documents any residual drift
+  here rather than failing default CI when R is absent.
+
+## CI note
+
+- Default GitHub Actions jobs do **not** require R or quanteda.
+- The optional workflow `.github/workflows/quanteda-parity.yml` runs on
+  `workflow_dispatch` (and an optional schedule) inside `rocker/r-ver`,
+  installs quanteda, sets `QUANTEDA_R_PARITY=1`, and executes only
+  `test_r_parity_optional.py`.
+- When R is unavailable locally, that test module skips cleanly.

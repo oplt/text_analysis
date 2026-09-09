@@ -21,8 +21,16 @@ from datetime import UTC, datetime
 from typing import Any
 
 from backend.modules.text_research.application.access import ResearchAccessMixin
+from backend.modules.text_research.application.analysis_executor import (
+    attach_run_identity,
+    build_spec_from_request,
+)
 from backend.modules.text_research.application.dataset_builder_service import DatasetBuilderService
-from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
+from backend.modules.text_research.domain.enums import (
+    AnalysisRunStatus,
+    AnalysisRunType,
+    ModelLifecycleStatus,
+)
 from backend.modules.text_research.domain.models import AnalysisRun, TrainedModel, dumps, loads
 from backend.modules.text_research.infrastructure import model_storage
 from backend.modules.text_research.infrastructure import classifiers
@@ -34,6 +42,8 @@ from backend.modules.text_research.infrastructure.classifiers import (
     grouped_train_val_test_split,
     infer_task_type,
 )
+from backend.modules.text_research.infrastructure.error_analysis import classifier_error_report
+from backend.modules.text_research.infrastructure.prepared_corpus_builder import prepare_texts_cached
 from backend.modules.text_research.infrastructure.preprocessing import PreprocessingConfig
 
 
@@ -83,8 +93,17 @@ class ClassificationService(ResearchAccessMixin):
         # §36 calibration: diagnostics always computed when proba is
         # available; recalibration method used only when a VAL set exists.
         calibration_method: str = "sigmoid",
+        validation_strategy: str = "holdout",
+        nested_cv_outer_splits: int = 5,
+        nested_cv_inner_splits: int = 3,
+        embedding_provider: str = "hashing",
+        threshold_objective: str = "f1",
+        threshold_utility_tp: float = 1.0,
+        threshold_utility_tn: float = 1.0,
+        threshold_utility_fp: float = -1.0,
+        threshold_utility_fn: float = -1.0,
         name: str | None = None,
-        run_async: bool = False,
+        run_async: bool = True,
     ) -> AnalysisRun:
         snapshot = await self.get_snapshot_or_404(snapshot_id, user_id=user_id)
         corpus = await self.get_corpus_or_404(snapshot.corpus_id, user_id=user_id)
@@ -122,9 +141,58 @@ class ClassificationService(ResearchAccessMixin):
             "n_bootstrap": n_bootstrap,
             "ci_confidence_level": ci_confidence_level,
             "calibration_method": calibration_method,
+            "validation_strategy": validation_strategy,
+            "nested_cv_outer_splits": nested_cv_outer_splits,
+            "nested_cv_inner_splits": nested_cv_inner_splits,
+            "embedding_provider": embedding_provider,
+            "threshold_objective": threshold_objective,
+            "threshold_utility_tp": threshold_utility_tp,
+            "threshold_utility_tn": threshold_utility_tn,
+            "threshold_utility_fp": threshold_utility_fp,
+            "threshold_utility_fn": threshold_utility_fn,
             "name": name,
             "split_strategy": "grouped_by_source_document",
         }
+        validation_spec = (
+            {
+                "strategy": "nested_grouped_cv",
+                "outer_splits": nested_cv_outer_splits,
+                "inner_splits": nested_cv_inner_splits,
+                "random_seed": random_seed,
+            }
+            if validation_strategy == "nested_grouped_cv"
+            else {
+                "strategy": "grouped_holdout",
+                "test_size": test_size,
+                "random_seed": random_seed,
+            }
+        )
+        spec = build_spec_from_request(
+            "classification",
+            corpus.id,
+            snapshot_id=snapshot_id,
+            preprocessing_profile_id=preprocessing_profile_id,
+            feature={
+                "type": vectorizer,
+                "ngram_range": (ngram_min, ngram_max),
+                "min_df": min_df,
+                "max_df": max_df,
+                "max_features": max_features,
+            },
+            model={
+                "family": algorithm,
+                "task_type": task_type,
+                "class_weight": class_weight,
+                "hyperparameters": {
+                    "regularization_c": regularization_c,
+                    "nb_alpha": nb_alpha,
+                    "sgd_loss": sgd_loss,
+                },
+            },
+            validation=validation_spec,
+            random_seed=random_seed,
+        )
+        params = attach_run_identity(params, spec)
         run = await self.repo.create_run(
             AnalysisRun(
                 project_id=corpus.project_id,
@@ -139,9 +207,11 @@ class ClassificationService(ResearchAccessMixin):
         await self.db.commit()
 
         if run_async:
-            from backend.modules.text_research.workers import queue_classifier_training
+            from backend.modules.text_research.application.execution_service import ExecutionService
 
-            queue_classifier_training(run_id=run.id, user_id=user_id)
+            await ExecutionService.submit(
+                db=self.db, run=run, operation="classification", user_id=user_id
+            )
         else:
             await self.execute_training(run.id)
 
@@ -153,6 +223,8 @@ class ClassificationService(ResearchAccessMixin):
         run = await self.repo.get_run(run_id)
         if run is None:
             raise ValueError(f"AnalysisRun {run_id} not found")
+        if run.status in {AnalysisRunStatus.COMPLETED.value, AnalysisRunStatus.CANCELLED.value}:
+            return run
         params = loads(run.parameters_json, {})
 
         await self.repo.update_run(
@@ -185,25 +257,6 @@ class ClassificationService(ResearchAccessMixin):
             groups = [u.corpus_document_id for u in ordered_units]
             y = [unit_labels.get(u.id, []) for u in ordered_units]
 
-            # Task type is user/config-driven (§27): honor an explicit
-            # request as-is, otherwise infer ONLY from unambiguous label
-            # shape. Never silently force multilabel.
-            task_type = infer_task_type(y, requested=params.get("task_type"))
-            if task_type != "multilabel":
-                y = flatten_single_label_targets(y)
-
-            await self.repo.update_run(run, progress_stage="splitting")
-            await self.db.commit()
-            run = await ensure_not_cancelled(self.repo, run)
-            split = grouped_train_val_test_split(
-                texts,
-                y,
-                groups,
-                test_size=params["test_size"],
-                val_size=params.get("val_size", 0.2),
-                random_seed=params["random_seed"],
-            )
-
             config: dict = PreprocessingConfig().to_dict()
             if params.get("preprocessing_profile_id"):
                 profile = await self.repo.get_preprocessing_profile(
@@ -217,6 +270,36 @@ class ClassificationService(ResearchAccessMixin):
                     "max_df": params["max_df"],
                     "max_features": params["max_features"],
                 }
+            )
+
+            prepared = prepare_texts_cached(
+                texts,
+                config,
+                corpus_id=run.corpus_id,
+                unit_type="dataset_snapshot",
+                unit_ids=[u.id for u in ordered_units],
+                document_ids=[u.corpus_document_id for u in ordered_units],
+                operation_config={"snapshot_id": params["snapshot_id"]},
+            )
+            prepared_texts = list(prepared.texts_joined)
+
+            # Task type is user/config-driven (§27): honor an explicit
+            # request as-is, otherwise infer ONLY from unambiguous label
+            # shape. Never silently force multilabel.
+            task_type = infer_task_type(y, requested=params.get("task_type"))
+            if task_type != "multilabel":
+                y = flatten_single_label_targets(y)
+
+            await self.repo.update_run(run, progress_stage="splitting")
+            await self.db.commit()
+            run = await ensure_not_cancelled(self.repo, run)
+            split = grouped_train_val_test_split(
+                prepared_texts,
+                y,
+                groups,
+                test_size=params["test_size"],
+                val_size=params.get("val_size", 0.2),
+                random_seed=params["random_seed"],
             )
 
             feature_config = FeatureConfig(
@@ -240,8 +323,32 @@ class ClassificationService(ResearchAccessMixin):
             # complete search configuration + all candidate results are
             # persisted verbatim into the training results JSON.
             hyperparameter_search_results: dict[str, Any] | None = None
+            nested_cv_results: dict[str, Any] | None = None
             applied_tuned_params: dict[str, Any] = {}
-            if params.get("tune_hyperparameters"):
+            resolved_algorithm, feature_family = classifiers.resolve_classifier_algorithm(
+                params["algorithm"]
+            )
+            if params.get("validation_strategy") == "nested_grouped_cv":
+                nested_cv_results = classifiers.nested_grouped_cv_evaluation(
+                    prepared_texts,
+                    y,
+                    groups,
+                    task_type=task_type,
+                    algorithm=params["algorithm"],
+                    feature_config=feature_config,
+                    preprocessing_config=config,
+                    label_names=label_names if task_type == "multilabel" else None,
+                    class_weight=params["class_weight"],
+                    C=params["regularization_c"],
+                    random_seed=params["random_seed"],
+                    outer_splits=params.get("nested_cv_outer_splits", 5),
+                    inner_splits=params.get("nested_cv_inner_splits", 3),
+                    tune_hyperparameters=params.get("tune_hyperparameters", False),
+                    hyperparameter_param_grid=params.get("hyperparameter_param_grid"),
+                    hyperparameter_scoring=params.get("hyperparameter_scoring", "f1_macro"),
+                    embedding_provider=params.get("embedding_provider", "hashing"),
+                )
+            if params.get("tune_hyperparameters") and params.get("validation_strategy") != "nested_grouped_cv":
                 await self.repo.update_run(run, progress_stage="hyperparameter_search")
                 await self.db.commit()
                 run = await ensure_not_cancelled(self.repo, run)
@@ -293,32 +400,82 @@ class ClassificationService(ResearchAccessMixin):
 
             await self.repo.update_run(run, progress_stage="training")
             await self.db.commit()
-            fit_result = fit_text_classifier(
-                split["X_train"],
-                split["y_train"],
-                split["X_test"],
-                split["y_test"],
-                task_type=task_type,
-                algorithm=params["algorithm"],
-                feature_config=feature_config,
-                preprocessing_config=config,
-                label_names=label_names if task_type == "multilabel" else None,
-                class_weight=params["class_weight"],
-                C=params["regularization_c"],
-                random_seed=params["random_seed"],
-                sgd_loss=params.get("sgd_loss", "log_loss"),
-                nb_alpha=params.get("nb_alpha", 1.0),
-                # §33/§35/§36: validation partition (threshold tuning +
-                # optional calibration fit) and TEST group ids (bootstrap
-                # CIs) — all additive, all no-ops with a persisted note
-                # when their prerequisite data is unavailable.
-                X_val_texts=split.get("X_val") or None,
-                y_val=split.get("y_val") or None,
-                groups_test=split["groups_test"],
-                tune_thresholds=params.get("tune_thresholds", True),
-                n_bootstrap=params.get("n_bootstrap", 200),
-                ci_confidence_level=params.get("ci_confidence_level", 0.95),
-                calibration_method=params.get("calibration_method", "sigmoid"),
+            fit_kwargs = {
+                "task_type": task_type,
+                "label_names": label_names if task_type == "multilabel" else None,
+                "class_weight": params["class_weight"],
+                "C": params["regularization_c"],
+                "random_seed": params["random_seed"],
+                "X_val_texts": split.get("X_val") or None,
+                "y_val": split.get("y_val") or None,
+                "groups_test": split["groups_test"],
+                "tune_thresholds": params.get("tune_thresholds", True),
+                "threshold_objective": params.get("threshold_objective", "f1"),
+                "threshold_utility_tp": params.get("threshold_utility_tp", 1.0),
+                "threshold_utility_tn": params.get("threshold_utility_tn", 1.0),
+                "threshold_utility_fp": params.get("threshold_utility_fp", -1.0),
+                "threshold_utility_fn": params.get("threshold_utility_fn", -1.0),
+                "n_bootstrap": params.get("n_bootstrap", 200),
+                "ci_confidence_level": params.get("ci_confidence_level", 0.95),
+                "calibration_method": params.get("calibration_method", "sigmoid"),
+            }
+            if feature_family == "embedding":
+                fit_result = classifiers.fit_embedding_text_classifier(
+                    split["X_train"],
+                    split["y_train"],
+                    split["X_test"],
+                    split["y_test"],
+                    task_type,
+                    algorithm=params["algorithm"],
+                    embedding_provider=params.get("embedding_provider", "hashing"),
+                    **fit_kwargs,
+                )
+            else:
+                fit_result = fit_text_classifier(
+                    split["X_train"],
+                    split["y_train"],
+                    split["X_test"],
+                    split["y_test"],
+                    task_type=task_type,
+                    algorithm=resolved_algorithm,
+                    feature_config=feature_config,
+                    preprocessing_config=config,
+                    sgd_loss=params.get("sgd_loss", "log_loss"),
+                    nb_alpha=params.get("nb_alpha", 1.0),
+                    **fit_kwargs,
+                )
+
+            test_unit_ids = [unit_ids[i] for i in split["test_index"]]
+            eval_data = fit_result.get("evaluation") or {}
+            metadata_by_unit: dict[str, dict[str, Any]] = {}
+            slice_fields = ["organization", "publication_year", "language", "region"]
+            test_doc_ids = sorted(set(split["groups_test"]))
+            if test_doc_ids:
+                docs = await self.repo.list_documents_by_ids(test_doc_ids)
+                doc_by_id = {doc.id: doc for doc in docs}
+                for uid, doc_id in zip(test_unit_ids, split["groups_test"], strict=True):
+                    doc = doc_by_id.get(doc_id)
+                    if doc is None:
+                        continue
+                    metadata_by_unit[str(uid)] = {
+                        "document_id": doc_id,
+                        "title": doc.title,
+                        "organization": doc.organization,
+                        "publication_year": doc.publication_year,
+                        "language": doc.language,
+                        "region": doc.region,
+                        "publication_type": doc.publication_type,
+                    }
+
+            error_analysis = classifier_error_report(
+                unit_ids=test_unit_ids,
+                y_true=eval_data.get("y_true", split["y_test"]),
+                y_pred=eval_data.get("y_pred", []),
+                y_proba=eval_data.get("y_proba"),
+                groups=split["groups_test"],
+                metadata_by_unit=metadata_by_unit or None,
+                slice_fields=slice_fields if metadata_by_unit else None,
+                label_names=fit_result["classes"],
             )
 
             await self.repo.update_run(run, progress_stage="saving")
@@ -358,6 +515,7 @@ class ClassificationService(ResearchAccessMixin):
                     vectorizer_artifact_path=vectorizer_artifact_path,
                     version=version,
                     name=params.get("name") or f"model-v{version}",
+                    lifecycle_status=ModelLifecycleStatus.CANDIDATE.value,
                     created_by=run.created_by,
                 )
             )
@@ -385,11 +543,18 @@ class ClassificationService(ResearchAccessMixin):
                         "val_groups": sorted(set(split.get("groups_val", []))),
                         "test_groups": sorted(set(split["groups_test"])),
                         "split_notes": split.get("notes", []),
+                        "split_feasibility": split.get("split_feasibility"),
+                        "corpus_checksum": prepared.corpus_checksum,
+                        "pipeline_checksum": prepared.pipeline_checksum,
+                        "analysis_spec_hash": params.get("analysis_spec_hash"),
                         # §31: complete search configuration + all
                         # candidate results (persisted verbatim, even when
                         # tuning was not requested — `None` in that case).
                         "hyperparameter_search": hyperparameter_search_results,
+                        "nested_grouped_cv": nested_cv_results,
                         "applied_tuned_params": applied_tuned_params,
+                        "feature_family": feature_family,
+                        "error_analysis": error_analysis,
                     }
                 ),
             )
@@ -418,10 +583,17 @@ class ClassificationService(ResearchAccessMixin):
         return refreshed
 
     async def list_models(
-        self, *, project_id: str, user_id: str, corpus_id: str | None = None
+        self,
+        *,
+        project_id: str,
+        user_id: str,
+        corpus_id: str | None = None,
+        lifecycle_status: str | None = None,
     ) -> list[TrainedModel]:
         await self.ensure_project_access(user_id=user_id, project_id=project_id)
-        return await self.repo.list_models(project_id, corpus_id=corpus_id)
+        return await self.repo.list_models(
+            project_id, corpus_id=corpus_id, lifecycle_status=lifecycle_status
+        )
 
     async def get_model(self, model_id: str, *, user_id: str) -> TrainedModel:
         return await self.get_model_or_404(model_id, user_id=user_id)
