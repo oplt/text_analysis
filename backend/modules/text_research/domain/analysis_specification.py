@@ -104,6 +104,10 @@ class EngineSpec(BaseModel):
     ``python`` remains the compatibility default.  Native R preprocessing is
     intentionally not implemented yet: both initial engines consume the same
     prepared token sequences.
+
+    ``implementation`` is an optional *family* hint (e.g. ``quanteda``), not a
+    version.  Engine version strings are always resolved server-side from the
+    registered execution engine.
     """
 
     runtime: Literal["python", "r"] = "python"
@@ -125,7 +129,7 @@ class OutputSpec(BaseModel):
 class AnalysisSpecification(BaseModel):
     """Reusable, versioned analysis configuration."""
 
-    spec_version: str = "2.0"
+    spec_version: str = "2.1"
     corpus: CorpusSelection
     preprocessing: PreprocessingSpec = Field(default_factory=PreprocessingSpec)
     feature_extraction: FeatureExtractionSpec = Field(default_factory=FeatureExtractionSpec)
@@ -203,10 +207,18 @@ class AnalysisSpecification(BaseModel):
                 raise ValueError("execution.memory_mb must be positive when set")
 
     def spec_hash(self) -> str:
-        """Stable sha256 digest of the normalized specification JSON."""
+        """Stable sha256 digest of the normalized specification JSON.
+
+        Version-aware: ``2.0`` specs omit the ``engine`` block so hashes remain
+        stable for pre-engine-field runs. ``2.1+`` include the full engine block.
+        """
         normalized = self.normalize()
+        payload = normalized.model_dump(mode="json")
+        version = str(payload.get("spec_version") or "2.1")
+        if version.startswith("2.0"):
+            payload.pop("engine", None)
         canonical = json.dumps(
-            normalized.model_dump(mode="json"),
+            payload,
             sort_keys=True,
             separators=(",", ":"),
         )

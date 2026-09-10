@@ -61,12 +61,13 @@ def normalize_direction(directional: bool | str | None) -> DirectionMode:
 
 
 def _pmi(count: float, freq_a: float, freq_b: float, n: float) -> float:
+    """Pointwise mutual information in bits (log2), matching quanteda-style CL convention."""
     if n <= 0 or count <= 0 or freq_a <= 0 or freq_b <= 0:
         return 0.0
     p_ab = count / n
     p_a = freq_a / n
     p_b = freq_b / n
-    return math.log(p_ab / (p_a * p_b))
+    return math.log2(p_ab / (p_a * p_b))
 
 
 def _npmi(count: float, freq_a: float, freq_b: float, n: float) -> float:
@@ -74,7 +75,7 @@ def _npmi(count: float, freq_a: float, freq_b: float, n: float) -> float:
         return 0.0
     p_ab = count / n
     pmi = _pmi(count, freq_a, freq_b, n)
-    denom = -math.log(p_ab)
+    denom = -math.log2(p_ab)
     if denom <= 0:
         return 0.0
     return pmi / denom

@@ -74,7 +74,7 @@ class AnalysisSpecificationV2Tests(unittest.TestCase):
             validation={"strategy": "grouped_cv", "group_field": "organization"},
             random_seed=7,
         )
-        self.assertEqual(spec.spec_version, "2.0")
+        self.assertEqual(spec.spec_version, "2.1")
         params = spec.to_run_parameters()
         self.assertEqual(params["corpus"]["corpus_id"], "c1")
         self.assertEqual(params["unit_type"], "sentence")
@@ -108,10 +108,33 @@ class AnalysisSpecificationV2Tests(unittest.TestCase):
         self.assertEqual(params["engine_version"], ENGINE_VERSION)
 
     def test_computation_identity_is_stable(self) -> None:
-        left = computation_identity("spec-hash", "snapshot-hash")
-        right = computation_identity("spec-hash", "snapshot-hash")
+        left = computation_identity("spec-hash", "snapshot-hash", engine_version="engine/1")
+        right = computation_identity("spec-hash", "snapshot-hash", engine_version="engine/1")
         self.assertEqual(left, right)
-        self.assertNotEqual(left, computation_identity("other-spec", "snapshot-hash"))
+        self.assertNotEqual(
+            left,
+            computation_identity("other-spec", "snapshot-hash", engine_version="engine/1"),
+        )
+        self.assertNotEqual(
+            left,
+            computation_identity(
+                "spec-hash",
+                "snapshot-hash",
+                engine_version="engine/1",
+                engine_name="r",
+            ),
+        )
+
+    def test_spec_hash_version_aware_for_legacy_2_0(self) -> None:
+        modern = AnalysisSpecification.from_flat(corpus_id="c1", analysis_type="dfm")
+        legacy = modern.model_copy(update={"spec_version": "2.0"})
+        # 2.0 omits engine from the hash; 2.1 includes it — hashes must differ.
+        self.assertNotEqual(modern.normalize().spec_hash(), legacy.normalize().spec_hash())
+        left_legacy = legacy.normalize().spec_hash()
+        right_legacy = legacy.model_copy(
+            update={"engine": legacy.engine.model_copy(update={"implementation": "other"})}
+        ).normalize().spec_hash()
+        self.assertEqual(left_legacy, right_legacy)
 
 
 if __name__ == "__main__":

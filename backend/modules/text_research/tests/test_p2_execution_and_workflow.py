@@ -97,7 +97,7 @@ class CheckpointTests(unittest.TestCase):
 
 class IdempotencyTests(unittest.TestCase):
     def test_is_idempotent_hit_returns_cached_stage_key(self) -> None:
-        identity = computation_identity("spec", "snapshot", "engine/1")
+        identity = computation_identity("spec", "snapshot", engine_version="engine/1")
         cache = {identity: "prepared_corpus:abc"}
 
         def stage_cache_get(key: str) -> str | None:

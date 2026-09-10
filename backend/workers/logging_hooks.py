@@ -79,6 +79,15 @@ def configure_worker_logging(**_kwargs) -> None:
             "enabled": policy["defaults"]["enabled"],
         },
     )
+    with contextlib.suppress(Exception):
+        from backend.modules.text_research.infrastructure.r_runtime.capabilities import (
+            refresh_r_worker_heartbeat_if_local_runtime_ready,
+            r_feature_enabled,
+        )
+
+        if r_feature_enabled():
+            ready = refresh_r_worker_heartbeat_if_local_runtime_ready()
+            logger.info("R worker capability heartbeat published ready=%s", ready)
 
 
 @before_task_publish.connect

@@ -4,12 +4,30 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 6 * * 1"
+  pull_request:
+    paths:
+      - "r_engine/**"
+      - "backend/modules/text_research/infrastructure/r_runtime/**"
+      - "backend/modules/text_research/infrastructure/engines/r_engine.py"
+      - "backend/modules/text_research/tests/parity/**"
+      - "backend/modules/text_research/application/engine_comparison.py"
+      - ".github/workflows/quanteda-parity.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "r_engine/**"
+      - "backend/modules/text_research/infrastructure/r_runtime/**"
+      - "backend/modules/text_research/infrastructure/engines/r_engine.py"
+      - "backend/modules/text_research/tests/parity/**"
+      - "backend/modules/text_research/application/engine_comparison.py"
+      - ".github/workflows/quanteda-parity.yml"
 
 jobs:
   quanteda-parity:
     runs-on: ubuntu-latest
     container:
-      image: rocker/r-ver:4.4.2
+      # Keep in lockstep with r_engine/Dockerfile and renv.lock (R 4.4.0).
+      image: rocker/r-ver:4.4.0
     defaults:
       run:
         working-directory: backend

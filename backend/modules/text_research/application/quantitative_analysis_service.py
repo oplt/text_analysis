@@ -22,6 +22,7 @@ from backend.modules.text_research.application.analysis_executor import (
     estimate_workload,
     execute_or_enqueue,
     run_cpu_bound,
+    run_prepared_analysis,
     should_enqueue_cpu_job,
 )
 from backend.modules.text_research.application.engine_comparison import compare_engine_results
@@ -553,6 +554,57 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             await self.db.commit()
             raise
 
+    async def _await_runs(
+        self,
+        run_ids: list[str],
+        *,
+        timeout_seconds: float | None = None,
+        poll_interval: float = 0.5,
+    ) -> list[AnalysisRun]:
+        """Poll until every run reaches a terminal status (single-session safe)."""
+        from backend.core.config import settings
+
+        timeout = (
+            float(timeout_seconds)
+            if timeout_seconds is not None
+            else float(settings.RESEARCH_R_TIMEOUT_SECONDS) + 120.0
+        )
+        deadline = asyncio.get_running_loop().time() + timeout
+        terminal = {
+            AnalysisRunStatus.COMPLETED.value,
+            AnalysisRunStatus.FAILED.value,
+            AnalysisRunStatus.CANCELLED.value,
+        }
+        while True:
+            runs: list[AnalysisRun] = []
+            for run_id in run_ids:
+                run = await self.repo.get_run(run_id)
+                if run is None:
+                    raise ValueError(f"AnalysisRun {run_id} not found")
+                runs.append(run)
+            if all(run.status in terminal for run in runs):
+                failed = [
+                    run
+                    for run in runs
+                    if run.status != AnalysisRunStatus.COMPLETED.value
+                ]
+                if failed:
+                    detail = "; ".join(
+                        f"{run.id}:{run.status}:{run.error_message or 'failed'}"
+                        for run in failed
+                    )
+                    raise HTTPException(
+                        status_code=502,
+                        detail=f"Engine comparison child run(s) did not complete: {detail}",
+                    )
+                return runs
+            if asyncio.get_running_loop().time() >= deadline:
+                raise HTTPException(
+                    status_code=504,
+                    detail="Timed out waiting for engine comparison child runs",
+                )
+            await asyncio.sleep(poll_interval)
+
     async def engine_comparison(
         self,
         corpus_id: str,
@@ -569,6 +621,8 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         """Run Python and R as separate persisted runs, then persist their comparison.
 
         The engine is deliberately never represented by a synthetic ``both`` value.
+        Orchestration runs on ``research_cpu``. When this process cannot execute R,
+        the R child is queued to ``research_r`` while Python runs on ``research_cpu``.
         """
         if analysis_type not in {"frequencies", "dfm", "kwic"}:
             raise HTTPException(
@@ -603,37 +657,63 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 execution_operation="engine_comparison",
             )
         parent = await self._resolve_existing_run(existing_run_id)
-        if analysis_type == "frequencies":
-            python_run = await self.frequencies(
-                corpus_id, user_id=user_id, unit_type=unit_type,
-                preprocessing_profile_id=preprocessing_profile_id, force_inline=True,
-                top_n=int(analysis_parameters.get("top_n", 50)),
-                rate_per=float(analysis_parameters.get("rate_per", 1000)), **filters,
-            )
-        elif analysis_type == "dfm":
-            python_run = await self.dfm(
-                corpus_id, user_id=user_id, unit_type=unit_type,
-                preprocessing_profile_id=preprocessing_profile_id, force_inline=True,
-                weighting=str(analysis_parameters.get("weighting", "count")), **filters,
-            )
-        else:
-            python_run = await self.kwic(
-                corpus_id, user_id=user_id, unit_type=unit_type,
+        # Prefer cross-queue parallelism when R is not local to this worker.
+        inline_children = RAnalysisEngine.runtime_ready()
+
+        async def _python_child() -> AnalysisRun:
+            kwargs = {
+                "preprocessing_profile_id": preprocessing_profile_id,
+                "force_inline": inline_children,
+                **filters,
+            }
+            if analysis_type == "frequencies":
+                return await self.frequencies(
+                    corpus_id,
+                    user_id=user_id,
+                    unit_type=unit_type,
+                    top_n=int(analysis_parameters.get("top_n", 50)),
+                    rate_per=float(analysis_parameters.get("rate_per", 1000)),
+                    **kwargs,
+                )
+            if analysis_type == "dfm":
+                return await self.dfm(
+                    corpus_id,
+                    user_id=user_id,
+                    unit_type=unit_type,
+                    weighting=str(analysis_parameters.get("weighting", "count")),
+                    **kwargs,
+                )
+            return await self.kwic(
+                corpus_id,
+                user_id=user_id,
+                unit_type=unit_type,
                 keyword=str(analysis_parameters["keyword"]),
                 window_size=int(analysis_parameters.get("window_size", 5)),
                 case_sensitive=bool(analysis_parameters.get("case_sensitive", False)),
-                query_mode=str(analysis_parameters.get("query_mode", "word")), **filters,
+                query_mode=str(analysis_parameters.get("query_mode", "word")),
+                **kwargs,
             )
-        r_run = await self.r_analysis(
-            corpus_id,
-            user_id=user_id,
-            analysis_type=analysis_type,
-            unit_type=unit_type,
-            preprocessing_profile_id=preprocessing_profile_id,
-            analysis_parameters=analysis_parameters,
-            force_inline=True,
-            **filters,
-        )
+
+        async def _r_child() -> AnalysisRun:
+            return await self.r_analysis(
+                corpus_id,
+                user_id=user_id,
+                analysis_type=analysis_type,
+                unit_type=unit_type,
+                preprocessing_profile_id=preprocessing_profile_id,
+                analysis_parameters=analysis_parameters,
+                force_inline=inline_children,
+                **filters,
+            )
+
+        if inline_children:
+            python_run = await _python_child()
+            r_run = await _r_child()
+        else:
+            python_run = await _python_child()
+            r_run = await _r_child()
+            python_run, r_run = await self._await_runs([python_run.id, r_run.id])
+
         python_results = loads(python_run.results_json, {}) or {}
         r_results = loads(r_run.results_json, {}) or {}
         comparison = compare_engine_results(analysis_type, python_results, r_results)
@@ -649,6 +729,18 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "comparison": comparison,
                 "python_run_id": python_run.id,
                 "r_run_id": r_run.id,
+                "python_runtime": python_results.get("runtime")
+                or (
+                    (python_results.get("analysis_result") or {}).get("runtime")
+                    if isinstance(python_results.get("analysis_result"), dict)
+                    else None
+                ),
+                "r_runtime": r_results.get("runtime")
+                or (
+                    (r_results.get("analysis_result") or {}).get("runtime")
+                    if isinstance(r_results.get("analysis_result"), dict)
+                    else None
+                ),
             },
             existing_run=parent,
         )
@@ -704,13 +796,21 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 status_code=422,
                 detail="R DFM currently supports count weighting only",
             )
-        if (
-            analysis_type == "kwic"
-            and analysis_parameters.get("query_mode", "auto") not in {"auto", "word"}
+        if analysis_type == "dfm" and (
+            analysis_parameters.get("trim")
+            or analysis_parameters.get("force_sparse_only")
+            or analysis_parameters.get("smooth_idf") is not None
+            or analysis_parameters.get("k1") is not None
+            or analysis_parameters.get("b") is not None
         ):
             raise HTTPException(
                 status_code=422,
-                detail="R KWIC currently supports word queries only",
+                detail="R DFM does not support trim, sparse-only, or TF-IDF/BM25 options yet",
+            )
+        if analysis_type == "kwic" and analysis_parameters.get("query_mode", "auto") != "word":
+            raise HTTPException(
+                status_code=422,
+                detail="R KWIC requires query_mode='word' (literal token match)",
             )
         if analysis_type == "cooccurrence":
             from backend.modules.text_research.infrastructure.collocation import (
@@ -765,17 +865,18 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             analysis_parameters=analysis_parameters,
             engine={"runtime": "r", "implementation": "quanteda"},
         )
-        prepared, _ = await _prepare_with_identity(
-            corpus_id=corpus.id,
-            analysis_type=analysis_type,
-            texts=texts,
+        unit_ids = [str(unit.id) for unit in units]
+        document_ids = [unit.corpus_document_id for unit in units]
+        runner_context = await run_cpu_bound(
+            run_prepared_analysis,
+            spec,
+            texts,
+            unit_ids=unit_ids,
             config=config,
-            units=units,
-            unit_type=unit_type,
-            filters=filters,
-            analysis_parameters=analysis_parameters,
+            document_ids=document_ids,
         )
-        canonical = await run_cpu_bound(engine.execute, spec, prepared)
+        canonical = runner_context["analysis_result"]
+        prepared = runner_context["prepared"]
         if analysis_type == "cooccurrence" and analysis_parameters.get("include_network", True):
             from backend.modules.text_research.infrastructure.association_network import (
                 build_association_network,
@@ -936,16 +1037,6 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             analysis_parameters=params,
             engine={"runtime": "r", "implementation": "quanteda"},
         )
-        prepared_a = await prepare_texts_cached_async(
-            [unit.text for unit in units_a],
-            config.to_dict(),
-            corpus_id=corpus.id,
-            unit_type=unit_type,
-            unit_ids=[unit.id for unit in units_a],
-            document_ids=[unit.corpus_document_id for unit in units_a],
-            filters=filters_a,
-            operation_config={},
-        )
         prepared_b = await prepare_texts_cached_async(
             [unit.text for unit in units_b],
             config.to_dict(),
@@ -956,12 +1047,17 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             filters=filters_b,
             operation_config={},
         )
-        canonical = await run_cpu_bound(
-            engine.execute,
+        runner_context = await run_cpu_bound(
+            run_prepared_analysis,
             spec,
-            prepared_a,
-            pipeline_context={"prepared_b": prepared_b},
+            [unit.text for unit in units_a],
+            unit_ids=[str(unit.id) for unit in units_a],
+            document_ids=[unit.corpus_document_id for unit in units_a],
+            config=config,
+            prepared_b=prepared_b,
         )
+        canonical = runner_context["analysis_result"]
+        prepared_a = runner_context["prepared"]
         report = canonical.results
         return await self._persist_run(
             corpus,
@@ -988,6 +1084,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "keyness": report.get("features") or [],
                 "report": report,
                 "analysis_result": canonical.model_dump(mode="json"),
+                "identity": canonical.identity.model_dump(mode="json"),
                 "corpus_checksum": prepared_a.corpus_checksum,
                 "pipeline_checksum": prepared_a.pipeline_checksum,
             },
@@ -1638,6 +1735,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 _tokenized_from_prepared(prepared),
                 spec,
                 unit_ids=[u.id for u in units],
+                document_ids=[u.corpus_document_id for u in units],
                 metadata=unit_metadata,
                 case_sensitive=case_sensitive,
                 rate_per=rate_per,

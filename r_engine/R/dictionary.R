@@ -123,6 +123,15 @@ run_dictionary <- function(manifest, inputs) {
     }
     per_unit[[length(per_unit) + 1L]] <- list(text_unit_id = unit_id, hits = unit_hits)
   }
-  n_tokens <- nrow(inputs$tokens); units_with_hit <- sum(vapply(per_unit, function(row) row$hits > 0L, logical(1)))
-  new_result(manifest, list(total_hits = total_hits, normalized_hits = if (n_tokens) total_hits / n_tokens * rate_per else 0, hits_per_1000_tokens = if (n_tokens) total_hits / n_tokens * 1000 else 0, rate_per = rate_per, unit_prevalence = if (length(unit_ids)) units_with_hit / length(unit_ids) else 0, document_prevalence = if (length(unit_ids)) units_with_hit / length(unit_ids) else 0, n_units = length(unit_ids), n_tokens = n_tokens, units_with_hit = units_with_hit, per_unit = per_unit, matches = matches, by_category = categories, dictionary = list(entry_count = length(parsed$entries), exclusion_count = length(parsed$exclusions), source = "user"), case_sensitive = case_sensitive))
+  n_tokens <- nrow(inputs$tokens)
+  units_with_hit <- sum(vapply(per_unit, function(row) row$hits > 0L, logical(1)))
+  document_ids <- as.character(inputs$units$document_id)
+  if (length(document_ids) != length(unit_ids)) {
+    document_ids <- unit_ids
+  }
+  unit_hit_flags <- vapply(per_unit, function(row) row$hits > 0L, logical(1))
+  docs_with_hit <- unique(document_ids[unit_hit_flags])
+  n_documents <- length(unique(document_ids))
+  document_prevalence <- if (n_documents) length(docs_with_hit) / n_documents else 0
+  new_result(manifest, list(total_hits = total_hits, normalized_hits = if (n_tokens) total_hits / n_tokens * rate_per else 0, hits_per_1000_tokens = if (n_tokens) total_hits / n_tokens * 1000 else 0, rate_per = rate_per, unit_prevalence = if (length(unit_ids)) units_with_hit / length(unit_ids) else 0, document_prevalence = document_prevalence, n_units = length(unit_ids), n_documents = n_documents, documents_with_hit = length(docs_with_hit), n_tokens = n_tokens, units_with_hit = units_with_hit, per_unit = per_unit, matches = matches, by_category = categories, dictionary = list(entry_count = length(parsed$entries), exclusion_count = length(parsed$exclusions), source = "user"), case_sensitive = case_sensitive))
 }

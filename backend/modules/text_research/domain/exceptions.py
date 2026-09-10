@@ -24,6 +24,17 @@ class RExecutionTimeout(TextResearchError):
 class RExecutionFailed(TextResearchError):
     """Raised when the R subprocess reports a safe, bounded failure."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        run_id: str | None = None,
+        exit_code: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.run_id = run_id
+        self.exit_code = exit_code
+
 
 class RInvalidResult(TextResearchError):
     """Raised when R output fails the canonical result validation contract."""
@@ -35,3 +46,16 @@ class RUnsupportedAnalysis(TextResearchError):
 
 class RArtifactTooLarge(TextResearchError):
     """Raised when the R result exceeds configured output bounds."""
+
+
+# Deterministic / validation failures must never be Celery-autoretried.
+NON_RETRYABLE_RESEARCH_ERRORS: tuple[type[BaseException], ...] = (
+    RUnsupportedAnalysis,
+    RInvalidResult,
+    RArtifactTooLarge,
+    RExecutionFailed,
+    CodebookFrozenError,
+    InsufficientDataError,
+    ValueError,
+    TypeError,
+)

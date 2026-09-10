@@ -38,21 +38,66 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def save_unit_table(path: str | Path, rows: list[dict[str, Any]]) -> dict[str, Any]:
-    """Persist unit rows as parquet when available, otherwise JSONL."""
+def save_unit_table(
+    path: str | Path,
+    rows: list[dict[str, Any]] | None = None,
+    *,
+    columns: dict[str, list[Any]] | None = None,
+    chunk_size: int = 50_000,
+) -> dict[str, Any]:
+    """Persist unit rows as parquet when available, otherwise JSONL.
+
+    Prefer ``columns`` (columnar arrays) to avoid materializing millions of
+    per-token Python dicts. When ``rows`` is provided, writes in chunks via
+    ``ParquetWriter`` so peak memory stays bounded.
+    """
     resolved = Path(path)
     resolved.parent.mkdir(parents=True, exist_ok=True)
 
     if parquet_available():
-        import pandas as pd
+        import pyarrow as pa
+        import pyarrow.parquet as pq
 
         target = resolved if resolved.suffix == ".parquet" else resolved.with_suffix(".parquet")
-        pd.DataFrame(rows).to_parquet(target, index=False)
-        return {"format": "parquet", "path": str(target), "row_count": len(rows)}
+        if columns is not None:
+            table = pa.table(columns)
+            pq.write_table(table, target)
+            return {
+                "format": "parquet",
+                "path": str(target),
+                "row_count": table.num_rows,
+            }
+
+        row_list = list(rows or [])
+        if not row_list:
+            pq.write_table(pa.table({}), target)
+            return {"format": "parquet", "path": str(target), "row_count": 0}
+
+        writer: pq.ParquetWriter | None = None
+        written = 0
+        try:
+            for start in range(0, len(row_list), max(1, chunk_size)):
+                batch_rows = row_list[start : start + chunk_size]
+                batch_table = pa.Table.from_pylist(batch_rows)
+                if writer is None:
+                    writer = pq.ParquetWriter(target, batch_table.schema)
+                writer.write_table(batch_table)
+                written += len(batch_rows)
+        finally:
+            if writer is not None:
+                writer.close()
+        return {"format": "parquet", "path": str(target), "row_count": written}
 
     target = resolved if resolved.suffix == ".jsonl" else resolved.with_suffix(".jsonl")
-    _write_jsonl(target, rows)
-    return {"format": "jsonl", "path": str(target), "row_count": len(rows)}
+    if columns is not None:
+        keys = list(columns)
+        n = len(next(iter(columns.values()), []))
+        materialized = [{key: columns[key][i] for key in keys} for i in range(n)]
+        _write_jsonl(target, materialized)
+        return {"format": "jsonl", "path": str(target), "row_count": n}
+    materialized_rows = list(rows or [])
+    _write_jsonl(target, materialized_rows)
+    return {"format": "jsonl", "path": str(target), "row_count": len(materialized_rows)}
 
 
 def load_unit_table(path: str | Path) -> list[dict[str, Any]]:

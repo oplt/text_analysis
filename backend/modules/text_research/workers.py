@@ -298,7 +298,7 @@ def queue_engine_comparison(*, run_id: str, user_id: str) -> None:
         kwargs={"run_id": run_id, "user_id": user_id},
         celery_task=research_engine_comparison_task,
         celery_kwargs={"run_id": run_id, "user_id": user_id},
-        queue=settings.RESEARCH_QUEUE_R,
+        queue=queue_for_resource_class("research_cpu"),
         job_name="research-engine-comparison",
     )
 

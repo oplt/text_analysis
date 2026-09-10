@@ -179,29 +179,46 @@ router.include_router(corpora_router)
 async def analysis_engines(
     current_user: User = Depends(get_current_user),
 ) -> dict[str, list[dict[str, Any]]]:
-    """Advertise runtime capabilities without requiring clients to probe R."""
+    """Advertise runtime capabilities without requiring local Rscript on the API."""
     del current_user
     from backend.modules.text_research.infrastructure.engines.python_engine import (
         PythonAnalysisEngine,
     )
     from backend.modules.text_research.infrastructure.engines.r_engine import RAnalysisEngine
+    from backend.modules.text_research.infrastructure.r_runtime.capabilities import (
+        get_r_worker_capabilities,
+        r_feature_enabled,
+    )
 
     python = PythonAnalysisEngine()
     r_engine = RAnalysisEngine()
-    r_available = r_engine.available()
+    r_enabled = r_feature_enabled()
+    worker_caps = get_r_worker_capabilities() if r_enabled else None
+    r_ready = bool(worker_caps and worker_caps.get("ready"))
+    # Feature availability is config-driven; worker readiness is Redis heartbeat.
+    r_available = r_enabled
+    r_analyses = (
+        sorted(r_engine.supported_analyses)
+        if r_enabled
+        else []
+    )
     return {
         "engines": [
             {
                 "name": python.name,
                 "implementation": "python",
+                "implementation_version": python.implementation_version,
                 "available": True,
+                "ready": True,
                 "analyses": sorted(name for name in ANALYSIS_TYPES if python.supports(name)),
             },
             {
                 "name": r_engine.name,
                 "implementation": "quanteda",
+                "implementation_version": r_engine.implementation_version,
                 "available": r_available,
-                "analyses": sorted(r_engine.supported_analyses) if r_available else [],
+                "ready": r_ready,
+                "analyses": r_analyses,
             },
         ]
     }

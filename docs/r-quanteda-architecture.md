@@ -31,18 +31,28 @@ preprocessing is deliberately not implemented.
 
 ## Configuration and operations
 
-R is opt-in. With `RESEARCH_R_ENABLED=false` (the default), the application
-does not invoke or require R. Configure `RESEARCH_RSCRIPT_PATH`,
-`RESEARCH_R_ENGINE_ENTRYPOINT`, `RESEARCH_R_TIMEOUT_SECONDS`,
-`RESEARCH_R_MAX_OUTPUT_MB`, `RESEARCH_R_WORK_DIR`, and `RESEARCH_QUEUE_R` for
-the R worker. The `GET /api/v1/research/analysis-engines` capability endpoint
-reports whether R is available and which analyses it supports.
+R is opt-in. With `RESEARCH_R_ENABLED=false` (the default), the application does
+not offer R analyses. Set `RESEARCH_R_ENABLED=true` on the **API** to advertise
+R in `GET /api/v1/research/analysis-engines` — the API does **not** require a
+local `Rscript`. Only the dedicated `research_r` Celery worker must have
+`Rscript`, `RESEARCH_R_ENGINE_ENTRYPOINT`, and related runtime settings.
+
+That worker publishes a Redis heartbeat (`research:r_worker:capabilities`).
+The capability endpoint exposes both `available` (feature flag) and `ready`
+(heartbeat). Configure `RESEARCH_RSCRIPT_PATH`, `RESEARCH_R_ENGINE_ENTRYPOINT`,
+`RESEARCH_R_TIMEOUT_SECONDS`, `RESEARCH_R_MAX_OUTPUT_MB`,
+`RESEARCH_R_WORK_DIR`, and `RESEARCH_QUEUE_R` on the R worker.
 
 R jobs always use a repository-owned entrypoint; API clients cannot provide R
 code, a command, a script path, or package-install requests. The bridge uses
 `--vanilla`, no shell, a unique temporary directory, timeout, bounded result
 validation, and cleanup. Failures surface as safe R runtime errors rather than
 raw environment data or stack traces.
+
+Engine **version** strings (`r-quanteda-1`, Python `ENGINE_VERSION`) are always
+resolved server-side from the registered engine. Clients may send
+`engine.runtime` and an optional implementation *family* (`quanteda`), never a
+version used as provenance/cache identity.
 
 ## Reproducibility
 
@@ -68,23 +78,24 @@ R co-occurrence implements `count`, PMI, NPMI, Dice, logDice, and t-score.
 
 ## Deployment: dedicated R-capable worker
 
-Build the worker from the repository root so the image contains the pinned R
-runtime and the backend Celery application:
+Build the combined Python+R Celery worker from the repository root:
 
 ```bash
 docker build -f r_engine/Dockerfile -t text-analysis-r-worker:local .
-docker run --rm text-analysis-r-worker:local Rscript --version
+# or via Compose profile:
+docker compose -f infra/docker-compose.yml --profile r up --build worker-r
 ```
 
-Use this image as the pinned R runtime layer in a separate Python 3.12 Celery
-worker consuming only `research_r`; that worker must install the backend from
-its committed `uv.lock`. Set the same database, Redis, artifact-storage, and
-application settings as the Python worker, plus `RESEARCH_R_ENABLED=true`,
-`RESEARCH_RSCRIPT_PATH=Rscript`, and
-`RESEARCH_R_ENGINE_ENTRYPOINT=/opt/r_engine/run_analysis.R`. Keep API and
-ordinary Python workers with R disabled unless they also need to execute the
-dedicated queue. The container restores packages solely from `renv.lock` at
-build time; production workers must not install R packages at runtime.
+The image CMD starts Celery with `-Q research_r` (not `Rscript --version`).
+Set the same database, Redis, artifact-storage, and application settings as the
+Python worker, plus `RESEARCH_R_ENABLED=true`, `RESEARCH_RSCRIPT_PATH=Rscript`,
+and `RESEARCH_R_ENGINE_ENTRYPOINT=/opt/r_engine/run_analysis.R`. Keep API and
+ordinary Python workers with R execution disabled unless they also need to
+run the dedicated queue. Local `Procfile.dev` includes a `worker-r` process
+that consumes `research_r`.
+
+The container restores R packages solely from `renv.lock` at build time;
+production workers must not install R packages at runtime.
 
 Before rollout, run `Rscript -e 'renv::status()'`,
 `Rscript -e 'testthat::test_dir("/opt/r_engine/tests/testthat")'`, and the

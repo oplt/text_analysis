@@ -96,6 +96,22 @@ class MatchDictionaryTests(unittest.TestCase):
         result = dm.match_dictionary(tokenized, spec, unit_ids=["u1"])
         self.assertEqual(result["total_hits"], 0)
 
+    def test_document_prevalence_aggregates_by_document_id(self):
+        tokenized = [["alpha"], ["alpha"], ["noise"], ["alpha"]]
+        spec = dm.parse_dictionary_payload({"hierarchy": {"theme": {"core": ["alpha"]}}})
+        result = dm.match_dictionary(
+            tokenized,
+            spec,
+            unit_ids=["u1", "u2", "u3", "u4"],
+            document_ids=["d1", "d1", "d2", "d3"],
+        )
+        self.assertEqual(result["total_hits"], 3)
+        self.assertEqual(result["unit_prevalence"], 0.75)
+        self.assertEqual(result["document_prevalence"], 2 / 3)
+        self.assertNotEqual(result["document_prevalence"], result["unit_prevalence"])
+        self.assertEqual(result["n_documents"], 3)
+        self.assertEqual(result["documents_with_hit"], 2)
+
     def test_synthetic_demo_fixture_marked(self):
         self.assertEqual(dm.SYNTHETIC_DEMO_DICTIONARY["source"], "synthetic_demo")
         self.assertIn("SYNTHETIC", dm.SYNTHETIC_DEMO_DICTIONARY["description"])

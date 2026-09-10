@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { getRunResultProvenance, ResearchResultsTable } from "./ResearchResults";
+import { getRunResultProvenance } from "./resultProvenance";
+import { ResearchResultsTable } from "./ResearchResults";
 
 describe("ResearchResultsTable", () => {
     it("sorts and paginates analysis rows", () => {

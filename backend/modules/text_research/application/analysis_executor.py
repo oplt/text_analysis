@@ -91,13 +91,14 @@ def plan_and_task(
         identity = computation_identity(
             plan.spec_hash,
             corpus_snapshot_hash,
-            plan.engine_version,
-            plan.engine_name,
+            engine_version=plan.engine_version,
+            engine_name=plan.engine_name,
         )
         cache_hit = is_idempotent_hit(
             spec_hash=plan.spec_hash,
             corpus_snapshot_hash=corpus_snapshot_hash,
             engine_version=plan.engine_version,
+            engine_name=plan.engine_name,
             stage_cache_get=stage_cache.get_stage,
         )
     return {

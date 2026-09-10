@@ -80,10 +80,18 @@ def is_idempotent_hit(
     spec_hash: str,
     corpus_snapshot_hash: str,
     engine_version: str = ENGINE_VERSION,
+    engine_name: str = "python",
+    pipeline_checksum: str | None = None,
     stage_cache_get: Callable[[str], Any] | None = None,
 ) -> str | None:
     """Return computation identity when an identical cached result exists."""
-    identity = computation_identity(spec_hash, corpus_snapshot_hash, engine_version)
+    identity = computation_identity(
+        spec_hash,
+        corpus_snapshot_hash,
+        engine_version=engine_version,
+        engine_name=engine_name,
+        pipeline_checksum=pipeline_checksum,
+    )
     getter = stage_cache_get
     if getter is None:
         from backend.modules.text_research.infrastructure.stage_cache import get_stage

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from backend.modules.text_research.domain.analysis_result import AnalysisResult
 from backend.modules.text_research.domain.exceptions import RArtifactTooLarge, RInvalidResult
@@ -15,7 +16,7 @@ def validate_r_result(
     path: Path,
     *,
     expected_analysis_type: str,
-    expected_identity: dict[str, str],
+    expected_identity: dict[str, Any],
     max_bytes: int,
 ) -> AnalysisResult:
     if not path.is_file():
@@ -31,9 +32,10 @@ def validate_r_result(
         raise RInvalidResult("unsupported R result schema version")
     if result.analysis_type != expected_analysis_type:
         raise RInvalidResult("R result analysis type does not match request")
-    identity = result.identity.model_dump()
-    if any(identity.get(key) != value for key, value in expected_identity.items()):
-        raise RInvalidResult("R result identity does not match request")
+    identity = result.identity.model_dump(mode="json")
+    for key, value in expected_identity.items():
+        if identity.get(key) != value:
+            raise RInvalidResult("R result identity does not match request")
     if not isinstance(result.results, dict) or not isinstance(result.artifacts, list):
         raise RInvalidResult("R result has invalid result fields")
     return result

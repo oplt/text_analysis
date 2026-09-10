@@ -430,7 +430,6 @@ class ClassificationService(ResearchAccessMixin):
             await self.repo.update_run(run, progress_stage="training")
             await self.db.commit()
             fit_kwargs = {
-                "task_type": task_type,
                 "label_names": label_names if task_type == "multilabel" else None,
                 "class_weight": params["class_weight"],
                 "C": params["regularization_c"],

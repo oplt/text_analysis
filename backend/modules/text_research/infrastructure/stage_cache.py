@@ -595,12 +595,21 @@ def compute_identity_lookup(
     spec_hash: str,
     corpus_snapshot_hash: str,
     engine_version: str,
+    *,
+    engine_name: str = "python",
+    pipeline_checksum: str | None = None,
 ) -> str:
-    """Wrap :func:`computation_identity` for prepared-corpus stage lookups."""
+    """Wrap :func:`computation_identity` for prepared-corpus stage lookups.
+
+    Cache generation is stored in stage meta, not folded into the scientific
+    identity string, so engine-aware identities stay comparable across deploys.
+    """
     return computation_identity(
         spec_hash,
         corpus_snapshot_hash,
-        f"{engine_version}:cache-generation={_cache_generation()}",
+        engine_version=engine_version,
+        engine_name=engine_name,
+        pipeline_checksum=pipeline_checksum,
     )
 
 
@@ -894,14 +903,26 @@ def remember_computation(
     meta: dict[str, Any],
     payload: Any | None = None,
     payload_format: PayloadFormat = "json",
+    engine_name: str = "python",
+    pipeline_checksum: str | None = None,
 ) -> str:
     """Store a full-analysis result under its computation identity key."""
-    key = compute_identity_lookup(spec_hash, corpus_snapshot_hash, engine_version)
+    key = compute_identity_lookup(
+        spec_hash,
+        corpus_snapshot_hash,
+        engine_version,
+        engine_name=engine_name,
+        pipeline_checksum=pipeline_checksum,
+    )
     sidecar = dict(meta)
     sidecar.setdefault("stage_name", "computation")
     sidecar["spec_hash"] = spec_hash
     sidecar["corpus_snapshot_hash"] = corpus_snapshot_hash
     sidecar["engine_version"] = engine_version
+    sidecar["engine_name"] = engine_name
+    if pipeline_checksum is not None:
+        sidecar["pipeline_checksum"] = pipeline_checksum
+    sidecar["cache_generation"] = _cache_generation()
     return put_stage(key, meta=sidecar, payload=payload, payload_format=payload_format)
 
 

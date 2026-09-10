@@ -164,15 +164,17 @@ def _stage_prepare_corpus(context: dict[str, Any], plan: ExecutionPlan) -> None:
         context["computation_identity"] = computation_identity(
             plan.spec_hash,
             snapshot_hash,
-            plan.engine_version,
-            plan.engine_name,
-            prepared.pipeline_checksum,
+            engine_version=plan.engine_version,
+            engine_name=plan.engine_name,
+            pipeline_checksum=prepared.pipeline_checksum,
         )
         if context.get("remember_computation", False):
             stage_cache.remember_computation(
                 spec_hash=plan.spec_hash,
                 corpus_snapshot_hash=snapshot_hash,
                 engine_version=plan.engine_version,
+                engine_name=plan.engine_name,
+                pipeline_checksum=prepared.pipeline_checksum,
                 meta={
                     "prepared_artifact_id": artifact_id,
                     "pipeline_checksum": prepared.pipeline_checksum,
@@ -294,6 +296,7 @@ def _run_dictionary(context: dict[str, Any], _plan: ExecutionPlan) -> None:
         _tokenized(prepared),
         dictionary_spec,
         unit_ids=list(prepared.unit_ids),
+        document_ids=list(prepared.document_ids) if prepared.document_ids else None,
         case_sensitive=bool(params.get("case_sensitive", False)),
         rate_per=float(params.get("rate_per", 1000.0)),
     )

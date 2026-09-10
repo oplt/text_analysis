@@ -14,12 +14,21 @@ class RuntimeInfo(BaseModel):
     package_versions: dict[str, str] = Field(default_factory=dict)
 
 
+class AnalysisInputIdentity(BaseModel):
+    """One scientific input corpus participating in a multi-corpus analysis."""
+
+    role: Literal["target", "reference"]
+    corpus_checksum: str
+    pipeline_checksum: str
+
+
 class AnalysisIdentity(BaseModel):
     spec_hash: str
     corpus_checksum: str
     pipeline_checksum: str
     engine_name: str
     engine_version: str
+    inputs: list[AnalysisInputIdentity] | None = None
 
 
 class AnalysisTiming(BaseModel):

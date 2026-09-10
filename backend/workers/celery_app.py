@@ -46,6 +46,13 @@ celery_app.conf.update(
         "backend.workers.tasks.research_quantitative_analysis_task": {
             "queue": settings.RESEARCH_QUEUE_CPU
         },
+        "backend.workers.tasks.research_r_quantitative_analysis_task": {
+            "queue": settings.RESEARCH_QUEUE_R
+        },
+        # Orchestrator only — Python child stays on research_cpu; R child on research_r.
+        "backend.workers.tasks.research_engine_comparison_task": {
+            "queue": settings.RESEARCH_QUEUE_CPU
+        },
     },
     task_serializer="json",
     accept_content=["json"],

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Button,
@@ -31,6 +31,7 @@ import {
     runCorpusStats,
     runDictionaryAnalysis,
     runDfm,
+    runEngineComparison,
     runFrequencies,
     runKeyness,
     runKwic,
@@ -459,8 +460,10 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
     const metrics = asRecord(run.metrics);
     const summary = asRecord(results?.summary) ?? asRecord(metrics?.summary);
     const payload = runPayload(run);
+    const comparisonEnvelope = asRecord(run.results);
+    const comparison = asRecord(comparisonEnvelope?.comparison);
 
-    if (isActiveRunStatus(run.status) && !results && !metrics) {
+    if (isActiveRunStatus(run.status) && !results && !metrics && !comparison) {
         return (
             <Typography color="text.secondary">
                 Run in progress…
@@ -471,6 +474,55 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
     if (run.status === "failed") {
         return (
             <Alert severity="error">{run.error_message || "Analysis run failed."}</Alert>
+        );
+    }
+
+    if (run.run_type === "engine_comparison" || comparison) {
+        return (
+            <Stack spacing={2}>
+                <Alert severity="info">
+                    Compared independent Python and R runs
+                    {comparisonEnvelope?.python_run_id
+                        ? ` (Python ${String(comparisonEnvelope.python_run_id)}`
+                        : ""}
+                    {comparisonEnvelope?.r_run_id
+                        ? `${comparisonEnvelope?.python_run_id ? ", " : " ("}R ${String(comparisonEnvelope.r_run_id)})`
+                        : comparisonEnvelope?.python_run_id
+                          ? ")"
+                          : ""}
+                    .
+                </Alert>
+                <MetricCards
+                    items={[
+                        {
+                            label: "Analysis",
+                            value: String(comparison?.analysis_type ?? tab),
+                        },
+                        {
+                            label: "Equal",
+                            value:
+                                comparison?.matches_equal === true ||
+                                comparison?.count_equal === true ||
+                                comparison?.cells_equal === true
+                                    ? "yes"
+                                    : comparison?.matches_equal === false ||
+                                        comparison?.count_equal === false ||
+                                        comparison?.cells_equal === false
+                                      ? "no"
+                                      : "—",
+                        },
+                        {
+                            label: "Python run",
+                            value: String(comparisonEnvelope?.python_run_id ?? "—"),
+                        },
+                        {
+                            label: "R run",
+                            value: String(comparisonEnvelope?.r_run_id ?? "—"),
+                        },
+                    ]}
+                />
+                <ResultsInspector data={comparisonEnvelope ?? {}} />
+            </Stack>
         );
     }
 
@@ -889,6 +941,21 @@ export default function AnalysisView() {
     const [metadataFilters, setMetadataFilters] = useState<Record<string, string>>({});
     const [engineRuntime, setEngineRuntime] = useState<"python" | "r">("python");
 
+    useEffect(() => {
+        if (engineRuntime !== "r") return;
+        setKwicQueryMode("word");
+        setDfmConfig((current) => ({
+            ...current,
+            weighting: "count",
+            forceSparseOnly: false,
+            minTermFrequency: "",
+            maxTermFrequency: "",
+            minDocumentFrequency: "",
+            maxDocumentFrequency: "",
+            topN: "",
+        }));
+    }, [engineRuntime]);
+
     const enginesQuery = useQuery({
         queryKey: ["text-research", "analysis-engines"],
         queryFn: listAnalysisEngines,
@@ -979,7 +1046,7 @@ export default function AnalysisView() {
                 keyword: kwicKeyword.trim(),
                 window_size: kwicWindow,
                 case_sensitive: kwicCaseSensitive,
-                query_mode: kwicQueryMode,
+                query_mode: engineRuntime === "r" ? "word" : kwicQueryMode,
             }),
         onSuccess: (run) => onRunSuccess(run, "KWIC search started."),
         onError: (error) => onRunError(error, "Failed to run KWIC."),
@@ -989,13 +1056,20 @@ export default function AnalysisView() {
         mutationFn: () =>
             runDfm(ctx.selectedCorpusId, {
                 ...basePayload,
-                weighting: dfmConfig.weighting,
-                ...(dfmConfig.weighting === "bm25" ? { k1: dfmConfig.k1, b: dfmConfig.b } : {}),
-                ...((dfmConfig.weighting === "tfidf" || dfmConfig.weighting === "sublinear_tf")
-                    ? { smooth_idf: dfmConfig.smoothIdf }
-                    : {}),
-                force_sparse_only: dfmConfig.forceSparseOnly,
-                ...(dfmTrimPayload(dfmConfig) ? { trim: dfmTrimPayload(dfmConfig) } : {}),
+                weighting: engineRuntime === "r" ? "count" : dfmConfig.weighting,
+                ...(engineRuntime === "r"
+                    ? {}
+                    : {
+                          ...(dfmConfig.weighting === "bm25"
+                              ? { k1: dfmConfig.k1, b: dfmConfig.b }
+                              : {}),
+                          ...((dfmConfig.weighting === "tfidf" ||
+                              dfmConfig.weighting === "sublinear_tf")
+                              ? { smooth_idf: dfmConfig.smoothIdf }
+                              : {}),
+                          force_sparse_only: dfmConfig.forceSparseOnly,
+                          ...(dfmTrimPayload(dfmConfig) ? { trim: dfmTrimPayload(dfmConfig) } : {}),
+                      }),
             }),
         onSuccess: (run) => onRunSuccess(run, "DFM build started."),
         onError: (error) => onRunError(error, "Failed to build DFM."),
@@ -1055,6 +1129,35 @@ export default function AnalysisView() {
             }),
         onSuccess: (run) => onRunSuccess(run, "Co-occurrence analysis started."),
         onError: (error) => onRunError(error, "Failed to run co-occurrence."),
+    });
+
+    const compareCompatible =
+        (tab === "frequencies" || tab === "dfm" || tab === "kwic") &&
+        rSelectionState === "available";
+
+    const compareMutation = useMutation({
+        mutationFn: () => {
+            const analysis_type = tab as "frequencies" | "dfm" | "kwic";
+            const analysis_parameters: Record<string, unknown> =
+                analysis_type === "frequencies"
+                    ? { top_n: topN }
+                    : analysis_type === "dfm"
+                      ? { weighting: "count" }
+                      : {
+                            keyword: kwicKeyword.trim(),
+                            window_size: kwicWindow,
+                            case_sensitive: kwicCaseSensitive,
+                            query_mode: "word",
+                        };
+            const { engine: _engine, ...compareBase } = basePayload;
+            return runEngineComparison(ctx.selectedCorpusId, {
+                ...compareBase,
+                analysis_type,
+                analysis_parameters,
+            });
+        },
+        onSuccess: (run) => onRunSuccess(run, "Python ↔ R comparison started."),
+        onError: (error) => onRunError(error, "Failed to compare engines."),
     });
 
     const mutationByTab = {
@@ -1241,17 +1344,35 @@ export default function AnalysisView() {
                                 select
                                 size="small"
                                 label="Query mode"
-                                value={kwicQueryMode}
+                                value={engineRuntime === "r" ? "word" : kwicQueryMode}
+                                disabled={engineRuntime === "r"}
                                 onChange={(event) => setKwicQueryMode(event.target.value)}
                                 sx={{ width: 160 }}
+                                helperText={
+                                    engineRuntime === "r"
+                                        ? "R KWIC requires literal word mode"
+                                        : undefined
+                                }
                             >
-                                <MenuItem value="auto">Auto</MenuItem>
+                                <MenuItem value="auto" disabled={engineRuntime === "r"}>
+                                    Auto
+                                </MenuItem>
                                 <MenuItem value="word">Word</MenuItem>
-                                <MenuItem value="phrase">Phrase</MenuItem>
-                                <MenuItem value="exact_phrase">Exact phrase</MenuItem>
-                                <MenuItem value="regex">Regex</MenuItem>
-                                <MenuItem value="wildcard">Wildcard</MenuItem>
-                                <MenuItem value="lemma">Lemma</MenuItem>
+                                <MenuItem value="phrase" disabled={engineRuntime === "r"}>
+                                    Phrase
+                                </MenuItem>
+                                <MenuItem value="exact_phrase" disabled={engineRuntime === "r"}>
+                                    Exact phrase
+                                </MenuItem>
+                                <MenuItem value="regex" disabled={engineRuntime === "r"}>
+                                    Regex
+                                </MenuItem>
+                                <MenuItem value="wildcard" disabled={engineRuntime === "r"}>
+                                    Wildcard
+                                </MenuItem>
+                                <MenuItem value="lemma" disabled={engineRuntime === "r"}>
+                                    Lemma
+                                </MenuItem>
                             </TextField>
                             <TextField
                                 size="small"
@@ -1277,7 +1398,11 @@ export default function AnalysisView() {
                     ) : null}
 
                     {tab === "dfm" ? (
-                        <AdvancedDfmPanel config={dfmConfig} onChange={setDfmConfig} />
+                        <AdvancedDfmPanel
+                            config={dfmConfig}
+                            onChange={setDfmConfig}
+                            rEngine={engineRuntime === "r"}
+                        />
                     ) : null}
 
                     {tab === "keyness" ? (
@@ -1476,15 +1601,28 @@ export default function AnalysisView() {
                         </Stack>
                     ) : null}
 
-                    <Button
-                        variant="contained"
-                        startIcon={<RunIcon />}
-                        onClick={() => activeMutation?.mutate()}
-                        disabled={!canRun}
-                        sx={{ alignSelf: "flex-start" }}
-                    >
-                        Run {runLabel}
-                    </Button>
+                    <Stack direction="row" spacing={1.5} sx={{ alignSelf: "flex-start" }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<RunIcon />}
+                            onClick={() => activeMutation?.mutate()}
+                            disabled={!canRun}
+                        >
+                            Run {runLabel}
+                        </Button>
+                        {compareCompatible ? (
+                            <Button
+                                variant="outlined"
+                                onClick={() => compareMutation.mutate()}
+                                disabled={
+                                    compareMutation.isPending ||
+                                    (tab === "kwic" && !kwicKeyword.trim())
+                                }
+                            >
+                                Compare Python ↔ R
+                            </Button>
+                        ) : null}
+                    </Stack>
                 </Stack>
             </SectionCard>
 

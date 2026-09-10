@@ -26,6 +26,22 @@ class RJobBundle:
     result_path: Path
 
 
+def _token_columns(
+    unit_ids: tuple[str, ...] | list[str],
+    token_sequences: tuple | list,
+) -> dict[str, list]:
+    """Build columnar token arrays without a per-token dict list."""
+    out_unit_ids: list[str] = []
+    positions: list[int] = []
+    tokens: list[str] = []
+    for unit_id, sequence in zip(unit_ids, token_sequences, strict=True):
+        for position, token in enumerate(sequence):
+            out_unit_ids.append(unit_id)
+            positions.append(position)
+            tokens.append(token)
+    return {"unit_id": out_unit_ids, "token_position": positions, "token": tokens}
+
+
 def serialize_r_job(
     *,
     specification: AnalysisSpecification,
@@ -40,29 +56,20 @@ def serialize_r_job(
     root = Path(settings.RESEARCH_R_WORK_DIR).expanduser()
     root.mkdir(parents=True, exist_ok=True)
     workdir = Path(tempfile.mkdtemp(prefix="job-", dir=root))
+    (workdir / "artifacts").mkdir(parents=True, exist_ok=True)
     units_path = workdir / "units.parquet"
     tokens_path = workdir / "tokens.parquet"
     metadata_path = workdir / "metadata.parquet"
     save_unit_table(
         units_path,
-        [
-            {
-                "unit_id": unit_id,
-                "document_id": prepared.document_ids[index],
-                "original_text": prepared.original_units[index],
-                "cleaned_text": prepared.cleaned_units[index],
-            }
-            for index, unit_id in enumerate(prepared.unit_ids)
-        ],
+        columns={
+            "unit_id": list(prepared.unit_ids),
+            "document_id": list(prepared.document_ids),
+            "original_text": list(prepared.original_units),
+            "cleaned_text": list(prepared.cleaned_units),
+        },
     )
-    save_unit_table(
-        tokens_path,
-        [
-            {"unit_id": unit_id, "token_position": position, "token": token}
-            for unit_id, sequence in zip(prepared.unit_ids, prepared.token_sequences, strict=True)
-            for position, token in enumerate(sequence)
-        ],
-    )
+    save_unit_table(tokens_path, columns=_token_columns(prepared.unit_ids, prepared.token_sequences))
     save_unit_table(
         metadata_path,
         [
@@ -82,22 +89,16 @@ def serialize_r_job(
         tokens_b_path = workdir / "tokens_b.parquet"
         save_unit_table(
             units_b_path,
-            [
-                {"unit_id": unit_id, "document_id": comparison_prepared.document_ids[index]}
-                for index, unit_id in enumerate(comparison_prepared.unit_ids)
-            ],
+            columns={
+                "unit_id": list(comparison_prepared.unit_ids),
+                "document_id": list(comparison_prepared.document_ids),
+            },
         )
         save_unit_table(
             tokens_b_path,
-            [
-                {"unit_id": unit_id, "token_position": position, "token": token}
-                for unit_id, sequence in zip(
-                    comparison_prepared.unit_ids,
-                    comparison_prepared.token_sequences,
-                    strict=True,
-                )
-                for position, token in enumerate(sequence)
-            ],
+            columns=_token_columns(
+                comparison_prepared.unit_ids, comparison_prepared.token_sequences
+            ),
         )
         inputs.update({"units_b": units_b_path.name, "tokens_b": tokens_b_path.name})
     write_manifest(
@@ -123,6 +124,24 @@ def serialize_r_job(
                 "pipeline_checksum": prepared.pipeline_checksum,
                 "engine_name": "r",
                 "engine_version": engine_version,
+                **(
+                    {
+                        "inputs": [
+                            {
+                                "role": "target",
+                                "corpus_checksum": prepared.corpus_checksum,
+                                "pipeline_checksum": prepared.pipeline_checksum,
+                            },
+                            {
+                                "role": "reference",
+                                "corpus_checksum": comparison_prepared.corpus_checksum,
+                                "pipeline_checksum": comparison_prepared.pipeline_checksum,
+                            },
+                        ]
+                    }
+                    if comparison_prepared is not None
+                    else {}
+                ),
             },
             "inputs": inputs,
             "output": {"result": result_path.name, "artifacts_directory": "artifacts"},

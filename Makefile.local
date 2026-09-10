@@ -71,7 +71,7 @@ DEV_PORTS := \
 	$(FRONTEND_PORT) \
 	$(REDIS_PORT)
 
-DEV_PROCS := redis backend worker frontend
+DEV_PROCS := redis backend worker worker-r frontend
 ifeq ($(OPEN_BROWSER),1)
 DEV_PROCS += browser
 endif

@@ -688,7 +688,9 @@ export type AnalysisBasePayload = {
 export type AnalysisEngineCapability = {
     name: "python" | "r";
     implementation: string;
+    implementation_version?: string;
     available: boolean;
+    ready?: boolean;
     analyses: string[];
 };
 
@@ -769,6 +771,22 @@ export async function runKwic(
             window_size: 5,
             case_sensitive: false,
             query_mode: "auto",
+            ...payload,
+        }),
+    });
+}
+
+export async function runEngineComparison(
+    corpusId: string,
+    payload: AnalysisBasePayload & {
+        analysis_type: "frequencies" | "dfm" | "kwic";
+        analysis_parameters?: Record<string, unknown>;
+    }
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/analysis/engine-comparison`, {
+        method: "POST",
+        body: JSON.stringify({
+            analysis_parameters: {},
             ...payload,
         }),
     });

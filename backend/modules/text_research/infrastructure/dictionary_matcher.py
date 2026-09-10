@@ -469,6 +469,7 @@ def match_dictionary(
     spec: DictionarySpec,
     *,
     unit_ids: list[str] | None = None,
+    document_ids: list[str | None] | None = None,
     metadata: list[dict[str, Any]] | None = None,
     case_sensitive: bool = False,
     rate_per: float = 1000.0,
@@ -483,6 +484,8 @@ def match_dictionary(
     n_units = len(tokenized)
     if unit_ids is not None and len(unit_ids) != n_units:
         raise ValueError("unit_ids must align 1:1 with tokenized units")
+    if document_ids is not None and len(document_ids) != n_units:
+        raise ValueError("document_ids must align 1:1 with tokenized units")
     if metadata is not None and len(metadata) != n_units:
         raise ValueError("metadata must align 1:1 with tokenized units")
     if not spec.entries:
@@ -549,7 +552,20 @@ def match_dictionary(
     total_hits = sum(per_unit_hits)
     units_with_hit = sum(1 for h in per_unit_hits if h > 0)
     normalized = (total_hits / total_tokens * rate_per) if total_tokens else 0.0
-    prevalence = (units_with_hit / n_units) if n_units else 0.0
+    unit_prevalence = (units_with_hit / n_units) if n_units else 0.0
+    if document_ids is not None:
+        distinct_docs = {doc_id for doc_id in document_ids if doc_id}
+        n_documents = len(distinct_docs)
+        docs_with_hit = {
+            document_ids[index]
+            for index, hits in enumerate(per_unit_hits)
+            if hits > 0 and document_ids[index]
+        }
+        document_prevalence = (len(docs_with_hit) / n_documents) if n_documents else 0.0
+    else:
+        n_documents = n_units
+        docs_with_hit = set()
+        document_prevalence = unit_prevalence
 
     per_unit = []
     for i, hits in enumerate(per_unit_hits):
@@ -568,9 +584,11 @@ def match_dictionary(
         "normalized_hits": normalized,
         "hits_per_1000_tokens": (total_hits / total_tokens * 1000.0) if total_tokens else 0.0,
         "rate_per": rate_per,
-        "document_prevalence": prevalence,
-        "unit_prevalence": prevalence,
+        "document_prevalence": document_prevalence,
+        "unit_prevalence": unit_prevalence,
         "n_units": n_units,
+        "n_documents": n_documents,
+        "documents_with_hit": len(docs_with_hit) if document_ids is not None else units_with_hit,
         "n_tokens": total_tokens,
         "units_with_hit": units_with_hit,
         "per_unit": per_unit,

@@ -9,6 +9,7 @@ from backend.modules.text_research.domain.analysis_specification import Analysis
 from backend.modules.text_research.domain.exceptions import RUnsupportedAnalysis
 from backend.modules.text_research.domain.prepared_corpus import PreparedCorpusArtifact
 from backend.modules.text_research.infrastructure.prepared_corpus_builder import prepare_texts
+from backend.modules.text_research.infrastructure.r_runtime.capabilities import r_feature_enabled
 from backend.modules.text_research.infrastructure.r_runtime.runner import (
     r_runtime_available,
     run_r_job,
@@ -28,6 +29,12 @@ class RAnalysisEngine:
 
     @classmethod
     def available(cls) -> bool:
+        """Feature flag: R may be selected / queued without local Rscript on the API."""
+        return r_feature_enabled()
+
+    @classmethod
+    def runtime_ready(cls) -> bool:
+        """Worker-local check: this process can execute Rscript."""
         return r_runtime_available()
 
     def execute(
@@ -50,6 +57,7 @@ class RAnalysisEngine:
                 texts_b,
                 prepared.preprocessing_profile,
                 unit_ids=pipeline_context.get("unit_ids_b"),
+                document_ids=pipeline_context.get("document_ids_b"),
                 force_in_memory=pipeline_context.get("force_in_memory", False),
             )
             pipeline_context["prepared_b"] = comparison_prepared

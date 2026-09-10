@@ -38,12 +38,41 @@ def timeout_for(resource_class: str) -> int | None:
 def computation_identity(
     spec_hash: str,
     corpus_snapshot_hash: str,
+    *,
     engine_version: str = ENGINE_VERSION,
     engine_name: str = "python",
     pipeline_checksum: str | None = None,
 ) -> str:
-    """Return a stable identity, scoped to the scientific implementation."""
+    """Canonical computation identity used by cache, idempotency, and provenance.
+
+    Always includes ``engine_name`` and server-owned ``engine_version``. Optional
+    ``pipeline_checksum`` scopes the identity to a prepared-corpus pipeline.
+    """
     payload = ":".join(
-        (spec_hash, corpus_snapshot_hash, pipeline_checksum or "", engine_name, engine_version)
+        (
+            spec_hash,
+            corpus_snapshot_hash,
+            pipeline_checksum or "",
+            engine_name,
+            engine_version,
+        )
     )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def build_computation_identity(
+    *,
+    spec_hash: str,
+    corpus_snapshot_hash: str,
+    engine_name: str,
+    engine_version: str,
+    pipeline_checksum: str | None = None,
+) -> str:
+    """Keyword-only wrapper for the canonical identity builder."""
+    return computation_identity(
+        spec_hash,
+        corpus_snapshot_hash,
+        engine_version=engine_version,
+        engine_name=engine_name,
+        pipeline_checksum=pipeline_checksum,
+    )

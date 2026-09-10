@@ -69,13 +69,24 @@ def compile_plan(spec: AnalysisSpecification) -> ExecutionPlan:
         stages.append("build_manifest")
 
     steps = tuple(PipelineStep(name=stage) for stage in stages)
+    engine_version = _resolve_engine_version(normalized.engine.runtime)
     return ExecutionPlan(
         stages=stages,
         spec_hash=normalized.spec_hash(),
         engine_name=normalized.engine.runtime,
-        engine_version=(
-            normalized.engine.implementation
-            or ("r-quanteda-1" if normalized.engine.runtime == "r" else ENGINE_VERSION)
-        ),
+        engine_version=engine_version,
         steps=steps,
     )
+
+
+def _resolve_engine_version(runtime: str) -> str:
+    """Server-owned engine version; clients must not supply version strings."""
+    if runtime == "r":
+        from backend.modules.text_research.infrastructure.engines.r_engine import RAnalysisEngine
+
+        return RAnalysisEngine.implementation_version
+    from backend.modules.text_research.infrastructure.engines.python_engine import (
+        PythonAnalysisEngine,
+    )
+
+    return PythonAnalysisEngine.implementation_version

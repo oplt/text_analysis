@@ -1,5 +1,6 @@
 from backend.modules.memory.workers import extract_turn_memories_sync
 from backend.modules.rag.workers import cleanup_document_sync, index_document_sync
+from backend.modules.text_research.domain.exceptions import NON_RETRYABLE_RESEARCH_ERRORS
 from backend.modules.text_research.infrastructure.execution_policy import retry_policy_for
 from backend.modules.text_research.workers import (
     classifier_training_sync,
@@ -18,16 +19,20 @@ from backend.workers.email import send_email_sync
 from backend.workers.evaluation import run_evaluation_sync
 
 
-def _research_task_options(resource_class: str) -> dict:
+def _research_task_options(resource_class: str, *, allow_deterministic_retry: bool = True) -> dict:
     policy = retry_policy_for(resource_class)
-    return {
+    options = {
         "bind": True,
         "autoretry_for": (Exception,),
-        "retry_backoff": False,
-        "retry_jitter": False,
+        "retry_backoff": True,
+        "retry_jitter": True,
         "max_retries": policy["max_retries"],
         "default_retry_delay": policy["countdown"],
     }
+    if not allow_deterministic_retry:
+        # Never autoretry validation / unsupported-analysis / safe R failures.
+        options["dont_autoretry_for"] = NON_RETRYABLE_RESEARCH_ERRORS
+    return options
 
 
 @celery_app.task(
@@ -193,15 +198,20 @@ def research_quantitative_analysis_task(self, *, run_id: str, user_id: str) -> N
 
 @celery_app.task(
     name="backend.workers.tasks.research_r_quantitative_analysis_task",
-    **_research_task_options("research_cpu"),
+    **_research_task_options("research_cpu", allow_deterministic_retry=False),
 )
 def research_r_quantitative_analysis_task(self, *, run_id: str, user_id: str) -> None:
+    from backend.modules.text_research.infrastructure.r_runtime.capabilities import (
+        refresh_r_worker_heartbeat_if_local_runtime_ready,
+    )
+
+    refresh_r_worker_heartbeat_if_local_runtime_ready()
     r_quantitative_analysis_sync(run_id=run_id, user_id=user_id)
 
 
 @celery_app.task(
     name="backend.workers.tasks.research_engine_comparison_task",
-    **_research_task_options("research_cpu"),
+    **_research_task_options("research_cpu", allow_deterministic_retry=False),
 )
 def research_engine_comparison_task(self, *, run_id: str, user_id: str) -> None:
     engine_comparison_sync(run_id=run_id, user_id=user_id)

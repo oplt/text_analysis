@@ -43,6 +43,32 @@ services:
       - "127.0.0.1:9001:9001"
     volumes:
       - minio_data:/data
+
+  # Optional dedicated R Celery worker (Python orchestration + pinned R/quanteda).
+  # Build from repo root: docker compose -f infra/docker-compose.yml build worker-r
+  worker-r:
+    profiles: ["r"]
+    build:
+      context: ..
+      dockerfile: r_engine/Dockerfile
+    image: text-analysis-r-worker:local
+    container_name: app_worker_r
+    environment:
+      RESEARCH_R_ENABLED: "true"
+      RESEARCH_RSCRIPT_PATH: Rscript
+      RESEARCH_R_ENGINE_ENTRYPOINT: /opt/r_engine/run_analysis.R
+      RESEARCH_QUEUE_R: research_r
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:?set in infra/.env}:${POSTGRES_PASSWORD:?set in infra/.env}@postgres:5432/${POSTGRES_DB:?set in infra/.env}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   minio_data:
