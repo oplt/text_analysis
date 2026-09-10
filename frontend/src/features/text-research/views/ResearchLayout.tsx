@@ -42,6 +42,11 @@ const ANALYSIS_SUBLINKS = [
     { tab: "measurement", label: "Measurement" },
 ] as const;
 
+const ANALYSIS_RELATED_LINKS = [
+    { path: "dictionaries", label: "Dictionary manager" },
+    { path: "comparative", label: "Comparative prevalence" },
+] as const;
+
 function routeFromPath(pathname: string, projectId: string): string {
     const prefix = `/research/${projectId}/`;
     if (!pathname.startsWith(prefix)) return "dashboard";
@@ -228,6 +233,18 @@ function ResearchLayoutInner() {
                                                 ? `/research/${projectId}/analysis`
                                                 : `/research/${projectId}/analysis?tab=${link.tab}`
                                         )
+                                    }
+                                >
+                                    {link.label}
+                                </Button>
+                            ))}
+                            {ANALYSIS_RELATED_LINKS.map((link) => (
+                                <Button
+                                    key={link.path}
+                                    size="small"
+                                    variant="text"
+                                    onClick={() =>
+                                        navigate(`/research/${projectId}/${link.path}`)
                                     }
                                 >
                                     {link.label}

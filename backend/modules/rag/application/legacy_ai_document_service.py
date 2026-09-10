@@ -124,7 +124,7 @@ class LegacyAiDocumentService:
     ) -> AiDocumentView:
         payload = content.encode("utf-8")
         resolved_filename = filename or _filename_for_text(title, content_type)
-        document, job, raw_content = await self.ingestion.upload_document(
+        document, job, _raw_content = await self.ingestion.upload_document(
             user_id=user_id,
             filename=resolved_filename,
             content=payload,
@@ -133,7 +133,6 @@ class LegacyAiDocumentService:
                 **(metadata or {}),
                 "title": title,
                 "description": description,
-                "size_bytes": len(payload),
             },
         )
         queue_document_indexing(
@@ -150,20 +149,16 @@ class LegacyAiDocumentService:
         file: UploadFile,
         description: str | None,
     ) -> AiDocumentView:
-        content = await file.read()
-        if not content:
-            raise HTTPException(status_code=400, detail="Uploaded document file is empty")
         title = file.filename or "Untitled document"
-        document, job, raw_content = await self.ingestion.upload_document(
+        document, job, _raw_content = await self.ingestion.upload_document(
             user_id=user_id,
             filename=file.filename or "upload.bin",
-            content=content,
             content_type=file.content_type or "application/octet-stream",
             metadata={
                 "title": title,
                 "description": description,
-                "size_bytes": len(content),
             },
+            upload=file,
         )
         queue_document_indexing(
             document_id=document.id,
@@ -189,13 +184,6 @@ class LegacyAiDocumentService:
         else:
             candidate_ids = None
 
-        doc_ids_for_titles = set(document_ids or [])
-        allowed_doc_map = {}
-        for doc_id in doc_ids_for_titles:
-            document = await self.repo.get_document(doc_id)
-            if document and document.user_id == user_id:
-                allowed_doc_map[doc_id] = document
-
         filters = {"document_ids": candidate_ids} if candidate_ids else None
         outcome = await self.retrieval.retrieve(
             query,
@@ -204,15 +192,29 @@ class LegacyAiDocumentService:
             top_k=top_k,
             filters=filters,
         )
-        return [
-            {
-                "document_id": match.document_id,
-                "chunk_id": match.chunk_id,
-                "document_title": match.filename
-                or allowed_doc_map[match.document_id].original_filename,
-                "chunk_index": match.chunk_index,
-                "score": match.score,
-                "content": match.content,
-            }
-            for match in outcome.chunks
-        ]
+
+        title_ids = {match.document_id for match in outcome.chunks}
+        if document_ids:
+            title_ids.update(document_ids)
+        documents = await self.repo.get_documents_by_ids(list(title_ids), user_id=user_id)
+        documents_by_id = {doc.id: doc for doc in documents}
+
+        results: list[dict[str, Any]] = []
+        for match in outcome.chunks:
+            document = documents_by_id.get(match.document_id)
+            title = (
+                match.filename
+                or (document.original_filename if document else None)
+                or "Unknown document"
+            )
+            results.append(
+                {
+                    "document_id": match.document_id,
+                    "chunk_id": match.chunk_id,
+                    "document_title": title,
+                    "chunk_index": match.chunk_index,
+                    "score": match.score,
+                    "content": match.content,
+                }
+            )
+        return results

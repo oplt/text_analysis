@@ -323,12 +323,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Build output
+# Build / test artifacts
 dist/
-build/
-.out/
-.next/
-.vite/
+coverage/
+playwright-report/
+test-results/
+*.log
+
 
 # Caches
 .cache/

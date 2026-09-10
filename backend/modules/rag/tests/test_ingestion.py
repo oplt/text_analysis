@@ -94,7 +94,15 @@ class UploadCreatesDocumentTest(unittest.IsolatedAsyncioTestCase):
     @patch("backend.modules.rag.application.document_ingestion_service.FileStorageAdapter")
     async def test_upload_creates_document_row(self, storage_cls, policy_cls):
         policy_cls.return_value.is_allowed_file_type.return_value = True
-        storage_cls.return_value.store_document = AsyncMock(return_value="rag/key")
+        storage_cls.return_value.store_document = AsyncMock(
+            return_value=SimpleNamespace(
+                storage_path="rag/key",
+                size_bytes=19,
+                checksum_sha256="deadbeef",
+                content_type="text/plain",
+                reused_existing=False,
+            )
+        )
 
         db = AsyncMock()
         service = __import__(
@@ -122,8 +130,10 @@ class UploadCreatesDocumentTest(unittest.IsolatedAsyncioTestCase):
             content_type="text/plain",
         )
         self.assertEqual(document.id, "doc-1")
-        self.assertEqual(content, b"hello world content")
+        self.assertIsNone(content)
         service.repo.create_document.assert_awaited_once()
+        metadata = service.repo.create_document.await_args.kwargs["metadata"]
+        self.assertEqual(metadata["checksum_sha256"], "deadbeef")
 
 
 class EmbeddingAdapterTest(unittest.IsolatedAsyncioTestCase):

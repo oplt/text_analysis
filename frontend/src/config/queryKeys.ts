@@ -67,8 +67,11 @@ export const queryKeys = {
         documents: (corpusId: string, params?: Record<string, unknown>) =>
             ["text-research", "corpus", corpusId, "documents", params ?? {}] as const,
         codebooks: (projectId: string) => ["text-research", projectId, "codebooks"] as const,
+        /** Version-aware: keyed by codebook id (frozen versions keep stable ids). */
         labels: (codebookId: string) => ["text-research", "codebook", codebookId, "labels"] as const,
         dashboard: (corpusId: string) => ["text-research", "corpus", corpusId, "dashboard"] as const,
+        /** Prefix for invalidating every annotation-queue page/filter. */
+        annotationQueueRoot: ["text-research", "annotation-queue"] as const,
         annotationQueue: (status?: string, offset = 0) =>
             ["text-research", "annotation-queue", status ?? "all", offset] as const,
         annotationProgress: (corpusId: string) =>
@@ -77,8 +80,13 @@ export const queryKeys = {
             ["text-research", projectId, "runs", corpusId ?? "all", runType ?? "all"] as const,
         run: (runId: string) => ["text-research", "run", runId] as const,
         runProvenance: (runId: string) => ["text-research", "run", runId, "provenance"] as const,
+        /** Prefix for all classifier lists under a project. */
+        classifiersRoot: (projectId: string) =>
+            ["text-research", projectId, "classifiers"] as const,
         classifiers: (projectId: string, corpusId?: string) =>
             ["text-research", projectId, "classifiers", corpusId ?? "all"] as const,
+        /** Prefix for model registry lists under a project (any corpus/lifecycle filter). */
+        modelsRoot: (projectId: string) => ["text-research", projectId, "models"] as const,
         models: (projectId: string, corpusId?: string, lifecycleStatus?: string) =>
             [
                 "text-research",
@@ -92,6 +100,9 @@ export const queryKeys = {
             ["text-research", "corpus", corpusId, "prediction-sets"] as const,
         predictionSet: (predictionSetId: string) =>
             ["text-research", "prediction-set", predictionSetId] as const,
+        /** Prefix for prediction-set detail pages (filters/offset). */
+        predictionSetPageRoot: (predictionSetId: string) =>
+            ["text-research", "prediction-set-page", predictionSetId] as const,
         datasetSnapshots: (projectId: string, corpusId?: string) =>
             ["text-research", projectId, "snapshots", corpusId ?? "all"] as const,
         exportManifest: (corpusId: string) =>
@@ -102,6 +113,8 @@ export const queryKeys = {
             ["text-research", projectId, "cleaning-profiles"] as const,
         dictionaries: (projectId: string) =>
             ["text-research", projectId, "dictionaries"] as const,
+        metadataFacets: (corpusId: string) =>
+            ["text-research", "metadata-facets", corpusId] as const,
         disagreements: (corpusId: string, codebookId: string) =>
             ["text-research", "corpus", corpusId, "disagreements", codebookId] as const,
         adjudications: (corpusId: string) =>
@@ -114,6 +127,48 @@ export const queryKeys = {
             ["text-research", projectId, "contextual-datasets"] as const,
         contextualDataset: (datasetId: string) =>
             ["text-research", "contextual-dataset", datasetId] as const,
+        /** Prefix for all active-learning queue pages for a model. */
+        activeLearningRoot: (modelId: string) =>
+            ["text-research", "active-learning", modelId] as const,
+        activeLearningQueue: (
+            modelId: string,
+            params?: { offset?: number; limit?: number; campaignId?: string }
+        ) =>
+            [
+                "text-research",
+                "active-learning",
+                modelId,
+                params?.offset ?? 0,
+                params?.limit ?? 20,
+                params?.campaignId ?? "none",
+            ] as const,
+        modelLifecycleEvents: (modelId: string) =>
+            ["text-research", "model", modelId, "lifecycle-events"] as const,
+        annotationCampaigns: (projectId: string, corpusId?: string) =>
+            ["text-research", projectId, "annotation-campaigns", corpusId ?? "all"] as const,
+    },
+    rag: {
+        all: ["rag"] as const,
+        documents: (projectId?: string, offset = 0) =>
+            ["rag", "documents", projectId ?? "all", offset] as const,
+        document: (documentId: string) => ["rag", "document", documentId] as const,
+        chunks: (documentId: string, offset = 0) =>
+            ["rag", "chunks", documentId, offset] as const,
+        job: (jobId: string) => ["rag", "job", jobId] as const,
+        queries: (offset = 0) => ["rag", "queries", offset] as const,
+    },
+    memory: {
+        all: ["memory"] as const,
+        list: (params?: Record<string, unknown>) => ["memory", "list", params ?? {}] as const,
+        detail: (memoryId: string) => ["memory", "detail", memoryId] as const,
+        audit: (offset = 0) => ["memory", "audit", offset] as const,
+        search: (query: string, params?: Record<string, unknown>) =>
+            ["memory", "search", query, params ?? {}] as const,
+    },
+    agent: {
+        all: ["agent"] as const,
+        runs: ["agent", "runs"] as const,
+        run: (runId: string) => ["agent", "run", runId] as const,
     },
 } as const;
 

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from functools import cached_property
-from typing import Any
+from typing import Any, BinaryIO
 
 from backend.core.config import settings
 
@@ -95,6 +95,38 @@ class ObjectStorage:
             if cache_control:
                 put_kwargs["CacheControl"] = cache_control
             self._client.put_object(**put_kwargs)
+
+        try:
+            await asyncio.to_thread(_upload)
+        except Exception as exc:
+            raise ObjectStorageError("Failed to upload object to storage") from exc
+
+        return self.public_url_for(object_key)
+
+    async def upload_fileobj(
+        self,
+        *,
+        object_key: str,
+        fileobj: BinaryIO,
+        content_type: str,
+        cache_control: str = AVATAR_CACHE_CONTROL,
+    ) -> str:
+        """Stream ``fileobj`` to object storage (multipart when boto3 deems it useful)."""
+        if not self.is_configured:
+            raise StorageNotConfiguredError(
+                "Object storage is not configured. Set STORAGE_BUCKET and storage credentials."
+            )
+
+        def _upload() -> None:
+            extra_args: dict[str, str] = {"ContentType": content_type}
+            if cache_control:
+                extra_args["CacheControl"] = cache_control
+            self._client.upload_fileobj(
+                fileobj,
+                settings.STORAGE_BUCKET,
+                object_key,
+                ExtraArgs=extra_args,
+            )
 
         try:
             await asyncio.to_thread(_upload)

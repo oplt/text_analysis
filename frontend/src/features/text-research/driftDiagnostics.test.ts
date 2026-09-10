@@ -9,11 +9,19 @@ import {
 
 describe("driftDiagnostics", () => {
     it("parses prediction, prevalence, score, and feature sections into table rows", () => {
-        const { rows, sectionCount } = parseDriftReport({
+        const { rows, sectionCount, warningLevel, provenance } = parseDriftReport({
             analysis_run_id: "run-1",
-            summary: { section_count: 3 },
-            baseline: { label_counts: { a: 10, b: 10 } },
-            current: { label_counts: { a: 18, b: 2 } },
+            mode: "MODEL_COMPARISON",
+            summary: { section_count: 3, warning_level: "investigate", n_observations: 40 },
+            provenance: {
+                baseline_prediction_set_id: "ps-a",
+                current_prediction_set_id: "ps-b",
+                n_baseline: 20,
+                n_current: 20,
+                aggregation: "full_prediction_set",
+            },
+            baseline: { label_counts: { a: 10, b: 10 }, n: 20 },
+            current: { label_counts: { a: 18, b: 2 }, n: 20 },
             sections: {
                 prediction_distribution: {
                     total_variation_distance: 0.3,
@@ -22,6 +30,12 @@ describe("driftDiagnostics", () => {
                 score_distribution: {
                     method: "ks_2samp",
                     statistic: 0.15,
+                    baseline_n: 20,
+                    current_n: 20,
+                },
+                uncertainty_distribution: {
+                    method: "ks_2samp",
+                    statistic: 0.2,
                     baseline_n: 20,
                     current_n: 20,
                 },
@@ -34,9 +48,13 @@ describe("driftDiagnostics", () => {
         });
 
         expect(sectionCount).toBe(3);
+        expect(warningLevel).toBe("investigate");
+        expect(provenance.baselinePredictionSetId).toBe("ps-a");
+        expect(provenance.nObservations).toBe(40);
         expect(rows.some((r) => r.kind === "prediction_distribution")).toBe(true);
         expect(rows.some((r) => r.kind === "class_prevalence")).toBe(true);
         expect(rows.some((r) => r.kind === "score_distribution")).toBe(true);
+        expect(rows.some((r) => r.kind === "uncertainty_distribution")).toBe(true);
         expect(rows.some((r) => r.kind === "feature_input")).toBe(true);
         expect(rows.find((r) => r.id === "pred-tvd")?.status).toBe("investigate");
         expect(rows.find((r) => r.id === "feature-jaccard")?.status).toBe("investigate");

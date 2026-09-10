@@ -72,6 +72,57 @@ class RagRepository:
         )
         return result.scalar_one_or_none()
 
+    async def get_documents_by_ids(
+        self,
+        document_ids: list[str],
+        *,
+        user_id: str | None = None,
+    ) -> list[RagDocument]:
+        """Fetch multiple documents in one query; optionally scoped to ``user_id``."""
+        if not document_ids:
+            return []
+        stmt = select(RagDocument).where(
+            RagDocument.id.in_(document_ids),
+            RagDocument.deleted_at.is_(None),
+        )
+        if user_id is not None:
+            stmt = stmt.where(RagDocument.user_id == user_id)
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
+
+    async def find_document_by_checksum(
+        self,
+        *,
+        user_id: str,
+        checksum_sha256: str,
+        project_id: str | None = None,
+    ) -> RagDocument | None:
+        """Return the newest non-deleted document with matching content checksum.
+
+        Checksums are hex digests stored in ``metadata_json``; matching is scoped
+        to the owning user and optional project so provenance stays isolated.
+        """
+        digest = checksum_sha256.strip().lower()
+        if not digest or any(c not in "0123456789abcdef" for c in digest):
+            return None
+        needle = f'"checksum_sha256": "{digest}"'
+        stmt = (
+            select(RagDocument)
+            .where(
+                RagDocument.user_id == user_id,
+                RagDocument.deleted_at.is_(None),
+                RagDocument.metadata_json.contains(needle),
+            )
+            .order_by(RagDocument.created_at.desc())
+            .limit(1)
+        )
+        if project_id is not None:
+            stmt = stmt.where(RagDocument.project_id == project_id)
+        else:
+            stmt = stmt.where(RagDocument.project_id.is_(None))
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def list_documents_for_user(
         self,
         user_id: str,

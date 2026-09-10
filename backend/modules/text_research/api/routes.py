@@ -2269,7 +2269,13 @@ async def list_prediction_sets(
 @router.get("/classifiers/{model_id}/active-learning/queue")
 async def list_uncertain_predictions(
     model_id: str,
-    limit: int = Query(default=20, ge=1, le=500),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    content_mode: str = Query(
+        default="snippet",
+        pattern="^(snippet|full)$",
+        description="Return truncated text previews (snippet) or full unit text (full).",
+    ),
     campaign_id: str | None = None,
     text_unit_id: str | None = None,
     db: AsyncSession = Depends(get_db),
@@ -2283,23 +2289,31 @@ async def list_uncertain_predictions(
     When ``campaign_id`` or ``text_unit_id`` refers to a blind campaign for the
     current annotator, the queue is empty — predictions must not be fetched.
     """
+    from backend.core.text_snippet import text_snippet
+
     if campaign_id:
         campaign = await AnnotationCampaignService(db).get_campaign(
             campaign_id, user_id=current_user.id
         )
         if campaign.blind_mode:
-            return []
+            return {"items": [], "total": 0, "limit": limit, "offset": offset}
     if text_unit_id:
         policy = await AnnotationCampaignService(db).blind_policy_for_annotator_unit(
             text_unit_id=text_unit_id, annotator_id=current_user.id
         )
         if policy.get("hide_model_predictions"):
-            return []
+            return {"items": [], "total": 0, "limit": limit, "offset": offset}
 
-    rows = await ActiveLearningService(db).uncertain_queue(
-        model_id, user_id=current_user.id, limit=limit
+    rows, total = await ActiveLearningService(db).uncertain_queue(
+        model_id, user_id=current_user.id, limit=limit, offset=offset
     )
-    return [
+
+    def unit_text(raw: str) -> str:
+        if content_mode == "full":
+            return raw
+        return text_snippet(raw)
+
+    items = [
         {
             "prediction": {
                 "id": prediction.id,
@@ -2315,12 +2329,13 @@ async def list_uncertain_predictions(
                 "corpus_document_id": unit.corpus_document_id,
                 "unit_type": unit.unit_type,
                 "position": unit.position,
-                "text": unit.text,
+                "text": unit_text(unit.text),
             },
         }
         for row in rows
         if (prediction := row["prediction"]) and (unit := row["text_unit"])
     ]
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @router.post("/classifiers/{model_id}/active-learning/assign", status_code=201)
@@ -2718,98 +2733,123 @@ async def stream_run_events(
 
     async def events():
         previous: AnalysisRunResponse | None = None
-        current = await _load_response()
-        event_name = _run_event_name(current, previous)
-        payload = json.dumps(current.model_dump(mode="json"), separators=(",", ":"))
-        if current.artifact_path:
-            yield f"event: artifact-created\ndata: {payload}\n\n"
-        yield f"event: {event_name}\ndata: {payload}\n\n"
-        previous = current
-        if current.status in TERMINAL_RUN_STATUSES:
-            return
-
-        channel = run_events_channel(run_id)
-        pubsub = None
-        use_redis = bool(getattr(settings, "CACHE_ENABLED", True))
-        last_db_reconcile = asyncio.get_running_loop().time()
-        db_reconcile_every = 15.0
-
         try:
-            if use_redis:
-                pubsub = redis_client.pubsub()
-                await pubsub.subscribe(channel)
+            from backend.observability.prometheus_metrics import research_sse_active_connections
 
-            while True:
-                message = None
-                if pubsub is not None:
-                    try:
-                        message = await pubsub.get_message(
-                            ignore_subscribe_messages=True, timeout=1.0
-                        )
-                    except Exception:
-                        # Redis hiccup → fall back to DB polling for this stream.
-                        pubsub = None
-                        use_redis = False
+            research_sse_active_connections.inc()
+        except Exception:
+            pass
+        try:
+            current = await _load_response()
+            event_name = _run_event_name(current, previous)
+            payload = json.dumps(current.model_dump(mode="json"), separators=(",", ":"))
+            if current.artifact_path:
+                yield f"event: artifact-created\ndata: {payload}\n\n"
+            yield f"event: {event_name}\ndata: {payload}\n\n"
+            previous = current
+            if current.status in TERMINAL_RUN_STATUSES:
+                return
 
-                if message and message.get("type") == "message":
-                    raw = message.get("data")
-                    try:
-                        envelope = json.loads(raw) if isinstance(raw, str) else raw
-                        run_payload = envelope.get("run") if isinstance(envelope, dict) else None
-                        redis_event = envelope.get("event") if isinstance(envelope, dict) else None
-                    except (TypeError, json.JSONDecodeError):
-                        run_payload = None
-                        redis_event = None
+            channel = run_events_channel(run_id)
+            pubsub = None
+            use_redis = bool(getattr(settings, "CACHE_ENABLED", True))
+            last_db_reconcile = asyncio.get_running_loop().time()
+            db_reconcile_every = 15.0
 
-                    if isinstance(run_payload, dict):
-                        current = AnalysisRunResponse.model_validate(run_payload)
-                        payload = json.dumps(current.model_dump(mode="json"), separators=(",", ":"))
-                        if current.artifact_path and (
-                            previous is None or current.artifact_path != previous.artifact_path
-                        ):
-                            yield f"event: artifact-created\ndata: {payload}\n\n"
-                        name = redis_event or _run_event_name(current, previous)
-                        if name != "artifact-created":
-                            yield f"event: {name}\ndata: {payload}\n\n"
-                        elif (
-                            previous is not None and current.artifact_path == previous.artifact_path
-                        ):
-                            # Redis said artifact-created but path unchanged — treat as progress.
-                            yield f"event: progress\ndata: {payload}\n\n"
-                        previous = current
+            try:
+                if use_redis:
+                    pubsub = redis_client.pubsub()
+                    await pubsub.subscribe(channel)
+
+                while True:
+                    message = None
+                    if pubsub is not None:
+                        try:
+                            message = await pubsub.get_message(
+                                ignore_subscribe_messages=True, timeout=1.0
+                            )
+                        except Exception:
+                            # Redis hiccup → fall back to DB polling for this stream.
+                            pubsub = None
+                            use_redis = False
+
+                    if message and message.get("type") == "message":
+                        raw = message.get("data")
+                        try:
+                            envelope = json.loads(raw) if isinstance(raw, str) else raw
+                            run_payload = (
+                                envelope.get("run") if isinstance(envelope, dict) else None
+                            )
+                            redis_event = (
+                                envelope.get("event") if isinstance(envelope, dict) else None
+                            )
+                        except (TypeError, json.JSONDecodeError):
+                            run_payload = None
+                            redis_event = None
+
+                        if isinstance(run_payload, dict):
+                            current = AnalysisRunResponse.model_validate(run_payload)
+                            payload = json.dumps(
+                                current.model_dump(mode="json"), separators=(",", ":")
+                            )
+                            if current.artifact_path and (
+                                previous is None or current.artifact_path != previous.artifact_path
+                            ):
+                                yield f"event: artifact-created\ndata: {payload}\n\n"
+                            name = redis_event or _run_event_name(current, previous)
+                            if name != "artifact-created":
+                                yield f"event: {name}\ndata: {payload}\n\n"
+                            elif (
+                                previous is not None
+                                and current.artifact_path == previous.artifact_path
+                            ):
+                                # Redis said artifact-created but path unchanged.
+                                yield f"event: progress\ndata: {payload}\n\n"
+                            previous = current
+                            if current.status in TERMINAL_RUN_STATUSES:
+                                return
+                            continue
+
+                    now = asyncio.get_running_loop().time()
+                    # Rare DB reconcile (missed publish / Redis down) — not 1Hz polling.
+                    should_reconcile = (not use_redis) or (
+                        now - last_db_reconcile >= db_reconcile_every
+                    )
+                    if should_reconcile:
+                        last_db_reconcile = now
+                        current = await _load_response()
+                        if previous != current:
+                            payload = json.dumps(
+                                current.model_dump(mode="json"), separators=(",", ":")
+                            )
+                            if current.artifact_path and (
+                                previous is None or current.artifact_path != previous.artifact_path
+                            ):
+                                yield f"event: artifact-created\ndata: {payload}\n\n"
+                            yield (
+                                f"event: {_run_event_name(current, previous)}\ndata: {payload}\n\n"
+                            )
+                            previous = current
                         if current.status in TERMINAL_RUN_STATUSES:
                             return
-                        continue
+                        if not use_redis:
+                            await asyncio.sleep(2)
+                            continue
 
-                now = asyncio.get_running_loop().time()
-                # Rare DB reconcile (missed publish / Redis down) — not 1Hz polling.
-                should_reconcile = (not use_redis) or (
-                    now - last_db_reconcile >= db_reconcile_every
-                )
-                if should_reconcile:
-                    last_db_reconcile = now
-                    current = await _load_response()
-                    if previous != current:
-                        payload = json.dumps(current.model_dump(mode="json"), separators=(",", ":"))
-                        if current.artifact_path and (
-                            previous is None or current.artifact_path != previous.artifact_path
-                        ):
-                            yield f"event: artifact-created\ndata: {payload}\n\n"
-                        yield f"event: {_run_event_name(current, previous)}\ndata: {payload}\n\n"
-                        previous = current
-                    if current.status in TERMINAL_RUN_STATUSES:
-                        return
-                    if not use_redis:
-                        await asyncio.sleep(2)
-                        continue
-
-                # SSE comment heartbeat keeps proxies from buffering/closing idle streams.
-                yield ": keepalive\n\n"
+                    # SSE comment heartbeat keeps proxies from buffering/closing idle streams.
+                    yield ": keepalive\n\n"
+            finally:
+                if pubsub is not None:
+                    with contextlib.suppress(Exception):
+                        await pubsub.unsubscribe(channel)
+                        await pubsub.aclose()
         finally:
-            if pubsub is not None:
-                with contextlib.suppress(Exception):
-                    await pubsub.unsubscribe(channel)
-                    await pubsub.aclose()
+            try:
+                from backend.observability.prometheus_metrics import research_sse_active_connections
+
+                research_sse_active_connections.dec()
+            except Exception:
+                pass
 
     return StreamingResponse(
         events(),

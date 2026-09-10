@@ -145,12 +145,44 @@ def build_drift_report(*, baseline: dict[str, Any], current: dict[str, Any]) -> 
     baseline_scores = baseline.get("scores")
     current_scores = current.get("scores")
     if isinstance(baseline_scores, list) and isinstance(current_scores, list):
-        sections["score_distribution"] = score_distribution_drift(baseline_scores, current_scores)
+        score_section = score_distribution_drift(baseline_scores, current_scores)
+        score_section["kind"] = "confidence"
+        sections["score_distribution"] = score_section
+
+    baseline_uncertainties = baseline.get("uncertainties")
+    current_uncertainties = current.get("uncertainties")
+    if (
+        isinstance(baseline_uncertainties, list)
+        and isinstance(current_uncertainties, list)
+        and (baseline_uncertainties or current_uncertainties)
+    ):
+        uncertainty_section = score_distribution_drift(
+            baseline_uncertainties, current_uncertainties
+        )
+        uncertainty_section["kind"] = "uncertainty"
+        uncertainty_section["metric"] = "uncertainty_distribution"
+        sections["uncertainty_distribution"] = uncertainty_section
 
     baseline_terms = baseline.get("top_terms")
     current_terms = current.get("top_terms")
     if isinstance(baseline_terms, list) and isinstance(current_terms, list):
         sections["feature_presence"] = feature_presence_drift(baseline_terms, current_terms)
+
+    warning_level = compute_warning_level(sections)
+    n_baseline = baseline.get("n")
+    n_current = current.get("n")
+    if not isinstance(n_baseline, int):
+        n_baseline = (
+            int(sum(int(v) for v in baseline_labels.values()))
+            if isinstance(baseline_labels, dict)
+            else 0
+        )
+    if not isinstance(n_current, int):
+        n_current = (
+            int(sum(int(v) for v in current_labels.values()))
+            if isinstance(current_labels, dict)
+            else 0
+        )
 
     return {
         "baseline": baseline,
@@ -160,6 +192,81 @@ def build_drift_report(*, baseline: dict[str, Any], current: dict[str, Any]) -> 
             "section_count": len(sections),
             "has_prediction_drift": "prediction_distribution" in sections,
             "has_score_drift": "score_distribution" in sections,
+            "has_uncertainty_drift": "uncertainty_distribution" in sections,
             "has_feature_drift": "feature_presence" in sections,
+            "warning_level": warning_level,
+            "n_baseline": n_baseline,
+            "n_current": n_current,
+            "n_observations": n_baseline + n_current,
         },
     }
+
+
+# Advisory bands aligned with frontend driftDiagnostics (descriptive, not alerts).
+_ADVISORY = {
+    "tvd": {"watch": 0.1, "investigate": 0.25},
+    "psi": {"watch": 0.1, "investigate": 0.25},
+    "ks": {"watch": 0.1, "investigate": 0.25},
+    "jaccard": {"watch": 0.7, "investigate": 0.5},  # lower is worse
+}
+
+
+def _band_higher_is_worse(value: float, bands: dict[str, float]) -> str:
+    if value >= bands["investigate"]:
+        return "investigate"
+    if value >= bands["watch"]:
+        return "watch"
+    return "ok"
+
+
+def _band_lower_is_worse(value: float, bands: dict[str, float]) -> str:
+    if value <= bands["investigate"]:
+        return "investigate"
+    if value <= bands["watch"]:
+        return "watch"
+    return "ok"
+
+
+def compute_warning_level(sections: dict[str, Any]) -> str:
+    """Worst advisory band across available sections (ok < watch < investigate)."""
+    rank = {"ok": 0, "watch": 1, "investigate": 2}
+    level = "ok"
+
+    def escalate(candidate: str) -> None:
+        nonlocal level
+        if rank.get(candidate, 0) > rank.get(level, 0):
+            level = candidate
+
+    pred = sections.get("prediction_distribution")
+    if isinstance(pred, dict):
+        tvd = pred.get("total_variation_distance")
+        psi = pred.get("psi_like")
+        if isinstance(tvd, (int, float)):
+            escalate(_band_higher_is_worse(float(tvd), _ADVISORY["tvd"]))
+        if isinstance(psi, (int, float)):
+            escalate(_band_higher_is_worse(float(psi), _ADVISORY["psi"]))
+
+    for key in ("score_distribution", "uncertainty_distribution"):
+        scores = sections.get(key)
+        if not isinstance(scores, dict):
+            continue
+        ks = scores.get("statistic")
+        if isinstance(ks, (int, float)):
+            escalate(_band_higher_is_worse(float(ks), _ADVISORY["ks"]))
+        elif isinstance(scores.get("mean_shift"), (int, float)):
+            escalate("watch" if abs(float(scores["mean_shift"])) >= 0.1 else "ok")
+
+    features = sections.get("feature_presence")
+    if isinstance(features, dict):
+        jaccard = features.get("jaccard_similarity")
+        if isinstance(jaccard, (int, float)):
+            escalate(_band_lower_is_worse(float(jaccard), _ADVISORY["jaccard"]))
+
+    performance = sections.get("performance")
+    if isinstance(performance, dict):
+        drop = performance.get("difference")
+        if isinstance(drop, (int, float)):
+            # Absolute accuracy drop; higher magnitude is worse when current is lower.
+            escalate(_band_higher_is_worse(abs(float(drop)), {"watch": 0.03, "investigate": 0.08}))
+
+    return level

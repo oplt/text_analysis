@@ -146,6 +146,23 @@ def prediction_sync(*, run_id: str, user_id: str) -> None:
     _run_with_session(_execute)
 
 
+def quantitative_analysis_sync(*, run_id: str, user_id: str) -> None:
+    from backend.modules.text_research.application.quantitative_analysis_service import (
+        QuantitativeAnalysisService,
+    )
+
+    async def _execute(db):
+        await QuantitativeAnalysisService(db).execute_quantitative(run_id)
+
+    try:
+        logger.info("Quantitative analysis started run=%s user=%s", run_id, user_id)
+        _run_with_session(_execute)
+        logger.info("Quantitative analysis completed run=%s", run_id)
+    except Exception:
+        logger.exception("Quantitative analysis failed run=%s user=%s", run_id, user_id)
+        raise
+
+
 def queue_segmentation(*, run_id: str, user_id: str) -> None:
     from backend.workers.tasks import research_segmentation_task
 
@@ -237,6 +254,19 @@ def queue_prediction(*, run_id: str, user_id: str) -> None:
     )
 
 
+def queue_quantitative_analysis(*, run_id: str, user_id: str) -> None:
+    from backend.workers.tasks import research_quantitative_analysis_task
+
+    return dispatch_background_sync_job(
+        target=quantitative_analysis_sync,
+        kwargs={"run_id": run_id, "user_id": user_id},
+        celery_task=research_quantitative_analysis_task,
+        celery_kwargs={"run_id": run_id, "user_id": user_id},
+        queue=queue_for_resource_class("research_cpu"),
+        job_name="research-quantitative-analysis",
+    )
+
+
 def queue_research_operation(*, operation: str, run_id: str, user_id: str) -> str | None:
     """Dispatch a named persisted operation through the shared worker boundary."""
     dispatchers = {
@@ -247,6 +277,7 @@ def queue_research_operation(*, operation: str, run_id: str, user_id: str) -> st
         "topic_seed_stability": queue_topic_seed_stability,
         "robustness": queue_robustness_sweep,
         "prediction": queue_prediction,
+        "quantitative": queue_quantitative_analysis,
     }
     try:
         dispatcher = dispatchers[operation]

@@ -1,27 +1,31 @@
-import { useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import {
     Alert,
     Button,
     Checkbox,
     FormControlLabel,
     MenuItem,
+    Skeleton,
     Stack,
     Table,
     TableBody,
     TableCell,
     TableHead,
+    TablePagination,
     TableRow,
     TextField,
     Typography,
 } from "@mui/material";
 import { BarChart as AnalysisIcon, PlayArrow as RunIcon } from "@mui/icons-material";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../../app/snackbarContext";
 import {
     getCorpusMetadataFacets,
     getRun,
     listDictionaries,
     listPreprocessingProfiles,
+    researchExportUrl,
     runCooccurrence,
     runCorpusStats,
     runDictionaryAnalysis,
@@ -35,9 +39,10 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { PageTabs } from "../../../components/ui/PageTabs";
+import { useDebounce } from "../../../hooks/useDebounce";
 import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { queryKeys } from "../../../config/queryKeys";
-import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
+import { QUERY_STALE_TIMES, researchRunStaleTime } from "../../../config/queryTiming";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import {
     MetricCards,
@@ -51,21 +56,35 @@ import { ChartTableToggle, ResearchResultPanel, ResearchResultsTable } from "../
 import { MetadataFilterBar } from "../components/MetadataFilterBar";
 import { AdvancedDfmPanel } from "../components/AdvancedDfmPanel";
 import { DEFAULT_DFM_CONFIG, type AdvancedDfmConfig } from "../components/advancedDfmConfig";
-import {
-    ClusterExplorer,
-    DimensionalityReductionView,
-    DuplicateDetectionView,
-    ReadabilityView,
-    SimilarityExplorer,
-} from "../components/AdvancedAnalysisPanels";
 import { ScientificWarnings } from "../components/ScientificWarnings";
 import { collectScientificWarnings } from "../components/scientificWarnings";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
+import { filterKwicRows, kwicRowsToCsv, toKwicSearchRows } from "../kwicTableModel";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 import type { AnalysisRun } from "../types";
-import MeasurementComparisonView from "./MeasurementComparisonView";
-import StatisticalModelView from "./StatisticalModelView";
+
+const StatisticalModelView = lazy(() => import("./StatisticalModelView"));
+const MeasurementComparisonView = lazy(() => import("./MeasurementComparisonView"));
+const ClusterExplorer = lazy(() => import("../components/ClusterExplorer"));
+const DimensionalityReductionView = lazy(
+    () => import("../components/DimensionalityReductionView")
+);
+const SimilarityExplorer = lazy(() =>
+    import("../components/AdvancedAnalysisPanels").then((m) => ({ default: m.SimilarityExplorer }))
+);
+const DuplicateDetectionView = lazy(() =>
+    import("../components/AdvancedAnalysisPanels").then((m) => ({
+        default: m.DuplicateDetectionView,
+    }))
+);
+const ReadabilityView = lazy(() =>
+    import("../components/AdvancedAnalysisPanels").then((m) => ({ default: m.ReadabilityView }))
+);
+
+function AnalysisPanelFallback() {
+    return <Skeleton variant="rounded" height={220} sx={{ borderRadius: 2 }} />;
+}
 
 type AnalysisTab =
     | "overview"
@@ -253,6 +272,11 @@ function parseCommaTerms(raw: string): string[] {
         .filter(Boolean);
 }
 
+/**
+ * Small client-side CSV for preview tables.
+ * Prefer backend run/corpus exports for large artifacts; if a heavier client
+ * transform is required, move it to a Web Worker rather than blocking the UI.
+ */
 function downloadCsv(filename: string, rows: unknown[]) {
     const records = rows.map(asRecord).filter((row): row is Record<string, unknown> => row != null);
     if (!records.length) return;
@@ -271,20 +295,26 @@ function runPayload(run: AnalysisRun | undefined): unknown {
     return run.results ?? run.metrics ?? null;
 }
 
-function KwicTable({ matches }: { matches: unknown[] }) {
+const KWIC_PAGE_SIZE = 50;
+
+function KwicTable({ matches, runId }: { matches: unknown[]; runId?: string | null }) {
     const [filter, setFilter] = useState("");
-    const visibleMatches = matches.filter((entry) =>
-        JSON.stringify(entry).toLocaleLowerCase().includes(filter.trim().toLocaleLowerCase())
+    const [page, setPage] = useState(0);
+    const debouncedFilter = useDebounce(filter, 200);
+    const searchableRows = useMemo(() => toKwicSearchRows(matches), [matches]);
+    const filteredRows = useMemo(
+        () => filterKwicRows(searchableRows, debouncedFilter),
+        [searchableRows, debouncedFilter]
+    );
+    const pageCount = Math.max(1, Math.ceil(filteredRows.length / KWIC_PAGE_SIZE));
+    const currentPage = Math.min(page, pageCount - 1);
+    const visibleRows = filteredRows.slice(
+        currentPage * KWIC_PAGE_SIZE,
+        (currentPage + 1) * KWIC_PAGE_SIZE
     );
 
-    function exportCsv() {
-        const rows = visibleMatches.map((entry) => {
-            const row = asRecord(entry) ?? {};
-            return ["left_context", "keyword", "right_context", "document_title", "organization"].map(
-                (key) => JSON.stringify(row[key] ?? "")
-            ).join(",");
-        });
-        const blob = new Blob([["left,keyword,right,document,organization", ...rows].join("\n")], { type: "text/csv" });
+    function exportClientCsv() {
+        const blob = new Blob([kwicRowsToCsv(filteredRows)], { type: "text/csv" });
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement("a");
         anchor.href = url;
@@ -302,40 +332,72 @@ function KwicTable({ matches }: { matches: unknown[] }) {
     }
     return (
         <Stack spacing={1}>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                <TextField size="small" label="Filter concordance" value={filter} onChange={(event) => setFilter(event.target.value)} />
-                <Button size="small" variant="outlined" onClick={exportCsv}>Export CSV</Button>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                <TextField
+                    size="small"
+                    label="Filter concordance"
+                    value={filter}
+                    onChange={(event) => {
+                        setFilter(event.target.value);
+                        setPage(0);
+                    }}
+                    sx={{ minWidth: 220 }}
+                />
+                {runId ? (
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        href={researchExportUrl(`/research/runs/${runId}/export.json`)}
+                        target="_blank"
+                        rel="noopener"
+                    >
+                        Backend export
+                    </Button>
+                ) : null}
+                <Button size="small" variant="outlined" onClick={exportClientCsv}>
+                    Export filtered CSV
+                </Button>
             </Stack>
-        <Table size="small">
-            <TableHead>
-                <TableRow>
-                    <TableCell>Left</TableCell>
-                    <TableCell>Keyword</TableCell>
-                    <TableCell>Right</TableCell>
-                    <TableCell>Document</TableCell>
-                    <TableCell>Organization</TableCell>
-                </TableRow>
-            </TableHead>
-            <TableBody>
-                {visibleMatches.slice(0, 100).map((entry, index) => {
-                    const row = asRecord(entry) ?? {};
-                    return (
-                        <TableRow key={index}>
-                            <TableCell sx={{ maxWidth: 280 }}>{pickString(row, ["left_context", "left"]) ?? ""}</TableCell>
+            {filteredRows.length > KWIC_PAGE_SIZE ? (
+                <Typography variant="caption" color="text.secondary">
+                    Large result sets: prefer backend export. Client CSV is for the current filter
+                    only (consider a Web Worker if transforms grow heavier).
+                </Typography>
+            ) : null}
+            <Table size="small">
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Left</TableCell>
+                        <TableCell>Keyword</TableCell>
+                        <TableCell>Right</TableCell>
+                        <TableCell>Document</TableCell>
+                        <TableCell>Organization</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {visibleRows.map((row, index) => (
+                        <TableRow key={`${currentPage}-${index}-${row.keyword}`}>
+                            <TableCell sx={{ maxWidth: 280 }}>{row.left}</TableCell>
                             <TableCell>
                                 <Typography component="span" fontWeight={600}>
-                                    {pickString(row, ["keyword", "match", "term"]) ?? ""}
+                                    {row.keyword}
                                 </Typography>
                             </TableCell>
-                            <TableCell sx={{ maxWidth: 280 }}>{pickString(row, ["right_context", "right"]) ?? ""}</TableCell>
-                            <TableCell>{pickString(row, ["document_title", "title", "document"]) ?? "—"}</TableCell>
-                            <TableCell>{pickString(row, ["organization"]) ?? "—"}</TableCell>
+                            <TableCell sx={{ maxWidth: 280 }}>{row.right}</TableCell>
+                            <TableCell>{row.document || "—"}</TableCell>
+                            <TableCell>{row.organization || "—"}</TableCell>
                         </TableRow>
-                    );
-                })}
-            </TableBody>
-        </Table>
-        {visibleMatches.length > 100 ? <Typography variant="caption" color="text.secondary">Showing the first 100 of {visibleMatches.length} matching lines.</Typography> : null}
+                    ))}
+                </TableBody>
+            </Table>
+            <TablePagination
+                component="div"
+                count={filteredRows.length}
+                page={currentPage}
+                onPageChange={(_, next) => setPage(next)}
+                rowsPerPage={KWIC_PAGE_SIZE}
+                rowsPerPageOptions={[KWIC_PAGE_SIZE]}
+            />
         </Stack>
     );
 }
@@ -540,7 +602,7 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                         },
                     ]}
                 />
-                <KwicTable matches={matches} />
+                <KwicTable matches={matches} runId={run.id} />
                 <ResultsInspector data={payload} />
             </Stack>
         );
@@ -789,6 +851,7 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
 
 export default function AnalysisView() {
     const ctx = useResearchContext();
+    const navigate = useNavigate();
     const { showToast } = useSnackbar();
 
     const [tab, setTab] = useTabQueryParam(ANALYSIS_TAB_VALUES, "overview");
@@ -833,17 +896,17 @@ export default function AnalysisView() {
     });
 
     const facetsQuery = useQuery({
-        queryKey: ["text-research", "metadata-facets", ctx.selectedCorpusId],
+        queryKey: queryKeys.textResearch.metadataFacets(ctx.selectedCorpusId),
         queryFn: () => getCorpusMetadataFacets(ctx.selectedCorpusId),
         enabled: Boolean(ctx.selectedCorpusId),
-        staleTime: QUERY_STALE_TIMES.researchReference,
+        staleTime: QUERY_STALE_TIMES.researchMetadataFacets,
     });
 
     const runQuery = useQuery({
         queryKey: queryKeys.textResearch.run(runId ?? ""),
         queryFn: () => getRun(runId!),
         enabled: Boolean(runId),
-        staleTime: QUERY_STALE_TIMES.researchActiveRun,
+        staleTime: (query) => researchRunStaleTime(query.state.data?.status),
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });
 
@@ -1022,7 +1085,9 @@ export default function AnalysisView() {
                     <code>POST …/analysis/statistical-model</code> and{" "}
                     <code>POST …/analysis/measurement-comparison</code>.
                 </Alert>
-                {tab === "statistical" ? <StatisticalModelView /> : <MeasurementComparisonView />}
+                <Suspense fallback={<AnalysisPanelFallback />}>
+                    {tab === "statistical" ? <StatisticalModelView /> : <MeasurementComparisonView />}
+                </Suspense>
             </Stack>
         );
     }
@@ -1048,7 +1113,7 @@ export default function AnalysisView() {
                         </TextField>
                     </Stack>
                 </SectionCard>
-                {advancedPanel}
+                <Suspense fallback={<AnalysisPanelFallback />}>{advancedPanel}</Suspense>
             </Stack>
         );
     }
@@ -1243,6 +1308,17 @@ export default function AnalysisView() {
 
                     {tab === "dictionaries" ? (
                         <Stack spacing={2}>
+                            <Stack direction="row" spacing={1}>
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() =>
+                                        navigate(`/research/${ctx.projectId}/dictionaries`)
+                                    }
+                                >
+                                    Manage dictionaries
+                                </Button>
+                            </Stack>
                             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                                 <TextField
                                     select

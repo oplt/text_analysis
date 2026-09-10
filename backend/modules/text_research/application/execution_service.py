@@ -18,6 +18,7 @@ ResearchOperation = Literal[
     "topic_seed_stability",
     "robustness",
     "prediction",
+    "quantitative",
 ]
 
 

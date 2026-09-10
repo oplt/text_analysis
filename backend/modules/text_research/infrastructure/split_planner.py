@@ -3,6 +3,11 @@
 Uses ``StratifiedGroupKFold`` when every class appears in at least two
 distinct groups; otherwise falls back to ``GroupShuffleSplit`` (same
 leakage-safe group boundary as :func:`classifiers.grouped_train_val_test_split`).
+
+Multilabel targets never use stratified grouped splitting — each row is a
+label set (unhashable / not a single class). Leakage-safe ``GroupShuffleSplit``
+is used instead, with explicit provenance that stratification was requested
+but not applied.
 """
 
 from __future__ import annotations
@@ -14,7 +19,7 @@ from typing import Any
 
 import numpy as np
 
-RECOMMENDED_STRATEGIES = ("stratified_group", "group_shuffle")
+RECOMMENDED_STRATEGIES = ("stratified_group", "group_shuffle", "group_shuffle_multilabel")
 
 
 @dataclass
@@ -31,17 +36,38 @@ class SplitFeasibility:
         return asdict(self)
 
 
+def _is_multilabel_labels(labels: list[Any]) -> bool:
+    """True when any target row is a list/tuple/set (multilabel encoding)."""
+    return any(isinstance(label, (list, tuple, set)) for label in labels)
+
+
 def evaluate_stratified_group_feasibility(
     labels: list[Any],
     groups: list[Any],
     *,
     min_groups_per_class: int = 2,
+    task_type: str | None = None,
 ) -> SplitFeasibility:
     """Return whether stratified grouped splits are feasible for ``labels``/``groups``."""
     if len(labels) != len(groups):
         raise ValueError("labels and groups must have the same length")
 
     n_groups = len(set(groups))
+    resolved_task = task_type
+    if resolved_task is None and _is_multilabel_labels(labels):
+        resolved_task = "multilabel"
+
+    if resolved_task == "multilabel" or _is_multilabel_labels(labels):
+        return SplitFeasibility(
+            n_groups=n_groups,
+            class_counts={},
+            feasible_stratified_group=False,
+            reason=(
+                "standard stratified grouped splitting is not valid for multilabel targets"
+            ),
+            recommended_strategy="group_shuffle_multilabel",
+        )
+
     class_counts = dict(Counter(labels))
     groups_by_class: dict[Any, set[Any]] = defaultdict(set)
     for label, group in zip(labels, groups, strict=True):
@@ -141,11 +167,17 @@ def plan_grouped_splits(
     val_size: float = 0.2,
     random_seed: int = 42,
     prefer_stratified: bool = True,
+    task_type: str | None = None,
+    grouping_variable: str = "corpus_document_id",
 ) -> dict[str, Any]:
     """Plan train/validation/test index partitions with no group leakage.
 
     Returns index lists compatible with
     :func:`classifiers.grouped_train_val_test_split`.
+
+    For ``task_type="multilabel"`` (or multilabel-shaped labels), always uses
+    leakage-safe ``GroupShuffleSplit`` and records that stratification was not
+    applied.
     """
     if len(labels) != len(groups):
         raise ValueError("labels and groups must have the same length")
@@ -155,10 +187,33 @@ def plan_grouped_splits(
         raise ValueError("plan_grouped_splits requires at least 2 distinct groups")
 
     indices = np.arange(len(labels))
-    feasibility = evaluate_stratified_group_feasibility(labels, groups)
-    use_stratified = prefer_stratified and feasibility.feasible_stratified_group
+    feasibility = evaluate_stratified_group_feasibility(
+        labels, groups, task_type=task_type
+    )
+    is_multilabel = (
+        task_type == "multilabel"
+        or feasibility.recommended_strategy == "group_shuffle_multilabel"
+    )
+    stratification_requested = prefer_stratified
+    use_stratified = (
+        prefer_stratified and feasibility.feasible_stratified_group and not is_multilabel
+    )
     notes: list[str] = []
-    strategy = feasibility.recommended_strategy if use_stratified else "group_shuffle"
+    if is_multilabel:
+        strategy = "group_shuffle_multilabel"
+        stratification_applied = False
+        notes.append(feasibility.reason)
+    elif use_stratified:
+        strategy = "stratified_group"
+        stratification_applied = True
+    else:
+        strategy = "group_shuffle"
+        stratification_applied = False
+        if prefer_stratified and not feasibility.feasible_stratified_group:
+            notes.append(
+                "Stratified grouped split unavailable; "
+                f"falling back to GroupShuffleSplit ({feasibility.reason})."
+            )
 
     if use_stratified:
         n_splits_test = max(2, int(round(1.0 / test_size)) if test_size > 0 else 2)
@@ -166,11 +221,6 @@ def plan_grouped_splits(
             labels, groups, n_splits=n_splits_test, random_seed=random_seed
         )
     else:
-        if prefer_stratified and not feasibility.feasible_stratified_group:
-            notes.append(
-                "Stratified grouped split unavailable; "
-                f"falling back to GroupShuffleSplit ({feasibility.reason})."
-            )
         train_val_idx, test_idx = _group_shuffle_holdout(
             indices, groups, holdout_size=test_size, random_seed=random_seed
         )
@@ -183,9 +233,13 @@ def plan_grouped_splits(
         n_remaining_groups = len(set(train_val_groups))
         if n_remaining_groups >= 2:
             inner_feasibility = evaluate_stratified_group_feasibility(
-                train_val_labels, train_val_groups
+                train_val_labels, train_val_groups, task_type=task_type
             )
-            inner_stratified = use_stratified and inner_feasibility.feasible_stratified_group
+            inner_stratified = (
+                use_stratified
+                and inner_feasibility.feasible_stratified_group
+                and not is_multilabel
+            )
             try:
                 if inner_stratified:
                     n_splits_val = max(2, int(round(1.0 / val_size)))
@@ -226,6 +280,12 @@ def plan_grouped_splits(
         "val_index": val_idx.tolist(),
         "test_index": test_idx.tolist(),
         "strategy": strategy,
+        "split_strategy": strategy,
+        "task_type": task_type or ("multilabel" if is_multilabel else "single_label"),
+        "grouping_variable": grouping_variable,
+        "stratification_requested": stratification_requested,
+        "stratification_applied": stratification_applied,
+        "reason": feasibility.reason if not stratification_applied else None,
         "feasibility": feasibility.to_dict(),
         "notes": notes,
     }
@@ -238,16 +298,23 @@ def nested_grouped_cv_indices(
     outer_splits: int = 5,
     inner_splits: int = 3,
     random_seed: int = 42,
+    task_type: str | None = None,
 ) -> list[dict[str, Any]]:
     """Nested grouped CV index plan: outer train/test + inner train/val folds."""
     if len(labels) != len(groups):
         raise ValueError("labels and groups must have the same length")
 
     indices = np.arange(len(labels))
-    feasibility = evaluate_stratified_group_feasibility(labels, groups)
+    feasibility = evaluate_stratified_group_feasibility(
+        labels, groups, task_type=task_type
+    )
     outer_results: list[dict[str, Any]] = []
+    is_multilabel = (
+        task_type == "multilabel"
+        or feasibility.recommended_strategy == "group_shuffle_multilabel"
+    )
 
-    if feasibility.feasible_stratified_group:
+    if feasibility.feasible_stratified_group and not is_multilabel:
         from sklearn.model_selection import StratifiedGroupKFold
 
         outer_cv = StratifiedGroupKFold(
@@ -262,7 +329,7 @@ def nested_grouped_cv_indices(
 
         outer_cv = GroupKFold(n_splits=max(2, min(outer_splits, len(set(groups)))))
         outer_iterator = outer_cv.split(indices, groups=groups)
-        outer_strategy = "group_kfold"
+        outer_strategy = "group_kfold_multilabel" if is_multilabel else "group_kfold"
 
     for outer_train, outer_test in outer_iterator:
         outer_train_labels = [labels[i] for i in outer_train]
@@ -271,9 +338,9 @@ def nested_grouped_cv_indices(
 
         if len(set(outer_train_groups)) >= 2:
             inner_feasibility = evaluate_stratified_group_feasibility(
-                outer_train_labels, outer_train_groups
+                outer_train_labels, outer_train_groups, task_type=task_type
             )
-            if inner_feasibility.feasible_stratified_group:
+            if inner_feasibility.feasible_stratified_group and not is_multilabel:
                 from sklearn.model_selection import StratifiedGroupKFold
 
                 inner_cv = StratifiedGroupKFold(

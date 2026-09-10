@@ -76,6 +76,39 @@ RESEARCH_JOBLIB_N_JOBS=1
 Scale CPU with Celery processes/queues; scale DB with PgBouncer + modest
 SQLAlchemy pools.
 
+## Connection budget (do not raise pools blindly)
+
+```text
+(API replicas × processes_per_replica × (DB_POOL_SIZE + DB_MAX_OVERFLOW))
++
+(Celery worker deployments × --concurrency × (DB_WORKER_POOL_SIZE + DB_WORKER_MAX_OVERFLOW))
++
+administrative / migration / replica connections
+<
+PostgreSQL max_connections   (or PgBouncer default_pool_size toward Postgres)
+```
+
+Prefer **more Celery processes with small worker pools** over large
+`DB_POOL_SIZE`. Raising SQLAlchemy pools without PgBouncer headroom causes
+checkout timeouts and saturation, not higher throughput.
+
+## Observability (Prometheus)
+
+Exposed when `PROMETHEUS_METRICS_ENABLED=true` (default):
+
+| Metric | Meaning |
+|--------|---------|
+| `database_pool_checked_out_connections{role}` | Live checkouts (`api` / `worker`) |
+| `database_pool_saturation_ratio{role}` | checkouts / (pool_size + max_overflow) |
+| `database_pool_wait_seconds{role}` | Time spent waiting for a free connection |
+| `database_pool_timeouts_total{role}` | Checkout timeouts |
+| `database_pool_connection_failures_total{role}` | Acquire / invalidate failures |
+| `database_query_duration_seconds{role}` | Cursor execute latency |
+| `database_session_duration_seconds{role}` | Request/task session lifetime |
+
+Alert when saturation stays high **and** wait/timeouts rise — that means
+capacity or query duration problems, not “need a bigger pool” by default.
+
 ## Inspect live policy
 
 ```python

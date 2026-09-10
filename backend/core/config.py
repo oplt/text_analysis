@@ -51,6 +51,8 @@ class Settings(BaseSettings):
     CACHE_ENABLED: bool = True
     CACHE_EMBEDDING_TTL_SECONDS: int = 600
     CACHE_EMBEDDING_MAX_TEXT_CHARS: int = 4000
+    # Max in-process single-flight locks for identical embedding misses.
+    CACHE_EMBEDDING_FLIGHT_LOCKS_MAX: int = 1024
     CACHE_RETRIEVAL_TTL_SECONDS: int = 180
     CACHE_PLATFORM_TTL_SECONDS: int = 300
     CACHE_SETTINGS_TTL_SECONDS: int = 60
@@ -86,8 +88,15 @@ class Settings(BaseSettings):
     CSRF_HEADER_NAME: str = "X-CSRF-Token"
     PUBLIC_RATE_LIMIT_REQUESTS: int = 120
     PUBLIC_RATE_LIMIT_WINDOW_SECONDS: int = 60
+    AUTH_SIGNIN_LIMIT: int = 10
+    AUTH_SIGNIN_WINDOW_SECONDS: int = 60
+    AUTH_SIGNUP_LIMIT: int = 5
+    AUTH_SIGNUP_WINDOW_SECONDS: int = 3600
     AUTH_FAILURE_LIMIT: int = 8
     AUTH_FAILURE_WINDOW_SECONDS: int = 900
+    # Playwright/CI only: raise rate-limit ceilings without disabling them.
+    # Ignored when APP_ENV=production even if set.
+    E2E_RELAX_RATE_LIMITS: bool = False
     HEALTH_READY_PUBLIC: bool = False
     HEALTH_VERSION_PUBLIC: bool = False
     REQUIRE_EMAIL_VERIFICATION: bool = False  # disabled for local dev; re-enable in production
@@ -186,12 +195,19 @@ class Settings(BaseSettings):
     RAG_MAX_CONTEXT_TOKENS: int = 6000
     RAG_ALLOWED_FILE_TYPES: str = "pdf,txt,md,docx,csv"
     RAG_MAX_FILE_BYTES: int = 10 * 1024 * 1024
+    RAG_UPLOAD_CHUNK_SIZE: int = 256 * 1024
+    RAG_EMBEDDING_BATCH_SIZE: int = 32
+    RAG_EMBEDDING_BATCH_CONCURRENCY: int = 2
     RAG_ASK_PROMPT_TEMPLATE_KEY: str = "rag-answer"
     RAG_ASK_TIMEOUT_SECONDS: float = 45.0
 
     # Text Research (text research) model/vectorizer artifact storage
     RESEARCH_ARTIFACT_DIR: str = "var/research_artifacts"
     RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD: int = 50
+    # Workload-aware async dispatch: above any threshold → AnalysisRun + Celery.
+    RESEARCH_ASYNC_UNIT_THRESHOLD: int = 5_000
+    RESEARCH_ASYNC_TOKEN_THRESHOLD: int = 500_000
+    RESEARCH_ASYNC_PAIR_THRESHOLD: int = 2_000_000
     # Layered stage cache (L1 process / L2 Redis / L3 shared artifacts).
     RESEARCH_STAGE_CACHE_TTL_SECONDS: int = 604800  # 7 days
     # Bump this value to invalidate research-stage caches without deleting a
@@ -236,6 +252,31 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.APP_ENV.lower() == "production"
+
+    @property
+    def e2e_rate_limits_relaxed(self) -> bool:
+        """True only for explicit non-production E2E/CI rate-limit relaxation."""
+        return bool(self.E2E_RELAX_RATE_LIMITS) and not self.is_production
+
+    def effective_rate_limit(self, configured: int, *, relaxed_floor: int) -> int:
+        """Return configured limit, optionally raising a floor for E2E (never disables)."""
+        if configured <= 0:
+            return configured
+        if self.e2e_rate_limits_relaxed:
+            return max(configured, relaxed_floor)
+        return configured
+
+    @property
+    def effective_public_rate_limit_requests(self) -> int:
+        return self.effective_rate_limit(self.PUBLIC_RATE_LIMIT_REQUESTS, relaxed_floor=5_000)
+
+    @property
+    def effective_auth_signin_limit(self) -> int:
+        return self.effective_rate_limit(self.AUTH_SIGNIN_LIMIT, relaxed_floor=100)
+
+    @property
+    def effective_auth_signup_limit(self) -> int:
+        return self.effective_rate_limit(self.AUTH_SIGNUP_LIMIT, relaxed_floor=50)
 
     @property
     def allowed_origins(self) -> list[str]:

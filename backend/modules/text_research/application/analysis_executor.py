@@ -1,7 +1,10 @@
-"""Thin helpers for building specs and attaching run identity metadata."""
+"""Thin helpers for building specs, attaching provenance, and workload-aware dispatch."""
 
 from __future__ import annotations
 
+import asyncio
+import logging
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
@@ -18,6 +21,13 @@ from backend.modules.text_research.infrastructure.pipeline_compiler import (
 )
 from backend.modules.text_research.infrastructure.preprocessing import PreprocessingConfig
 from backend.modules.text_research.infrastructure.stage_runner import StageRunner
+from backend.modules.text_research.infrastructure.workload_estimator import (
+    WorkloadEstimate,
+    estimate_workload,
+    exceeds_async_threshold,
+)
+
+logger = logging.getLogger(__name__)
 
 
 def build_spec_from_request(
@@ -135,3 +145,68 @@ def run_prepared_analysis(
         )
 
     return StageRunner(plan, context, delegate_callback=kwargs.get("delegate_callback")).run()
+
+
+def should_enqueue_cpu_job(
+    estimate: WorkloadEstimate,
+    *,
+    force_inline: bool = False,
+    force_async: bool = False,
+) -> bool:
+    """Decide whether a CPU-heavy analysis should leave the FastAPI worker.
+
+    * ``force_inline`` — always run in-process (worker re-entry, tests).
+    * ``force_async`` — always enqueue (explicit client preference).
+    """
+    if force_inline:
+        return False
+    if force_async:
+        return True
+    return exceeds_async_threshold(estimate)
+
+
+async def run_cpu_bound[T](fn: Callable[..., T], /, *args: Any, **kwargs: Any) -> T:
+    """Run moderate CPU work off the event loop via a worker thread."""
+    return await asyncio.to_thread(fn, *args, **kwargs)
+
+
+async def execute_or_enqueue[T](
+    *,
+    estimate: WorkloadEstimate,
+    inline: Callable[[], Awaitable[T]],
+    enqueue: Callable[[], Awaitable[T]],
+    force_inline: bool = False,
+    force_async: bool = False,
+) -> T:
+    """Run ``inline`` for small jobs; otherwise call ``enqueue`` (Celery path)."""
+    if should_enqueue_cpu_job(estimate, force_inline=force_inline, force_async=force_async):
+        logger.info(
+            "research analysis enqueue analysis_type=%s n_units=%s tokens=%s pairs=%s",
+            estimate.analysis_type,
+            estimate.n_units,
+            estimate.estimated_tokens,
+            estimate.estimated_pairs,
+        )
+        return await enqueue()
+    logger.debug(
+        "research analysis inline analysis_type=%s n_units=%s tokens=%s pairs=%s",
+        estimate.analysis_type,
+        estimate.n_units,
+        estimate.estimated_tokens,
+        estimate.estimated_pairs,
+    )
+    return await inline()
+
+
+# Re-export estimator helpers for call sites that import from analysis_executor.
+__all__ = [
+    "WorkloadEstimate",
+    "attach_run_identity",
+    "build_spec_from_request",
+    "estimate_workload",
+    "execute_or_enqueue",
+    "plan_and_task",
+    "run_cpu_bound",
+    "run_prepared_analysis",
+    "should_enqueue_cpu_job",
+]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import UTC, datetime
 
 from backend.core.storage import ObjectStorageError, StorageNotConfiguredError
@@ -13,12 +14,17 @@ from backend.modules.rag.application.embedding_service import EmbeddingService
 from backend.modules.rag.application.rag_policy_service import RagPolicyService
 from backend.modules.rag.domain.enums import DocumentStatus, IngestionJobStatus
 from backend.modules.rag.infrastructure import metrics
-from backend.modules.rag.infrastructure.file_storage_adapter import FileStorageAdapter
+from backend.modules.rag.infrastructure.file_storage_adapter import (
+    EmptyUploadError,
+    FileStorageAdapter,
+    FileTooLargeError,
+    StoredDocument,
+)
 from backend.modules.rag.infrastructure.rag_config import RagConfig
 from backend.modules.rag.infrastructure.repositories import RagRepository
 from backend.modules.rag.infrastructure.vector_store_adapter import build_vector_store
 from backend.modules.rag.workers import queue_document_cleanup, queue_document_indexing
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -43,17 +49,28 @@ class DocumentIngestionService:
         *,
         user_id: str,
         filename: str,
-        content: bytes,
+        content: bytes | None = None,
         content_type: str,
         project_id: str | None = None,
         organization_id: str | None = None,
         metadata: dict | None = None,
+        upload: UploadFile | None = None,
     ):
+        """Upload a document from bytes or a streamed ``UploadFile``.
+
+        Prefer ``upload=`` for HTTP multipart so the whole body is not buffered
+        before size enforcement. ``content=`` remains for small in-memory text.
+        """
         if not self.config.enabled:
             raise HTTPException(status_code=503, detail="RAG is disabled")
 
-        if len(content) > self.config.max_file_bytes:
-            raise HTTPException(status_code=413, detail="File too large")
+        if content is None and upload is None:
+            raise HTTPException(status_code=400, detail="No file content provided")
+        if content is not None and upload is not None:
+            raise HTTPException(
+                status_code=400,
+                detail="Provide either content or upload, not both",
+            )
 
         if not self.policy.is_allowed_file_type(filename, self.config.allowed_file_types):
             raise HTTPException(status_code=400, detail="Unsupported file type")
@@ -61,13 +78,50 @@ class DocumentIngestionService:
         if project_id:
             await self._ensure_project_access(user_id, project_id)
 
-        try:
-            storage_path = await self.storage.store_document(
+        async def _dedupe_lookup(checksum: str) -> StoredDocument | None:
+            existing = await self.repo.find_document_by_checksum(
                 user_id=user_id,
-                filename=filename,
-                content=content,
-                content_type=content_type,
+                checksum_sha256=checksum,
+                project_id=project_id,
             )
+            if existing is None or not existing.storage_path:
+                return None
+            meta = json.loads(existing.metadata_json or "{}")
+            return StoredDocument(
+                storage_path=existing.storage_path,
+                size_bytes=int(meta.get("size_bytes") or 0),
+                checksum_sha256=checksum,
+                content_type=existing.content_type,
+                reused_existing=True,
+            )
+
+        try:
+            if upload is not None:
+                stored = await self._store_upload_stream(
+                    user_id=user_id,
+                    filename=filename,
+                    content_type=content_type,
+                    upload=upload,
+                    dedupe_lookup=_dedupe_lookup,
+                )
+            else:
+                assert content is not None
+                if len(content) > self.config.max_file_bytes:
+                    raise HTTPException(status_code=413, detail="File too large")
+                if not content:
+                    raise HTTPException(status_code=400, detail="Uploaded document file is empty")
+                stored = await self.storage.store_document(
+                    user_id=user_id,
+                    filename=filename,
+                    content=content,
+                    content_type=content_type,
+                    max_bytes=self.config.max_file_bytes,
+                    dedupe_lookup=_dedupe_lookup,
+                )
+        except FileTooLargeError as exc:
+            raise HTTPException(status_code=413, detail="File too large") from exc
+        except EmptyUploadError as exc:
+            raise HTTPException(status_code=400, detail="Uploaded document file is empty") from exc
         except StorageNotConfiguredError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
         except ObjectStorageError as exc:
@@ -79,16 +133,50 @@ class DocumentIngestionService:
                     "and confirm STORAGE_* credentials match MINIO_ROOT_*."
                 ),
             ) from exc
+
+        if stored.reused_existing:
+            document = await self.repo.find_document_by_checksum(
+                user_id=user_id,
+                checksum_sha256=stored.checksum_sha256,
+                project_id=project_id,
+            )
+            if document is None:
+                raise HTTPException(status_code=500, detail="Duplicate document lookup failed")
+            active_job = await self.repo.get_active_ingestion_job(document.id)
+            if active_job:
+                return document, active_job, None
+            job = await self.repo.create_ingestion_job(
+                document_id=document.id,
+                user_id=user_id,
+                project_id=project_id,
+            )
+            await self.db.commit()
+            await self.db.refresh(document)
+            await self.db.refresh(job)
+            return document, job, None
+
+        document_metadata = {
+            "size_bytes": stored.size_bytes,
+            "checksum_sha256": stored.checksum_sha256,
+            "content_type": stored.content_type,
+            "storage_key": stored.storage_path,
+            **(metadata or {}),
+        }
+        # Prefer measured size/checksum over caller overrides.
+        document_metadata["size_bytes"] = stored.size_bytes
+        document_metadata["checksum_sha256"] = stored.checksum_sha256
+        document_metadata["storage_key"] = stored.storage_path
+
         document = await self.repo.create_document(
             user_id=user_id,
             filename=filename,
             original_filename=filename,
             content_type=content_type,
-            storage_path=storage_path,
+            storage_path=stored.storage_path,
             project_id=project_id,
             organization_id=organization_id,
             source_type="upload",
-            metadata={"size_bytes": len(content), **(metadata or {})},
+            metadata=document_metadata,
         )
         job = await self.repo.create_ingestion_job(
             document_id=document.id,
@@ -100,7 +188,38 @@ class DocumentIngestionService:
         await self.db.refresh(job)
         metrics.rag_document_upload_total.inc()
 
-        return document, job, content
+        # Content is not kept in memory after streaming; callers download from storage.
+        return document, job, None
+
+    async def _store_upload_stream(
+        self,
+        *,
+        user_id: str,
+        filename: str,
+        content_type: str,
+        upload: UploadFile,
+        dedupe_lookup: Callable[[str], Awaitable[StoredDocument | None]] | None = None,
+    ) -> StoredDocument:
+        from backend.core.config import settings
+
+        chunk_size = max(8 * 1024, int(getattr(settings, "RAG_UPLOAD_CHUNK_SIZE", 256 * 1024)))
+
+        async def _chunks() -> AsyncIterator[bytes]:
+            while True:
+                chunk = await upload.read(chunk_size)
+                if not chunk:
+                    break
+                yield chunk
+
+        return await self.storage.store_document_stream(
+            user_id=user_id,
+            filename=filename,
+            content_type=content_type,
+            chunks=_chunks(),
+            max_bytes=self.config.max_file_bytes,
+            chunk_size=chunk_size,
+            dedupe_lookup=dedupe_lookup,
+        )
 
     async def enqueue_document_indexing(
         self,

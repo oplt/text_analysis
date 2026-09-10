@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import {
     Alert,
     Box,
@@ -6,6 +6,7 @@ import {
     Checkbox,
     Chip,
     MenuItem,
+    Skeleton,
     Stack,
     Table,
     TableBody,
@@ -33,7 +34,7 @@ import {
     getClassifier,
     getClassifierCoefficients,
     getRunProvenance,
-    listModelPredictions,
+    listModelLifecycleEvents,
     listModels,
     listPredictionSets,
     predictClassifier,
@@ -43,16 +44,13 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
+import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
-import {
-    ClassificationCalibrationPanel,
-    ClassificationModelComparison,
-} from "../components/ClassificationEvalPanels";
 import { ResultsInspector } from "../components/ResearchCharts";
 import { ResearchResultsTable } from "../components/ResearchResults";
+import { parseDriftReport, predictionSetOptionLabel } from "../driftDiagnostics";
 import { useResearchContext } from "../hooks/useResearchContext";
 import {
-    aggregatePredictionsForDrift,
     asRecord,
     extractConfidenceIntervals,
     extractMacroF1,
@@ -63,6 +61,21 @@ import {
     num,
 } from "../modelRegistryUtils";
 import type { UnitType } from "../types";
+
+const ClassificationCalibrationPanel = lazy(() =>
+    import("../components/ClassificationEvalPanels").then((m) => ({
+        default: m.ClassificationCalibrationPanel,
+    }))
+);
+const ClassificationModelComparison = lazy(() =>
+    import("../components/ClassificationEvalPanels").then((m) => ({
+        default: m.ClassificationModelComparison,
+    }))
+);
+
+function EvalPanelFallback() {
+    return <Skeleton variant="rounded" height={160} sx={{ borderRadius: 2 }} />;
+}
 
 const LIFECYCLE_FILTERS = [
     { value: "", label: "All statuses" },
@@ -82,7 +95,8 @@ export default function ModelRegistryView() {
     const [lifecycleFilter, setLifecycleFilter] = useState("");
     const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
     const [compareIds, setCompareIds] = useState<string[]>([]);
-    const [driftPeerId, setDriftPeerId] = useState("");
+    const [baselinePredictionSetId, setBaselinePredictionSetId] = useState("");
+    const [currentPredictionSetId, setCurrentPredictionSetId] = useState("");
     const [predictUnitType, setPredictUnitType] = useState<UnitType>(
         ctx.unitType || "paragraph"
     );
@@ -101,6 +115,7 @@ export default function ModelRegistryView() {
                 lifecycleStatus: lifecycleFilter || undefined,
             }),
         enabled: Boolean(ctx.projectId),
+        staleTime: QUERY_STALE_TIMES.researchModelLifecycle,
     });
 
     const models = modelsQuery.data ?? [];
@@ -113,6 +128,7 @@ export default function ModelRegistryView() {
         queryKey: queryKeys.textResearch.model(selectedModelIdSafe ?? ""),
         queryFn: () => getClassifier(selectedModelIdSafe!),
         enabled: Boolean(selectedModelIdSafe),
+        staleTime: QUERY_STALE_TIMES.researchModelLifecycle,
     });
 
     const selectedModel = modelQuery.data ?? models.find((m) => m.id === selectedModelIdSafe) ?? null;
@@ -121,18 +137,28 @@ export default function ModelRegistryView() {
         queryKey: queryKeys.textResearch.coefficients(selectedModelIdSafe ?? ""),
         queryFn: () => getClassifierCoefficients(selectedModelIdSafe!),
         enabled: Boolean(selectedModelIdSafe),
+        staleTime: QUERY_STALE_TIMES.researchModelMetrics,
     });
 
     const provenanceQuery = useQuery({
         queryKey: queryKeys.textResearch.runProvenance(selectedModel?.analysis_run_id ?? ""),
         queryFn: () => getRunProvenance(selectedModel!.analysis_run_id),
         enabled: Boolean(selectedModel?.analysis_run_id),
+        staleTime: QUERY_STALE_TIMES.researchProvenance,
     });
 
     const predictionSetsQuery = useQuery({
         queryKey: queryKeys.textResearch.predictionSets(selectedModel?.corpus_id ?? ""),
         queryFn: () => listPredictionSets(selectedModel!.corpus_id, { limit: 50 }),
         enabled: Boolean(selectedModel?.corpus_id),
+        staleTime: QUERY_STALE_TIMES.researchPredictionSets,
+    });
+
+    const lifecycleEventsQuery = useQuery({
+        queryKey: queryKeys.textResearch.modelLifecycleEvents(selectedModelIdSafe ?? ""),
+        queryFn: () => listModelLifecycleEvents(selectedModelIdSafe!),
+        enabled: Boolean(selectedModelIdSafe),
+        staleTime: QUERY_STALE_TIMES.researchModelLifecycle,
     });
 
     const predictionSets = predictionSetsQuery.data ?? [];
@@ -142,14 +168,17 @@ export default function ModelRegistryView() {
 
     const invalidateModels = async () => {
         await queryClient.invalidateQueries({
-            queryKey: ["text-research", ctx.projectId, "models"],
+            queryKey: queryKeys.textResearch.modelsRoot(ctx.projectId),
         });
         await queryClient.invalidateQueries({
-            queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
+            queryKey: queryKeys.textResearch.classifiersRoot(ctx.projectId),
         });
         if (selectedModelIdSafe) {
             await queryClient.invalidateQueries({
                 queryKey: queryKeys.textResearch.model(selectedModelIdSafe),
+            });
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.textResearch.modelLifecycleEvents(selectedModelIdSafe),
             });
         }
     };
@@ -213,31 +242,27 @@ export default function ModelRegistryView() {
 
     const driftMutation = useMutation({
         mutationFn: async () => {
-            if (!selectedModel || !driftPeerId) {
-                throw new Error("Select a peer model for drift comparison.");
+            if (!selectedModel) {
+                throw new Error("Select a model first.");
             }
-            const [baselineRows, currentRows] = await Promise.all([
-                listModelPredictions(selectedModel.id, { limit: 500 }),
-                listModelPredictions(driftPeerId, { limit: 500 }),
-            ]);
-            const baseline = aggregatePredictionsForDrift(baselineRows);
-            const current = aggregatePredictionsForDrift(currentRows);
-            if (!Object.keys(baseline.label_counts).length || !Object.keys(current.label_counts).length) {
-                throw new Error(
-                    "Both models need stored predictions before drift can run. Predict first."
-                );
+            if (!baselinePredictionSetId || !currentPredictionSetId) {
+                throw new Error("Select baseline and current prediction sets.");
+            }
+            if (baselinePredictionSetId === currentPredictionSetId) {
+                throw new Error("Baseline and current prediction sets must differ.");
             }
             return compareClassifierDrift(selectedModel.corpus_id, {
-                baseline,
-                current,
-                baseline_run_id: selectedModel.analysis_run_id,
-                current_run_id:
-                    models.find((m) => m.id === driftPeerId)?.analysis_run_id ?? null,
+                mode: "MODEL_COMPARISON",
+                baseline_prediction_set_id: baselinePredictionSetId,
+                current_prediction_set_id: currentPredictionSetId,
             });
         },
         onSuccess: (report) => {
             setDriftReport(report);
-            showToast({ message: "Drift report computed.", severity: "success" });
+            showToast({
+                message: "Drift report computed from complete PredictionSets.",
+                severity: "success",
+            });
         },
         onError: (error) =>
             showToast({
@@ -265,7 +290,7 @@ export default function ModelRegistryView() {
     const calibration =
         asRecord(metrics?.calibration) ?? asRecord(metrics?.calibration_summary);
 
-    const peerModels = models.filter((m) => m.id !== selectedModelIdSafe);
+    const parsedDrift = parseDriftReport(driftReport);
 
     if (!ctx.projectId) {
         return <Alert severity="info">Select a research project to open the model registry.</Alert>;
@@ -422,11 +447,13 @@ export default function ModelRegistryView() {
 
             {compareIds.length >= 2 ? (
                 <SectionCard title="Compare models" description="Holdout metrics side by side.">
-                    <ClassificationModelComparison
-                        models={models}
-                        selectedIds={compareIds}
-                        onToggle={toggleCompare}
-                    />
+                    <Suspense fallback={<EvalPanelFallback />}>
+                        <ClassificationModelComparison
+                            models={models}
+                            selectedIds={compareIds}
+                            onToggle={toggleCompare}
+                        />
+                    </Suspense>
                 </SectionCard>
             ) : null}
 
@@ -516,6 +543,21 @@ export default function ModelRegistryView() {
                                 <Button
                                     size="small"
                                     variant="outlined"
+                                    onClick={() =>
+                                        navigate(
+                                            `/research/${ctx.projectId}/active-learning${
+                                                selectedModelIdSafe
+                                                    ? `?modelId=${selectedModelIdSafe}`
+                                                    : ""
+                                            }`
+                                        )
+                                    }
+                                >
+                                    Active learning
+                                </Button>
+                                <Button
+                                    size="small"
+                                    variant="outlined"
                                     startIcon={<CloneIcon />}
                                     disabled={cloneMutation.isPending}
                                     onClick={() => cloneMutation.mutate()}
@@ -594,21 +636,47 @@ export default function ModelRegistryView() {
                                 <Typography variant="subtitle2" gutterBottom>
                                     Run drift check
                                 </Typography>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                    sx={{ mb: 1 }}
+                                >
+                                    Backend compares entire PredictionSets (not a browser sample of
+                                    500 rows).
+                                </Typography>
                                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                                     <TextField
                                         select
                                         size="small"
-                                        label="Compare against"
-                                        value={driftPeerId}
-                                        onChange={(e) => setDriftPeerId(e.target.value)}
-                                        sx={{ minWidth: 220 }}
-                                        helperText="Uses stored prediction label/score aggregates"
+                                        label="Baseline prediction set"
+                                        value={baselinePredictionSetId}
+                                        onChange={(e) =>
+                                            setBaselinePredictionSetId(e.target.value)
+                                        }
+                                        sx={{ minWidth: 240, flex: 1 }}
                                     >
-                                        <MenuItem value="">Select peer model</MenuItem>
-                                        {peerModels.map((peer) => (
-                                            <MenuItem key={peer.id} value={peer.id}>
-                                                {modelDisplayName(peer)} (
-                                                {lifecycleDisplayLabel(peer.lifecycle_status)})
+                                        <MenuItem value="">Select…</MenuItem>
+                                        {predictionSets.map((ps) => (
+                                            <MenuItem key={ps.id} value={ps.id}>
+                                                {predictionSetOptionLabel(ps)}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
+                                    <TextField
+                                        select
+                                        size="small"
+                                        label="Current prediction set"
+                                        value={currentPredictionSetId}
+                                        onChange={(e) =>
+                                            setCurrentPredictionSetId(e.target.value)
+                                        }
+                                        sx={{ minWidth: 240, flex: 1 }}
+                                    >
+                                        <MenuItem value="">Select…</MenuItem>
+                                        {predictionSets.map((ps) => (
+                                            <MenuItem key={ps.id} value={ps.id}>
+                                                {predictionSetOptionLabel(ps)}
                                             </MenuItem>
                                         ))}
                                     </TextField>
@@ -616,10 +684,14 @@ export default function ModelRegistryView() {
                                         size="small"
                                         variant="outlined"
                                         startIcon={<DriftIcon />}
-                                        disabled={!driftPeerId || driftMutation.isPending}
+                                        disabled={
+                                            !baselinePredictionSetId ||
+                                            !currentPredictionSetId ||
+                                            driftMutation.isPending
+                                        }
                                         onClick={() => driftMutation.mutate()}
                                     >
-                                        Quick drift
+                                        Compare sets
                                     </Button>
                                     <Button
                                         size="small"
@@ -633,6 +705,39 @@ export default function ModelRegistryView() {
                                 </Stack>
                                 {driftReport ? (
                                     <Box sx={{ mt: 1.5 }}>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            flexWrap="wrap"
+                                            useFlexGap
+                                            sx={{ mb: 1 }}
+                                        >
+                                            <Chip
+                                                size="small"
+                                                label={`Warning: ${parsedDrift.warningLevel}`}
+                                                color={
+                                                    parsedDrift.warningLevel === "investigate"
+                                                        ? "error"
+                                                        : parsedDrift.warningLevel === "watch"
+                                                          ? "warning"
+                                                          : "success"
+                                                }
+                                            />
+                                            {parsedDrift.provenance.nObservations != null ? (
+                                                <Chip
+                                                    size="small"
+                                                    variant="outlined"
+                                                    label={`n=${parsedDrift.provenance.nObservations}`}
+                                                />
+                                            ) : null}
+                                            {parsedDrift.analysisRunId ? (
+                                                <Chip
+                                                    size="small"
+                                                    variant="outlined"
+                                                    label={`run ${parsedDrift.analysisRunId.slice(0, 8)}…`}
+                                                />
+                                            ) : null}
+                                        </Stack>
                                         <ResultsInspector title="drift report" data={driftReport} />
                                     </Box>
                                 ) : null}
@@ -654,10 +759,98 @@ export default function ModelRegistryView() {
                                 <Typography variant="body2" color="text.secondary">
                                     Notes: {selectedModel.lifecycle_notes || "—"}
                                 </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    Full transition history is not persisted separately; latest
-                                    status, notes, and timestamp are shown.
+                                <Stack
+                                    direction="row"
+                                    spacing={0.75}
+                                    flexWrap="wrap"
+                                    useFlexGap
+                                    sx={{ py: 1 }}
+                                    aria-label="Lifecycle path"
+                                >
+                                    {(["candidate", "staging", "production", "deprecated"] as const).map(
+                                        (step, index) => (
+                                            <Stack
+                                                key={step}
+                                                direction="row"
+                                                spacing={0.75}
+                                                alignItems="center"
+                                            >
+                                                {index > 0 ? (
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        →
+                                                    </Typography>
+                                                ) : null}
+                                                <Chip
+                                                    size="small"
+                                                    label={lifecycleDisplayLabel(step)}
+                                                    color={
+                                                        selectedModel.lifecycle_status === step
+                                                            ? lifecycleChipColor(step)
+                                                            : "default"
+                                                    }
+                                                    variant={
+                                                        selectedModel.lifecycle_status === step
+                                                            ? "filled"
+                                                            : "outlined"
+                                                    }
+                                                />
+                                            </Stack>
+                                        )
+                                    )}
+                                </Stack>
+                                <Typography variant="subtitle2" sx={{ pt: 1 }}>
+                                    Lifecycle event timeline
                                 </Typography>
+                                <QueryBoundary
+                                    isLoading={lifecycleEventsQuery.isLoading}
+                                    isError={lifecycleEventsQuery.isError}
+                                    error={lifecycleEventsQuery.error}
+                                    onRetry={() => void lifecycleEventsQuery.refetch()}
+                                >
+                                    {(lifecycleEventsQuery.data ?? []).length === 0 ? (
+                                        <Typography variant="body2" color="text.secondary">
+                                            No lifecycle events recorded yet.
+                                        </Typography>
+                                    ) : (
+                                        <Stack spacing={1}>
+                                            {(lifecycleEventsQuery.data ?? []).map((event) => (
+                                                <Box
+                                                    key={event.id}
+                                                    sx={{
+                                                        p: 1.25,
+                                                        borderRadius: 1,
+                                                        bgcolor: "action.hover",
+                                                    }}
+                                                >
+                                                    <Typography variant="body2">
+                                                        {event.from_status
+                                                            ? `${lifecycleDisplayLabel(event.from_status)} → `
+                                                            : ""}
+                                                        {lifecycleDisplayLabel(event.to_status)}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                        display="block"
+                                                    >
+                                                        {new Date(event.created_at).toLocaleString()}
+                                                        {event.actor_id
+                                                            ? ` · actor ${event.actor_id.slice(0, 8)}…`
+                                                            : ""}
+                                                        {event.run_id
+                                                            ? ` · run ${event.run_id.slice(0, 8)}…`
+                                                            : ""}
+                                                    </Typography>
+                                                    {event.reason ? (
+                                                        <Typography variant="caption" display="block">
+                                                            Reason: {event.reason}
+                                                        </Typography>
+                                                    ) : null}
+                                                </Box>
+                                            ))}
+                                        </Stack>
+                                    )}
+                                </QueryBoundary>
                             </Stack>
 
                             <Stack spacing={0.5}>
@@ -723,10 +916,12 @@ export default function ModelRegistryView() {
                                     Calibration
                                 </Typography>
                                 {calibration ? (
-                                    <ClassificationCalibrationPanel
-                                        metrics={metrics}
-                                        results={null}
-                                    />
+                                    <Suspense fallback={<EvalPanelFallback />}>
+                                        <ClassificationCalibrationPanel
+                                            metrics={metrics}
+                                            results={null}
+                                        />
+                                    </Suspense>
                                 ) : (
                                     <Typography variant="body2" color="text.secondary">
                                         No calibration payload on this model.

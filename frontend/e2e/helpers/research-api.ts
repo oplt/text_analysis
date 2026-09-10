@@ -1,4 +1,4 @@
-import { expect, type APIRequestContext } from "@playwright/test";
+import { expect, type APIRequestContext, type APIResponse } from "@playwright/test";
 
 const apiBaseUrl = process.env.E2E_API_URL ?? "http://localhost:8000";
 const researchBase = `${apiBaseUrl}/api/v1/research`;
@@ -6,25 +6,116 @@ const researchBase = `${apiBaseUrl}/api/v1/research`;
 export type ApiContext = {
     request: APIRequestContext;
     csrfToken: string | undefined;
+    email: string;
+    password: string;
     close: () => Promise<void>;
 };
 
+export type E2ECredentials = {
+    email: string;
+    password: string;
+};
+
+/** Unique email/password per worker/test so retries never share auth rate-limit keys. */
+export function uniqueE2ECredentials(options?: {
+    workerIndex?: number;
+    parallelIndex?: number;
+    retry?: number;
+    prefix?: string;
+}): E2ECredentials {
+    const prefix = options?.prefix ?? "e2e";
+    const worker = options?.workerIndex ?? Number(process.env.TEST_WORKER_INDEX ?? "0");
+    const parallel = options?.parallelIndex ?? 0;
+    const retry = options?.retry ?? 0;
+    const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const email = `${prefix}-w${worker}-p${parallel}-r${retry}-${stamp}@example.com`;
+    const password = process.env.E2E_TEST_PASSWORD ?? `E2E-Pass-${stamp.slice(0, 12)}!Aa1`;
+    return { email, password };
+}
+
+async function expectOk(response: APIResponse, label: string): Promise<void> {
+    if (response.ok()) {
+        return;
+    }
+    const body = await response.text();
+    expect(
+        response.ok(),
+        `${label} failed: HTTP ${response.status()} ${body.slice(0, 500)}`
+    ).toBeTruthy();
+}
+
+export async function provisionE2EUser(
+    request: APIRequestContext,
+    credentials: E2ECredentials,
+    fullName = "Playwright E2E"
+): Promise<void> {
+    const signUp = await request.post(`${apiBaseUrl}/api/v1/auth/sign-up`, {
+        data: {
+            email: credentials.email,
+            password: credentials.password,
+            full_name: fullName,
+        },
+    });
+    // 202 = created; 409/400 may occur on rare collisions — sign-in will decide.
+    if (![202, 400, 409].includes(signUp.status())) {
+        await expectOk(signUp, "sign-up");
+    }
+}
+
 export async function createAuthenticatedApiContext(
     browser: import("@playwright/test").Browser,
-    email: string,
-    password: string
+    emailOrCredentials: string | E2ECredentials,
+    password?: string,
+    options?: { provision?: boolean }
 ): Promise<ApiContext> {
+    const credentials: E2ECredentials =
+        typeof emailOrCredentials === "string"
+            ? { email: emailOrCredentials, password: password ?? "" }
+            : emailOrCredentials;
+    if (!credentials.email || !credentials.password) {
+        throw new Error("E2E credentials require both email and password");
+    }
+
     const context = await browser.newContext();
+    const shouldProvision = options?.provision ?? true;
+    if (shouldProvision) {
+        await provisionE2EUser(context.request, credentials);
+    }
+
     const signIn = await context.request.post(`${apiBaseUrl}/api/v1/auth/sign-in`, {
-        data: { email, password },
+        data: { email: credentials.email, password: credentials.password },
     });
-    expect(signIn.ok()).toBeTruthy();
-    const csrfToken = (await context.cookies()).find((cookie) => cookie.name === "csrf_token")?.value;
+    await expectOk(signIn, `sign-in (${credentials.email})`);
+    const csrfToken = (await context.cookies()).find((cookie) => cookie.name === "csrf_token")
+        ?.value;
     return {
         request: context.request,
         csrfToken,
+        email: credentials.email,
+        password: credentials.password,
         close: () => context.close(),
     };
+}
+
+/** Authenticated browser context for UI tests, isolated per credentials. */
+export async function createAuthenticatedBrowserContext(
+    browser: import("@playwright/test").Browser,
+    credentials: E2ECredentials,
+    options?: { provision?: boolean }
+): Promise<{
+    context: import("@playwright/test").BrowserContext;
+    email: string;
+    password: string;
+}> {
+    const context = await browser.newContext();
+    if (options?.provision ?? false) {
+        await provisionE2EUser(context.request, credentials);
+    }
+    const signIn = await context.request.post(`${apiBaseUrl}/api/v1/auth/sign-in`, {
+        data: { email: credentials.email, password: credentials.password },
+    });
+    await expectOk(signIn, `UI sign-in (${credentials.email})`);
+    return { context, email: credentials.email, password: credentials.password };
 }
 
 function firstCsvField(line: string): string {
@@ -47,7 +138,7 @@ export async function createProject(
         headers: headers(api.csrfToken),
         data: { name, description: "Playwright E2E research workflow" },
     });
-    expect(response.ok()).toBeTruthy();
+    await expectOk(response, "create project");
     return response.json();
 }
 
@@ -60,7 +151,7 @@ export async function seedDemoCorpus(
         headers: headers(api.csrfToken),
         data: { corpus_name: corpusName ?? `E2E Demo ${Date.now()}` },
     });
-    expect(response.ok(), await response.text()).toBeTruthy();
+    await expectOk(response, "seed demo corpus");
     return response.json();
 }
 
@@ -73,7 +164,7 @@ export async function segmentCorpus(
         headers: headers(api.csrfToken),
         data: { unit_type: unitType },
     });
-    expect(response.ok(), await response.text()).toBeTruthy();
+    await expectOk(response, "segment corpus");
     return response.json();
 }
 
@@ -87,7 +178,7 @@ export async function waitForRun(
         const response = await api.request.get(`${researchBase}/runs/${runId}`, {
             headers: headers(api.csrfToken),
         });
-        expect(response.ok()).toBeTruthy();
+        await expectOk(response, `poll run ${runId}`);
         const run = await response.json();
         if (run.status === "completed" || run.status === "failed") {
             expect(run.status).toBe("completed");
@@ -107,7 +198,7 @@ export async function listTextUnitIdsFromExport(
         `${researchBase}/corpora/${corpusId}/export/units.csv?unit_type=${unitType}`,
         { headers: headers(api.csrfToken) }
     );
-    expect(response.ok()).toBeTruthy();
+    await expectOk(response, "export text units");
     const csv = await response.text();
     const lines = csv.trim().split("\n");
     expect(lines.length).toBeGreaterThan(1);
@@ -123,7 +214,7 @@ export async function createCodebook(
         headers: headers(api.csrfToken),
         data: { name, seed_demo_labels: false },
     });
-    expect(response.ok(), await response.text()).toBeTruthy();
+    await expectOk(response, "create codebook");
     return response.json();
 }
 
@@ -137,7 +228,7 @@ export async function createLabel(
         headers: headers(api.csrfToken),
         data: { name, description: description ?? `Synthetic fixture label ${name}` },
     });
-    expect(response.ok(), await response.text()).toBeTruthy();
+    await expectOk(response, "create label");
     return response.json();
 }
 
@@ -148,7 +239,7 @@ export async function listLabels(
     const response = await api.request.get(`${researchBase}/codebooks/${codebookId}/labels`, {
         headers: headers(api.csrfToken),
     });
-    expect(response.ok()).toBeTruthy();
+    await expectOk(response, "list labels");
     return response.json();
 }
 
@@ -164,7 +255,7 @@ export async function saveAnnotations(
         headers: headers(api.csrfToken),
         data: { ...payload, mark_task_complete: true },
     });
-    expect(response.ok(), await response.text()).toBeTruthy();
+    await expectOk(response, "save annotations");
 }
 
 export async function computeReliability(
@@ -177,7 +268,7 @@ export async function computeReliability(
         headers: headers(api.csrfToken),
         data: { codebook_id: codebookId, label_ids: labelIds },
     });
-    expect(response.ok(), await response.text()).toBeTruthy();
+    await expectOk(response, "compute reliability");
     return response.json();
 }
 
@@ -194,7 +285,7 @@ export async function previewDataset(
         headers: headers(api.csrfToken),
         data: { annotation_source: "adjudicated_only", ...payload },
     });
-    expect(response.ok(), await response.text()).toBeTruthy();
+    await expectOk(response, "dataset preview");
     return response.json();
 }
 
@@ -212,7 +303,7 @@ export async function freezeDataset(
         headers: headers(api.csrfToken),
         data: { annotation_source: "adjudicated_only", ...payload },
     });
-    expect(response.ok(), await response.text()).toBeTruthy();
+    await expectOk(response, "freeze dataset");
     return response.json();
 }
 
@@ -229,7 +320,7 @@ export async function trainClassifier(
             name: "E2E Classifier",
         },
     });
-    expect(response.ok(), await response.text()).toBeTruthy();
+    await expectOk(response, "train classifier");
     const run = await response.json();
     if (run.status !== "completed") {
         return waitForRun(api, run.id);
@@ -246,7 +337,7 @@ export async function listClassifiers(
         `${researchBase}/projects/${projectId}/classifiers?corpus_id=${encodeURIComponent(corpusId)}`,
         { headers: headers(api.csrfToken) }
     );
-    expect(response.ok()).toBeTruthy();
+    await expectOk(response, "list classifiers");
     return response.json();
 }
 
@@ -259,7 +350,7 @@ export async function predictWithModel(
         headers: headers(api.csrfToken),
         data: { unit_type: unitType, only_unannotated: false },
     });
-    expect(response.ok(), await response.text()).toBeTruthy();
+    await expectOk(response, "predict with model");
     const run = await response.json();
     if (run.status !== "completed") {
         return waitForRun(api, run.id);
@@ -274,7 +365,7 @@ export async function listPredictions(
     const response = await api.request.get(`${researchBase}/classifiers/${modelId}/predictions`, {
         headers: headers(api.csrfToken),
     });
-    expect(response.ok()).toBeTruthy();
+    await expectOk(response, "list predictions");
     return response.json();
 }
 
@@ -285,6 +376,6 @@ export async function getDashboard(
     const response = await api.request.get(`${researchBase}/corpora/${corpusId}/dashboard`, {
         headers: headers(api.csrfToken),
     });
-    expect(response.ok()).toBeTruthy();
+    await expectOk(response, "get dashboard");
     return response.json();
 }

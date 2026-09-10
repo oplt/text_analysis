@@ -999,22 +999,46 @@ export async function predictClassifier(
     });
 }
 
+export type ActiveLearningQueuePage = {
+    items: UncertainPrediction[];
+    total: number;
+    limit: number;
+    offset: number;
+};
+
 export async function listUncertainPredictions(
     modelId: string,
-    options: { limit?: number; campaignId?: string; textUnitId?: string } = {}
-): Promise<UncertainPrediction[]> {
+    options: {
+        limit?: number;
+        offset?: number;
+        campaignId?: string;
+        textUnitId?: string;
+        contentMode?: "snippet" | "full";
+    } = {}
+): Promise<ActiveLearningQueuePage> {
     const search = new URLSearchParams();
     search.set("limit", String(options.limit ?? 20));
+    search.set("offset", String(options.offset ?? 0));
+    search.set("content_mode", options.contentMode ?? "snippet");
     if (options.campaignId) search.set("campaign_id", options.campaignId);
     if (options.textUnitId) search.set("text_unit_id", options.textUnitId);
     return apiFetch(`${BASE}/classifiers/${modelId}/active-learning/queue?${search}`);
 }
 
+export type ActiveLearningAssignment = {
+    id: string;
+    text_unit_id: string;
+    annotator_id: string;
+    status: string;
+    assigned_at: string | null;
+    completed_at: string | null;
+};
+
 export async function assignUncertainPredictions(
     modelId: string,
     textUnitIds: string[],
     annotatorIds: string[]
-): Promise<unknown> {
+): Promise<ActiveLearningAssignment[]> {
     return apiFetch(`${BASE}/classifiers/${modelId}/active-learning/assign`, {
         method: "POST",
         body: JSON.stringify({ text_unit_ids: textUnitIds, annotator_ids: annotatorIds }),
@@ -1192,6 +1216,11 @@ export async function listPredictionSetPredictions(
 export async function compareClassifierDrift(
     corpusId: string,
     payload: {
+        /** Preferred: backend aggregates the full persisted PredictionSet. */
+        baseline_prediction_set_id?: string;
+        current_prediction_set_id?: string;
+        mode?: "DATA_DRIFT" | "PREDICTION_DRIFT" | "PERFORMANCE_DRIFT" | "MODEL_COMPARISON";
+        /** Legacy/manual aggregate body (browser-built). Prefer prediction set IDs. */
         baseline?: {
             label_counts?: Record<string, number>;
             scores?: number[];
@@ -1204,9 +1233,6 @@ export async function compareClassifierDrift(
         };
         baseline_run_id?: string | null;
         current_run_id?: string | null;
-        mode?: "DATA_DRIFT" | "PREDICTION_DRIFT" | "PERFORMANCE_DRIFT" | "MODEL_COMPARISON";
-        baseline_prediction_set_id?: string;
-        current_prediction_set_id?: string;
     }
 ): Promise<Record<string, unknown>> {
     return apiFetch(`${BASE}/corpora/${encodeURIComponent(corpusId)}/monitoring/drift`, {

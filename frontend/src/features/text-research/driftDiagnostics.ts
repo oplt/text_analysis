@@ -5,6 +5,7 @@ export type DriftKind =
     | "prediction_distribution"
     | "class_prevalence"
     | "score_distribution"
+    | "uncertainty_distribution"
     | "performance";
 
 export type DriftRowStatus = "ok" | "watch" | "investigate" | "unavailable";
@@ -20,6 +21,20 @@ export type DriftDiagnosticRow = {
     threshold: string;
     status: DriftRowStatus;
     note: string;
+};
+
+export type DriftProvenance = {
+    baselinePredictionSetId: string | null;
+    currentPredictionSetId: string | null;
+    baselineAnalysisRunId: string | null;
+    currentAnalysisRunId: string | null;
+    baselineTrainedModelId: string | null;
+    currentTrainedModelId: string | null;
+    nBaseline: number | null;
+    nCurrent: number | null;
+    nObservations: number | null;
+    aggregation: string | null;
+    mode: string | null;
 };
 
 /** Advisory review bands only — never claim proven model degradation. */
@@ -67,18 +82,84 @@ function sampleSizeLabel(counts: Record<string, unknown> | null): string {
     return total > 0 ? `${Math.round(total)} units` : "—";
 }
 
+function strOrNull(value: unknown): string | null {
+    return typeof value === "string" && value.trim() ? value : null;
+}
+
+function pushScoreRows(
+    rows: DriftDiagnosticRow[],
+    section: Record<string, unknown> | null,
+    opts: { idPrefix: string; kind: DriftKind; kindLabel: string; note: string }
+): void {
+    if (!section) return;
+    const ks = num(section.statistic);
+    const meanShift = num(section.mean_shift);
+    const method = String(section.method ?? "score");
+    if (ks != null) {
+        rows.push({
+            id: `${opts.idPrefix}-ks`,
+            kind: opts.kind,
+            kindLabel: opts.kindLabel,
+            metric: `KS statistic (${method})`,
+            baseline: `${num(section.baseline_n) ?? "—"} values`,
+            current: `${num(section.current_n) ?? "—"} values`,
+            value: formatNum(ks),
+            threshold: `watch ≥ ${DRIFT_ADVISORY.ks.watch}; investigate ≥ ${DRIFT_ADVISORY.ks.investigate}`,
+            status: bandHigherIsWorse(ks, DRIFT_ADVISORY.ks),
+            note: opts.note,
+        });
+        return;
+    }
+    rows.push({
+        id: `${opts.idPrefix}-mean`,
+        kind: opts.kind,
+        kindLabel: opts.kindLabel,
+        metric: `Mean shift (${method})`,
+        baseline: formatNum(num(section.baseline_mean)),
+        current: formatNum(num(section.current_mean)),
+        value: formatNum(meanShift),
+        threshold: "Review mean/std shifts qualitatively",
+        status: meanShift == null ? "unavailable" : Math.abs(meanShift) >= 0.1 ? "watch" : "ok",
+        note: String(section.note ?? opts.note),
+    });
+}
+
 export function parseDriftReport(report: Record<string, unknown> | null | undefined): {
     rows: DriftDiagnosticRow[];
     analysisRunId: string | null;
     sectionCount: number;
+    warningLevel: DriftRowStatus;
+    provenance: DriftProvenance;
 } {
+    const emptyProvenance: DriftProvenance = {
+        baselinePredictionSetId: null,
+        currentPredictionSetId: null,
+        baselineAnalysisRunId: null,
+        currentAnalysisRunId: null,
+        baselineTrainedModelId: null,
+        currentTrainedModelId: null,
+        nBaseline: null,
+        nCurrent: null,
+        nObservations: null,
+        aggregation: null,
+        mode: null,
+    };
+
     if (!report) {
-        return { rows: [], analysisRunId: null, sectionCount: 0 };
+        return {
+            rows: [],
+            analysisRunId: null,
+            sectionCount: 0,
+            warningLevel: "unavailable",
+            provenance: emptyProvenance,
+        };
     }
 
     const sections = asRecord(report.sections) ?? {};
     const baseline = asRecord(report.baseline);
     const current = asRecord(report.current);
+    const summary = asRecord(report.summary) ?? {};
+    const provenanceRaw = asRecord(report.provenance) ?? {};
     const baselineCounts = asRecord(baseline?.label_counts);
     const currentCounts = asRecord(current?.label_counts);
     const baselineSample = sampleSizeLabel(baselineCounts);
@@ -92,7 +173,7 @@ export function parseDriftReport(report: Record<string, unknown> | null | undefi
         rows.push({
             id: "pred-tvd",
             kind: "prediction_distribution",
-            kindLabel: "Prediction distribution",
+            kindLabel: "Label-distribution drift",
             metric: "Total variation distance",
             baseline: baselineSample,
             current: currentSample,
@@ -104,7 +185,7 @@ export function parseDriftReport(report: Record<string, unknown> | null | undefi
         rows.push({
             id: "pred-psi",
             kind: "prediction_distribution",
-            kindLabel: "Prediction distribution",
+            kindLabel: "Label-distribution drift",
             metric: "PSI-like",
             baseline: baselineSample,
             current: currentSample,
@@ -127,39 +208,19 @@ export function parseDriftReport(report: Record<string, unknown> | null | undefi
         });
     }
 
-    const scores = asRecord(sections.score_distribution);
-    if (scores) {
-        const ks = num(scores.statistic);
-        const meanShift = num(scores.mean_shift);
-        const method = String(scores.method ?? "score");
-        if (ks != null) {
-            rows.push({
-                id: "score-ks",
-                kind: "score_distribution",
-                kindLabel: "Score / confidence distribution",
-                metric: `KS statistic (${method})`,
-                baseline: `${num(scores.baseline_n) ?? "—"} scores`,
-                current: `${num(scores.current_n) ?? "—"} scores`,
-                value: formatNum(ks),
-                threshold: `watch ≥ ${DRIFT_ADVISORY.ks.watch}; investigate ≥ ${DRIFT_ADVISORY.ks.investigate}`,
-                status: bandHigherIsWorse(ks, DRIFT_ADVISORY.ks),
-                note: "Confidence/score distribution shift. Does not alone prove accuracy drop.",
-            });
-        } else {
-            rows.push({
-                id: "score-mean",
-                kind: "score_distribution",
-                kindLabel: "Score / confidence distribution",
-                metric: `Mean shift (${method})`,
-                baseline: formatNum(num(scores.baseline_mean)),
-                current: formatNum(num(scores.current_mean)),
-                value: formatNum(meanShift),
-                threshold: "Review mean/std shifts qualitatively",
-                status: meanShift == null ? "unavailable" : Math.abs(meanShift) >= 0.1 ? "watch" : "ok",
-                note: String(scores.note ?? "Fallback mean/std comparison when KS unavailable."),
-            });
-        }
-    }
+    pushScoreRows(rows, asRecord(sections.score_distribution), {
+        idPrefix: "score",
+        kind: "score_distribution",
+        kindLabel: "Confidence drift",
+        note: "Confidence/score distribution shift. Does not alone prove accuracy drop.",
+    });
+
+    pushScoreRows(rows, asRecord(sections.uncertainty_distribution), {
+        idPrefix: "uncertainty",
+        kind: "uncertainty_distribution",
+        kindLabel: "Uncertainty drift",
+        note: "Model uncertainty distribution shift when uncertainty scores are persisted.",
+    });
 
     const features = asRecord(sections.feature_presence);
     if (features) {
@@ -181,35 +242,75 @@ export function parseDriftReport(report: Record<string, unknown> | null | undefi
 
     const performance = asRecord(sections.performance);
     if (performance) {
-        const drop = num(performance.macro_f1_drop) ?? num(performance.metric_drop);
-        const baselineF1 = num(performance.baseline_macro_f1) ?? num(performance.baseline_value);
-        const currentF1 = num(performance.current_macro_f1) ?? num(performance.current_value);
+        const drop =
+            num(performance.macro_f1_drop) ??
+            num(performance.metric_drop) ??
+            (num(performance.difference) != null
+                ? Math.abs(num(performance.difference)!)
+                : null);
+        const baselineF1 =
+            num(performance.baseline_macro_f1) ??
+            num(performance.baseline_value) ??
+            num(performance.baseline_accuracy);
+        const currentF1 =
+            num(performance.current_macro_f1) ??
+            num(performance.current_value) ??
+            num(performance.current_accuracy);
         rows.push({
             id: "perf-f1",
             kind: "performance",
             kindLabel: "Performance (labeled)",
-            metric: String(performance.metric_name ?? "Macro F1 drop vs gold / holdout"),
+            metric: String(performance.metric_name ?? "Labeled accuracy / Macro F1 drop"),
             baseline: formatNum(baselineF1),
             current: formatNum(currentF1),
             value: formatNum(drop),
             threshold: `watch ≥ ${DRIFT_ADVISORY.f1_drop.watch}; investigate ≥ ${DRIFT_ADVISORY.f1_drop.investigate}`,
             status: drop == null ? "unavailable" : bandHigherIsWorse(drop, DRIFT_ADVISORY.f1_drop),
-            note:
-                String(
-                    performance.note ??
-                        "Only available when adjudicated/holdout labels exist. Distribution drift alone is not enough."
-                ),
+            note: String(
+                performance.note ??
+                    "Only available when adjudicated/holdout labels exist. Distribution drift alone is not enough."
+            ),
         });
     }
 
-    const summary = asRecord(report.summary);
+    const warningFromSummary = strOrNull(summary.warning_level);
+    const worstFromRows = rows.reduce<DriftRowStatus>((worst, row) => {
+        const order: DriftRowStatus[] = ["ok", "watch", "investigate"];
+        if (row.status === "unavailable") return worst;
+        const worstKey = worst === "unavailable" ? "ok" : worst;
+        if (order.indexOf(row.status) > order.indexOf(worstKey)) {
+            return row.status;
+        }
+        return worst;
+    }, "unavailable");
+
+    const provenance: DriftProvenance = {
+        baselinePredictionSetId: strOrNull(provenanceRaw.baseline_prediction_set_id),
+        currentPredictionSetId: strOrNull(provenanceRaw.current_prediction_set_id),
+        baselineAnalysisRunId: strOrNull(provenanceRaw.baseline_analysis_run_id),
+        currentAnalysisRunId: strOrNull(provenanceRaw.current_analysis_run_id),
+        baselineTrainedModelId: strOrNull(provenanceRaw.baseline_trained_model_id),
+        currentTrainedModelId: strOrNull(provenanceRaw.current_trained_model_id),
+        nBaseline: num(provenanceRaw.n_baseline) ?? num(summary.n_baseline) ?? num(baseline?.n),
+        nCurrent: num(provenanceRaw.n_current) ?? num(summary.n_current) ?? num(current?.n),
+        nObservations: num(provenanceRaw.n_observations) ?? num(summary.n_observations) ?? null,
+        aggregation: strOrNull(provenanceRaw.aggregation),
+        mode: strOrNull(report.mode),
+    };
+    if (
+        provenance.nObservations == null &&
+        provenance.nBaseline != null &&
+        provenance.nCurrent != null
+    ) {
+        provenance.nObservations = provenance.nBaseline + provenance.nCurrent;
+    }
+
     return {
         rows,
-        analysisRunId:
-            typeof report.analysis_run_id === "string"
-                ? report.analysis_run_id
-                : null,
-        sectionCount: num(summary?.section_count) ?? rows.length,
+        analysisRunId: typeof report.analysis_run_id === "string" ? report.analysis_run_id : null,
+        sectionCount: num(summary.section_count) ?? rows.length,
+        warningLevel: (warningFromSummary as DriftRowStatus) || worstFromRows,
+        provenance,
     };
 }
 
@@ -258,4 +359,19 @@ export function topTermsFromCoefficients(
         if (terms.length >= limit) break;
     }
     return terms;
+}
+
+export function predictionSetOptionLabel(ps: {
+    id: string;
+    trained_model_id: string;
+    analysis_run_id: string;
+    created_at: string;
+    metadata?: Record<string, unknown>;
+}): string {
+    const unitCount = num(ps.metadata?.unit_count);
+    const shortId = ps.id.slice(0, 8);
+    const runShort = ps.analysis_run_id.slice(0, 8);
+    const when = new Date(ps.created_at).toLocaleString();
+    const n = unitCount != null ? `${Math.round(unitCount)} units` : "units unknown";
+    return `${shortId}… · run ${runShort}… · ${n} · ${when}`;
 }

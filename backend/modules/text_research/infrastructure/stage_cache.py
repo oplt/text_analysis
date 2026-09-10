@@ -17,6 +17,7 @@ Methodological safeguard: never cache leakage-sensitive supervised fits
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import io
 import json
@@ -27,8 +28,8 @@ import threading
 import time
 import uuid
 from collections import OrderedDict
-from collections.abc import Callable
-from contextlib import contextmanager
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager, contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -42,6 +43,63 @@ from backend.modules.text_research.infrastructure.pipeline_compiler import compu
 logger = logging.getLogger(__name__)
 
 PayloadFormat = str  # "json" | "joblib" | "npz"
+
+# Process-local hit/miss counters (tests / ops). Reset via invalidate().
+_STAGE_CACHE_HITS = 0
+_STAGE_CACHE_MISSES = 0
+_HIT_MISS_LOCK = threading.Lock()
+
+
+def _record_cache_hit(*, stage: str = "stage") -> None:
+    global _STAGE_CACHE_HITS
+    with _HIT_MISS_LOCK:
+        _STAGE_CACHE_HITS += 1
+    logger.info("research stage cache hit stage=%s", stage)
+    try:
+        from backend.observability.prometheus_metrics import (
+            research_prepared_corpus_cache_hits_total,
+            research_stage_cache_hits_total,
+        )
+
+        label = stage or "stage"
+        research_stage_cache_hits_total.labels(stage=label).inc()
+        if label == "prepared_corpus":
+            research_prepared_corpus_cache_hits_total.inc()
+    except Exception:
+        pass
+
+
+def _record_cache_miss(*, stage: str = "stage") -> None:
+    global _STAGE_CACHE_MISSES
+    with _HIT_MISS_LOCK:
+        _STAGE_CACHE_MISSES += 1
+    logger.info("research stage cache miss stage=%s", stage)
+    try:
+        from backend.observability.prometheus_metrics import (
+            research_prepared_corpus_cache_misses_total,
+            research_stage_cache_misses_total,
+        )
+
+        label = stage or "stage"
+        research_stage_cache_misses_total.labels(stage=label).inc()
+        if label == "prepared_corpus":
+            research_prepared_corpus_cache_misses_total.inc()
+    except Exception:
+        pass
+
+
+def stage_cache_hit_miss_counts() -> dict[str, int]:
+    """Return process-local stage-cache hit/miss counters."""
+    with _HIT_MISS_LOCK:
+        return {"hits": _STAGE_CACHE_HITS, "misses": _STAGE_CACHE_MISSES}
+
+
+def reset_hit_miss_counts_for_tests() -> None:
+    """Reset hit/miss counters (unit tests only)."""
+    global _STAGE_CACHE_HITS, _STAGE_CACHE_MISSES
+    with _HIT_MISS_LOCK:
+        _STAGE_CACHE_HITS = 0
+        _STAGE_CACHE_MISSES = 0
 
 # Stages that must never be shared globally (train/test leakage risk).
 LEAKAGE_SENSITIVE_STAGES = frozenset(
@@ -71,8 +129,13 @@ end
 _L1_LOCK = threading.RLock()
 _L1: OrderedDict[str, dict[str, Any]] = OrderedDict()
 _L1_BYTES = 0
-_PROCESS_LOCKS: dict[str, threading.Lock] = {}
+_PROCESS_LOCKS: OrderedDict[str, threading.Lock] = OrderedDict()
 _PROCESS_LOCKS_GUARD = threading.Lock()
+_PROCESS_LOCKS_MAX = 1024
+
+_ASYNC_PROCESS_LOCKS: OrderedDict[str, asyncio.Lock] | None = None
+_ASYNC_PROCESS_LOCKS_GUARD: asyncio.Lock | None = None
+_ASYNC_PROCESS_LOCKS_MAX = 1024
 
 _sync_redis: Any | None = None
 _sync_redis_failed = False
@@ -187,7 +250,49 @@ def _process_lock(key: str) -> threading.Lock:
         if lock is None:
             lock = threading.Lock()
             _PROCESS_LOCKS[key] = lock
+        else:
+            _PROCESS_LOCKS.move_to_end(key)
+        while len(_PROCESS_LOCKS) > _PROCESS_LOCKS_MAX:
+            oldest_key, oldest_lock = _PROCESS_LOCKS.popitem(last=False)
+            if oldest_lock.locked():
+                _PROCESS_LOCKS[oldest_key] = oldest_lock
+                if all(candidate.locked() for candidate in _PROCESS_LOCKS.values()):
+                    break
         return lock
+
+
+def _ensure_async_lock_state() -> tuple[OrderedDict[str, asyncio.Lock], asyncio.Lock]:
+    global _ASYNC_PROCESS_LOCKS, _ASYNC_PROCESS_LOCKS_GUARD
+    if _ASYNC_PROCESS_LOCKS is None:
+        _ASYNC_PROCESS_LOCKS = OrderedDict()
+    if _ASYNC_PROCESS_LOCKS_GUARD is None:
+        _ASYNC_PROCESS_LOCKS_GUARD = asyncio.Lock()
+    return _ASYNC_PROCESS_LOCKS, _ASYNC_PROCESS_LOCKS_GUARD
+
+
+async def _async_process_lock(key: str) -> asyncio.Lock:
+    locks, guard = _ensure_async_lock_state()
+    async with guard:
+        lock = locks.get(key)
+        if lock is None:
+            lock = asyncio.Lock()
+            locks[key] = lock
+        else:
+            locks.move_to_end(key)
+        while len(locks) > _ASYNC_PROCESS_LOCKS_MAX:
+            oldest_key, oldest_lock = locks.popitem(last=False)
+            if oldest_lock.locked():
+                locks[oldest_key] = oldest_lock
+                if all(candidate.locked() for candidate in locks.values()):
+                    break
+        return lock
+
+
+def reset_async_locks_for_tests() -> None:
+    """Test helper: drop async process-local locks."""
+    global _ASYNC_PROCESS_LOCKS, _ASYNC_PROCESS_LOCKS_GUARD
+    _ASYNC_PROCESS_LOCKS = None
+    _ASYNC_PROCESS_LOCKS_GUARD = None
 
 
 # --- L2 Redis ---------------------------------------------------------------
@@ -302,16 +407,31 @@ def _redis_delete(key: str) -> None:
         logger.debug("stage cache Redis delete failed key=%s", key, exc_info=True)
 
 
+def _redis_unlink(client: Any, keys: list[str]) -> None:
+    if not keys:
+        return
+    if hasattr(client, "unlink"):
+        client.unlink(*keys)
+    else:
+        client.delete(*keys)
+
+
 def _redis_clear_stage_pointers() -> None:
-    """Best-effort removal for explicit cache clears; generation handles global expiry."""
+    """Best-effort batched SCAN+UNLINK; prefer generation bump for mass expiry."""
     client = _get_sync_redis()
     if client is None or not hasattr(client, "scan_iter"):
         return
     try:
+        batch_size = 100
         for prefix in (REDIS_META_PREFIX, REDIS_STATUS_PREFIX, REDIS_LOCK_PREFIX):
-            keys = list(client.scan_iter(match=f"{prefix}*"))
-            if keys:
-                client.delete(*keys)
+            batch: list[str] = []
+            for key in client.scan_iter(match=f"{prefix}*", count=batch_size):
+                batch.append(key)
+                if len(batch) >= batch_size:
+                    _redis_unlink(client, batch)
+                    batch.clear()
+            if batch:
+                _redis_unlink(client, batch)
     except Exception:
         logger.debug("stage cache Redis clear failed", exc_info=True)
 
@@ -319,6 +439,11 @@ def _redis_clear_stage_pointers() -> None:
 @contextmanager
 def distributed_lock(computation_hash: str, *, ttl: int | None = None, wait: float | None = None):
     """Acquire ``research:lock:{hash}``; falls back to process lock if Redis down.
+
+    Sync/Celery path: uses ``time.sleep`` while polling. FastAPI request handlers
+    must use :func:`distributed_lock_async` / :func:`get_or_compute_async` (or
+    ``asyncio.to_thread(get_or_compute, ...)``) instead of calling this on the
+    event loop.
 
     Yields ``True`` when this caller holds the exclusive compute token,
     ``False`` when the wait timed out (caller may still double-check cache).
@@ -357,6 +482,74 @@ def distributed_lock(computation_hash: str, *, ttl: int | None = None, wait: flo
                 client.eval(_RELEASE_LOCK_LUA, 1, redis_key, token)
             except Exception:
                 logger.debug("stage cache lock release failed", exc_info=True)
+        if got_process:
+            process_lock.release()
+
+
+@asynccontextmanager
+async def distributed_lock_async(
+    computation_hash: str, *, ttl: int | None = None, wait: float | None = None
+) -> AsyncIterator[bool]:
+    """Async counterpart of :func:`distributed_lock` using ``asyncio.sleep``.
+
+    Redis commands still run via the sync client in a worker thread so Celery and
+    FastAPI share one Redis protocol implementation without blocking the loop on
+    sleep/polling.
+    """
+    lock_ttl = _lock_ttl() if ttl is None else ttl
+    wait_s = _lock_wait() if wait is None else wait
+    token = str(uuid.uuid4())
+    redis_key = _lock_redis_key(computation_hash)
+    acquired_redis = False
+    process_lock = await _async_process_lock(computation_hash)
+    got_process = False
+
+    try:
+        await asyncio.wait_for(process_lock.acquire(), timeout=wait_s)
+        got_process = True
+    except TimeoutError:
+        got_process = False
+
+    client_available = await asyncio.to_thread(_get_sync_redis) is not None
+
+    if client_available and got_process:
+        deadline = time.monotonic() + wait_s
+        while time.monotonic() < deadline:
+            try:
+
+                def _try_acquire() -> bool:
+                    client = _get_sync_redis()
+                    if client is None:
+                        return False
+                    return bool(client.set(redis_key, token, nx=True, ex=lock_ttl))
+
+                if await asyncio.to_thread(_try_acquire):
+                    acquired_redis = True
+                    break
+                status = await asyncio.to_thread(_redis_get_status, computation_hash)
+                if status == "ready" and await asyncio.to_thread(has_stage, computation_hash):
+                    break
+            except Exception:
+                logger.debug("stage cache async lock acquire failed", exc_info=True)
+                break
+            await asyncio.sleep(0.05)
+
+    held = bool(got_process and (acquired_redis or not client_available))
+    try:
+        yield held
+    finally:
+        if acquired_redis:
+
+            def _release() -> None:
+                client = _get_sync_redis()
+                if client is None:
+                    return
+                try:
+                    client.eval(_RELEASE_LOCK_LUA, 1, redis_key, token)
+                except Exception:
+                    logger.debug("stage cache async lock release failed", exc_info=True)
+
+            await asyncio.to_thread(_release)
         if got_process:
             process_lock.release()
 
@@ -667,6 +860,7 @@ def invalidate(key: str | None = None) -> None:
         root = _stage_cache_root()
         if root.exists():
             shutil.rmtree(root)
+        reset_hit_miss_counts_for_tests()
         return
 
     _l1_delete(key)
@@ -718,16 +912,22 @@ def get_or_compute(
 ) -> dict[str, Any]:
     """Stampede-safe cache fill: lookup → lock → re-lookup → compute → publish.
 
+    Sync/Celery-only: may call ``time.sleep`` while waiting on locks. Do not
+    invoke from async FastAPI handlers on the event loop — use
+    :func:`get_or_compute_async` or ``await asyncio.to_thread(get_or_compute, ...)``.
+
     ``factory`` returns ``(meta, payload)``. Supervised leakage-sensitive stage
     names in ``meta`` are rejected by :func:`put_stage`.
     """
     hit = get_stage(key)
     if hit is not None:
+        _record_cache_hit(stage=str((hit.get("meta") or {}).get("stage_name") or "stage"))
         return hit
 
     with distributed_lock(key) as held:
         hit = get_stage(key)
         if hit is not None:
+            _record_cache_hit(stage=str((hit.get("meta") or {}).get("stage_name") or "stage"))
             return hit
 
         if not held:
@@ -735,16 +935,23 @@ def get_or_compute(
             while time.monotonic() < deadline:
                 hit = get_stage(key)
                 if hit is not None:
+                    _record_cache_hit(
+                        stage=str((hit.get("meta") or {}).get("stage_name") or "stage")
+                    )
                     return hit
                 if _redis_get_status(key) == "ready":
                     hit = get_stage(key)
                     if hit is not None:
+                        _record_cache_hit(
+                            stage=str((hit.get("meta") or {}).get("stage_name") or "stage")
+                        )
                         return hit
                 time.sleep(0.05)
 
         _redis_set_status(key, "computing")
         try:
             meta, payload = factory()
+            _record_cache_miss(stage=str((meta or {}).get("stage_name") or "stage"))
             put_stage(key, meta=meta, payload=payload, payload_format=payload_format)
             loaded = get_stage(key)
             if loaded is None:
@@ -755,12 +962,74 @@ def get_or_compute(
             raise
 
 
+async def get_or_compute_async(
+    key: str,
+    factory: Callable[[], tuple[dict[str, Any], Any | None]],
+    *,
+    payload_format: PayloadFormat = "json",
+) -> dict[str, Any]:
+    """Async FastAPI-safe variant of :func:`get_or_compute`.
+
+    Uses ``await asyncio.sleep`` during lock wait and runs blocking Redis / L3
+    IO via ``asyncio.to_thread``. ``factory`` remains synchronous and is
+    executed in a worker thread so CPU-heavy stage work does not block the loop.
+    """
+    hit = await asyncio.to_thread(get_stage, key)
+    if hit is not None:
+        _record_cache_hit(stage=str((hit.get("meta") or {}).get("stage_name") or "stage"))
+        return hit
+
+    async with distributed_lock_async(key) as held:
+        hit = await asyncio.to_thread(get_stage, key)
+        if hit is not None:
+            _record_cache_hit(stage=str((hit.get("meta") or {}).get("stage_name") or "stage"))
+            return hit
+
+        if not held:
+            deadline = time.monotonic() + min(5.0, _lock_wait())
+            while time.monotonic() < deadline:
+                hit = await asyncio.to_thread(get_stage, key)
+                if hit is not None:
+                    _record_cache_hit(
+                        stage=str((hit.get("meta") or {}).get("stage_name") or "stage")
+                    )
+                    return hit
+                status = await asyncio.to_thread(_redis_get_status, key)
+                if status == "ready":
+                    hit = await asyncio.to_thread(get_stage, key)
+                    if hit is not None:
+                        _record_cache_hit(
+                            stage=str((hit.get("meta") or {}).get("stage_name") or "stage")
+                        )
+                        return hit
+                await asyncio.sleep(0.05)
+
+        await asyncio.to_thread(_redis_set_status, key, "computing")
+        try:
+            meta, payload = await asyncio.to_thread(factory)
+            _record_cache_miss(stage=str((meta or {}).get("stage_name") or "stage"))
+
+            def _put() -> None:
+                put_stage(key, meta=meta, payload=payload, payload_format=payload_format)
+
+            await asyncio.to_thread(_put)
+            loaded = await asyncio.to_thread(get_stage, key)
+            if loaded is None:
+                raise RuntimeError(f"stage cache put failed to materialize key={key}")
+            return loaded
+        except Exception:
+            await asyncio.to_thread(_redis_set_status, key, "failed")
+            raise
+
+
 def cache_layer_metrics() -> dict[str, Any]:
     """Lightweight observability for L1 occupancy (tests / ops)."""
     with _L1_LOCK:
-        return {
+        occupancy = {
             "l1_entries": len(_L1),
             "l1_bytes": _L1_BYTES,
             "redis_enabled": _redis_enabled() and _get_sync_redis() is not None,
             "object_storage": _object_storage_configured(),
         }
+    occupancy.update(stage_cache_hit_miss_counts())
+    return occupancy

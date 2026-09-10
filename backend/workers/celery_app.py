@@ -43,6 +43,9 @@ celery_app.conf.update(
             "queue": settings.RESEARCH_QUEUE_CPU
         },
         "backend.workers.tasks.research_prediction_task": {"queue": settings.RESEARCH_QUEUE_CPU},
+        "backend.workers.tasks.research_quantitative_analysis_task": {
+            "queue": settings.RESEARCH_QUEUE_CPU
+        },
     },
     task_serializer="json",
     accept_content=["json"],

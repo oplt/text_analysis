@@ -41,6 +41,9 @@ class FakeRedis:
                 deleted += 1
         return deleted
 
+    def unlink(self, *keys: str) -> int:
+        return self.delete(*keys)
+
     def eval(self, _script: str, _numkeys: int, key: str, token: str) -> int:
         if self.store.get(key) == token:
             self.store.pop(key, None)
@@ -280,6 +283,48 @@ class LayeredStageCacheTests(unittest.TestCase):
             assert loaded is not None
             self.assertEqual(loaded.get("storage_backend"), "object")
             self.assertTrue(str(loaded.get("object_key", "")).startswith("research-stage-cache/"))
+
+
+class AsyncStageCacheTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        os.environ["RESEARCH_ARTIFACT_DIR"] = self.temp_dir.name
+        self.fake_redis = FakeRedis()
+        stage_cache.invalidate()
+        stage_cache.reset_redis_client_for_tests()
+        stage_cache.reset_async_locks_for_tests()
+
+    def tearDown(self) -> None:
+        stage_cache.invalidate()
+        stage_cache.reset_redis_client_for_tests()
+        stage_cache.reset_async_locks_for_tests()
+
+    async def test_get_or_compute_async_materializes_payload(self) -> None:
+        key = stage_cache.stage_cache_key(
+            engine_version=ENGINE_VERSION,
+            stage_name="async_stage",
+            input_checksum="abc",
+            spec_hash="def",
+            params={"k": 1},
+        )
+        with (
+            patch.object(stage_cache, "_redis_enabled", return_value=True),
+            patch.object(stage_cache, "_get_sync_redis", return_value=self.fake_redis),
+        ):
+            loaded = await stage_cache.get_or_compute_async(
+                key,
+                lambda: ({"stage_name": "async_stage"}, {"ok": True}),
+                payload_format="json",
+            )
+
+        self.assertEqual(loaded["payload"], {"ok": True})
+        again = await stage_cache.get_or_compute_async(
+            key,
+            lambda: ({"stage_name": "async_stage"}, {"ok": False}),
+            payload_format="json",
+        )
+        self.assertEqual(again["payload"], {"ok": True})
 
 
 if __name__ == "__main__":

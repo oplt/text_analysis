@@ -1,5 +1,8 @@
 import { useMemo, useState } from "react";
 import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
     Alert,
     Box,
     Button,
@@ -15,6 +18,7 @@ import {
     Typography,
 } from "@mui/material";
 import {
+    ExpandMore as ExpandIcon,
     OpenInNew as OpenIcon,
     Science as DriftIcon,
 } from "@mui/icons-material";
@@ -27,6 +31,7 @@ import {
     getRun,
     listModelPredictions,
     listModels,
+    listPredictionSets,
     listRuns,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
@@ -39,6 +44,7 @@ import { RunStatusChip } from "../components/ResearchShared";
 import {
     DRIFT_DISCLAIMER,
     parseDriftReport,
+    predictionSetOptionLabel,
     topTermsFromCoefficients,
     withPerformanceSection,
     type DriftRowStatus,
@@ -47,6 +53,13 @@ import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { aggregatePredictionsForDrift, asRecord, extractMacroF1, modelDisplayName } from "../modelRegistryUtils";
 import { activeRunRefetchInterval } from "../runPolling";
+
+const DRIFT_MODES = [
+    { value: "MODEL_COMPARISON", label: "Model comparison" },
+    { value: "PREDICTION_DRIFT", label: "Prediction drift (same model)" },
+    { value: "DATA_DRIFT", label: "Data drift" },
+    { value: "PERFORMANCE_DRIFT", label: "Performance drift (labeled)" },
+] as const;
 
 function statusColor(status: DriftRowStatus): "success" | "warning" | "error" | "default" {
     switch (status) {
@@ -67,10 +80,21 @@ export default function DriftMonitoringView() {
     const { showToast } = useSnackbar();
     const queryClient = useQueryClient();
 
-    const [baselineModelId, setBaselineModelId] = useState("");
-    const [currentModelId, setCurrentModelId] = useState("");
+    const [baselineSetId, setBaselineSetId] = useState("");
+    const [currentSetId, setCurrentSetId] = useState("");
+    const [driftMode, setDriftMode] = useState<(typeof DRIFT_MODES)[number]["value"]>(
+        "MODEL_COMPARISON"
+    );
+    const [legacyBaselineModelId, setLegacyBaselineModelId] = useState("");
+    const [legacyCurrentModelId, setLegacyCurrentModelId] = useState("");
     const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
     const [liveReport, setLiveReport] = useState<Record<string, unknown> | null>(null);
+
+    const predictionSetsQuery = useQuery({
+        queryKey: queryKeys.textResearch.predictionSets(ctx.selectedCorpusId),
+        queryFn: () => listPredictionSets(ctx.selectedCorpusId, { limit: 100 }),
+        enabled: Boolean(ctx.selectedCorpusId),
+    });
 
     const modelsQuery = useQuery({
         queryKey: queryKeys.textResearch.models(ctx.projectId, ctx.selectedCorpusId),
@@ -81,6 +105,7 @@ export default function DriftMonitoringView() {
         enabled: Boolean(ctx.projectId),
     });
 
+    const predictionSets = predictionSetsQuery.data ?? [];
     const models = modelsQuery.data ?? [];
 
     const driftRunsQuery = useQuery({
@@ -114,29 +139,70 @@ export default function DriftMonitoringView() {
 
     const parsed = useMemo(() => parseDriftReport(activeReport), [activeReport]);
 
-    const runDriftMutation = useMutation({
+    const runPredictionSetDriftMutation = useMutation({
         mutationFn: async () => {
             if (!ctx.selectedCorpusId) {
                 throw new Error("Select a corpus in the workspace context bar.");
             }
-            if (!baselineModelId || !currentModelId) {
+            if (!baselineSetId || !currentSetId) {
+                throw new Error("Select baseline and current prediction sets.");
+            }
+            if (baselineSetId === currentSetId) {
+                throw new Error("Baseline and current prediction sets must differ.");
+            }
+            return compareClassifierDrift(ctx.selectedCorpusId, {
+                mode: driftMode,
+                baseline_prediction_set_id: baselineSetId,
+                current_prediction_set_id: currentSetId,
+            });
+        },
+        onSuccess: async (report) => {
+            setLiveReport(report);
+            const runId =
+                typeof report.analysis_run_id === "string" ? report.analysis_run_id : null;
+            if (runId) setSelectedRunId(runId);
+            await queryClient.invalidateQueries({
+                queryKey: queryKeys.textResearch.runs(
+                    ctx.projectId,
+                    ctx.selectedCorpusId,
+                    "drift_monitoring"
+                ),
+            });
+            showToast({
+                message: "Drift report saved from complete PredictionSets.",
+                severity: "success",
+            });
+        },
+        onError: (error) =>
+            showToast({
+                message: getQueryErrorMessage(error, "Drift check failed."),
+                severity: "error",
+            }),
+    });
+
+    const runLegacyDriftMutation = useMutation({
+        mutationFn: async () => {
+            if (!ctx.selectedCorpusId) {
+                throw new Error("Select a corpus in the workspace context bar.");
+            }
+            if (!legacyBaselineModelId || !legacyCurrentModelId) {
                 throw new Error("Select baseline and current models.");
             }
-            if (baselineModelId === currentModelId) {
+            if (legacyBaselineModelId === legacyCurrentModelId) {
                 throw new Error("Baseline and current models must differ.");
             }
 
-            const baselineModel = models.find((m) => m.id === baselineModelId);
-            const currentModel = models.find((m) => m.id === currentModelId);
+            const baselineModel = models.find((m) => m.id === legacyBaselineModelId);
+            const currentModel = models.find((m) => m.id === legacyCurrentModelId);
             if (!baselineModel || !currentModel) {
                 throw new Error("Models not found in registry.");
             }
 
             const [baselineRows, currentRows, baselineCoefs, currentCoefs] = await Promise.all([
-                listModelPredictions(baselineModelId, { limit: 500 }),
-                listModelPredictions(currentModelId, { limit: 500 }),
-                getClassifierCoefficients(baselineModelId).catch(() => []),
-                getClassifierCoefficients(currentModelId).catch(() => []),
+                listModelPredictions(legacyBaselineModelId, { limit: 500 }),
+                listModelPredictions(legacyCurrentModelId, { limit: 500 }),
+                getClassifierCoefficients(legacyBaselineModelId).catch(() => []),
+                getClassifierCoefficients(legacyCurrentModelId).catch(() => []),
             ]);
 
             const baselineAgg = aggregatePredictionsForDrift(baselineRows);
@@ -146,7 +212,7 @@ export default function DriftMonitoringView() {
                 !Object.keys(currentAgg.label_counts).length
             ) {
                 throw new Error(
-                    "Both models need stored predictions. Run Predict from Model Registry first."
+                    "Both models need stored predictions. Prefer PredictionSets above, or run Predict first."
                 );
             }
 
@@ -188,13 +254,13 @@ export default function DriftMonitoringView() {
                 ),
             });
             showToast({
-                message: "Drift report saved as analysis run.",
+                message: "Legacy/manual drift report saved (≤500 predictions per model).",
                 severity: "success",
             });
         },
         onError: (error) =>
             showToast({
-                message: getQueryErrorMessage(error, "Drift check failed."),
+                message: getQueryErrorMessage(error, "Legacy drift check failed."),
                 severity: "error",
             }),
     });
@@ -203,18 +269,20 @@ export default function DriftMonitoringView() {
         return <Alert severity="info">Select a research project to monitor drift.</Alert>;
     }
 
+    const { provenance, warningLevel } = parsed;
+
     return (
         <Stack spacing={2}>
             <SectionCard
                 title="Drift monitoring"
-                description="Model comparison across stored prediction samples. Use the PredictionSet API with an explicit drift mode for deployment/data drift."
+                description="Compare complete persisted PredictionSets on the backend. The browser never downloads full prediction rows to aggregate."
                 action={
                     <Button
                         size="small"
                         variant="outlined"
-                        onClick={() => navigate(`/research/${ctx.projectId}/models`)}
+                        onClick={() => navigate(`/research/${ctx.projectId}/predictions`)}
                     >
-                        Model Registry
+                        Prediction Sets
                     </Button>
                 }
             >
@@ -229,24 +297,24 @@ export default function DriftMonitoringView() {
                 ) : null}
 
                 <QueryBoundary
-                    isLoading={modelsQuery.isLoading}
-                    isError={modelsQuery.isError}
-                    error={modelsQuery.error}
-                    onRetry={() => void modelsQuery.refetch()}
+                    isLoading={predictionSetsQuery.isLoading}
+                    isError={predictionSetsQuery.isError}
+                    error={predictionSetsQuery.error}
+                    onRetry={() => void predictionSetsQuery.refetch()}
                 >
-                    {!models.length ? (
+                    {!predictionSets.length ? (
                         <EmptyState
                             icon={<DriftIcon />}
-                            title="No models"
-                            description="Train classifiers, run predictions, then compare baseline vs current here."
+                            title="No prediction sets"
+                            description="Run Predict from Model Registry to create PredictionSets, then compare them here."
                             action={
                                 <Button
                                     variant="contained"
                                     onClick={() =>
-                                        navigate(`/research/${ctx.projectId}/classification`)
+                                        navigate(`/research/${ctx.projectId}/models`)
                                     }
                                 >
-                                    Open Classification
+                                    Open Model Registry
                                 </Button>
                             }
                         />
@@ -256,10 +324,99 @@ export default function DriftMonitoringView() {
                                 <TextField
                                     select
                                     size="small"
+                                    label="Baseline prediction set"
+                                    value={baselineSetId}
+                                    onChange={(e) => setBaselineSetId(e.target.value)}
+                                    sx={{ minWidth: 280, flex: 1 }}
+                                >
+                                    <MenuItem value="">Select…</MenuItem>
+                                    {predictionSets.map((ps) => (
+                                        <MenuItem key={ps.id} value={ps.id}>
+                                            {predictionSetOptionLabel(ps)}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField
+                                    select
+                                    size="small"
+                                    label="Current prediction set"
+                                    value={currentSetId}
+                                    onChange={(e) => setCurrentSetId(e.target.value)}
+                                    sx={{ minWidth: 280, flex: 1 }}
+                                >
+                                    <MenuItem value="">Select…</MenuItem>
+                                    {predictionSets.map((ps) => (
+                                        <MenuItem key={ps.id} value={ps.id}>
+                                            {predictionSetOptionLabel(ps)}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField
+                                    select
+                                    size="small"
+                                    label="Drift mode"
+                                    value={driftMode}
+                                    onChange={(e) =>
+                                        setDriftMode(
+                                            e.target.value as (typeof DRIFT_MODES)[number]["value"]
+                                        )
+                                    }
+                                    sx={{ minWidth: 220 }}
+                                >
+                                    {DRIFT_MODES.map((mode) => (
+                                        <MenuItem key={mode.value} value={mode.value}>
+                                            {mode.label}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<DriftIcon />}
+                                    disabled={
+                                        !ctx.selectedCorpusId ||
+                                        !baselineSetId ||
+                                        !currentSetId ||
+                                        runPredictionSetDriftMutation.isPending
+                                    }
+                                    onClick={() => runPredictionSetDriftMutation.mutate()}
+                                >
+                                    Compare prediction sets
+                                </Button>
+                            </Stack>
+                            <Typography variant="caption" color="text.secondary">
+                                Backend aggregates <strong>all</strong> predictions in each set
+                                (including &gt;500 rows) and persists an auditable{" "}
+                                <code>drift_monitoring</code> analysis run.
+                            </Typography>
+                        </Stack>
+                    )}
+                </QueryBoundary>
+
+                <Accordion disableGutters elevation={0} sx={{ mt: 2, border: "1px solid", borderColor: "divider" }}>
+                    <AccordionSummary expandIcon={<ExpandIcon />}>
+                        <Typography variant="subtitle2">
+                            Legacy / manual — aggregate up to 500 predictions in the browser
+                        </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Alert severity="warning" sx={{ mb: 1.5 }}>
+                            This path samples at most 500 predictions per model client-side. Prefer
+                            PredictionSet comparison above for scientific completeness.
+                        </Alert>
+                        <QueryBoundary
+                            isLoading={modelsQuery.isLoading}
+                            isError={modelsQuery.isError}
+                            error={modelsQuery.error}
+                            onRetry={() => void modelsQuery.refetch()}
+                        >
+                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                                <TextField
+                                    select
+                                    size="small"
                                     label="Baseline model"
-                                    value={baselineModelId}
-                                    onChange={(e) => setBaselineModelId(e.target.value)}
-                                    sx={{ minWidth: 240 }}
+                                    value={legacyBaselineModelId}
+                                    onChange={(e) => setLegacyBaselineModelId(e.target.value)}
+                                    sx={{ minWidth: 220 }}
                                 >
                                     <MenuItem value="">Select…</MenuItem>
                                     {models.map((model) => (
@@ -271,10 +428,10 @@ export default function DriftMonitoringView() {
                                 <TextField
                                     select
                                     size="small"
-                                    label="Current sample model"
-                                    value={currentModelId}
-                                    onChange={(e) => setCurrentModelId(e.target.value)}
-                                    sx={{ minWidth: 240 }}
+                                    label="Current model"
+                                    value={legacyCurrentModelId}
+                                    onChange={(e) => setLegacyCurrentModelId(e.target.value)}
+                                    sx={{ minWidth: 220 }}
                                 >
                                     <MenuItem value="">Select…</MenuItem>
                                     {models.map((model) => (
@@ -284,31 +441,26 @@ export default function DriftMonitoringView() {
                                     ))}
                                 </TextField>
                                 <Button
-                                    variant="contained"
-                                    startIcon={<DriftIcon />}
+                                    variant="outlined"
                                     disabled={
                                         !ctx.selectedCorpusId ||
-                                        !baselineModelId ||
-                                        !currentModelId ||
-                                        runDriftMutation.isPending
+                                        !legacyBaselineModelId ||
+                                        !legacyCurrentModelId ||
+                                        runLegacyDriftMutation.isPending
                                     }
-                                    onClick={() => runDriftMutation.mutate()}
+                                    onClick={() => runLegacyDriftMutation.mutate()}
                                 >
-                                    Run model comparison
+                                    Run legacy/manual drift
                                 </Button>
                             </Stack>
-                            <Typography variant="caption" color="text.secondary">
-                                This is explicitly a model comparison, not a claim of deployment drift. It persists an auditable{" "}
-                                <code>drift_monitoring</code> analysis run.
-                            </Typography>
-                        </Stack>
-                    )}
-                </QueryBoundary>
+                        </QueryBoundary>
+                    </AccordionDetails>
+                </Accordion>
             </SectionCard>
 
             <SectionCard
                 title="Diagnostics"
-                description="Baseline vs current sample · metric · advisory threshold · review status"
+                description="Baseline vs current · label-distribution · confidence/uncertainty · warning level · provenance"
             >
                 {!parsed.rows.length ? (
                     <Typography variant="body2" color="text.secondary">
@@ -316,18 +468,54 @@ export default function DriftMonitoringView() {
                     </Typography>
                 ) : (
                     <Stack spacing={1.5}>
-                        {parsed.analysisRunId ? (
-                            <Typography variant="caption" color="text.secondary">
-                                Analysis run: {parsed.analysisRunId}
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
+                            <Chip
+                                size="small"
+                                label={`Warning: ${warningLevel}`}
+                                color={statusColor(warningLevel)}
+                            />
+                            {provenance.mode ? (
+                                <Chip size="small" variant="outlined" label={`Mode: ${provenance.mode}`} />
+                            ) : null}
+                            {provenance.nObservations != null ? (
+                                <Chip
+                                    size="small"
+                                    variant="outlined"
+                                    label={`n observations: ${provenance.nObservations}`}
+                                />
+                            ) : null}
+                            {provenance.aggregation ? (
+                                <Chip
+                                    size="small"
+                                    variant="outlined"
+                                    label={provenance.aggregation}
+                                />
+                            ) : null}
+                        </Stack>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" display="block">
+                                Baseline set: {provenance.baselinePredictionSetId ?? "—"} · n=
+                                {provenance.nBaseline ?? "—"} · run{" "}
+                                {provenance.baselineAnalysisRunId ?? "—"}
                             </Typography>
-                        ) : null}
+                            <Typography variant="caption" color="text.secondary" display="block">
+                                Current set: {provenance.currentPredictionSetId ?? "—"} · n=
+                                {provenance.nCurrent ?? "—"} · run{" "}
+                                {provenance.currentAnalysisRunId ?? "—"}
+                            </Typography>
+                            {parsed.analysisRunId ? (
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                    Drift analysis run: {parsed.analysisRunId}
+                                </Typography>
+                            ) : null}
+                        </Box>
                         <Box sx={{ overflowX: "auto" }}>
                             <Table size="small">
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>Kind</TableCell>
                                         <TableCell>Baseline</TableCell>
-                                        <TableCell>Current sample</TableCell>
+                                        <TableCell>Current</TableCell>
                                         <TableCell>Metric</TableCell>
                                         <TableCell align="right">Value</TableCell>
                                         <TableCell>Threshold</TableCell>

@@ -4,6 +4,7 @@ from backend.modules.text_research.infrastructure.execution_policy import retry_
 from backend.modules.text_research.workers import (
     classifier_training_sync,
     prediction_sync,
+    quantitative_analysis_sync,
     robustness_sweep_sync,
     segmentation_sync,
     topic_k_sweep_sync,
@@ -178,3 +179,11 @@ def research_robustness_sweep_task(self, *, run_id: str, user_id: str) -> None:
 )
 def research_prediction_task(self, *, run_id: str, user_id: str) -> None:
     prediction_sync(run_id=run_id, user_id=user_id)
+
+
+@celery_app.task(
+    name="backend.workers.tasks.research_quantitative_analysis_task",
+    **_research_task_options("research_cpu"),
+)
+def research_quantitative_analysis_task(self, *, run_id: str, user_id: str) -> None:
+    quantitative_analysis_sync(run_id=run_id, user_id=user_id)

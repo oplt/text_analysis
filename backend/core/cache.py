@@ -172,6 +172,79 @@ async def cache_set_json(key: str, value: Any, *, ttl_seconds: int) -> None:
         logger.debug("cache set failed for key=%s", key, exc_info=True)
 
 
+async def cache_mget_json(keys: list[str]) -> list[Any | None]:
+    """Batch GET for Redis JSON values. Missing / failed keys return ``None``."""
+    if not keys:
+        return []
+    if not settings.CACHE_ENABLED:
+        return [None] * len(keys)
+
+    results: list[Any | None] = [None] * len(keys)
+    redis_indices: list[int] = []
+    redis_keys: list[str] = []
+
+    for index, key in enumerate(keys):
+        if _uses_local_cache(key):
+            local_value = _local_cache.get(key)
+            if local_value is not None:
+                results[index] = local_value
+                continue
+        if _uses_redis_cache(key):
+            redis_indices.append(index)
+            redis_keys.append(key)
+
+    if not redis_keys:
+        return results
+
+    try:
+        raw_values = await redis_client.mget(redis_keys)
+    except Exception:
+        logger.debug("cache mget failed for %s keys", len(redis_keys), exc_info=True)
+        return results
+
+    for index, raw in zip(redis_indices, raw_values, strict=True):
+        if raw is None:
+            continue
+        try:
+            value = json.loads(raw)
+        except Exception:
+            logger.debug("cache mget decode failed for key=%s", keys[index], exc_info=True)
+            continue
+        results[index] = value
+        key = keys[index]
+        if _uses_local_cache(key):
+            _local_cache.set(key, value, ttl_seconds=_local_ttl_for_key(key))
+    return results
+
+
+async def cache_mset_json(items: list[tuple[str, Any]], *, ttl_seconds: int) -> None:
+    """Pipeline SETEX for Redis JSON values."""
+    if not items:
+        return
+
+    redis_items: list[tuple[str, Any]] = []
+    for key, value in items:
+        if _uses_local_cache(key):
+            _local_cache.set(key, value, ttl_seconds=ttl_seconds)
+        if _uses_redis_cache(key):
+            redis_items.append((key, value))
+
+    if not redis_items:
+        return
+
+    try:
+        pipe = redis_client.pipeline(transaction=False)
+        for key, value in redis_items:
+            pipe.setex(
+                key,
+                ttl_seconds,
+                json.dumps(value, ensure_ascii=True, default=str),
+            )
+        await pipe.execute()
+    except Exception:
+        logger.debug("cache mset failed for %s keys", len(redis_items), exc_info=True)
+
+
 async def cache_delete(*keys: str) -> None:
     if keys:
         _local_cache.delete(*keys)
@@ -184,7 +257,18 @@ async def cache_delete(*keys: str) -> None:
         logger.debug("cache delete failed for keys=%s", redis_keys, exc_info=True)
 
 
+async def _unlink_keys(keys: list[str]) -> None:
+    """Prefer non-blocking UNLINK; fall back to DELETE."""
+    if not keys:
+        return
+    try:
+        await redis_client.unlink(*keys)
+    except Exception:
+        await redis_client.delete(*keys)
+
+
 async def cache_delete_pattern(pattern: str, *, batch_size: int = 100) -> None:
+    """Batched SCAN + UNLINK — never materializes the full keyspace with ``list(scan_iter)``."""
     if not settings.CACHE_ENABLED:
         return
     try:
@@ -192,10 +276,10 @@ async def cache_delete_pattern(pattern: str, *, batch_size: int = 100) -> None:
         async for key in redis_client.scan_iter(match=pattern, count=batch_size):
             batch.append(key)
             if len(batch) >= batch_size:
-                await redis_client.delete(*batch)
+                await _unlink_keys(batch)
                 batch.clear()
         if batch:
-            await redis_client.delete(*batch)
+            await _unlink_keys(batch)
     except Exception:
         logger.debug("cache delete pattern failed for pattern=%s", pattern, exc_info=True)
 
@@ -213,7 +297,7 @@ async def cache_set_model(key: str, value: BaseModel, *, ttl_seconds: int) -> No
     await cache_set_json(key, value.model_dump(mode="json"), ttl_seconds=ttl_seconds)
 
 
-async def cache_get_or_load_model(
+async def cache_get_or_load_model[T](
     key: str,
     model: type[T],
     *,

@@ -69,14 +69,13 @@ async def upload_document(
     current_user: User = Depends(get_current_user),
 ):
     _require_rag_enabled()
-    content = await file.read()
     service = DocumentIngestionService(db)
     document, job, _ = await service.upload_document(
         user_id=current_user.id,
         filename=file.filename or "upload.bin",
-        content=content,
         content_type=file.content_type or "application/octet-stream",
         project_id=project_id,
+        upload=file,
     )
     queue_document_indexing(
         document_id=document.id,

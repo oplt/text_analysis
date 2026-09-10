@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Box,
@@ -7,6 +7,7 @@ import {
     Chip,
     FormControlLabel,
     MenuItem,
+    Skeleton,
     Stack,
     Step,
     StepLabel,
@@ -15,6 +16,7 @@ import {
     TableBody,
     TableCell,
     TableHead,
+    TablePagination,
     TableRow,
     TextField,
     Typography,
@@ -50,18 +52,13 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
+import { QUERY_STALE_TIMES, researchRunStaleTime } from "../../../config/queryTiming";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { ClassificationConfigPanel } from "../components/ClassificationConfigPanel";
 import {
     DEFAULT_CLASSIFICATION_TRAIN_CONFIG,
     type ClassificationTrainConfig,
 } from "../components/classificationTrainConfig";
-import {
-    ClassificationCalibrationPanel,
-    ClassificationCurvePanel,
-    ClassificationErrorBrowser,
-    ClassificationModelComparison,
-} from "../components/ClassificationEvalPanels";
 import {
     DivergingBarChart,
     MatrixHeatmap,
@@ -77,6 +74,33 @@ import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval } from "../runPolling";
 import type { AnalysisRun, TrainedModel } from "../types";
+
+const ClassificationCalibrationPanel = lazy(() =>
+    import("../components/ClassificationEvalPanels").then((m) => ({
+        default: m.ClassificationCalibrationPanel,
+    }))
+);
+const ClassificationCurvePanel = lazy(() =>
+    import("../components/ClassificationEvalPanels").then((m) => ({
+        default: m.ClassificationCurvePanel,
+    }))
+);
+const ClassificationErrorBrowser = lazy(() =>
+    import("../components/ClassificationEvalPanels").then((m) => ({
+        default: m.ClassificationErrorBrowser,
+    }))
+);
+const ClassificationModelComparison = lazy(() =>
+    import("../components/ClassificationEvalPanels").then((m) => ({
+        default: m.ClassificationModelComparison,
+    }))
+);
+
+const UNCERTAIN_PAGE_SIZE = 20;
+
+function EvalPanelFallback() {
+    return <Skeleton variant="rounded" height={160} sx={{ borderRadius: 2 }} />;
+}
 
 type AnnotationSource = "adjudicated_only" | "majority_vote" | "selected_annotator";
 
@@ -296,6 +320,7 @@ export default function ClassificationView() {
     const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
     const [compareModelIds, setCompareModelIds] = useState<string[]>([]);
     const [selectedUncertainIds, setSelectedUncertainIds] = useState<string[]>([]);
+    const [uncertainPage, setUncertainPage] = useState(0);
     const [assignedOnce, setAssignedOnce] = useState(false);
     const [coefficientLabel, setCoefficientLabel] = useState("");
     const [confusionNormalized, setConfusionNormalized] = useState(false);
@@ -345,24 +370,28 @@ export default function ClassificationView() {
         queryKey: queryKeys.textResearch.datasetSnapshots(ctx.projectId, ctx.selectedCorpusId),
         queryFn: () => listDatasetSnapshots(ctx.projectId, ctx.selectedCorpusId),
         enabled: Boolean(ctx.projectId),
+        staleTime: QUERY_STALE_TIMES.researchFrozenSnapshot,
     });
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
         queryFn: () => listPreprocessingProfiles(ctx.projectId),
         enabled: Boolean(ctx.projectId),
+        staleTime: QUERY_STALE_TIMES.researchReference,
     });
 
     const classifiersQuery = useQuery({
         queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
         queryFn: () => listClassifiers(ctx.projectId, ctx.selectedCorpusId),
         enabled: Boolean(ctx.projectId),
+        staleTime: QUERY_STALE_TIMES.researchModelLifecycle,
     });
 
     const trainRunQuery = useQuery({
         queryKey: queryKeys.textResearch.run(trainRunId ?? ""),
         queryFn: () => getRun(trainRunId!),
         enabled: Boolean(trainRunId),
+        staleTime: (query) => researchRunStaleTime(query.state.data?.status),
         refetchInterval: (query) => activeRunRefetchInterval(query, trainSseConnected),
     });
 
@@ -370,19 +399,31 @@ export default function ClassificationView() {
         queryKey: queryKeys.textResearch.run(predictRunId ?? ""),
         queryFn: () => getRun(predictRunId!),
         enabled: Boolean(predictRunId),
+        staleTime: (query) => researchRunStaleTime(query.state.data?.status),
         refetchInterval: (query) => activeRunRefetchInterval(query, predictSseConnected),
     });
 
+    const uncertainOffset = uncertainPage * UNCERTAIN_PAGE_SIZE;
     const uncertainQuery = useQuery({
-        queryKey: ["text-research", "uncertain-predictions", selectedModelId],
-        queryFn: () => listUncertainPredictions(selectedModelId!),
+        queryKey: queryKeys.textResearch.activeLearningQueue(selectedModelId ?? "", {
+            offset: uncertainOffset,
+            limit: UNCERTAIN_PAGE_SIZE,
+        }),
+        queryFn: () =>
+            listUncertainPredictions(selectedModelId!, {
+                limit: UNCERTAIN_PAGE_SIZE,
+                offset: uncertainOffset,
+                contentMode: "snippet",
+            }),
         enabled: Boolean(selectedModelId),
+        staleTime: QUERY_STALE_TIMES.researchAnnotationQueue,
     });
 
     const coefficientsQuery = useQuery({
         queryKey: queryKeys.textResearch.coefficients(selectedModelId ?? ""),
         queryFn: () => getClassifierCoefficients(selectedModelId!),
         enabled: Boolean(selectedModelId),
+        staleTime: QUERY_STALE_TIMES.researchModelMetrics,
     });
 
     const selectedModel: TrainedModel | undefined = classifiersQuery.data?.find(
@@ -621,6 +662,9 @@ export default function ClassificationView() {
         onSuccess: () => {
             setSelectedUncertainIds([]);
             setAssignedOnce(true);
+            void client.invalidateQueries({
+                queryKey: queryKeys.textResearch.annotationQueueRoot,
+            });
             showToast({
                 message: "Selected cases were added to your annotation queue.",
                 severity: "success",
@@ -637,6 +681,9 @@ export default function ClassificationView() {
         if (trainRunQuery.data?.status !== "completed") return;
         void client.invalidateQueries({
             queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
+        });
+        void client.invalidateQueries({
+            queryKey: queryKeys.textResearch.modelsRoot(ctx.projectId),
         });
         const trainedModelIdFromRun =
             typeof trainResults?.trained_model_id === "string"
@@ -664,14 +711,19 @@ export default function ClassificationView() {
     useEffect(() => {
         if (predictRunQuery.data?.status !== "completed" || !selectedModelId) return;
         void client.invalidateQueries({
-            queryKey: ["text-research", "uncertain-predictions", selectedModelId],
+            queryKey: queryKeys.textResearch.activeLearningRoot(selectedModelId),
         });
     }, [client, predictRunQuery.data?.status, selectedModelId]);
 
+    useEffect(() => {
+        setUncertainPage(0);
+        setSelectedUncertainIds([]);
+    }, [selectedModelId]);
+
     const workflowStep = activeLearningStepIndex({
         hasModel: Boolean(selectedModelId || classifiersQuery.data?.length),
-        hasPredictRun: Boolean(predictRunId || (uncertainQuery.data?.length ?? 0) > 0),
-        uncertainCount: uncertainQuery.data?.length ?? 0,
+        hasPredictRun: Boolean(predictRunId || (uncertainQuery.data?.items.length ?? 0) > 0),
+        uncertainCount: uncertainQuery.data?.items.length ?? 0,
         assignedOnce,
     });
 
@@ -1107,24 +1159,30 @@ export default function ClassificationView() {
                             <Typography variant="subtitle2" gutterBottom>
                                 ROC / Precision–Recall
                             </Typography>
-                            <ClassificationCurvePanel metrics={trainMetrics} />
+                            <Suspense fallback={<EvalPanelFallback />}>
+                                <ClassificationCurvePanel metrics={trainMetrics} />
+                            </Suspense>
                         </Box>
 
                         <Box>
                             <Typography variant="subtitle2" gutterBottom>
                                 Calibration
                             </Typography>
-                            <ClassificationCalibrationPanel
-                                metrics={trainMetrics}
-                                results={trainResults}
-                            />
+                            <Suspense fallback={<EvalPanelFallback />}>
+                                <ClassificationCalibrationPanel
+                                    metrics={trainMetrics}
+                                    results={trainResults}
+                                />
+                            </Suspense>
                         </Box>
 
                         <Box>
                             <Typography variant="subtitle2" gutterBottom>
                                 Error analysis
                             </Typography>
-                            <ClassificationErrorBrowser results={trainResults} />
+                            <Suspense fallback={<EvalPanelFallback />}>
+                                <ClassificationErrorBrowser results={trainResults} />
+                            </Suspense>
                         </Box>
 
                         <ResultsInspector
@@ -1259,15 +1317,17 @@ export default function ClassificationView() {
                 title="Model comparison"
                 description="Compare holdout metrics across trained classifiers."
             >
-                <ClassificationModelComparison
-                    models={classifiersQuery.data ?? []}
-                    selectedIds={compareModelIds}
-                    onToggle={(id) =>
-                        setCompareModelIds((ids) =>
-                            ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]
-                        )
-                    }
-                />
+                <Suspense fallback={<EvalPanelFallback />}>
+                    <ClassificationModelComparison
+                        models={classifiersQuery.data ?? []}
+                        selectedIds={compareModelIds}
+                        onToggle={(id) =>
+                            setCompareModelIds((ids) =>
+                                ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]
+                            )
+                        }
+                    />
+                </Suspense>
             </SectionCard>
 
             <SectionCard
@@ -1318,6 +1378,21 @@ export default function ClassificationView() {
                 title="Active learning loop"
                 description="Train a model, score unannotated units, review uncertain cases, send them for human coding, then freeze and retrain."
                 compact
+                action={
+                    <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() =>
+                            navigate(
+                                `/research/${ctx.projectId}/active-learning${
+                                    selectedModelId ? `?modelId=${selectedModelId}` : ""
+                                }`
+                            )
+                        }
+                    >
+                        Open Active Learning
+                    </Button>
+                }
             >
                 <Stepper activeStep={workflowStep} alternativeLabel sx={{ mb: 2 }}>
                     {ACTIVE_LEARNING_STEPS.map((label) => (
@@ -1391,13 +1466,13 @@ export default function ClassificationView() {
                                     Highest uncertainty first. These are model candidates
                                     for human review — not automatic labels.
                                 </Typography>
-                                {(uncertainQuery.data ?? []).length === 0 ? (
+                                {(uncertainQuery.data?.items ?? []).length === 0 ? (
                                     <Typography variant="body2" color="text.secondary">
                                         No uncertain predictions yet. Run predict on unannotated
                                         units after training.
                                     </Typography>
                                 ) : null}
-                                {uncertainQuery.data?.map((item) => {
+                                {uncertainQuery.data?.items.map((item) => {
                                     const checked = selectedUncertainIds.includes(
                                         item.text_unit.id
                                     );
@@ -1468,7 +1543,7 @@ export default function ClassificationView() {
                                     );
                                 })}
                                 <ResearchResultsTable
-                                    rows={(uncertainQuery.data ?? []).map((item) => ({
+                                    rows={(uncertainQuery.data?.items ?? []).map((item) => ({
                                         id: item.prediction.id,
                                         text: item.text_unit.text,
                                         labels: item.prediction.predicted_labels.join(", "),
@@ -1487,6 +1562,18 @@ export default function ClassificationView() {
                                         { id: "model", label: "Model", value: (row) => row.model },
                                         { id: "provenance", label: "Provenance", value: (row) => row.provenance },
                                     ]}
+                                    pageSize={UNCERTAIN_PAGE_SIZE}
+                                />
+                                <TablePagination
+                                    component="div"
+                                    count={uncertainQuery.data?.total ?? 0}
+                                    page={uncertainPage}
+                                    onPageChange={(_, next) => {
+                                        setUncertainPage(next);
+                                        setSelectedUncertainIds([]);
+                                    }}
+                                    rowsPerPage={UNCERTAIN_PAGE_SIZE}
+                                    rowsPerPageOptions={[UNCERTAIN_PAGE_SIZE]}
                                 />
                                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                                     <Button

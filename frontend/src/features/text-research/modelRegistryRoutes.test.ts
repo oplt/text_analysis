@@ -17,6 +17,15 @@ describe("model registry frontend routes", () => {
         expect(routerSource).toContain("PredictionSetsView");
         expect(routerSource).toContain('path="drift"');
         expect(routerSource).toContain("DriftMonitoringView");
+        expect(routerSource).toContain('path="active-learning"');
+        expect(routerSource).toContain("ActiveLearningView");
+        expect(routerSource).toContain('path="dictionaries"');
+        expect(routerSource).toContain("DictionaryManagerView");
+        expect(routerSource).toContain('path="comparative"');
+        expect(routerSource).toContain("ComparativeAnalysisView");
+        expect(routerSource).toContain('path="/rag"');
+        expect(routerSource).toContain('path="/memory"');
+        expect(routerSource).toContain('path="/agent"');
     });
 
     it("workflow stages expose models, predictions, and drift", async () => {

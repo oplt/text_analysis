@@ -113,8 +113,8 @@ async def sign_up(
             f"rate_limit:signup:"
             f"{request.client.host if request.client else 'unknown'}:{payload.email}"
         ),
-        max_attempts=5,
-        window_seconds=3600,
+        max_attempts=settings.effective_auth_signup_limit,
+        window_seconds=settings.AUTH_SIGNUP_WINDOW_SECONDS,
     )
     service = IdentityService(db)
     await service.sign_up(
@@ -140,8 +140,8 @@ async def sign_in(
 ):
     await check_rate_limit(
         key=auth_rate_limit_key(request, payload.email),
-        max_attempts=10,
-        window_seconds=60,
+        max_attempts=settings.effective_auth_signin_limit,
+        window_seconds=settings.AUTH_SIGNIN_WINDOW_SECONDS,
     )
     failure_key = (
         f"rate_limit:auth_fail:"

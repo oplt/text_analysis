@@ -27,6 +27,7 @@ import { alpha } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { createProject, listProjects } from "../api/projects";
 import { queryKeys } from "../config/queryKeys";
+import { QUERY_STALE_TIMES } from "../config/queryTiming";
 import { useSnackbar } from "../app/snackbarContext";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -52,6 +53,7 @@ export default function ProjectsPage() {
     const { data: projects, isLoading, isError, error, refetch } = useQuery({
         queryKey: queryKeys.projects.all,
         queryFn: listProjects,
+        staleTime: QUERY_STALE_TIMES.projects,
     });
     const {
         register,

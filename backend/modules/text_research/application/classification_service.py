@@ -44,7 +44,7 @@ from backend.modules.text_research.infrastructure.classifiers import (
 )
 from backend.modules.text_research.infrastructure.error_analysis import classifier_error_report
 from backend.modules.text_research.infrastructure.prepared_corpus_builder import (
-    prepare_texts_cached,
+    prepare_texts_cached_async,
 )
 from backend.modules.text_research.infrastructure.preprocessing import PreprocessingConfig
 from backend.modules.text_research.infrastructure.provenance import (
@@ -289,7 +289,7 @@ class ClassificationService(ResearchAccessMixin):
                 }
             )
 
-            prepared = prepare_texts_cached(
+            prepared = await prepare_texts_cached_async(
                 texts,
                 config,
                 corpus_id=run.corpus_id,
@@ -317,6 +317,8 @@ class ClassificationService(ResearchAccessMixin):
                 test_size=params["test_size"],
                 val_size=params.get("val_size", 0.2),
                 random_seed=params["random_seed"],
+                task_type=task_type,
+                grouping_variable="corpus_document_id",
             )
 
             feature_config = FeatureConfig(
@@ -626,6 +628,12 @@ class ClassificationService(ResearchAccessMixin):
                         "test_groups": sorted(set(split["groups_test"])),
                         "split_notes": split.get("notes", []),
                         "split_feasibility": split.get("split_feasibility"),
+                        "split_strategy": split.get("split_strategy"),
+                        "split_task_type": split.get("task_type"),
+                        "grouping_variable": split.get("grouping_variable"),
+                        "stratification_requested": split.get("stratification_requested"),
+                        "stratification_applied": split.get("stratification_applied"),
+                        "split_reason": split.get("reason"),
                         "corpus_checksum": prepared.corpus_checksum,
                         "pipeline_checksum": prepared.pipeline_checksum,
                         "analysis_spec_hash": params.get("analysis_spec_hash"),

@@ -1,3 +1,13 @@
+# CI structure (Phase 21):
+# - backend-lint
+# - backend-tests (research unit)
+# - backend-rag-tests
+# - backend-memory-agent-tests
+# - backend-benchmarks (performance; 100k optional via workflow_dispatch)
+# - migrations
+# - frontend (lint + unit + build)
+# - playwright-research
+# Nightly/expensive 100k benchmarks stay opt-in via include_100k.
 name: Current-HEAD quality gates
 
 # Always evaluates the commit that triggered the workflow (actions/checkout SHA).
@@ -89,7 +99,7 @@ jobs:
           args: "format --check backend"
 
   backend-tests:
-    name: Backend unit tests
+    name: Backend unit tests (research)
     needs: [identity, backend-lock]
     runs-on: ubuntu-latest
     steps:
@@ -109,6 +119,58 @@ jobs:
             backend/modules/text_research/tests \
             -q \
             --ignore=backend/modules/text_research/tests/test_benchmark_scale.py
+
+  # Lightweight subsystem gates (Phase 21). Keep paths cheap; skip heavy benchmarks.
+  backend-rag-tests:
+    name: Backend RAG unit tests
+    needs: [identity, backend-lock]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.identity.outputs.sha }}
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install backend (frozen lock)
+        working-directory: backend
+        run: uv sync --frozen --extra dev
+      - name: Pytest RAG (+ shared pool/cache smoke)
+        run: |
+          backend/.venv/bin/pytest \
+            backend/modules/rag/tests \
+            backend/tests/test_cache.py \
+            backend/tests/test_pool_observability.py \
+            backend/tests/test_database_pool.py \
+            -q
+
+  backend-memory-agent-tests:
+    name: Backend memory + agent unit tests
+    needs: [identity, backend-lock]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.identity.outputs.sha }}
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install backend (frozen lock)
+        working-directory: backend
+        run: uv sync --frozen --extra dev
+      - name: Pytest memory / agent / observability
+        run: |
+          backend/.venv/bin/pytest \
+            backend/tests/test_memory.py \
+            backend/tests/test_memory_crud_phase21.py \
+            backend/tests/test_memory_ranking.py \
+            backend/tests/test_memory_search_cache.py \
+            backend/tests/test_agent_degraded_phase21.py \
+            backend/tests/test_async_dispatch.py \
+            backend/modules/ai/tests \
+            -q
 
   backend-benchmarks:
     name: Performance-sensitive benchmarks
@@ -231,13 +293,17 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     env:
+      APP_ENV: ci
       RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD: "50"
       FRONTEND_URL: http://127.0.0.1:5173
       CORS_ALLOWED_ORIGINS: http://127.0.0.1:5173,http://localhost:5173
-      E2E_TEST_EMAIL: e2e-ci@example.com
+      # Password used when Playwright auto-provisions unique per-test users.
       E2E_TEST_PASSWORD: CiTestPass123!
       E2E_API_URL: http://127.0.0.1:8000
       E2E_BASE_URL: http://127.0.0.1:5173
+      E2E_WORKERS: "1"
+      # Explicit non-production ceiling raise (does not disable rate limiting).
+      E2E_RELAX_RATE_LIMITS: "true"
       STORAGE_ENDPOINT_URL: ""
       RAG_ENABLED: "true"
     steps:
@@ -280,15 +346,16 @@ jobs:
             sleep 1
           done
           echo "API failed to start"; tail -n 100 /tmp/api.log; exit 1
-      - name: Provision E2E user
+      - name: Verify API accepts isolated sign-up
         run: |
+          # Smoke that auth is reachable; research tests provision unique users themselves.
+          EMAIL="e2e-ci-smoke-$(date +%s)@example.com"
           curl -sf -X POST http://127.0.0.1:8000/api/v1/auth/sign-up \
             -H 'Content-Type: application/json' \
-            -d "{\"email\":\"${E2E_TEST_EMAIL}\",\"password\":\"${E2E_TEST_PASSWORD}\",\"full_name\":\"CI E2E\"}" \
-            || true
+            -d "{\"email\":\"${EMAIL}\",\"password\":\"${E2E_TEST_PASSWORD}\",\"full_name\":\"CI E2E Smoke\"}"
           curl -sf -X POST http://127.0.0.1:8000/api/v1/auth/sign-in \
             -H 'Content-Type: application/json' \
-            -d "{\"email\":\"${E2E_TEST_EMAIL}\",\"password\":\"${E2E_TEST_PASSWORD}\"}" \
+            -d "{\"email\":\"${EMAIL}\",\"password\":\"${E2E_TEST_PASSWORD}\"}" \
             > /tmp/signin.json
           test -s /tmp/signin.json
       - name: Start frontend
@@ -306,7 +373,7 @@ jobs:
           echo "Frontend failed to start"; tail -n 100 /tmp/frontend.log; exit 1
       - name: Playwright research workflow
         working-directory: frontend
-        run: npx playwright test e2e/research-flow.spec.ts --project=chromium
+        run: npx playwright test e2e/research-flow.spec.ts --project=chromium --workers=1
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
@@ -326,6 +393,8 @@ jobs:
       - identity
       - backend-lint
       - backend-tests
+      - backend-rag-tests
+      - backend-memory-agent-tests
       - backend-benchmarks
       - migrations
       - frontend
@@ -337,6 +406,8 @@ jobs:
           echo "HEAD ${{ needs.identity.outputs.sha }}"
           echo "backend-lint=${{ needs.backend-lint.result }}"
           echo "backend-tests=${{ needs.backend-tests.result }}"
+          echo "backend-rag-tests=${{ needs.backend-rag-tests.result }}"
+          echo "backend-memory-agent-tests=${{ needs.backend-memory-agent-tests.result }}"
           echo "backend-benchmarks=${{ needs.backend-benchmarks.result }}"
           echo "migrations=${{ needs.migrations.result }}"
           echo "frontend=${{ needs.frontend.result }}"
@@ -344,6 +415,8 @@ jobs:
           for result in \
             "${{ needs.backend-lint.result }}" \
             "${{ needs.backend-tests.result }}" \
+            "${{ needs.backend-rag-tests.result }}" \
+            "${{ needs.backend-memory-agent-tests.result }}" \
             "${{ needs.backend-benchmarks.result }}" \
             "${{ needs.migrations.result }}" \
             "${{ needs.frontend.result }}" \

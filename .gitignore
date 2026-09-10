@@ -367,3 +367,19 @@ frontend/node_modules
 .observability-data/
 .observability-logs/
 .understand-anything
+
+# --- Generated / local artifacts (Phase 20) ---
+# Do NOT ignore scientific fixtures under backend/**/tests/**/fixtures or golden/.
+playwright-report/
+test-results/
+coverage/
+*.log
+var/benchmarks/
+var/research_artifacts*/
+var/research_artifacts_ci/
+frontend/playwright-report/
+frontend/test-results/
+frontend/coverage/
+frontend/dist/
+backend/coverage/
+backend/htmlcov/

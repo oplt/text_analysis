@@ -949,6 +949,15 @@ class DriftDistributionPayload(BaseModel):
 
 
 class DriftMonitoringRequest(BaseModel):
+    """POST /corpora/{corpus_id}/monitoring/drift
+
+    Preferred: send ``baseline_prediction_set_id`` + ``current_prediction_set_id``.
+    The backend aggregates ALL predictions in those persisted sets.
+
+    Legacy/manual: send ``baseline`` / ``current`` aggregate payloads (optionally with
+    run IDs). Clients must not download capped prediction pages merely to aggregate.
+    """
+
     baseline: DriftDistributionPayload | None = None
     current: DriftDistributionPayload | None = None
     baseline_run_id: str | None = None

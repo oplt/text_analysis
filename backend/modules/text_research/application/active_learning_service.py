@@ -12,11 +12,16 @@ from backend.modules.text_research.domain.models import AnnotationTask
 
 class ActiveLearningService(ResearchAccessMixin):
     async def uncertain_queue(
-        self, model_id: str, *, user_id: str, limit: int = 20
-    ) -> list[dict[str, Any]]:
+        self,
+        model_id: str,
+        *,
+        user_id: str,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> tuple[list[dict[str, Any]], int]:
         model = await self.get_model_or_404(model_id, user_id=user_id)
-        predictions, _total = await self.repo.list_predictions_for_model(
-            model.id, limit=limit, offset=0, order_by_uncertainty=True
+        predictions, total = await self.repo.list_predictions_for_model(
+            model.id, limit=limit, offset=offset, order_by_uncertainty=True
         )
         units = {
             unit.id: unit
@@ -24,11 +29,12 @@ class ActiveLearningService(ResearchAccessMixin):
                 [p.text_unit_id for p in predictions]
             )
         }
-        return [
+        items = [
             {"prediction": prediction, "text_unit": units.get(prediction.text_unit_id)}
             for prediction in predictions
             if prediction.text_unit_id in units
         ]
+        return items, total
 
     async def send_to_annotation(
         self,

@@ -45,6 +45,9 @@ class DatabasePoolConfigTests(unittest.TestCase):
         self.assertIn("postgres-pgbouncer.md", policy["pgbouncer"]["runbook"])
         self.assertGreaterEqual(policy["api"]["max_connections_per_api_process"], 1)
         self.assertGreaterEqual(policy["worker"]["max_connections_per_worker_process"], 1)
+        self.assertIn("connection_budget", policy)
+        self.assertTrue(policy["connection_budget"]["do_not_blindly_increase_pools"])
+        self.assertIn("DB_POOL_SIZE", policy["connection_budget"]["formula"])
 
     def test_parallelism_policy_documents_concurrency_split(self) -> None:
         policy = parallelism.describe_parallelism_policy()

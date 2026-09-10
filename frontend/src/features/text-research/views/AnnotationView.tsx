@@ -39,6 +39,8 @@ import { PageTabs } from "../../../components/ui/PageTabs";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
+import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
+import { useDebounce } from "../../../hooks/useDebounce";
 import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { AnnotationSetupPanel } from "../components/AnnotationSetupPanel";
@@ -106,18 +108,22 @@ export default function AnnotationView() {
     const [confidence, setConfidence] = useState(0.8);
     const [queueFilter, setQueueFilter] = useState<"assigned" | "in_progress" | "all">("assigned");
     const [queuePage, setQueuePage] = useState(0);
+    const [queueSearch, setQueueSearch] = useState("");
+    const debouncedQueueSearch = useDebounce(queueSearch, 200);
     const queuePageSize = 50;
 
     const queueStatus = queueFilter === "all" ? undefined : queueFilter;
     const queueQuery = useQuery({
         queryKey: queryKeys.textResearch.annotationQueue(queueStatus ?? "all", queuePage * queuePageSize),
         queryFn: () => listAnnotationQueue(queueStatus, { limit: queuePageSize, offset: queuePage * queuePageSize }),
+        staleTime: QUERY_STALE_TIMES.researchAnnotationQueue,
     });
 
     const progressQuery = useQuery({
         queryKey: queryKeys.textResearch.annotationProgress(ctx.selectedCorpusId),
         queryFn: () => getAnnotationProgress(ctx.selectedCorpusId),
         enabled: Boolean(ctx.selectedCorpusId),
+        staleTime: QUERY_STALE_TIMES.researchAnnotationQueue,
     });
 
     const queueItems = useMemo(() => {
@@ -125,13 +131,36 @@ export default function AnnotationView() {
         return items as AnnotationQueueItem[];
     }, [queueQuery.data]);
 
-    const resolvedSelectedUnitId =
-        selectedUnitId ?? queueItems[0]?.text_unit?.id ?? null;
+    const searchableQueue = useMemo(
+        () =>
+            queueItems.map((item) => ({
+                item,
+                searchText: [
+                    item.text_unit?.text ?? "",
+                    item.task.status,
+                    item.campaign?.name ?? "",
+                ]
+                    .join(" ")
+                    .toLocaleLowerCase(),
+            })),
+        [queueItems]
+    );
 
-    const selectedIndex = queueItems.findIndex(
+    const visibleQueueItems = useMemo(() => {
+        const needle = debouncedQueueSearch.trim().toLocaleLowerCase();
+        if (!needle) return searchableQueue.map((entry) => entry.item);
+        return searchableQueue
+            .filter((entry) => entry.searchText.includes(needle))
+            .map((entry) => entry.item);
+    }, [searchableQueue, debouncedQueueSearch]);
+
+    const resolvedSelectedUnitId =
+        selectedUnitId ?? visibleQueueItems[0]?.text_unit?.id ?? null;
+
+    const selectedIndex = visibleQueueItems.findIndex(
         (item) => item.text_unit?.id === resolvedSelectedUnitId
     );
-    const selectedItem = selectedIndex >= 0 ? queueItems[selectedIndex] : null;
+    const selectedItem = selectedIndex >= 0 ? visibleQueueItems[selectedIndex] : null;
 
     const classifiersQuery = useQuery({
         queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
@@ -168,7 +197,7 @@ export default function AnnotationView() {
         enabled: Boolean(resolvedSelectedUnitId),
     });
 
-    const modelPrediction = predictionsQuery.data?.find(
+    const modelPrediction = predictionsQuery.data?.items.find(
         (item) => item.text_unit.id === resolvedSelectedUnitId
     );
     const blindCoding = isBlindReliabilityCoding(
@@ -183,7 +212,7 @@ export default function AnnotationView() {
     }, [resolvedSelectedUnitId]);
 
     function selectIndex(index: number) {
-        const item = queueItems[index];
+        const item = visibleQueueItems[index];
         if (item?.text_unit) setSelectedUnitId(item.text_unit.id);
     }
 
@@ -209,7 +238,7 @@ export default function AnnotationView() {
         },
         onSuccess: (options) => {
             void client.invalidateQueries({
-                queryKey: ["text-research", "annotation-queue"],
+                queryKey: queryKeys.textResearch.annotationQueueRoot,
             });
             void client.invalidateQueries({
                 queryKey: queryKeys.textResearch.annotationProgress(ctx.selectedCorpusId),
@@ -219,7 +248,7 @@ export default function AnnotationView() {
                 severity: "success",
             });
             if (options.advance) {
-                const next = queueItems[selectedIndex + 1];
+                const next = visibleQueueItems[selectedIndex + 1];
                 if (next?.text_unit) setSelectedUnitId(next.text_unit.id);
             }
         },
@@ -237,7 +266,7 @@ export default function AnnotationView() {
 
             if (event.key === "ArrowRight" || event.key === "j") {
                 event.preventDefault();
-                selectIndex(Math.min(queueItems.length - 1, selectedIndex + 1));
+                selectIndex(Math.min(visibleQueueItems.length - 1, selectedIndex + 1));
             } else if (event.key === "ArrowLeft" || event.key === "k") {
                 event.preventDefault();
                 selectIndex(Math.max(0, selectedIndex - 1));
@@ -246,13 +275,13 @@ export default function AnnotationView() {
                 saveMutation.mutate({ complete: true, advance: true });
             } else if (event.key === "n" && !event.metaKey && !event.ctrlKey) {
                 event.preventDefault();
-                selectIndex(Math.min(queueItems.length - 1, selectedIndex + 1));
+                selectIndex(Math.min(visibleQueueItems.length - 1, selectedIndex + 1));
             }
         }
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [queueItems, selectedIndex, saveMutation]);
+    }, [visibleQueueItems, selectedIndex, saveMutation]);
 
     const completionRate = Math.round((progressQuery.data?.completion_rate ?? 0) * 100);
 
@@ -387,7 +416,14 @@ export default function AnnotationView() {
                                         </Button>
                                     </Stack>
                                 </Stack>
-                                {queueItems.map((item, index) => (
+                                <TextField
+                                    size="small"
+                                    label="Filter page"
+                                    value={queueSearch}
+                                    onChange={(event) => setQueueSearch(event.target.value)}
+                                    placeholder="Search text / status"
+                                />
+                                {visibleQueueItems.map((item, index) => (
                                     <Button
                                         key={item.task.id}
                                         size="small"
@@ -416,7 +452,7 @@ export default function AnnotationView() {
                                     </Button>
                                     <Button
                                         endIcon={<NextIcon />}
-                                        disabled={selectedIndex >= queueItems.length - 1}
+                                        disabled={selectedIndex >= visibleQueueItems.length - 1}
                                         onClick={() => selectIndex(selectedIndex + 1)}
                                     >
                                         Next
@@ -424,7 +460,7 @@ export default function AnnotationView() {
                                     <Button
                                         onClick={() =>
                                             selectIndex(
-                                                Math.min(queueItems.length - 1, selectedIndex + 1)
+                                                Math.min(visibleQueueItems.length - 1, selectedIndex + 1)
                                             )
                                         }
                                     >

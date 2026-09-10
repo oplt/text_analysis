@@ -145,8 +145,25 @@ def dispatch_background_sync_job(
         future.add_done_callback(lambda completed: _release_eager_slot(completed, slots))
         return None
 
-    result = celery_task.apply_async(kwargs=celery_kwargs, queue=queue)
+    result = celery_task.apply_async(
+        kwargs=celery_kwargs,
+        queue=queue,
+        headers=_celery_observability_headers(),
+    )
     return str(result.id)
+
+
+def _celery_observability_headers() -> dict[str, Any]:
+    """Correlation id + enqueue wall-clock for worker queue-delay metrics."""
+    from time import time
+    from uuid import uuid4
+
+    from backend.core.log_context import get_correlation_id
+
+    return {
+        "correlation_id": get_correlation_id() or str(uuid4()),
+        "enqueued_at": time(),
+    }
 
 
 def log_eager_mode_startup_warning() -> None:

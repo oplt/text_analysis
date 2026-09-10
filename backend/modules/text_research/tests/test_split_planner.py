@@ -106,5 +106,78 @@ class NestedGroupedCvTests(unittest.TestCase):
         )
 
 
+class MultilabelGroupedSplitTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.texts = [f"unit {i} about topic" for i in range(30)]
+        self.labels = [
+            ["a"] if i % 3 == 0 else ["b"] if i % 3 == 1 else ["a", "b"] for i in range(30)
+        ]
+        self.groups = [f"doc-{i // 3}" for i in range(30)]  # 10 docs × 3 units
+
+    def test_multilabel_does_not_crash_and_uses_group_shuffle(self) -> None:
+        planned = plan_grouped_splits(
+            self.labels,
+            self.groups,
+            test_size=0.2,
+            val_size=0.2,
+            random_seed=42,
+            task_type="multilabel",
+        )
+        self.assertEqual(planned["split_strategy"], "group_shuffle_multilabel")
+        self.assertTrue(planned["stratification_requested"])
+        self.assertFalse(planned["stratification_applied"])
+        self.assertIn("not valid for multilabel", planned["reason"])
+        self.assertEqual(planned["grouping_variable"], "corpus_document_id")
+
+    def test_multilabel_no_group_leakage(self) -> None:
+        planned = plan_grouped_splits(
+            self.labels, self.groups, task_type="multilabel", random_seed=7
+        )
+        train_g = {self.groups[i] for i in planned["train_index"]}
+        val_g = {self.groups[i] for i in planned["val_index"]}
+        test_g = {self.groups[i] for i in planned["test_index"]}
+        self.assertTrue(train_g.isdisjoint(val_g))
+        self.assertTrue(train_g.isdisjoint(test_g))
+        self.assertTrue(val_g.isdisjoint(test_g))
+
+    def test_multilabel_reproducible_seed(self) -> None:
+        a = plan_grouped_splits(self.labels, self.groups, task_type="multilabel", random_seed=99)
+        b = plan_grouped_splits(self.labels, self.groups, task_type="multilabel", random_seed=99)
+        self.assertEqual(a["train_index"], b["train_index"])
+        self.assertEqual(a["test_index"], b["test_index"])
+
+    def test_multilabel_via_classifier_helper(self) -> None:
+        split = classifiers.grouped_train_val_test_split(
+            self.texts,
+            self.labels,
+            self.groups,
+            test_size=0.2,
+            val_size=0.2,
+            random_seed=3,
+            task_type="multilabel",
+        )
+        self.assertEqual(split["split_strategy"], "group_shuffle_multilabel")
+        self.assertFalse(split["stratification_applied"])
+        self.assertTrue(set(split["groups_train"]).isdisjoint(set(split["groups_test"])))
+        self.assertTrue(all(isinstance(row, list) for row in split["y_train"]))
+
+    def test_multilabel_few_groups_still_runs(self) -> None:
+        labels = [["a"], ["b"], ["a", "b"], ["b"]]
+        groups = ["g1", "g2", "g1", "g2"]
+        planned = plan_grouped_splits(
+            labels, groups, test_size=0.5, val_size=0.0, task_type="multilabel", random_seed=1
+        )
+        self.assertEqual(planned["split_strategy"], "group_shuffle_multilabel")
+        self.assertEqual(
+            len(planned["train_index"]) + len(planned["test_index"]),
+            len(labels),
+        )
+
+    def test_infer_multilabel_shape_without_explicit_task_type(self) -> None:
+        feasibility = evaluate_stratified_group_feasibility(self.labels, self.groups)
+        self.assertFalse(feasibility.feasible_stratified_group)
+        self.assertEqual(feasibility.recommended_strategy, "group_shuffle_multilabel")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -10,7 +10,10 @@ from fastapi import HTTPException
 from backend.modules.text_research.application.access import ResearchAccessMixin
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import AnalysisRun, dumps, loads
-from backend.modules.text_research.infrastructure.drift_monitoring import build_drift_report
+from backend.modules.text_research.infrastructure.drift_monitoring import (
+    build_drift_report,
+    compute_warning_level,
+)
 
 
 def _utcnow() -> datetime:
@@ -30,19 +33,35 @@ def _aggregate_label_counts(predictions: list[Any]) -> dict[str, int]:
     return counts
 
 
-def _aggregate_scores(predictions: list[Any]) -> list[float]:
+def _aggregate_confidence_scores(predictions: list[Any]) -> list[float]:
+    """Collect class confidence/score values (not uncertainty)."""
     scores: list[float] = []
     for row in predictions:
         payload = loads(row.scores_json, {})
-        if isinstance(payload, dict):
-            for value in payload.values():
-                try:
-                    scores.append(float(value))
-                except (TypeError, ValueError):
-                    continue
-        if row.uncertainty is not None:
-            scores.append(float(row.uncertainty))
+        if not isinstance(payload, dict):
+            continue
+        for value in payload.values():
+            try:
+                scores.append(float(value))
+            except (TypeError, ValueError):
+                continue
     return scores
+
+
+def _aggregate_uncertainties(predictions: list[Any]) -> list[float]:
+    values: list[float] = []
+    for row in predictions:
+        if row.uncertainty is not None:
+            try:
+                values.append(float(row.uncertainty))
+            except (TypeError, ValueError):
+                continue
+    return values
+
+
+def _aggregate_scores(predictions: list[Any]) -> list[float]:
+    """Legacy combined score vector (confidence + uncertainty) for aggregate-body mode."""
+    return _aggregate_confidence_scores(predictions) + _aggregate_uncertainties(predictions)
 
 
 class DriftService(ResearchAccessMixin):
@@ -88,14 +107,23 @@ class DriftService(ResearchAccessMixin):
         report["provenance"] = {
             "baseline_prediction_set_id": baseline_set.id,
             "current_prediction_set_id": current_set.id,
+            "baseline_analysis_run_id": baseline_set.analysis_run_id,
+            "current_analysis_run_id": current_set.analysis_run_id,
             "baseline_trained_model_id": baseline_set.trained_model_id,
             "current_trained_model_id": current_set.trained_model_id,
             "baseline_snapshot_id": baseline_set.dataset_snapshot_id,
             "current_snapshot_id": current_set.dataset_snapshot_id,
             "n_baseline": baseline["n"],
             "n_current": current["n"],
+            "n_observations": baseline["n"] + current["n"],
             "labeled_n": min(baseline.get("labeled_n", 0), current.get("labeled_n", 0)),
+            "aggregation": "full_prediction_set",
         }
+        summary = dict(report.get("summary") or {})
+        summary["n_baseline"] = baseline["n"]
+        summary["n_current"] = current["n"]
+        summary["n_observations"] = baseline["n"] + current["n"]
+        report["summary"] = summary
         if mode == "PERFORMANCE_DRIFT":
             if not baseline.get("labeled_n") or not current.get("labeled_n"):
                 raise HTTPException(
@@ -109,6 +137,12 @@ class DriftService(ResearchAccessMixin):
                 "current_accuracy": current["gold_accuracy"],
                 "difference": current["gold_accuracy"] - baseline["gold_accuracy"],
             }
+            sections = dict(report.get("sections") or {})
+            sections["performance"] = report["performance"]
+            report["sections"] = sections
+            report["summary"]["warning_level"] = compute_warning_level(report["sections"])
+            report["summary"]["section_count"] = len(report["sections"])
+            report["summary"]["has_performance_drift"] = True
         run = await self._persist_report(
             corpus=corpus,
             user_id=user_id,
@@ -121,6 +155,7 @@ class DriftService(ResearchAccessMixin):
         return report
 
     async def _aggregates_from_prediction_set(self, prediction_set: Any) -> dict[str, Any]:
+        """Aggregate ALL predictions belonging to a persisted PredictionSet (no row cap)."""
         unit_ids = list(loads(prediction_set.metadata_json, {}).get("unit_ids") or [])
         predictions = await self.repo.list_predictions_for_units(
             prediction_set.trained_model_id, unit_ids
@@ -139,7 +174,8 @@ class DriftService(ResearchAccessMixin):
                     correct += 1
         return {
             "label_counts": _aggregate_label_counts(predictions),
-            "scores": _aggregate_scores(predictions),
+            "scores": _aggregate_confidence_scores(predictions),
+            "uncertainties": _aggregate_uncertainties(predictions),
             "n": len(predictions),
             "labeled_n": labeled,
             "gold_accuracy": correct / labeled if labeled else None,

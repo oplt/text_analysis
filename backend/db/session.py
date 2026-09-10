@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from backend.core.config import settings
+from backend.db.pool_observability import instrument_engine
 
 DatabaseRole = Literal["api", "worker"]
 
@@ -86,31 +87,21 @@ def describe_database_pool_policy() -> dict[str, Any]:
                 "from SQLAlchemy pool_size alone."
             ),
         },
+        "connection_budget": {
+            "formula": (
+                "api_replicas * api_processes * (DB_POOL_SIZE + DB_MAX_OVERFLOW) + "
+                "celery_deployments * celery_concurrency * "
+                "(DB_WORKER_POOL_SIZE + DB_WORKER_MAX_OVERFLOW) + admin "
+                "< postgres_or_pgbouncer_capacity"
+            ),
+            "do_not_blindly_increase_pools": True,
+        },
     }
 
 
 # Primary engine for the API process event loop.
 engine = create_async_engine(settings.DATABASE_URL, **database_engine_kwargs(role="api"))
-
-
-def _observe_pool(role: DatabaseRole) -> None:
-    """Best-effort pool gauges; observability must never affect database I/O."""
-    try:
-        from backend.observability.prometheus_metrics import database_pool_checked_out
-
-        database_pool_checked_out.labels(role=role).set(engine.sync_engine.pool.checkedout())
-    except Exception:
-        pass
-
-
-@event.listens_for(engine.sync_engine, "checkout")
-def _observe_api_pool_checkout(*_args: Any) -> None:
-    _observe_pool("api")
-
-
-@event.listens_for(engine.sync_engine, "checkin")
-def _observe_api_pool_checkin(*_args: Any) -> None:
-    _observe_pool("api")
+instrument_engine(role="api", sync_engine=engine.sync_engine)
 
 
 def observe_session_duration(*, role: DatabaseRole, started_at: float) -> None:
@@ -176,6 +167,7 @@ def create_worker_sessionmaker() -> tuple[AsyncEngine, async_sessionmaker[AsyncS
         settings.DATABASE_URL,
         **database_engine_kwargs(role="worker"),
     )
+    instrument_engine(role="worker", sync_engine=worker_engine.sync_engine)
     maker = async_sessionmaker(
         bind=worker_engine,
         class_=AsyncSession,

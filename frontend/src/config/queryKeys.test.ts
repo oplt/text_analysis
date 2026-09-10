@@ -56,4 +56,24 @@ describe("queryKeys", () => {
         expect(queryKeys.observability.links).toEqual(["observability", "links"]);
         expect(queryKeys.observability.status).toEqual(["observability", "status"]);
     });
+
+    it("builds rag, memory, agent, and lifecycle keys", () => {
+        expect(queryKeys.rag.documents("p1", 0)).toEqual(["rag", "documents", "p1", 0]);
+        expect(queryKeys.memory.detail("m1")).toEqual(["memory", "detail", "m1"]);
+        expect(queryKeys.agent.run("r1")).toEqual(["agent", "run", "r1"]);
+        expect(queryKeys.textResearch.modelLifecycleEvents("model-1")).toEqual([
+            "text-research",
+            "model",
+            "model-1",
+            "lifecycle-events",
+        ]);
+        expect(queryKeys.textResearch.activeLearningQueue("model-1", { offset: 20 })).toEqual([
+            "text-research",
+            "active-learning",
+            "model-1",
+            20,
+            20,
+            "none",
+        ]);
+    });
 });

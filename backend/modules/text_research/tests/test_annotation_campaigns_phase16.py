@@ -177,7 +177,7 @@ class UncertainQueueBlindGateTests(unittest.IsolatedAsyncioTestCase):
             patch.object(
                 routes.ActiveLearningService,
                 "uncertain_queue",
-                new=AsyncMock(return_value=[{"should": "not appear"}]),
+                new=AsyncMock(return_value=([{"should": "not appear"}], 1)),
             ) as queue_mock,
         ):
             result = await routes.list_uncertain_predictions(
@@ -185,10 +185,12 @@ class UncertainQueueBlindGateTests(unittest.IsolatedAsyncioTestCase):
                 campaign_id="camp-1",
                 text_unit_id=None,
                 limit=20,
+                offset=0,
+                content_mode="snippet",
                 db=db,
                 current_user=user,
             )
-        self.assertEqual(result, [])
+        self.assertEqual(result, {"items": [], "total": 0, "limit": 20, "offset": 0})
         queue_mock.assert_not_called()
 
     async def test_route_returns_empty_when_unit_policy_hides_predictions(self) -> None:
@@ -206,7 +208,7 @@ class UncertainQueueBlindGateTests(unittest.IsolatedAsyncioTestCase):
             patch.object(
                 routes.ActiveLearningService,
                 "uncertain_queue",
-                new=AsyncMock(return_value=[{"leak": True}]),
+                new=AsyncMock(return_value=([{"leak": True}], 1)),
             ) as queue_mock,
         ):
             result = await routes.list_uncertain_predictions(
@@ -214,10 +216,12 @@ class UncertainQueueBlindGateTests(unittest.IsolatedAsyncioTestCase):
                 campaign_id=None,
                 text_unit_id="unit-1",
                 limit=20,
+                offset=0,
+                content_mode="snippet",
                 db=db,
                 current_user=user,
             )
-        self.assertEqual(result, [])
+        self.assertEqual(result, {"items": [], "total": 0, "limit": 20, "offset": 0})
         queue_mock.assert_not_called()
 
 

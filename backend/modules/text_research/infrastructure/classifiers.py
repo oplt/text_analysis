@@ -137,6 +137,8 @@ def grouped_train_val_test_split(
     val_size: float = 0.2,
     random_seed: int = 42,
     prefer_stratified_groups: bool = True,
+    task_type: str | None = None,
+    grouping_variable: str = "corpus_document_id",
 ) -> dict[str, Any]:
     """Split by ``groups`` into train/validation/test with no group leakage.
 
@@ -149,6 +151,10 @@ def grouped_train_val_test_split(
     When ``prefer_stratified_groups`` is true, :mod:`split_planner` attempts
     a stratified grouped holdout first and falls back to ``GroupShuffleSplit``
     when stratification is infeasible (backward compatible).
+
+    For ``task_type="multilabel"`` (or multilabel-shaped ``y``), stratification
+    is never applied — leakage-safe ``GroupShuffleSplit`` is used with
+    explicit provenance.
 
     Guarantees no group appears in more than one partition. If too few
     groups remain after the test split to carve out a non-trivial
@@ -178,14 +184,21 @@ def grouped_train_val_test_split(
             val_size=val_size,
             random_seed=random_seed,
             prefer_stratified=True,
+            task_type=task_type,
+            grouping_variable=grouping_variable,
         )
         train_idx = np.asarray(planned["train_index"], dtype=int)
         val_idx = np.asarray(planned["val_index"], dtype=int)
         test_idx = np.asarray(planned["test_index"], dtype=int)
         notes.extend(planned.get("notes") or [])
         split_meta = {
-            "split_strategy": planned.get("strategy"),
+            "split_strategy": planned.get("split_strategy") or planned.get("strategy"),
             "split_feasibility": planned.get("feasibility"),
+            "task_type": planned.get("task_type"),
+            "grouping_variable": planned.get("grouping_variable", grouping_variable),
+            "stratification_requested": planned.get("stratification_requested"),
+            "stratification_applied": planned.get("stratification_applied"),
+            "reason": planned.get("reason"),
         }
     else:
         from sklearn.model_selection import GroupShuffleSplit
@@ -222,7 +235,21 @@ def grouped_train_val_test_split(
                     "Validation split skipped: fewer than 2 distinct groups remained "
                     "after the test split."
                 )
-        split_meta = {"split_strategy": "group_shuffle"}
+        resolved_task = task_type or (
+            "multilabel"
+            if any(isinstance(label, (list, tuple, set)) for label in y)
+            else "single_label"
+        )
+        split_meta = {
+            "split_strategy": (
+                "group_shuffle_multilabel" if resolved_task == "multilabel" else "group_shuffle"
+            ),
+            "task_type": resolved_task,
+            "grouping_variable": grouping_variable,
+            "stratification_requested": False,
+            "stratification_applied": False,
+            "reason": "prefer_stratified_groups=False",
+        }
 
     train_groups_final = {groups[i] for i in train_idx}
     val_groups_final = {groups[i] for i in val_idx}

@@ -75,6 +75,30 @@ const RunsView = lazy(() =>
 const ExportsView = lazy(() =>
     import("../features/text-research/views/ExportsView").then((m) => ({ default: m.default }))
 );
+const ActiveLearningView = lazy(() =>
+    import("../features/text-research/views/ActiveLearningView").then((m) => ({
+        default: m.default,
+    }))
+);
+const DictionaryManagerView = lazy(() =>
+    import("../features/text-research/views/DictionaryManagerView").then((m) => ({
+        default: m.default,
+    }))
+);
+const ComparativeAnalysisView = lazy(() =>
+    import("../features/text-research/views/ComparativeAnalysisView").then((m) => ({
+        default: m.default,
+    }))
+);
+const RagView = lazy(() =>
+    import("../features/rag/RagView").then((m) => ({ default: m.default }))
+);
+const MemoryView = lazy(() =>
+    import("../features/memory/MemoryView").then((m) => ({ default: m.default }))
+);
+const AgentView = lazy(() =>
+    import("../features/agent/AgentView").then((m) => ({ default: m.default }))
+);
 
 /** Deep-link aliases for Analysis-grouped tools (avoid extra top-level nav items). */
 function AnalysisSubRedirect({ tab }: { tab: "statistical" | "measurement" }) {
@@ -147,9 +171,15 @@ export function AppRouter() {
                         <Route path="contextual" element={<SuspensePage><ContextualView /></SuspensePage>} />
                         <Route path="runs" element={<SuspensePage><RunsView /></SuspensePage>} />
                         <Route path="exports" element={<SuspensePage><ExportsView /></SuspensePage>} />
+                        <Route path="active-learning" element={<SuspensePage><ActiveLearningView /></SuspensePage>} />
+                        <Route path="dictionaries" element={<SuspensePage><DictionaryManagerView /></SuspensePage>} />
+                        <Route path="comparative" element={<SuspensePage><ComparativeAnalysisView /></SuspensePage>} />
                     </Route>
                     <Route path="/platform" element={<SuspensePage><PlatformPage /></SuspensePage>} />
                     <Route path="/ai" element={<SuspensePage><AiStudioPage /></SuspensePage>} />
+                    <Route path="/rag" element={<SuspensePage><RagView /></SuspensePage>} />
+                    <Route path="/memory" element={<SuspensePage><MemoryView /></SuspensePage>} />
+                    <Route path="/agent" element={<SuspensePage><AgentView /></SuspensePage>} />
                     <Route path="/observability" element={<SuspensePage><ObservabilityPage /></SuspensePage>} />
                     <Route path="/profile" element={<SuspensePage><ProfilePage /></SuspensePage>} />
                     <Route path="/notifications" element={<SuspensePage><NotificationsPage /></SuspensePage>} />

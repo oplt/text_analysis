@@ -32,7 +32,7 @@ from backend.modules.text_research.domain.prepared_corpus import (
 from backend.modules.text_research.infrastructure import model_storage
 from backend.modules.text_research.infrastructure.prepared_corpus_builder import (
     prepare_texts,
-    prepare_texts_cached,
+    prepare_texts_cached_async,
 )
 from backend.modules.text_research.infrastructure.preprocessing import PreprocessingConfig
 from backend.modules.text_research.infrastructure.topic_models import (
@@ -253,7 +253,7 @@ class TopicModelService(ResearchAccessMixin):
                 if profile is not None:
                     config.update(loads(profile.config_json, {}))
 
-            prepared = prepare_texts_cached(
+            prepared = await prepare_texts_cached_async(
                 texts,
                 config,
                 corpus_id=run.corpus_id,

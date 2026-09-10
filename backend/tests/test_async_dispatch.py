@@ -88,10 +88,12 @@ def test_dispatch_background_sync_job_uses_celery_when_not_eager() -> None:
         job_name="rag-indexing",
     )
 
-    celery_task.apply_async.assert_called_once_with(
-        kwargs={"document_id": "doc-1", "user_id": "user-1"},
-        queue="default",
-    )
+    celery_task.apply_async.assert_called_once()
+    call_kwargs = celery_task.apply_async.call_args.kwargs
+    assert call_kwargs["kwargs"] == {"document_id": "doc-1", "user_id": "user-1"}
+    assert call_kwargs["queue"] == "default"
+    assert "correlation_id" in call_kwargs["headers"]
+    assert "enqueued_at" in call_kwargs["headers"]
 
 
 @patch("backend.workers.async_dispatch.settings.CELERY_TASK_ALWAYS_EAGER", True)

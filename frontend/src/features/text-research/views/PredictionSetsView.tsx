@@ -29,6 +29,7 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
+import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
 import { ResultsInspector } from "../components/ResearchCharts";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { formatMetric, modelDisplayName, num } from "../modelRegistryUtils";
@@ -63,6 +64,7 @@ export default function PredictionSetsView() {
         queryKey: queryKeys.textResearch.predictionSets(ctx.selectedCorpusId),
         queryFn: () => listPredictionSets(ctx.selectedCorpusId, { limit: 100 }),
         enabled: Boolean(ctx.selectedCorpusId),
+        staleTime: QUERY_STALE_TIMES.researchPredictionSets,
     });
 
     const modelsQuery = useQuery({
@@ -70,6 +72,7 @@ export default function PredictionSetsView() {
         queryFn: () =>
             listModels(ctx.projectId, { corpusId: ctx.selectedCorpusId || undefined }),
         enabled: Boolean(ctx.projectId),
+        staleTime: QUERY_STALE_TIMES.researchModelLifecycle,
     });
 
     const modelsById = (() => {
@@ -88,7 +91,11 @@ export default function PredictionSetsView() {
 
     const selectedSet = (setsQuery.data ?? []).find((item) => item.id === selectedSetId) ?? null;
     const pageQuery = useQuery({
-        queryKey: ["text-research", "prediction-set-page", selectedSetId, pageOffset, filters],
+        queryKey: [
+            ...queryKeys.textResearch.predictionSetPageRoot(selectedSetId),
+            pageOffset,
+            filters,
+        ],
         queryFn: () =>
             listPredictionSetPredictions(selectedSetId, {
                 limit: 100,
@@ -100,6 +107,7 @@ export default function PredictionSetsView() {
                 humanDisagreement: filters.humanDisagreementOnly || undefined,
             }),
         enabled: Boolean(selectedSetId),
+        staleTime: QUERY_STALE_TIMES.researchPredictionSets,
     });
 
     const sourceModelQuery = useQuery({

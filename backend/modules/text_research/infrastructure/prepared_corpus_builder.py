@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
+from collections.abc import Callable
 from typing import Any
 
 from backend.modules.text_research.domain.prepared_corpus import (
@@ -16,6 +18,10 @@ from backend.modules.text_research.infrastructure.preprocessing import (
     describe_implementation,
     tokenize,
 )
+
+logger = logging.getLogger(__name__)
+
+PREPARED_CORPUS_ENGINE_VERSION = "prepared-corpus-v1"
 
 
 def _tokenize_with_per_unit_language(
@@ -210,25 +216,146 @@ def prepare_texts_cached(
 ) -> PreparedCorpusArtifact:
     """Build or reuse an immutable prepared corpus by full scientific inputs.
 
+    Sync/Celery path (may sleep on Redis locks). Prefer
+    :func:`prepare_texts_cached_async` from FastAPI handlers.
+
     Uses the layered stage cache (L1/L2/L3) with stampede protection. Covers
     only deterministic cleaning/tokenization outputs — never fitted
     vectorizers, IDF, supervised selectors, or classifiers.
     """
+    from time import perf_counter
+
+    from backend.modules.text_research.infrastructure import stage_cache
+
+    started = perf_counter()
+    try:
+        cache_key, factory = _prepared_corpus_cache_parts(
+            texts,
+            config,
+            corpus_id=corpus_id,
+            unit_type=unit_type,
+            unit_ids=unit_ids,
+            document_ids=document_ids,
+            filters=filters,
+            cleaning_profile_hash=cleaning_profile_hash,
+            operation_config=operation_config,
+            **kwargs,
+        )
+        cached = stage_cache.get_or_compute(cache_key, factory, payload_format="joblib")
+        return _payload_or_prepare(
+            cached,
+            texts,
+            config,
+            unit_ids=unit_ids,
+            document_ids=document_ids,
+            **kwargs,
+        )
+    finally:
+        try:
+            from backend.observability.prometheus_metrics import (
+                research_preprocessing_duration_seconds,
+            )
+
+            research_preprocessing_duration_seconds.labels(path="cached_sync").observe(
+                perf_counter() - started
+            )
+        except Exception:
+            pass
+
+
+async def prepare_texts_cached_async(
+    texts: list[str],
+    config: dict[str, Any] | PreprocessingConfig,
+    *,
+    corpus_id: str,
+    unit_type: str,
+    unit_ids: list[str],
+    document_ids: list[str | None] | None = None,
+    filters: dict[str, Any] | None = None,
+    cleaning_profile_hash: str | None = None,
+    operation_config: dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> PreparedCorpusArtifact:
+    """Async FastAPI-safe variant of :func:`prepare_texts_cached`."""
+    from time import perf_counter
+
+    from backend.modules.text_research.infrastructure import stage_cache
+
+    started = perf_counter()
+    try:
+        cache_key, factory = _prepared_corpus_cache_parts(
+            texts,
+            config,
+            corpus_id=corpus_id,
+            unit_type=unit_type,
+            unit_ids=unit_ids,
+            document_ids=document_ids,
+            filters=filters,
+            cleaning_profile_hash=cleaning_profile_hash,
+            operation_config=operation_config,
+            **kwargs,
+        )
+        cached = await stage_cache.get_or_compute_async(
+            cache_key, factory, payload_format="joblib"
+        )
+        return _payload_or_prepare(
+            cached,
+            texts,
+            config,
+            unit_ids=unit_ids,
+            document_ids=document_ids,
+            **kwargs,
+        )
+    finally:
+        try:
+            from backend.observability.prometheus_metrics import (
+                research_preprocessing_duration_seconds,
+            )
+
+            research_preprocessing_duration_seconds.labels(path="cached_async").observe(
+                perf_counter() - started
+            )
+        except Exception:
+            pass
+
+
+def _prepared_corpus_cache_parts(
+    texts: list[str],
+    config: dict[str, Any] | PreprocessingConfig,
+    *,
+    corpus_id: str,
+    unit_type: str,
+    unit_ids: list[str],
+    document_ids: list[str | None] | None = None,
+    filters: dict[str, Any] | None = None,
+    cleaning_profile_hash: str | None = None,
+    operation_config: dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> tuple[str, Callable[[], tuple[dict[str, Any], PreparedCorpusArtifact]]]:
     from backend.modules.text_research.infrastructure import stage_cache
 
     resolved_config = config.to_dict() if isinstance(config, PreprocessingConfig) else dict(config)
     input_checksum = compute_corpus_checksum(unit_ids, texts)
+    # Scientific identity only — never fitted IDF / classifiers / selectors.
     cache_spec = {
         "corpus_id": corpus_id,
         "unit_type": unit_type,
         "filters": filters or {},
         "cleaning_profile_hash": cleaning_profile_hash,
         "preprocessing_config": resolved_config,
+        "language": resolved_config.get("language"),
+        "language_mode": resolved_config.get("language_mode")
+        or resolved_config.get("auto_detect_language"),
         "operation_config": operation_config or {},
-        "implementation_version": "prepared-corpus-v1",
+        "implementation_version": PREPARED_CORPUS_ENGINE_VERSION,
+        "document_ids_fingerprint": hashlib.sha256(
+            json.dumps(document_ids or [], sort_keys=True, default=str).encode("utf-8")
+        ).hexdigest()
+        if document_ids is not None
+        else None,
     }
     cache_key = stage_cache.stage_cache_key(
-        engine_version="prepared-corpus-v1",
+        engine_version=PREPARED_CORPUS_ENGINE_VERSION,
         stage_name="prepared_corpus",
         input_checksum=input_checksum,
         spec_hash=hashlib.sha256(
@@ -236,6 +363,13 @@ def prepare_texts_cached(
         ).hexdigest(),
         params=cache_spec,
         preprocessing_config=resolved_config,
+    )
+    logger.debug(
+        "prepared corpus cache lookup corpus_id=%s unit_type=%s units=%s key=%s",
+        corpus_id,
+        unit_type,
+        len(unit_ids),
+        cache_key[:16],
     )
 
     def _factory() -> tuple[dict[str, Any], PreparedCorpusArtifact]:
@@ -255,11 +389,21 @@ def prepare_texts_cached(
             prepared,
         )
 
-    cached = stage_cache.get_or_compute(cache_key, _factory, payload_format="joblib")
+    return cache_key, _factory
+
+
+def _payload_or_prepare(
+    cached: dict[str, Any],
+    texts: list[str],
+    config: dict[str, Any] | PreprocessingConfig,
+    *,
+    unit_ids: list[str],
+    document_ids: list[str | None] | None,
+    **kwargs: Any,
+) -> PreparedCorpusArtifact:
     payload = cached.get("payload")
     if isinstance(payload, PreparedCorpusArtifact):
         return payload
-    # Joblib round-trip across processes may lose exact type in edge cases.
     return prepare_texts(
         texts,
         config,

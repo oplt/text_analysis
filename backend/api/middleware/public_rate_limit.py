@@ -12,7 +12,8 @@ logger = logging.getLogger("backend.rate_limit")
 
 class PublicRateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
-        if settings.PUBLIC_RATE_LIMIT_REQUESTS <= 0:
+        max_requests = settings.effective_public_rate_limit_requests
+        if max_requests <= 0:
             return await call_next(request)
 
         if not request.url.path.startswith("/api/") and not request.url.path.startswith("/health/"):
@@ -24,7 +25,7 @@ class PublicRateLimitMiddleware(BaseHTTPMiddleware):
             count = await redis_client.incr(key)
             if count == 1:
                 await redis_client.expire(key, settings.PUBLIC_RATE_LIMIT_WINDOW_SECONDS)
-            if count > settings.PUBLIC_RATE_LIMIT_REQUESTS:
+            if count > max_requests:
                 ttl = await redis_client.ttl(key)
                 return JSONResponse(
                     status_code=429,
