@@ -163,6 +163,16 @@ def quantitative_analysis_sync(*, run_id: str, user_id: str) -> None:
         raise
 
 
+def r_quantitative_analysis_sync(*, run_id: str, user_id: str) -> None:
+    """Run isolated R jobs from a dedicated Celery queue."""
+    quantitative_analysis_sync(run_id=run_id, user_id=user_id)
+
+
+def engine_comparison_sync(*, run_id: str, user_id: str) -> None:
+    """The comparison worker creates two independent child runs and persists their diff."""
+    quantitative_analysis_sync(run_id=run_id, user_id=user_id)
+
+
 def queue_segmentation(*, run_id: str, user_id: str) -> None:
     from backend.workers.tasks import research_segmentation_task
 
@@ -267,6 +277,32 @@ def queue_quantitative_analysis(*, run_id: str, user_id: str) -> None:
     )
 
 
+def queue_r_quantitative_analysis(*, run_id: str, user_id: str) -> None:
+    from backend.workers.tasks import research_r_quantitative_analysis_task
+
+    return dispatch_background_sync_job(
+        target=r_quantitative_analysis_sync,
+        kwargs={"run_id": run_id, "user_id": user_id},
+        celery_task=research_r_quantitative_analysis_task,
+        celery_kwargs={"run_id": run_id, "user_id": user_id},
+        queue=settings.RESEARCH_QUEUE_R,
+        job_name="research-r-quantitative-analysis",
+    )
+
+
+def queue_engine_comparison(*, run_id: str, user_id: str) -> None:
+    from backend.workers.tasks import research_engine_comparison_task
+
+    return dispatch_background_sync_job(
+        target=engine_comparison_sync,
+        kwargs={"run_id": run_id, "user_id": user_id},
+        celery_task=research_engine_comparison_task,
+        celery_kwargs={"run_id": run_id, "user_id": user_id},
+        queue=settings.RESEARCH_QUEUE_R,
+        job_name="research-engine-comparison",
+    )
+
+
 def queue_research_operation(*, operation: str, run_id: str, user_id: str) -> str | None:
     """Dispatch a named persisted operation through the shared worker boundary."""
     dispatchers = {
@@ -278,6 +314,8 @@ def queue_research_operation(*, operation: str, run_id: str, user_id: str) -> st
         "robustness": queue_robustness_sweep,
         "prediction": queue_prediction,
         "quantitative": queue_quantitative_analysis,
+        "r_quantitative": queue_r_quantitative_analysis,
+        "engine_comparison": queue_engine_comparison,
     }
     try:
         dispatcher = dispatchers[operation]

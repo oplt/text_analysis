@@ -238,6 +238,16 @@ class Settings(BaseSettings):
     RESEARCH_QUEUE_NLP: str = "research_nlp"
     RESEARCH_QUEUE_MEMORY: str = "research_memory"
     RESEARCH_QUEUE_GPU: str = "research_gpu"
+    # Optional isolated R/quanteda runtime.  Keeping this disabled means an
+    # installation without R starts and serves Python analyses normally.
+    RESEARCH_R_ENABLED: bool = False
+    RESEARCH_RSCRIPT_PATH: str = "Rscript"
+    RESEARCH_R_ENGINE_PATH: str = "../r_engine"
+    RESEARCH_R_ENGINE_ENTRYPOINT: str = "../r_engine/run_analysis.R"
+    RESEARCH_R_TIMEOUT_SECONDS: int = 600
+    RESEARCH_R_MAX_OUTPUT_MB: int = 100
+    RESEARCH_R_WORK_DIR: str = "/tmp/text-analysis-r"
+    RESEARCH_QUEUE_R: str = "research_r"
 
     CORS_ALLOWED_ORIGINS: Annotated[list[str], NoDecode] = Field(default_factory=list)
 

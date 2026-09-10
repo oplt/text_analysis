@@ -13,6 +13,7 @@ _REGISTRY: dict[str, dict[str, dict[str, Any]]] = {
     "classifier_engine": {},
     "text_transform": {},
     "analysis": {},
+    "execution_engine": {},
 }
 
 _BUILTINS_REGISTERED = False
@@ -60,8 +61,15 @@ def register_builtins() -> None:
 
     from backend.modules.text_research.domain.analysis_specification import ANALYSIS_TYPES
     from backend.modules.text_research.infrastructure.embeddings import get_embedding_provider
+    from backend.modules.text_research.infrastructure.engines.python_engine import (
+        PythonAnalysisEngine,
+    )
+    from backend.modules.text_research.infrastructure.engines.r_engine import RAnalysisEngine
     from backend.modules.text_research.infrastructure.pipeline_compiler import compile_plan
     from backend.modules.text_research.infrastructure.topic_engines import get_topic_engine
+
+    register_plugin("execution_engine", "python", PythonAnalysisEngine)
+    register_plugin("execution_engine", "r", RAnalysisEngine)
 
     for engine_name in ("sklearn_lda", "sklearn_nmf", "bertopic", "semantic_stack"):
         register_plugin(

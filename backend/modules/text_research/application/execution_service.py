@@ -19,6 +19,8 @@ ResearchOperation = Literal[
     "robustness",
     "prediction",
     "quantitative",
+    "r_quantitative",
+    "engine_comparison",
 ]
 
 

@@ -52,6 +52,7 @@ class AnalysisPlugin(Protocol):
 class ExecutionPlan:
     stages: list[str]
     spec_hash: str
+    engine_name: str = "python"
     engine_version: str = field(default=ENGINE_VERSION)
     steps: tuple[PipelineStep, ...] = ()
 
@@ -71,6 +72,10 @@ def compile_plan(spec: AnalysisSpecification) -> ExecutionPlan:
     return ExecutionPlan(
         stages=stages,
         spec_hash=normalized.spec_hash(),
-        engine_version=ENGINE_VERSION,
+        engine_name=normalized.engine.runtime,
+        engine_version=(
+            normalized.engine.implementation
+            or ("r-quanteda-1" if normalized.engine.runtime == "r" else ENGINE_VERSION)
+        ),
         steps=steps,
     )

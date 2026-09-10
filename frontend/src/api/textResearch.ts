@@ -682,7 +682,19 @@ export type CorpusFilterParams = {
 export type AnalysisBasePayload = {
     unit_type: UnitType;
     preprocessing_profile_id?: string;
+    engine?: { runtime: "python" | "r"; implementation?: string; preprocessing_mode?: "standardized" };
 } & CorpusFilterParams;
+
+export type AnalysisEngineCapability = {
+    name: "python" | "r";
+    implementation: string;
+    available: boolean;
+    analyses: string[];
+};
+
+export async function listAnalysisEngines(): Promise<{ engines: AnalysisEngineCapability[] }> {
+    return apiFetch(`${BASE}/analysis-engines`);
+}
 
 export async function runCorpusStats(
     corpusId: string,
@@ -781,6 +793,7 @@ export async function runKeyness(
     payload: {
         unit_type: UnitType;
         preprocessing_profile_id?: string;
+        engine?: AnalysisBasePayload["engine"];
         filters_a: Record<string, unknown>;
         filters_b: Record<string, unknown>;
         group_field?: string;

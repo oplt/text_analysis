@@ -23,6 +23,7 @@ import { useSnackbar } from "../../../app/snackbarContext";
 import {
     getCorpusMetadataFacets,
     getRun,
+    listAnalysisEngines,
     listDictionaries,
     listPreprocessingProfiles,
     researchExportUrl,
@@ -62,6 +63,11 @@ import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { filterKwicRows, kwicRowsToCsv, toKwicSearchRows } from "../kwicTableModel";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
+import {
+    canonicalAnalysisResults,
+    rEngineOptionLabel,
+    rEngineSelectionState,
+} from "../analysisEngine";
 import type { AnalysisRun } from "../types";
 
 const StatisticalModelView = lazy(() => import("./StatisticalModelView"));
@@ -449,7 +455,7 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
     const [display, setDisplay] = useState<"chart" | "table" | "both">("both");
     const [networkLimit, setNetworkLimit] = useState<20 | 50>(20);
     const [minimumEdgeStrength, setMinimumEdgeStrength] = useState(1);
-    const results = asRecord(run.results);
+    const results = canonicalAnalysisResults(run.results);
     const metrics = asRecord(run.metrics);
     const summary = asRecord(results?.summary) ?? asRecord(metrics?.summary);
     const payload = runPayload(run);
@@ -609,7 +615,7 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
     }
 
     if (tab === "dfm") {
-        const unitCount = metricNumber([summary, metrics, results], ["unit_count", "units", "n_units"]);
+        const unitCount = metricNumber([summary, metrics, results], ["unit_count", "units", "n_units", "documents"]);
         const featureCount = metricNumber([summary, metrics, results], [
             "feature_count",
             "features",
@@ -657,7 +663,8 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
     }
 
     if (tab === "keyness") {
-        const items = extractRankedItems(results?.keyness ?? payload, ["feature", "term", "token", "ngram"], [
+        const keynessResults = results?.keyness ?? results?.features ?? payload;
+        const items = extractRankedItems(keynessResults, ["feature", "term", "token", "ngram"], [
             "keyness_statistic",
             "keyness",
             "score",
@@ -685,7 +692,7 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                     ]}
                 />
                 <DivergingBarChart
-                    items={asArray(results?.keyness ?? payload).map((entry) => {
+                    items={asArray(keynessResults).map((entry) => {
                         const row = asRecord(entry) ?? {};
                         const score = pickNumber(row, ["keyness_statistic", "keyness", "g2"]) ?? 0;
                         return {
@@ -695,14 +702,14 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                     })}
                 />
                 <ResearchResultsTable
-                    rows={asArray(results?.keyness ?? payload).map((entry, index) => ({ ...(asRecord(entry) ?? {}), id: index }))}
+                    rows={asArray(keynessResults).map((entry, index) => ({ ...(asRecord(entry) ?? {}), id: index }))}
                     columns={[
                         { id: "feature", label: "Feature", value: (row) => pickString(row, ["feature", "term"]) },
                         { id: "a", label: "Group A", value: (row) => pickNumber(row, ["freq_a", "count_a"]), align: "right" },
                         { id: "b", label: "Group B", value: (row) => pickNumber(row, ["freq_b", "count_b"]), align: "right" },
                         { id: "keyness", label: "Keyness", value: (row) => pickNumber(row, ["keyness_statistic", "keyness", "g2"]), align: "right" },
                         { id: "p", label: "p", value: (row) => pickNumber(row, ["p_value", "p"]), align: "right" },
-                        { id: "padj", label: "p (BH)", value: (row) => pickNumber(row, ["p_adjusted"]), align: "right" },
+                        { id: "padj", label: "p (BH)", value: (row) => pickNumber(row, ["p_adjusted", "p_value_adjusted"]), align: "right" },
                         { id: "log_ratio", label: "Log ratio", value: (row) => pickNumber(row, ["log_ratio", "effect_size"]), align: "right" },
                         { id: "direction", label: "Direction", value: (row) => pickString(row, ["effect_direction", "direction"]) },
                     ]}
@@ -713,7 +720,7 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
     }
 
     if (tab === "dictionaries") {
-        const byGroup = asRecord(results?.by_group);
+        const byGroup = asRecord(results?.by_group) ?? asRecord(results?.by_category);
         const groupItems = Object.entries(byGroup ?? {}).map(([label, value]) => {
             const bucket = asRecord(value);
             const hits = bucket ? pickNumber(bucket, ["hits", "count"]) : Number(value) || 0;
@@ -794,7 +801,7 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
     const networkEdges = (
         asArray(networkPayload?.edges).length
             ? asArray(networkPayload?.edges)
-            : asArray(results?.cooccurrence ?? payload)
+            : asArray(results?.cooccurrence ?? results?.pairs ?? payload)
     )
         .map((entry) => asRecord(entry))
         .filter((row): row is Record<string, unknown> => row != null)
@@ -832,7 +839,7 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
             </Stack>
             <CooccurrenceNetwork edges={networkEdges} />
             <ResearchResultsTable
-                rows={asArray(results?.cooccurrence ?? payload).map((entry, index) => ({ ...(asRecord(entry) ?? {}), id: index }))}
+                rows={asArray(results?.cooccurrence ?? results?.pairs ?? payload).map((entry, index) => ({ ...(asRecord(entry) ?? {}), id: index }))}
                 columns={[
                     { id: "termA", label: "Term A", value: (row) => pickString(row, ["term_a", "termA", "a"]) },
                     { id: "termB", label: "Term B", value: (row) => pickString(row, ["term_b", "termB", "b"]) },
@@ -880,6 +887,13 @@ export default function AnalysisView() {
     const [coocMinFreq, setCoocMinFreq] = useState(1);
     const [coocMinCount, setCoocMinCount] = useState(1);
     const [metadataFilters, setMetadataFilters] = useState<Record<string, string>>({});
+    const [engineRuntime, setEngineRuntime] = useState<"python" | "r">("python");
+
+    const enginesQuery = useQuery({
+        queryKey: ["text-research", "analysis-engines"],
+        queryFn: listAnalysisEngines,
+        staleTime: QUERY_STALE_TIMES.researchReference,
+    });
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
@@ -910,10 +924,16 @@ export default function AnalysisView() {
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });
 
+    const rSelectionState = rEngineSelectionState(enginesQuery.data?.engines, tab);
+    const selectedEngineSupportsTab =
+        engineRuntime === "python" || rSelectionState === "available";
     const basePayload = {
         unit_type: ctx.unitType,
         ...metadataFilters,
         ...(profileId ? { preprocessing_profile_id: profileId } : {}),
+        ...(engineRuntime === "r"
+            ? { engine: { runtime: "r" as const, implementation: "quanteda", preprocessing_mode: "standardized" as const } }
+            : {}),
     };
 
     const onRunSuccess = (run: AnalysisRun, message: string) => {
@@ -986,6 +1006,15 @@ export default function AnalysisView() {
             runKeyness(ctx.selectedCorpusId, {
                 unit_type: ctx.unitType,
                 ...(profileId ? { preprocessing_profile_id: profileId } : {}),
+                ...(engineRuntime === "r"
+                    ? {
+                          engine: {
+                              runtime: "r" as const,
+                              implementation: "quanteda",
+                              preprocessing_mode: "standardized" as const,
+                          },
+                      }
+                    : {}),
                 filters_a: { [keynessField]: keynessA.trim() },
                 filters_b: { [keynessField]: keynessB.trim() },
                 group_field: keynessField,
@@ -1055,7 +1084,7 @@ export default function AnalysisView() {
         resolvedDictionaryTerms.length > 0 || Boolean(selectedDictionary?.terms?.length);
 
     const canRun = (() => {
-        if (!ctx.selectedCorpusId || !activeMutation || activeMutation.isPending) return false;
+        if (!ctx.selectedCorpusId || !activeMutation || activeMutation.isPending || !selectedEngineSupportsTab) return false;
         if (tab === "kwic") return Boolean(kwicKeyword.trim());
         if (tab === "keyness") return Boolean(keynessA.trim() && keynessB.trim());
         if (tab === "dictionaries") return hasDictionaryInput;
@@ -1152,6 +1181,19 @@ export default function AnalysisView() {
                         <Typography variant="body2" color="text.secondary" sx={{ alignSelf: "center" }}>
                             Unit type: {ctx.unitType}
                         </Typography>
+                        <TextField
+                            select
+                            size="small"
+                            label="Analysis engine"
+                            value={engineRuntime}
+                            onChange={(event) => setEngineRuntime(event.target.value as "python" | "r")}
+                            sx={{ minWidth: 180 }}
+                        >
+                            <MenuItem value="python">Python</MenuItem>
+                            <MenuItem value="r" disabled={rSelectionState !== "available"}>
+                                {rEngineOptionLabel(rSelectionState)}
+                            </MenuItem>
+                        </TextField>
                         {tab === "frequencies" ||
                         tab === "ngrams" ||
                         tab === "keyness" ||
@@ -1167,6 +1209,12 @@ export default function AnalysisView() {
                             />
                         ) : null}
                     </Stack>
+
+                    {engineRuntime === "r" && !selectedEngineSupportsTab ? (
+                        <Alert severity="info">
+                            R / quanteda supports frequencies, DFM, KWIC, dictionaries, keyness, and co-occurrence when available.
+                        </Alert>
+                    ) : null}
 
                     {tab === "ngrams" ? (
                         <TextField

@@ -27,6 +27,7 @@ class ResearchRouteRegistrationTest(unittest.TestCase):
             '/robustness/sweep"',
             '/preprocessing/preview"',
             "/contextual-datasets/",
+            "/analysis/engine-comparison",
         ):
             self.assertIn(fragment, source)
 

@@ -76,6 +76,7 @@ from backend.modules.text_research.api.schemas import (
     DimensionalityReductionRequest,
     DriftMonitoringRequest,
     DuplicateDetectionRequest,
+    EngineComparisonRequest,
     ExportManifestResponse,
     FrequencyRequest,
     KeynessRequest,
@@ -155,6 +156,7 @@ from backend.modules.text_research.application.statistical_modeling_service impo
     StatisticalModelingService,
 )
 from backend.modules.text_research.application.topic_model_service import TopicModelService
+from backend.modules.text_research.domain.analysis_specification import ANALYSIS_TYPES
 from backend.modules.text_research.domain.models import (
     AnalysisRun,
     AnnotationLabel,
@@ -171,6 +173,38 @@ from backend.modules.text_research.domain.models import (
 
 router = APIRouter()
 router.include_router(corpora_router)
+
+
+@router.get("/analysis-engines")
+async def analysis_engines(
+    current_user: User = Depends(get_current_user),
+) -> dict[str, list[dict[str, Any]]]:
+    """Advertise runtime capabilities without requiring clients to probe R."""
+    del current_user
+    from backend.modules.text_research.infrastructure.engines.python_engine import (
+        PythonAnalysisEngine,
+    )
+    from backend.modules.text_research.infrastructure.engines.r_engine import RAnalysisEngine
+
+    python = PythonAnalysisEngine()
+    r_engine = RAnalysisEngine()
+    r_available = r_engine.available()
+    return {
+        "engines": [
+            {
+                "name": python.name,
+                "implementation": "python",
+                "available": True,
+                "analyses": sorted(name for name in ANALYSIS_TYPES if python.supports(name)),
+            },
+            {
+                "name": r_engine.name,
+                "implementation": "quanteda",
+                "available": r_available,
+                "analyses": sorted(r_engine.supported_analyses) if r_available else [],
+            },
+        ]
+    }
 
 
 def _loads(value: str | None, default: Any = None) -> Any:
@@ -1432,6 +1466,7 @@ def _analysis_filters(body: AnalysisRequest) -> dict[str, Any]:
         "force_sparse_only",
         "trim",
         "run_async",
+        "engine",
         "keyword",
         "window_size",
         "case_sensitive",
@@ -1494,6 +1529,21 @@ async def frequencies(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if body.engine.runtime == "r":
+        run = await QuantitativeAnalysisService(db).r_analysis(
+            corpus_id,
+            user_id=current_user.id,
+            analysis_type="frequencies",
+            unit_type=body.unit_type,
+            preprocessing_profile_id=body.preprocessing_profile_id,
+            analysis_parameters={
+                "top_n": body.top_n,
+                "rate_per": body.rate_per,
+                "group_by": body.group_by,
+            },
+            **_analysis_filters(body),
+        )
+        return _run_response(run)
     run = await QuantitativeAnalysisService(db).frequencies(
         corpus_id,
         user_id=current_user.id,
@@ -1535,6 +1585,17 @@ async def dfm(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if body.engine.runtime == "r":
+        run = await QuantitativeAnalysisService(db).r_analysis(
+            corpus_id,
+            user_id=current_user.id,
+            analysis_type="dfm",
+            unit_type=body.unit_type,
+            preprocessing_profile_id=body.preprocessing_profile_id,
+            analysis_parameters={"weighting": body.weighting},
+            **_analysis_filters(body),
+        )
+        return _run_response(run)
     run = await QuantitativeAnalysisService(db).dfm(
         corpus_id,
         user_id=current_user.id,
@@ -1558,6 +1619,22 @@ async def kwic(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if body.engine.runtime == "r":
+        run = await QuantitativeAnalysisService(db).r_analysis(
+            corpus_id,
+            user_id=current_user.id,
+            analysis_type="kwic",
+            unit_type=body.unit_type,
+            preprocessing_profile_id=body.preprocessing_profile_id,
+            analysis_parameters={
+                "keyword": body.keyword,
+                "window_size": body.window_size,
+                "case_sensitive": body.case_sensitive,
+                "query_mode": body.query_mode,
+            },
+            **_analysis_filters(body),
+        )
+        return _run_response(run)
     run = await QuantitativeAnalysisService(db).kwic(
         corpus_id,
         user_id=current_user.id,
@@ -1586,6 +1663,52 @@ async def dictionary_analysis(
             status_code=400,
             detail="dictionary_id, dictionary_terms, or hierarchy required (user-defined only)",
         )
+    if body.engine.runtime == "r":
+        if body.group_by:
+            raise HTTPException(
+                status_code=422,
+                detail="R dictionary does not yet support group_by",
+            )
+        if body.dictionary_id:
+            from backend.modules.text_research.application.dictionary_service import (
+                DictionaryService,
+            )
+
+            definition = await DictionaryService(db).get_dictionary(
+                body.dictionary_id,
+                user_id=current_user.id,
+            )
+            corpus = await CorpusService(db).get_corpus(corpus_id, user_id=current_user.id)
+            if definition.project_id != corpus.project_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Dictionary does not belong to this corpus project",
+                )
+            dictionary_payload = DictionaryService.get_spec(definition).to_dict()
+            analysis_parameters = {
+                "entries": dictionary_payload["entries"],
+                "exclusions": dictionary_payload["exclusions"],
+                "case_sensitive": body.case_sensitive,
+                "rate_per": body.rate_per,
+            }
+        else:
+            analysis_parameters = {
+                "hierarchy": body.hierarchy,
+                "terms": body.dictionary_terms,
+                "exclusions": body.exclusions,
+                "case_sensitive": body.case_sensitive,
+                "rate_per": body.rate_per,
+            }
+        run = await QuantitativeAnalysisService(db).r_analysis(
+            corpus_id,
+            user_id=current_user.id,
+            analysis_type="dictionary",
+            unit_type=body.unit_type,
+            preprocessing_profile_id=body.preprocessing_profile_id,
+            analysis_parameters=analysis_parameters,
+            **_analysis_filters(body),
+        )
+        return _run_response(run)
     run = await QuantitativeAnalysisService(db).dictionary(
         corpus_id,
         user_id=current_user.id,
@@ -1611,6 +1734,21 @@ async def keyness(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if body.engine.runtime == "r":
+        run = await QuantitativeAnalysisService(db).r_keyness(
+            corpus_id,
+            user_id=current_user.id,
+            unit_type=body.unit_type,
+            filters_a=body.filters_a,
+            filters_b=body.filters_b,
+            group_field=body.group_field,
+            method=body.method,
+            correction=body.correction,
+            min_frequency=body.min_frequency,
+            preprocessing_profile_id=body.preprocessing_profile_id,
+            top_n=body.top_n,
+        )
+        return _run_response(run)
     run = await QuantitativeAnalysisService(db).keyness(
         corpus_id,
         user_id=current_user.id,
@@ -1634,6 +1772,25 @@ async def cooccurrence(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if body.engine.runtime == "r":
+        run = await QuantitativeAnalysisService(db).r_analysis(
+            corpus_id,
+            user_id=current_user.id,
+            analysis_type="cooccurrence",
+            unit_type=body.unit_type,
+            preprocessing_profile_id=body.preprocessing_profile_id,
+            analysis_parameters={
+                "window_size": body.window_size,
+                "top_n": body.top_n,
+                "association_method": body.association_method,
+                "directional": body.directional,
+                "min_frequency": body.min_frequency,
+                "min_count": body.min_count,
+                "include_network": body.include_network,
+            },
+            **_analysis_filters(body),
+        )
+        return _run_response(run)
     run = await QuantitativeAnalysisService(db).cooccurrence(
         corpus_id,
         user_id=current_user.id,
@@ -1645,6 +1802,25 @@ async def cooccurrence(
         min_frequency=body.min_frequency,
         min_count=body.min_count,
         include_network=body.include_network,
+        preprocessing_profile_id=body.preprocessing_profile_id,
+        **_analysis_filters(body),
+    )
+    return _run_response(run)
+
+
+@router.post("/corpora/{corpus_id}/analysis/engine-comparison", response_model=AnalysisRunResponse)
+async def engine_comparison(
+    corpus_id: str,
+    body: EngineComparisonRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await QuantitativeAnalysisService(db).engine_comparison(
+        corpus_id,
+        user_id=current_user.id,
+        unit_type=body.unit_type,
+        analysis_type=body.analysis_type,
+        analysis_parameters=body.analysis_parameters,
         preprocessing_profile_id=body.preprocessing_profile_id,
         **_analysis_filters(body),
     )

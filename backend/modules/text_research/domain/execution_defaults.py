@@ -39,7 +39,11 @@ def computation_identity(
     spec_hash: str,
     corpus_snapshot_hash: str,
     engine_version: str = ENGINE_VERSION,
+    engine_name: str = "python",
+    pipeline_checksum: str | None = None,
 ) -> str:
-    """Return the stable identity for a prepared-corpus computation artifact."""
-    payload = f"{spec_hash}:{corpus_snapshot_hash}:{engine_version}"
+    """Return a stable identity, scoped to the scientific implementation."""
+    payload = ":".join(
+        (spec_hash, corpus_snapshot_hash, pipeline_checksum or "", engine_name, engine_version)
+    )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()

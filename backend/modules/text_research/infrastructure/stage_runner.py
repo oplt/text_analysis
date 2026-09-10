@@ -119,6 +119,7 @@ def _stage_prepare_corpus(context: dict[str, Any], plan: ExecutionPlan) -> None:
         "corpus_checksum": prepared.corpus_checksum,
         "pipeline_checksum": prepared.pipeline_checksum,
         "analysis_spec_hash": plan.spec_hash,
+        "engine_name": plan.engine_name,
         "engine_version": plan.engine_version,
     }
 
@@ -164,6 +165,8 @@ def _stage_prepare_corpus(context: dict[str, Any], plan: ExecutionPlan) -> None:
             plan.spec_hash,
             snapshot_hash,
             plan.engine_version,
+            plan.engine_name,
+            prepared.pipeline_checksum,
         )
         if context.get("remember_computation", False):
             stage_cache.remember_computation(
@@ -489,10 +492,42 @@ def _run_delegated(context: dict[str, Any], plan: ExecutionPlan) -> None:
     context["delegated"] = True
 
 
+def _execute_selected_engine(context: dict[str, Any], plan: ExecutionPlan) -> None:
+    """Select exactly one runtime after canonical preprocessing is complete."""
+    from backend.modules.text_research.infrastructure.plugin_registry import (
+        ensure_builtins_registered,
+        get_plugin,
+    )
+
+    ensure_builtins_registered()
+    engine_factory = get_plugin("execution_engine", plan.engine_name)
+    engine = engine_factory()
+    spec: AnalysisSpecification = context["spec"]
+    if not engine.supports(spec.analysis.type):
+        raise ValueError(f"Engine {plan.engine_name!r} does not support {spec.analysis.type!r}")
+    result = engine.execute(spec, context["prepared"], pipeline_context=context, plan=plan)
+    context["analysis_result"] = result
+    # Existing callers consume this payload directly; retain that contract.
+    context["results"] = result.results
+
+
+def execute_python_analysis(context: dict[str, Any], plan: ExecutionPlan) -> dict[str, Any]:
+    """Invoke the legacy handler selected by the Python engine."""
+    stage = context["spec"].analysis.type
+    if stage in DELEGATED_ANALYSES:
+        _run_delegated(context, plan)
+    elif stage in ANALYSIS_HANDLERS:
+        ANALYSIS_HANDLERS[stage](context, plan)
+    else:
+        raise ValueError(f"Unsupported Python analysis {stage!r}")
+    return dict(context.get("results") or {})
+
+
 def _stage_persist_run(context: dict[str, Any], plan: ExecutionPlan) -> None:
     checksums = dict(context.get("checksums") or {})
     checksums.setdefault("analysis_spec_hash", plan.spec_hash)
     checksums.setdefault("engine_version", plan.engine_version)
+    checksums.setdefault("engine_name", plan.engine_name)
     context["checksums"] = checksums
     context.setdefault("run_record", {}).update(
         {
@@ -500,6 +535,8 @@ def _stage_persist_run(context: dict[str, Any], plan: ExecutionPlan) -> None:
             "analysis_spec_hash": plan.spec_hash,
             "corpus_checksum": checksums.get("corpus_checksum"),
             "pipeline_checksum": checksums.get("pipeline_checksum"),
+            "engine_name": plan.engine_name,
+            "engine_version": plan.engine_version,
             "delegated": bool(context.get("delegated")),
         }
     )
@@ -536,10 +573,19 @@ def _stage_build_manifest(context: dict[str, Any], plan: ExecutionPlan) -> None:
         ),
         random_seed=getattr(spec, "random_seed", None) if spec is not None else None,
         implementation_version=plan.engine_version,
-        extra={"stage_timings": dict(context.get("stage_timings") or {})},
+        extra={
+            "engine_name": plan.engine_name,
+            "stage_timings": dict(context.get("stage_timings") or {}),
+            "runtime": (
+                context["analysis_result"].runtime.model_dump(mode="json")
+                if context.get("analysis_result") is not None
+                else None
+            ),
+        },
     )
     manifest: dict[str, Any] = {
         "engine_version": plan.engine_version,
+        "engine_name": plan.engine_name,
         "analysis_spec_hash": plan.spec_hash,
         "stages": list(plan.stages),
         "checksums": checksums,
@@ -602,10 +648,8 @@ class StageRunner:
             started = time.perf_counter()
             if stage in BASE_STAGE_HANDLERS:
                 BASE_STAGE_HANDLERS[stage](self.context, self.plan)
-            elif stage in DELEGATED_ANALYSES:
-                _run_delegated(self.context, self.plan)
-            elif stage in ANALYSIS_HANDLERS:
-                ANALYSIS_HANDLERS[stage](self.context, self.plan)
+            elif stage == self.context["spec"].analysis.type:
+                _execute_selected_engine(self.context, self.plan)
             else:
                 raise ValueError(f"Unknown pipeline stage {stage!r}")
             timings[stage] = time.perf_counter() - started

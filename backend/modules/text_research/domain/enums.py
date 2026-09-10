@@ -57,6 +57,7 @@ class AnalysisRunType(StrEnum):
     CLASSIFIER_PREDICTION = "classifier_prediction"
     ROBUSTNESS = "robustness"
     COMPARATIVE_ANALYSIS = "comparative_analysis"
+    ENGINE_COMPARISON = "engine_comparison"
     EXPORT = "export"
     CORPUS_STATS = "corpus_stats"
     SEGMENTATION = "segmentation"

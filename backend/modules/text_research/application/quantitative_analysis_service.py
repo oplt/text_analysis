@@ -24,9 +24,11 @@ from backend.modules.text_research.application.analysis_executor import (
     run_cpu_bound,
     should_enqueue_cpu_job,
 )
+from backend.modules.text_research.application.engine_comparison import compare_engine_results
 from backend.modules.text_research.application.preprocessing_service import (
     PreprocessingProfileService,
 )
+from backend.modules.text_research.domain.analysis_specification import EngineSpec
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import (
     AnalysisRun,
@@ -37,6 +39,7 @@ from backend.modules.text_research.domain.models import (
 )
 from backend.modules.text_research.domain.prepared_corpus import PreparedCorpusArtifact
 from backend.modules.text_research.infrastructure import quantitative
+from backend.modules.text_research.infrastructure.engines.r_engine import RAnalysisEngine
 from backend.modules.text_research.infrastructure.feature_cache import build_cache_key
 from backend.modules.text_research.infrastructure.prepared_corpus_builder import (
     prepare_texts_cached_async,
@@ -294,6 +297,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         operation: str,
         parameters: dict[str, Any],
         estimate: Any,
+        execution_operation: str = "quantitative",
     ) -> AnalysisRun:
         from backend.modules.text_research.application.execution_service import ExecutionService
 
@@ -317,7 +321,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         )
         await self.db.commit()
         await ExecutionService.submit(
-            db=self.db, run=run, operation="quantitative", user_id=user_id
+            db=self.db, run=run, operation=execution_operation, user_id=user_id
         )
         refreshed = await self.repo.get_run(run.id)
         assert refreshed is not None
@@ -371,6 +375,46 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                     top_n=params.get("top_n", 50),
                     rate_per=params.get("rate_per", 1000),
                     group_by=params.get("group_by"),
+                    force_inline=True,
+                    existing_run_id=run_id,
+                    **filters,
+                )
+            if operation == "r_analysis":
+                return await self.r_analysis(
+                    corpus_id,
+                    user_id=user_id,
+                    analysis_type=str(params["analysis_type"]),
+                    unit_type=params["unit_type"],
+                    preprocessing_profile_id=params.get("preprocessing_profile_id"),
+                    analysis_parameters=dict(params.get("analysis_parameters") or {}),
+                    force_inline=True,
+                    existing_run_id=run_id,
+                    **filters,
+                )
+            if operation == "r_keyness":
+                return await self.r_keyness(
+                    corpus_id,
+                    user_id=user_id,
+                    unit_type=params["unit_type"],
+                    filters_a=dict(params["filters_a"]),
+                    filters_b=dict(params["filters_b"]),
+                    group_field=params.get("group_field"),
+                    method=str(params.get("method", "log_likelihood")),
+                    correction=str(params.get("correction", "bh")),
+                    min_frequency=int(params.get("min_frequency", 1)),
+                    preprocessing_profile_id=params.get("preprocessing_profile_id"),
+                    top_n=int(params.get("top_n", 50)),
+                    force_inline=True,
+                    existing_run_id=run_id,
+                )
+            if operation == "engine_comparison":
+                return await self.engine_comparison(
+                    corpus_id,
+                    user_id=user_id,
+                    unit_type=params["unit_type"],
+                    analysis_type=str(params["analysis_type"]),
+                    analysis_parameters=dict(params.get("analysis_parameters") or {}),
+                    preprocessing_profile_id=params.get("preprocessing_profile_id"),
                     force_inline=True,
                     existing_run_id=run_id,
                     **filters,
@@ -509,6 +553,106 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             await self.db.commit()
             raise
 
+    async def engine_comparison(
+        self,
+        corpus_id: str,
+        *,
+        user_id: str,
+        unit_type: str,
+        analysis_type: str,
+        analysis_parameters: dict[str, Any],
+        preprocessing_profile_id: str | None = None,
+        force_inline: bool = False,
+        existing_run_id: str | None = None,
+        **filters: Any,
+    ) -> AnalysisRun:
+        """Run Python and R as separate persisted runs, then persist their comparison.
+
+        The engine is deliberately never represented by a synthetic ``both`` value.
+        """
+        if analysis_type not in {"frequencies", "dfm", "kwic"}:
+            raise HTTPException(
+                status_code=422,
+                detail="Engine comparison supports frequencies, DFM, and KWIC",
+            )
+        if not RAnalysisEngine.available():
+            raise HTTPException(status_code=503, detail="R / quanteda analysis is unavailable")
+        corpus, units, documents = await self._select(
+            corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
+        )
+        request_params = {
+            "unit_type": unit_type,
+            "analysis_type": analysis_type,
+            "analysis_parameters": analysis_parameters,
+            "preprocessing_profile_id": preprocessing_profile_id,
+            "filters": filters,
+        }
+        estimate = estimate_workload(
+            analysis_type=analysis_type,
+            n_units=len(units),
+            texts=[unit.text for unit in units],
+        )
+        if not force_inline and not existing_run_id:
+            return await self._enqueue_quantitative(
+                corpus,
+                AnalysisRunType.ENGINE_COMPARISON,
+                user_id=user_id,
+                operation="engine_comparison",
+                parameters=request_params,
+                estimate=estimate,
+                execution_operation="engine_comparison",
+            )
+        parent = await self._resolve_existing_run(existing_run_id)
+        if analysis_type == "frequencies":
+            python_run = await self.frequencies(
+                corpus_id, user_id=user_id, unit_type=unit_type,
+                preprocessing_profile_id=preprocessing_profile_id, force_inline=True,
+                top_n=int(analysis_parameters.get("top_n", 50)),
+                rate_per=float(analysis_parameters.get("rate_per", 1000)), **filters,
+            )
+        elif analysis_type == "dfm":
+            python_run = await self.dfm(
+                corpus_id, user_id=user_id, unit_type=unit_type,
+                preprocessing_profile_id=preprocessing_profile_id, force_inline=True,
+                weighting=str(analysis_parameters.get("weighting", "count")), **filters,
+            )
+        else:
+            python_run = await self.kwic(
+                corpus_id, user_id=user_id, unit_type=unit_type,
+                keyword=str(analysis_parameters["keyword"]),
+                window_size=int(analysis_parameters.get("window_size", 5)),
+                case_sensitive=bool(analysis_parameters.get("case_sensitive", False)),
+                query_mode=str(analysis_parameters.get("query_mode", "word")), **filters,
+            )
+        r_run = await self.r_analysis(
+            corpus_id,
+            user_id=user_id,
+            analysis_type=analysis_type,
+            unit_type=unit_type,
+            preprocessing_profile_id=preprocessing_profile_id,
+            analysis_parameters=analysis_parameters,
+            force_inline=True,
+            **filters,
+        )
+        python_results = loads(python_run.results_json, {}) or {}
+        r_results = loads(r_run.results_json, {}) or {}
+        comparison = compare_engine_results(analysis_type, python_results, r_results)
+        return await self._persist_run(
+            corpus, AnalysisRunType.ENGINE_COMPARISON, user_id=user_id,
+            parameters={
+                **request_params,
+                "python_run_id": python_run.id,
+                "r_run_id": r_run.id,
+            },
+            metrics={"python_run_id": python_run.id, "r_run_id": r_run.id},
+            results={
+                "comparison": comparison,
+                "python_run_id": python_run.id,
+                "r_run_id": r_run.id,
+            },
+            existing_run=parent,
+        )
+
     def _document_lookup(
         self, units: list[TextUnit], documents: list[CorpusDocument]
     ) -> dict[str, CorpusDocument]:
@@ -532,6 +676,322 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             config=config,
             mode=mode,
             filters=filters,
+        )
+
+    async def r_analysis(
+        self,
+        corpus_id: str,
+        *,
+        user_id: str,
+        analysis_type: str,
+        unit_type: str,
+        preprocessing_profile_id: str | None,
+        analysis_parameters: dict[str, Any],
+        force_inline: bool = False,
+        existing_run_id: str | None = None,
+        **filters: Any,
+    ) -> AnalysisRun:
+        """Persist and execute a supported R analysis through the normal run lifecycle."""
+        engine = RAnalysisEngine()
+        if not engine.supports(analysis_type):
+            raise HTTPException(status_code=422, detail=f"R does not support {analysis_type!r}")
+        if not engine.available():
+            raise HTTPException(status_code=503, detail="R / quanteda analysis is unavailable")
+        if analysis_type == "frequencies" and analysis_parameters.get("group_by"):
+            raise HTTPException(status_code=422, detail="R frequencies do not yet support group_by")
+        if analysis_type == "dfm" and analysis_parameters.get("weighting", "count") != "count":
+            raise HTTPException(
+                status_code=422,
+                detail="R DFM currently supports count weighting only",
+            )
+        if (
+            analysis_type == "kwic"
+            and analysis_parameters.get("query_mode", "auto") not in {"auto", "word"}
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="R KWIC currently supports word queries only",
+            )
+        if analysis_type == "cooccurrence":
+            from backend.modules.text_research.infrastructure.collocation import (
+                normalize_association_method,
+            )
+
+            try:
+                normalize_association_method(analysis_parameters.get("association_method", "pmi"))
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
+        corpus, units, _documents = await self._select(
+            corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
+        )
+        texts = [unit.text for unit in units]
+        estimate = estimate_workload(analysis_type=analysis_type, n_units=len(units), texts=texts)
+        request_params = {
+            "analysis_type": analysis_type,
+            "unit_type": unit_type,
+            "preprocessing_profile_id": preprocessing_profile_id,
+            "analysis_parameters": analysis_parameters,
+            "filters": filters,
+            "engine": EngineSpec(runtime="r", implementation="quanteda").model_dump(mode="json"),
+        }
+        run_types = {
+            "frequencies": AnalysisRunType.FREQUENCY_ANALYSIS,
+            "dfm": AnalysisRunType.DFM,
+            "kwic": AnalysisRunType.KWIC,
+            "dictionary": AnalysisRunType.DICTIONARY_ANALYSIS,
+            "cooccurrence": AnalysisRunType.COOCCURRENCE,
+        }
+        if not force_inline and not existing_run_id:
+            return await self._enqueue_quantitative(
+                corpus,
+                run_types[analysis_type],
+                user_id=user_id,
+                operation="r_analysis",
+                parameters=request_params,
+                estimate=estimate,
+                execution_operation="r_quantitative",
+            )
+        existing_run = await self._resolve_existing_run(existing_run_id)
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id,
+            user_id=user_id,
+        )
+        spec = build_spec_from_request(
+            analysis_type,
+            corpus.id,
+            unit_type=unit_type,
+            filters=filters,
+            preprocessing_profile_id=preprocessing_profile_id,
+            analysis_parameters=analysis_parameters,
+            engine={"runtime": "r", "implementation": "quanteda"},
+        )
+        prepared, _ = await _prepare_with_identity(
+            corpus_id=corpus.id,
+            analysis_type=analysis_type,
+            texts=texts,
+            config=config,
+            units=units,
+            unit_type=unit_type,
+            filters=filters,
+            analysis_parameters=analysis_parameters,
+        )
+        canonical = await run_cpu_bound(engine.execute, spec, prepared)
+        if analysis_type == "cooccurrence" and analysis_parameters.get("include_network", True):
+            from backend.modules.text_research.infrastructure.association_network import (
+                build_association_network,
+            )
+
+            pairs = canonical.results.get("pairs") or []
+            canonical.results["network"] = build_association_network(
+                pairs,
+                directed=bool(canonical.results.get("directional")),
+                weight_field=(
+                    "count"
+                    if canonical.results.get("association_method") == "count"
+                    else "association_score"
+                ),
+            )
+        persisted_results = {
+            **canonical.results,
+            "analysis_result": canonical.model_dump(mode="json"),
+            "runtime": canonical.runtime.model_dump(mode="json"),
+            "identity": canonical.identity.model_dump(mode="json"),
+            "warnings": canonical.warnings,
+            "diagnostics": canonical.diagnostics,
+            "artifacts": canonical.artifacts,
+            "timing": canonical.timing.model_dump(mode="json"),
+            "corpus_checksum": prepared.corpus_checksum,
+            "pipeline_checksum": prepared.pipeline_checksum,
+        }
+        if analysis_type == "cooccurrence":
+            persisted_results.update(
+                {
+                    "cooccurrence": canonical.results.get("pairs") or [],
+                    "report": canonical.results,
+                    "network": canonical.results.get("network"),
+                }
+            )
+        return await self._persist_run(
+            corpus,
+            run_types[analysis_type],
+            user_id=user_id,
+            parameters={
+                **request_params,
+                **attach_run_identity(
+                    {},
+                    spec,
+                    implementation_version=engine.implementation_version,
+                ),
+                **config_params,
+            },
+            metrics={
+                "unit_count": len(units),
+                "engine": "r",
+                "analysis_type": analysis_type,
+            },
+            results=persisted_results,
+            existing_run=existing_run,
+        )
+
+    async def r_keyness(
+        self,
+        corpus_id: str,
+        *,
+        user_id: str,
+        unit_type: str,
+        filters_a: dict[str, Any],
+        filters_b: dict[str, Any],
+        group_field: str | None = None,
+        method: str = "log_likelihood",
+        correction: str = "bh",
+        min_frequency: int = 1,
+        preprocessing_profile_id: str | None = None,
+        top_n: int = 50,
+        force_inline: bool = False,
+        existing_run_id: str | None = None,
+    ) -> AnalysisRun:
+        """Execute keyness in R over the same two canonical prepared corpora."""
+        engine = RAnalysisEngine()
+        if not engine.available():
+            raise HTTPException(status_code=503, detail="R / quanteda analysis is unavailable")
+        if not filters_a or not filters_b:
+            raise HTTPException(status_code=400, detail="filters_a and filters_b are required")
+        from backend.modules.text_research.infrastructure.keyness import (
+            normalize_correction,
+            normalize_keyness_method,
+        )
+
+        try:
+            normalize_keyness_method(method)
+            normalize_correction(correction)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        corpus, units_a, _ = await self._select(
+            corpus_id, user_id=user_id, unit_type=unit_type, filters=filters_a
+        )
+        _, units_b, _ = await self._select(
+            corpus_id, user_id=user_id, unit_type=unit_type, filters=filters_b
+        )
+        if not units_a or not units_b:
+            raise HTTPException(
+                status_code=400,
+                detail="Both comparison groups must contain at least one text unit",
+            )
+        estimate = estimate_workload(
+            analysis_type="keyness",
+            n_units=len(units_a) + len(units_b),
+            texts=[unit.text for unit in units_a] + [unit.text for unit in units_b],
+            requested_top_k=top_n,
+        )
+        request_params = {
+            "unit_type": unit_type,
+            "preprocessing_profile_id": preprocessing_profile_id,
+            "filters_a": filters_a,
+            "filters_b": filters_b,
+            "group_field": group_field,
+            "method": method,
+            "correction": correction,
+            "min_frequency": min_frequency,
+            "top_n": top_n,
+            "engine": EngineSpec(runtime="r", implementation="quanteda").model_dump(mode="json"),
+        }
+        if not force_inline and not existing_run_id:
+            return await self._enqueue_quantitative(
+                corpus,
+                AnalysisRunType.KEYNESS,
+                user_id=user_id,
+                operation="r_keyness",
+                parameters={**request_params, "filters": {}},
+                estimate=estimate,
+                execution_operation="r_quantitative",
+            )
+        existing_run = await self._resolve_existing_run(existing_run_id)
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id,
+            user_id=user_id,
+        )
+        inferred_field = group_field
+        shared_fields = set(filters_a) & set(filters_b)
+        if inferred_field is None and len(shared_fields) == 1:
+            inferred_field = next(iter(shared_fields))
+        params = {
+            "method": method,
+            "correction": correction,
+            "min_frequency": min_frequency,
+            "top_n": top_n,
+            "group_field": inferred_field,
+            "group_a_label": ", ".join(
+                f"{key}={value}" for key, value in sorted(filters_a.items())
+            ),
+            "group_b_label": ", ".join(
+                f"{key}={value}" for key, value in sorted(filters_b.items())
+            ),
+        }
+        spec = build_spec_from_request(
+            "keyness",
+            corpus.id,
+            unit_type=unit_type,
+            filters={"a": filters_a, "b": filters_b},
+            preprocessing_profile_id=preprocessing_profile_id,
+            analysis_parameters=params,
+            engine={"runtime": "r", "implementation": "quanteda"},
+        )
+        prepared_a = await prepare_texts_cached_async(
+            [unit.text for unit in units_a],
+            config.to_dict(),
+            corpus_id=corpus.id,
+            unit_type=unit_type,
+            unit_ids=[unit.id for unit in units_a],
+            document_ids=[unit.corpus_document_id for unit in units_a],
+            filters=filters_a,
+            operation_config={},
+        )
+        prepared_b = await prepare_texts_cached_async(
+            [unit.text for unit in units_b],
+            config.to_dict(),
+            corpus_id=corpus.id,
+            unit_type=unit_type,
+            unit_ids=[unit.id for unit in units_b],
+            document_ids=[unit.corpus_document_id for unit in units_b],
+            filters=filters_b,
+            operation_config={},
+        )
+        canonical = await run_cpu_bound(
+            engine.execute,
+            spec,
+            prepared_a,
+            pipeline_context={"prepared_b": prepared_b},
+        )
+        report = canonical.results
+        return await self._persist_run(
+            corpus,
+            AnalysisRunType.KEYNESS,
+            user_id=user_id,
+            parameters={
+                **request_params,
+                **attach_run_identity(
+                    {},
+                    spec,
+                    implementation_version=engine.implementation_version,
+                ),
+                **config_params,
+            },
+            metrics={
+                "unit_count_a": len(units_a),
+                "unit_count_b": len(units_b),
+                "features_returned": len(report.get("features") or []),
+                "method": report.get("method"),
+                "correction": report.get("correction"),
+                "engine": "r",
+            },
+            results={
+                "keyness": report.get("features") or [],
+                "report": report,
+                "analysis_result": canonical.model_dump(mode="json"),
+                "corpus_checksum": prepared_a.corpus_checksum,
+                "pipeline_checksum": prepared_a.pipeline_checksum,
+            },
+            existing_run=existing_run,
         )
 
     # ------------------------------------------------------------------

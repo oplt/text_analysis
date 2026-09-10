@@ -3,8 +3,10 @@ from backend.modules.rag.workers import cleanup_document_sync, index_document_sy
 from backend.modules.text_research.infrastructure.execution_policy import retry_policy_for
 from backend.modules.text_research.workers import (
     classifier_training_sync,
+    engine_comparison_sync,
     prediction_sync,
     quantitative_analysis_sync,
+    r_quantitative_analysis_sync,
     robustness_sweep_sync,
     segmentation_sync,
     topic_k_sweep_sync,
@@ -187,3 +189,19 @@ def research_prediction_task(self, *, run_id: str, user_id: str) -> None:
 )
 def research_quantitative_analysis_task(self, *, run_id: str, user_id: str) -> None:
     quantitative_analysis_sync(run_id=run_id, user_id=user_id)
+
+
+@celery_app.task(
+    name="backend.workers.tasks.research_r_quantitative_analysis_task",
+    **_research_task_options("research_cpu"),
+)
+def research_r_quantitative_analysis_task(self, *, run_id: str, user_id: str) -> None:
+    r_quantitative_analysis_sync(run_id=run_id, user_id=user_id)
+
+
+@celery_app.task(
+    name="backend.workers.tasks.research_engine_comparison_task",
+    **_research_task_options("research_cpu"),
+)
+def research_engine_comparison_task(self, *, run_id: str, user_id: str) -> None:
+    engine_comparison_sync(run_id=run_id, user_id=user_id)

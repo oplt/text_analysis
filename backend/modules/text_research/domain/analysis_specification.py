@@ -98,6 +98,19 @@ class ExecutionSpec(BaseModel):
     memory_mb: int | None = None
 
 
+class EngineSpec(BaseModel):
+    """Scientific runtime selection.
+
+    ``python`` remains the compatibility default.  Native R preprocessing is
+    intentionally not implemented yet: both initial engines consume the same
+    prepared token sequences.
+    """
+
+    runtime: Literal["python", "r"] = "python"
+    implementation: str | None = None
+    preprocessing_mode: Literal["standardized", "native"] = "standardized"
+
+
 class AnalysisBlock(BaseModel):
     type: str
     parameters: dict[str, Any] = Field(default_factory=dict)
@@ -120,6 +133,7 @@ class AnalysisSpecification(BaseModel):
     model: ModelSpec | None = None
     validation: ValidationSpec | None = None
     execution: ExecutionSpec | None = None
+    engine: EngineSpec = Field(default_factory=EngineSpec)
     output: OutputSpec = Field(default_factory=OutputSpec)
     random_seed: int = 42
     notes: str | None = None
@@ -223,6 +237,7 @@ class AnalysisSpecification(BaseModel):
         model: dict[str, Any] | None = None,
         validation: dict[str, Any] | None = None,
         execution: dict[str, Any] | None = None,
+        engine: EngineSpec | dict[str, Any] | None = None,
         output: dict[str, Any] | None = None,
         analysis_parameters: dict[str, Any] | None = None,
         random_seed: int = 42,
@@ -247,6 +262,13 @@ class AnalysisSpecification(BaseModel):
             model=ModelSpec(**model) if model else None,
             validation=ValidationSpec(**validation) if validation else None,
             execution=ExecutionSpec(**execution) if execution else None,
+            engine=(
+                engine
+                if isinstance(engine, EngineSpec)
+                else EngineSpec(**engine)
+                if engine
+                else EngineSpec()
+            ),
             output=OutputSpec(**(output or {})),
             random_seed=random_seed,
         )

@@ -1,0 +1,10 @@
+{
+  "R": {"Version": "4.4.0", "Repositories": [{"Name": "CRAN", "URL": "https://cloud.r-project.org"}]},
+  "Packages": {
+    "arrow": {"Package": "arrow", "Version": "18.1.0", "Source": "Repository"},
+    "jsonlite": {"Package": "jsonlite", "Version": "1.8.9", "Source": "Repository"},
+    "quanteda": {"Package": "quanteda", "Version": "4.1.0", "Source": "Repository"},
+    "quanteda.textstats": {"Package": "quanteda.textstats", "Version": "0.97.2", "Source": "Repository"},
+    "testthat": {"Package": "testthat", "Version": "3.2.3", "Source": "Repository"}
+  }
+}

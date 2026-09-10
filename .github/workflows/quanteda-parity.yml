@@ -1,4 +1,4 @@
-name: Quanteda R parity (optional)
+name: R runtime quality gates
 
 on:
   workflow_dispatch:
@@ -25,14 +25,20 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           uv sync --frozen --extra dev
 
-      - name: Install quanteda and jsonlite
+      - name: Restore locked R dependencies
         run: |
-          Rscript -e 'install.packages(c("quanteda", "jsonlite"), repos="https://cloud.r-project.org")'
+          Rscript -e 'install.packages("renv", repos="https://cloud.r-project.org")'
+          Rscript -e 'renv::restore(project = "../r_engine", prompt = FALSE)'
 
-      - name: Run optional R parity test
+      - name: R testthat contracts
+        working-directory: r_engine
+        run: Rscript -e 'renv::load("."); testthat::test_dir("tests/testthat")'
+
+      - name: Run cross-runtime parity tests
         env:
-          QUANTEDA_R_PARITY: "1"
+          RESEARCH_R_ENABLED: "true"
+          RESEARCH_R_ENGINE_ENTRYPOINT: ../r_engine/run_analysis.R
           PYTHONPATH: ..
         run: |
           . .venv/bin/activate
-          python -m pytest modules/text_research/tests/quanteda_parity/test_r_parity_optional.py -q
+          python -m pytest modules/text_research/tests/parity/test_r_parity.py -q

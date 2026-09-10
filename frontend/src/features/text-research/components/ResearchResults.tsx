@@ -21,6 +21,43 @@ import type { AnalysisRun } from "../types";
 import { JsonBlock, RunStatusChip } from "./ResearchShared";
 import { MetricCards, ResultsInspector } from "./ResearchCharts";
 
+type ResultProvenance = {
+    runtime: Record<string, unknown> | null;
+    identity: Record<string, unknown> | null;
+    artifacts: unknown[];
+};
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+        return value as Record<string, unknown>;
+    }
+    return null;
+}
+
+function formatProvenanceValue(value: unknown): string {
+    return typeof value === "object" ? JSON.stringify(value) : String(value);
+}
+
+export function getRunResultProvenance(run: AnalysisRun): ResultProvenance {
+    const persistedResults = asRecord(run.results);
+    const canonicalResult = asRecord(persistedResults?.analysis_result);
+    const canonicalArtifacts = canonicalResult?.artifacts;
+    const persistedArtifacts = persistedResults?.artifacts;
+    return {
+        runtime:
+            asRecord(canonicalResult?.runtime) ??
+            asRecord(persistedResults?.runtime) ??
+            asRecord(run.parameters?.engine),
+        identity:
+            asRecord(canonicalResult?.identity) ?? asRecord(persistedResults?.identity),
+        artifacts: Array.isArray(canonicalArtifacts)
+            ? canonicalArtifacts
+            : Array.isArray(persistedArtifacts)
+                ? persistedArtifacts
+                : [],
+    };
+}
+
 export type ResearchResultsColumn<Row> = {
     id: string;
     label: string;
@@ -131,6 +168,7 @@ export function ResearchResultsTable<Row extends { id?: string | number }>({
 export function MethodsAndProvenanceDrawer({ run }: { run: AnalysisRun }) {
     const [open, setOpen] = useState(false);
     const parameters = run.parameters ?? {};
+    const resultProvenance = getRunResultProvenance(run);
     const section = (title: string, keys: string[]) => {
         const values = keys
             .filter((key) => parameters[key] != null)
@@ -147,6 +185,36 @@ export function MethodsAndProvenanceDrawer({ run }: { run: AnalysisRun }) {
                     {section("Preprocessing", ["preprocessing_profile_id", "preprocessing_config", "ngram_range", "min_df", "max_df"])}
                     {section("Measurement", ["codebook_id", "codebook_version", "annotation_source", "minimum_agreement", "provenance_mode"])}
                     {section("Model", ["algorithm", "dataset_snapshot_id", "random_seed", "test_size", "class_weight", "C", "grouped_split"])}
+                    {resultProvenance.runtime ? (
+                        <Box>
+                            <Typography variant="subtitle2">Runtime</Typography>
+                            {Object.entries(resultProvenance.runtime).map(([key, value]) => (
+                                <Typography key={key} variant="body2" color="text.secondary">
+                                    {key.replace(/_/g, " ")}: {formatProvenanceValue(value)}
+                                </Typography>
+                            ))}
+                        </Box>
+                    ) : null}
+                    {resultProvenance.identity ? (
+                        <Box>
+                            <Typography variant="subtitle2">Result identity</Typography>
+                            {Object.entries(resultProvenance.identity).map(([key, value]) => (
+                                <Typography key={key} variant="body2" color="text.secondary">
+                                    {key.replace(/_/g, " ")}: {formatProvenanceValue(value)}
+                                </Typography>
+                            ))}
+                        </Box>
+                    ) : null}
+                    {resultProvenance.artifacts.length ? (
+                        <Box>
+                            <Typography variant="subtitle2">Artifacts</Typography>
+                            {resultProvenance.artifacts.map((artifact, index) => (
+                                <Typography key={index} variant="body2" color="text.secondary">
+                                    {formatProvenanceValue(artifact)}
+                                </Typography>
+                            ))}
+                        </Box>
+                    ) : null}
                     <Box>
                         <Typography variant="subtitle2">Reproducibility</Typography>
                         <Typography variant="body2" color="text.secondary">AnalysisRun ID: {run.id}</Typography>
@@ -155,7 +223,12 @@ export function MethodsAndProvenanceDrawer({ run }: { run: AnalysisRun }) {
                         <Typography variant="body2" color="text.secondary">Artifact: {run.artifact_path ?? "—"}</Typography>
                         <ResearchExportActions runId={run.id} />
                     </Box>
-                    <JsonBlock data={{ parameters, random_seed: run.random_seed, artifact_path: run.artifact_path }} />
+                    <JsonBlock data={{
+                        parameters,
+                        random_seed: run.random_seed,
+                        artifact_path: run.artifact_path,
+                        result_provenance: resultProvenance,
+                    }} />
                 </Stack>
             </Drawer>
         </>
@@ -177,12 +250,22 @@ export function ResearchResultPanel({
     metricItems?: Array<{ label: string; value: string | number | null | undefined }>;
     children: ReactNode;
 }) {
+    const resultProvenance = getRunResultProvenance(run);
+    const runtimeLabel = [
+        resultProvenance.runtime?.engine,
+        resultProvenance.runtime?.implementation,
+    ].filter((part): part is string => typeof part === "string" && Boolean(part)).join(" / ");
     return (
         <Stack spacing={2}>
             <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1}>
                 <Box>
                     <Typography variant="h6">{title}</Typography>
                     <Typography variant="caption" color="text.secondary">Run {run.id} · {new Date(run.created_at).toLocaleString()}</Typography>
+                    {runtimeLabel ? (
+                        <Typography variant="caption" display="block" color="text.secondary">
+                            Runtime: {runtimeLabel}
+                        </Typography>
+                    ) : null}
                 </Box>
                 <Stack direction="row" spacing={0.5} alignItems="center">
                     <RunStatusChip status={run.status} />

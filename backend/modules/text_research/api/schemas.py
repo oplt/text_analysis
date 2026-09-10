@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
+
+from backend.modules.text_research.domain.analysis_specification import EngineSpec
 
 
 class ResearchCorpusCreate(BaseModel):
@@ -511,6 +513,7 @@ class AnalysisRequest(CorpusFilters):
     unit_type: str
     preprocessing_profile_id: str | None = None
     run_async: bool = False
+    engine: EngineSpec = Field(default_factory=EngineSpec)
 
 
 class FrequencyRequest(AnalysisRequest):
@@ -631,6 +634,7 @@ class DictionaryAnalysisRequest(AnalysisRequest):
 class KeynessRequest(BaseModel):
     unit_type: str
     preprocessing_profile_id: str | None = None
+    engine: EngineSpec = Field(default_factory=EngineSpec)
     filters_a: dict[str, Any] = Field(
         description="Metadata filters selecting group A (from corpus facets; not hardcoded)."
     )
@@ -680,6 +684,13 @@ class CooccurrenceRequest(AnalysisRequest):
         description="If true, include graph-ready nodes/edges in the results.",
     )
     run_async: bool = True
+
+
+class EngineComparisonRequest(AnalysisRequest):
+    """Submit two independently persisted Python/R runs and their deterministic diff."""
+
+    analysis_type: Literal["frequencies", "dfm", "kwic"]
+    analysis_parameters: dict[str, Any] = Field(default_factory=dict)
 
 
 class SimilarityRequest(AnalysisRequest):
