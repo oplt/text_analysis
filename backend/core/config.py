@@ -16,7 +16,7 @@ class Settings(BaseSettings):
         extra="ignore",
         env_ignore_empty=True,
     )
-    APP_NAME: str = "fullstack-app"
+    APP_NAME: str = "CORPUS"
     APP_ENV: str = "dev"
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000
