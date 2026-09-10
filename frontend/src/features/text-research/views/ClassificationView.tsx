@@ -716,8 +716,11 @@ export default function ClassificationView() {
     }, [client, predictRunQuery.data?.status, selectedModelId]);
 
     useEffect(() => {
-        setUncertainPage(0);
-        setSelectedUncertainIds([]);
+        const resetUncertainSelection = window.setTimeout(() => {
+            setUncertainPage(0);
+            setSelectedUncertainIds([]);
+        }, 0);
+        return () => window.clearTimeout(resetUncertainSelection);
     }, [selectedModelId]);
 
     const workflowStep = activeLearningStepIndex({

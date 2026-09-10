@@ -67,6 +67,9 @@ export function SectionCard({
                 (theme) => ({
                     p: padding,
                     borderRadius: variant === "flat" ? 0 : `${radii.card}px`,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
                     ...variantSx(variant, theme),
                 }),
                 ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
@@ -78,7 +81,7 @@ export function SectionCard({
                     justifyContent="space-between"
                     alignItems={{ xs: "flex-start", sm: "flex-start" }}
                     spacing={compact ? 1 : 2}
-                    sx={{ mb: compact ? 1.5 : 2.5 }}
+                    sx={{ mb: compact ? 1.5 : 2.5, flexShrink: 0 }}
                 >
                     <Box sx={{ minWidth: 0, flex: 1 }}>
                         {title && (
@@ -114,6 +117,7 @@ export function SectionCard({
             )}
             <Box
                 sx={[
+                    { flex: 1, minHeight: 0 },
                     ...(Array.isArray(contentSx) ? contentSx : contentSx ? [contentSx] : []),
                 ]}
             >

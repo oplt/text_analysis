@@ -211,6 +211,8 @@ See [docs/text-research.md](docs/text-research.md) for methods, Celery tasks, an
 | Document | Topic |
 |----------|--------|
 | [docs/text-research.md](docs/text-research.md) | Text Research module |
+| [docs/final-audit-report.md](docs/final-audit-report.md) | Verified audit result, validation status, and remaining work |
+| [docs/r-quanteda-architecture.md](docs/r-quanteda-architecture.md) | Current R/quanteda boundary and future engine requirements |
 | [DESIGN.md](DESIGN.md) | System design |
 | [docs/adr/](docs/adr/) | Architecture decision records |
 | [docs/logging.md](docs/logging.md) | Logging |

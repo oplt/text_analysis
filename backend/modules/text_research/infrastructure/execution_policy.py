@@ -10,38 +10,23 @@ from pathlib import Path
 from typing import Any
 
 from backend.core.config import settings
-from backend.modules.text_research.infrastructure.pipeline_compiler import (
+from backend.modules.text_research.domain.execution_defaults import (
     ENGINE_VERSION,
     computation_identity,
+    retry_policy_for,
+    timeout_for,
 )
 
-DEFAULT_RETRY_POLICIES: dict[str, dict[str, int]] = {
-    "research_light": {"max_retries": 3, "countdown": 5},
-    "research_cpu": {"max_retries": 2, "countdown": 30},
-    "research_io": {"max_retries": 3, "countdown": 10},
-    "research_nlp": {"max_retries": 2, "countdown": 60},
-    "research_memory": {"max_retries": 1, "countdown": 60},
-    "research_gpu": {"max_retries": 1, "countdown": 120},
-}
-
-DEFAULT_TIMEOUT_SECONDS: dict[str, int | None] = {
-    "research_light": 600,
-    "research_cpu": 3600,
-    "research_io": 1800,
-    "research_nlp": 7200,
-    "research_memory": 7200,
-    "research_gpu": 14400,
-}
-
-
-def retry_policy_for(resource_class: str) -> dict[str, int]:
-    """Return Celery-compatible retry kwargs for a resource class."""
-    return dict(DEFAULT_RETRY_POLICIES.get(resource_class, DEFAULT_RETRY_POLICIES["research_cpu"]))
-
-
-def timeout_for(resource_class: str) -> int | None:
-    """Return soft timeout seconds for a resource class, or None when unset."""
-    return DEFAULT_TIMEOUT_SECONDS.get(resource_class)
+__all__ = [
+    "Checkpoint",
+    "computation_identity",
+    "ENGINE_VERSION",
+    "is_idempotent_hit",
+    "load_checkpoint",
+    "retry_policy_for",
+    "save_checkpoint",
+    "timeout_for",
+]
 
 
 @dataclass

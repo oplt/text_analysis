@@ -1,31 +1,13 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Alert, Stack, Typography } from "@mui/material";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { getRun } from "../../../api/textResearch";
+import { useQuery } from "@tanstack/react-query";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
-import { queryKeys } from "../../../config/queryKeys";
-import { researchRunStaleTime } from "../../../config/queryTiming";
-import { getQueryErrorMessage } from "../../../utils/queryErrors";
-import { useSnackbar } from "../../../app/snackbarContext";
-import { useResearchContext } from "../hooks/useResearchContext";
-import { useRunEvents } from "../hooks/useRunEvents";
-import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
-import type { AnalysisRun, UnitType } from "../types";
+import { isActiveRunStatus } from "../runPolling";
+import type { AnalysisRun } from "../types";
 import { ResultsInspector } from "./ResearchCharts";
 import { ResearchResultsTable } from "./ResearchResults";
 import { RunStatusChip } from "./ResearchShared";
-
-export type AdvancedAnalysisBasePayload = {
-    unit_type: UnitType;
-    preprocessing_profile_id?: string;
-    [key: string]: unknown;
-};
-
-export function asRecord(value: unknown): Record<string, unknown> | null {
-    return value && typeof value === "object" && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-}
+import { asRecord } from "./advancedAnalysisUtils";
 
 function ResultOutput({ run }: { run: AnalysisRun | undefined }) {
     if (!run) return null;
@@ -66,38 +48,6 @@ function ResultOutput({ run }: { run: AnalysisRun | undefined }) {
             ) : null}
         </Stack>
     );
-}
-
-export function useAnalysisRun() {
-    const ctx = useResearchContext();
-    const { showToast } = useSnackbar();
-    const [runId, setRunId] = useState<string | null>(null);
-    const sseConnected = useRunEvents(runId, ctx.projectId);
-    const runQuery = useQuery({
-        queryKey: queryKeys.textResearch.run(runId ?? ""),
-        queryFn: () => getRun(runId!),
-        enabled: Boolean(runId),
-        staleTime: (query) => researchRunStaleTime(query.state.data?.status),
-        refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
-    });
-    return { ctx, run: runQuery.data, runQuery, setRunId, showToast };
-}
-
-export function useRunMutation(
-    action: () => Promise<AnalysisRun>,
-    label: string,
-    setRunId: (runId: string) => void,
-    showToast: ReturnType<typeof useSnackbar>["showToast"]
-) {
-    return useMutation({
-        mutationFn: action,
-        onSuccess: (run) => {
-            setRunId(run.id);
-            showToast({ message: `${label} started.`, severity: "success" });
-        },
-        onError: (error) =>
-            showToast({ message: getQueryErrorMessage(error, `${label} failed.`), severity: "error" }),
-    });
 }
 
 export function PanelBody({

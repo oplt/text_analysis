@@ -6,13 +6,14 @@ import {
     Drawer,
     IconButton,
     Stack,
+    Tooltip,
     Typography,
     useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import {
-    ArrowBack as BackIcon,
     Close as CloseIcon,
+    InfoOutlined as InfoIcon,
     Science as LabIcon,
     Tune as ContextIcon,
 } from "@mui/icons-material";
@@ -25,11 +26,13 @@ import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { ResearchContextBar } from "../components/ResearchShared";
-import { ResearchWorkflowNavigator } from "../components/ResearchWorkflowNavigator";
+import { ResearchWorkflowDrawer } from "../components/ResearchWorkflowDrawer";
+import { ResearchWorkflowStrip } from "../components/ResearchWorkflowStrip";
 import { ResearchProvider, useResearchContext } from "../hooks/useResearchContext";
 import { useResearchWorkflow } from "../hooks/useResearchWorkflow";
 import { setLastResearchProjectId } from "../researchProjectStorage";
 import { RESEARCH_TABS } from "../types";
+import { workflowProgress } from "../workflowDisplay";
 import {
     RESEARCH_WORKFLOW_STAGES,
     stageIdFromPath,
@@ -38,12 +41,12 @@ import {
 
 const ANALYSIS_SUBLINKS = [
     { tab: "overview", label: "Corpus tools" },
-    { tab: "statistical", label: "Statistical model" },
+    { tab: "statistical", label: "Statistical models" },
     { tab: "measurement", label: "Measurement" },
 ] as const;
 
 const ANALYSIS_RELATED_LINKS = [
-    { path: "dictionaries", label: "Dictionary manager" },
+    { path: "dictionaries", label: "Dictionaries" },
     { path: "comparative", label: "Comparative prevalence" },
 ] as const;
 
@@ -63,13 +66,14 @@ function ResearchLayoutInner() {
     const location = useLocation();
     const theme = useTheme();
     const isWide = useMediaQuery(theme.breakpoints.up("xl"));
-    const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
     const showInlineContext = isWide;
     const ctx = useResearchContext();
     const activeRoute = routeFromPath(location.pathname, projectId);
     const activeStageId = stageIdFromPath(location.pathname, projectId);
     const { stages } = useResearchWorkflow(activeRoute);
+    const progress = workflowProgress(stages);
     const [contextOpen, setContextOpen] = useState(false);
+    const [workflowOpen, setWorkflowOpen] = useState(false);
 
     const projectQuery = useQuery({
         queryKey: queryKeys.projects.detail(projectId),
@@ -84,10 +88,14 @@ function ResearchLayoutInner() {
     }, [projectId]);
 
     function handleSelectStage(stage: WorkflowStageState) {
+        if (stage.status === "blocked") {
+            setWorkflowOpen(true);
+            return;
+        }
         navigate(`/research/${projectId}/${stage.route}`);
     }
 
-    const drawerOpen = contextOpen && !showInlineContext;
+    const contextDrawerOpen = contextOpen && !showInlineContext;
 
     const contextPanel = (
         <SectionCard
@@ -98,7 +106,11 @@ function ResearchLayoutInner() {
             sx={{ mt: 0 }}
             action={
                 !showInlineContext ? (
-                    <IconButton aria-label="Close context" size="small" onClick={() => setContextOpen(false)}>
+                    <IconButton
+                        aria-label="Close context"
+                        size="small"
+                        onClick={() => setContextOpen(false)}
+                    >
                         <CloseIcon fontSize="small" />
                     </IconButton>
                 ) : undefined
@@ -110,90 +122,88 @@ function ResearchLayoutInner() {
 
     return (
         <PageShell width="full" dense>
-            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<BackIcon />}
-                    onClick={() => navigate(`/projects/${projectId}`)}
-                >
-                    Back to project
-                </Button>
-                <Button variant="text" size="small" onClick={() => navigate("/research")}>
-                    Switch project
-                </Button>
-                {!showInlineContext ? (
+            {!showInlineContext ? (
+                <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
                     <Button
                         variant="outlined"
                         size="small"
                         startIcon={<ContextIcon />}
                         onClick={() => setContextOpen(true)}
-                        sx={{ ml: { sm: "auto" } }}
                     >
                         Context
                     </Button>
-                ) : null}
-            </Stack>
+                </Stack>
+            ) : null}
 
             <PageHeader
                 dense
                 icon={<LabIcon />}
-                title="Text Research"
-                description={`${projectQuery.data?.name ?? "Research workspace"} — corpus, annotation, analysis, and exports.`}
+                title={`Text Research · ${projectQuery.data?.name ?? "workspace"}`}
+                description="Corpus, annotation, analysis, and exports"
+                actions={
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                        <Typography variant="body2" color="text.secondary">
+                            {progress.completed}/{progress.total} stages
+                        </Typography>
+                        <Tooltip title="Pipeline stages stay clickable when ready. Details open via All stages.">
+                            <IconButton size="small" aria-label="Workflow help">
+                                <InfoIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </Stack>
+                }
             />
+
+            <Box sx={{ mb: 1.5 }}>
+                <ResearchWorkflowStrip
+                    stages={stages}
+                    activeStageId={
+                        activeStageId && activeStageId !== "dashboard" ? activeStageId : false
+                    }
+                    onSelectStage={handleSelectStage}
+                    onOpenWorkflow={() => setWorkflowOpen(true)}
+                />
+            </Box>
+
+            {!workflowOpen ? (
+                <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => setWorkflowOpen(true)}
+                    aria-label="Open all workflow stages"
+                    sx={{
+                        position: "fixed",
+                        right: { xs: 12, md: 16 },
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        zIndex: (t) => t.zIndex.speedDial,
+                        writingMode: "vertical-rl",
+                        textOrientation: "mixed",
+                        minWidth: 40,
+                        px: 1,
+                        py: 1.5,
+                        borderRadius: 2,
+                        boxShadow: 3,
+                        letterSpacing: 0.04,
+                    }}
+                >
+                    
+                    
+                    Stages
+                </Button>
+            ) : null}
 
             <Box
                 sx={{
                     display: "grid",
                     gridTemplateColumns: {
                         xs: "minmax(0, 1fr)",
-                        lg: showInlineContext
-                            ? "minmax(160px, 180px) minmax(0, 1fr) minmax(220px, 260px)"
-                            : "minmax(160px, 180px) minmax(0, 1fr)",
-                        xl: "minmax(170px, 200px) minmax(0, 1fr) minmax(240px, 280px)",
+                        xl: "minmax(0, 1fr) minmax(240px, 280px)",
                     },
                     gap: { xs: 1.5, lg: 2 },
                     alignItems: "start",
                 }}
             >
-                {isDesktop ? (
-                    <Box
-                        component="nav"
-                        aria-label="Research workflow"
-                        sx={{ position: "sticky", top: 16 }}
-                    >
-                        <SectionCard variant="subtle" compact sx={{ mt: 0 }}>
-                            <ResearchWorkflowNavigator
-                                stages={stages}
-                                activeStageId={
-                                    activeStageId && activeStageId !== "dashboard"
-                                        ? activeStageId
-                                        : false
-                                }
-                                onSelectStage={handleSelectStage}
-                                onOpenDashboard={() => navigate(`/research/${projectId}/dashboard`)}
-                                dashboardSelected={activeRoute === "dashboard"}
-                                orientation="vertical"
-                            />
-                        </SectionCard>
-                    </Box>
-                ) : (
-                    <SectionCard variant="flat" compact sx={{ mt: 0 }}>
-                        <ResearchWorkflowNavigator
-                            stages={stages}
-                            activeStageId={
-                                activeStageId && activeStageId !== "dashboard"
-                                    ? activeStageId
-                                    : false
-                            }
-                            onSelectStage={handleSelectStage}
-                            onOpenDashboard={() => navigate(`/research/${projectId}/dashboard`)}
-                            dashboardSelected={activeRoute === "dashboard"}
-                            orientation="horizontal"
-                        />
-                    </SectionCard>
-                )}
-
                 <Box component="main" sx={{ minWidth: 0 }}>
                     {ctx.corporaError ? (
                         <Alert severity="error" sx={{ mb: 2 }}>
@@ -214,7 +224,7 @@ function ResearchLayoutInner() {
                                 color="text.secondary"
                                 sx={{ alignSelf: "center", mr: 0.5 }}
                             >
-                                Analysis
+                                Overview
                             </Typography>
                             {ANALYSIS_SUBLINKS.map((link) => (
                                 <Button
@@ -273,12 +283,24 @@ function ResearchLayoutInner() {
 
             <Drawer
                 anchor="right"
-                open={drawerOpen}
+                open={contextDrawerOpen}
                 onClose={() => setContextOpen(false)}
                 PaperProps={{ sx: { width: { xs: "100%", sm: 360 }, p: 2 } }}
             >
                 {contextPanel}
             </Drawer>
+
+            <ResearchWorkflowDrawer
+                open={workflowOpen}
+                onClose={() => setWorkflowOpen(false)}
+                stages={stages}
+                activeStageId={
+                    activeStageId && activeStageId !== "dashboard" ? activeStageId : false
+                }
+                onSelectStage={handleSelectStage}
+                onOpenDashboard={() => navigate(`/research/${projectId}/dashboard`)}
+                dashboardSelected={activeRoute === "dashboard"}
+            />
 
             <Box
                 component="footer"

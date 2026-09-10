@@ -17,6 +17,8 @@ def run_to_response(run) -> AiRunResponse:
         id=run.id,
         prompt_template_id=run.prompt_template_id,
         prompt_version_id=run.prompt_version_id,
+        agent_id=getattr(run, "agent_id", None),
+        agent_run_id=getattr(run, "agent_run_id", None),
         provider_key=run.provider_key,
         model_name=run.model_name,
         status=run.status,

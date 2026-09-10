@@ -295,9 +295,7 @@ async def prepare_texts_cached_async(
             operation_config=operation_config,
             **kwargs,
         )
-        cached = await stage_cache.get_or_compute_async(
-            cache_key, factory, payload_format="joblib"
-        )
+        cached = await stage_cache.get_or_compute_async(cache_key, factory, payload_format="joblib")
         return _payload_or_prepare(
             cached,
             texts,

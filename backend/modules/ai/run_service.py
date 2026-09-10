@@ -39,6 +39,8 @@ class AiRunService(AiPromptService, AiDocumentService):
         memory_degraded: bool = False,
         degradation_reason: str | None = None,
         injection_chunks_filtered: int = 0,
+        agent_id: str | None = None,
+        agent_run_id: str | None = None,
     ):
         template, version = await self._resolve_prompt_version(
             user,
@@ -96,6 +98,8 @@ class AiRunService(AiPromptService, AiDocumentService):
             prompt_version_id=version.id,
             evaluation_dataset_id=evaluation_dataset_id,
             evaluation_case_id=evaluation_case_id,
+            agent_id=agent_id,
+            agent_run_id=agent_run_id,
             provider_key=version.provider_key,
             model_name=version.model_name,
             status="running",

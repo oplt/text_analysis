@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any
 
 from scipy import sparse
 
@@ -23,8 +23,6 @@ from backend.modules.text_research.infrastructure.preprocessing import (
     describe_implementation,
     tokenize,
 )
-
-T = TypeVar("T")
 
 DEFAULT_BATCH_SIZE = 500
 DEFAULT_HASHING_N_FEATURES = 2**18
@@ -189,8 +187,8 @@ def build_hashing_matrix(
     )
     size = resolve_batch_size(len(texts), batch_size)
     blocks: list[sparse.csr_matrix] = []
-    for batch in iter_item_batches(list(texts), size):
-        block = vectorizer.transform(list(batch))
+    for batch in iter_item_batches(texts, size):
+        block = vectorizer.transform(batch)
         blocks.append(ensure_csr(block))
     if len(blocks) == 1:
         return blocks[0]

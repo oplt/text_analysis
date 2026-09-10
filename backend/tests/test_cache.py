@@ -52,7 +52,7 @@ class CacheHelpersTest(unittest.IsolatedAsyncioTestCase):
         pipe.setex = MagicMock()
         pipe.execute = AsyncMock(return_value=[True, True])
         client.pipeline = MagicMock(return_value=pipe)
-        client.mget = AsyncMock(return_value=['[0.1]', None])
+        client.mget = AsyncMock(return_value=["[0.1]", None])
 
         with (
             patch("backend.core.cache.settings") as mock_settings,

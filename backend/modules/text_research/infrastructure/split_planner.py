@@ -62,9 +62,7 @@ def evaluate_stratified_group_feasibility(
             n_groups=n_groups,
             class_counts={},
             feasible_stratified_group=False,
-            reason=(
-                "standard stratified grouped splitting is not valid for multilabel targets"
-            ),
+            reason=("standard stratified grouped splitting is not valid for multilabel targets"),
             recommended_strategy="group_shuffle_multilabel",
         )
 
@@ -187,12 +185,15 @@ def plan_grouped_splits(
         raise ValueError("plan_grouped_splits requires at least 2 distinct groups")
 
     indices = np.arange(len(labels))
+    n_splits_test = max(2, int(round(1.0 / test_size)) if test_size > 0 else 2)
     feasibility = evaluate_stratified_group_feasibility(
-        labels, groups, task_type=task_type
+        labels,
+        groups,
+        min_groups_per_class=n_splits_test,
+        task_type=task_type,
     )
     is_multilabel = (
-        task_type == "multilabel"
-        or feasibility.recommended_strategy == "group_shuffle_multilabel"
+        task_type == "multilabel" or feasibility.recommended_strategy == "group_shuffle_multilabel"
     )
     stratification_requested = prefer_stratified
     use_stratified = (
@@ -216,7 +217,6 @@ def plan_grouped_splits(
             )
 
     if use_stratified:
-        n_splits_test = max(2, int(round(1.0 / test_size)) if test_size > 0 else 2)
         train_val_idx, test_idx = _pick_stratified_fold(
             labels, groups, n_splits=n_splits_test, random_seed=random_seed
         )
@@ -232,17 +232,18 @@ def plan_grouped_splits(
         train_val_groups = [groups[i] for i in train_val_idx]
         n_remaining_groups = len(set(train_val_groups))
         if n_remaining_groups >= 2:
+            n_splits_val = max(2, int(round(1.0 / val_size)))
             inner_feasibility = evaluate_stratified_group_feasibility(
-                train_val_labels, train_val_groups, task_type=task_type
+                train_val_labels,
+                train_val_groups,
+                min_groups_per_class=n_splits_val,
+                task_type=task_type,
             )
             inner_stratified = (
-                use_stratified
-                and inner_feasibility.feasible_stratified_group
-                and not is_multilabel
+                use_stratified and inner_feasibility.feasible_stratified_group and not is_multilabel
             )
             try:
                 if inner_stratified:
-                    n_splits_val = max(2, int(round(1.0 / val_size)))
                     rel_train, rel_val = _pick_stratified_fold(
                         train_val_labels,
                         train_val_groups,
@@ -306,12 +307,14 @@ def nested_grouped_cv_indices(
 
     indices = np.arange(len(labels))
     feasibility = evaluate_stratified_group_feasibility(
-        labels, groups, task_type=task_type
+        labels,
+        groups,
+        min_groups_per_class=max(2, outer_splits),
+        task_type=task_type,
     )
     outer_results: list[dict[str, Any]] = []
     is_multilabel = (
-        task_type == "multilabel"
-        or feasibility.recommended_strategy == "group_shuffle_multilabel"
+        task_type == "multilabel" or feasibility.recommended_strategy == "group_shuffle_multilabel"
     )
 
     if feasibility.feasible_stratified_group and not is_multilabel:
@@ -338,7 +341,10 @@ def nested_grouped_cv_indices(
 
         if len(set(outer_train_groups)) >= 2:
             inner_feasibility = evaluate_stratified_group_feasibility(
-                outer_train_labels, outer_train_groups, task_type=task_type
+                outer_train_labels,
+                outer_train_groups,
+                min_groups_per_class=max(2, inner_splits),
+                task_type=task_type,
             )
             if inner_feasibility.feasible_stratified_group and not is_multilabel:
                 from sklearn.model_selection import StratifiedGroupKFold

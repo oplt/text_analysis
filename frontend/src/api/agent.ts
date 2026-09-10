@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { apiFetch, type Paginated } from "./client";
 
 const BASE = "/agent";
 
@@ -6,6 +6,8 @@ export type AgentRun = {
     id: string;
     prompt_template_id: string | null;
     prompt_version_id: string | null;
+    agent_id: string | null;
+    agent_run_id: string | null;
     provider_key: string;
     model_name: string;
     status: string;
@@ -57,6 +59,20 @@ export async function createAgentRun(payload: AgentRunRequest): Promise<AgentRun
             ...payload,
         }),
     });
+}
+
+export async function listAgentRuns(
+    options: { limit?: number; offset?: number } = {}
+): Promise<Paginated<AgentRun>> {
+    const search = new URLSearchParams();
+    if (options.limit !== undefined) search.set("limit", String(options.limit));
+    if (options.offset !== undefined) search.set("offset", String(options.offset));
+    const query = search.size ? `?${search}` : "";
+    return apiFetch(`${BASE}/runs${query}`);
+}
+
+export async function getAgentRun(runId: string): Promise<AgentRun> {
+    return apiFetch(`${BASE}/runs/${runId}`);
 }
 
 export function formatAgentCostMicros(micros: number): string {

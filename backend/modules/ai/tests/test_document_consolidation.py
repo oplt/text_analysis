@@ -104,12 +104,14 @@ class LegacyAiDocumentServiceRetrieveTest(unittest.IsolatedAsyncioTestCase):
         db = AsyncMock()
         service = LegacyAiDocumentService(db)
         service.repo.filter_document_ids_for_user = AsyncMock(return_value=["doc-1"])
-        service.repo.get_document = AsyncMock(
-            return_value=SimpleNamespace(
-                id="doc-1",
-                user_id="user-1",
-                original_filename="Doc",
-            )
+        service.repo.get_documents_by_ids = AsyncMock(
+            return_value=[
+                SimpleNamespace(
+                    id="doc-1",
+                    user_id="user-1",
+                    original_filename="Doc",
+                )
+            ]
         )
         service.retrieval.retrieve = AsyncMock(
             return_value=RetrievalOutcome(
@@ -134,3 +136,4 @@ class LegacyAiDocumentServiceRetrieveTest(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(matches[0]["chunk_id"], "chunk-1")
         self.assertEqual(matches[0]["document_title"], "Doc")
+        service.repo.get_documents_by_ids.assert_awaited_once_with(["doc-1"], user_id="user-1")

@@ -138,6 +138,8 @@ class AiRun(Base):
         index=True,
         nullable=True,
     )
+    agent_id: Mapped[str | None] = mapped_column(String(128), index=True, nullable=True)
+    agent_run_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     provider_key: Mapped[str] = mapped_column(String(64))
     model_name: Mapped[str] = mapped_column(String(128))
     status: Mapped[str] = mapped_column(String(32), default="completed")

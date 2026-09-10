@@ -99,7 +99,10 @@ class SupervisedSelectionFitTests(unittest.TestCase):
     def test_k_larger_than_vocabulary_is_clamped(self) -> None:
         train_x, train_y, test_x, test_y = self._toy()
         result = classifiers.fit_text_classifier(
-            train_x, train_y, test_x, test_y,
+            train_x,
+            train_y,
+            test_x,
+            test_y,
             task_type="binary",
             feature_config=classifiers.FeatureConfig(vectorizer="count"),
             selection_config=classifiers.FeatureSelectionConfig(method="chi2", k=10_000),
@@ -113,7 +116,10 @@ class SupervisedSelectionFitTests(unittest.TestCase):
     def test_percentile_selection(self) -> None:
         train_x, train_y, test_x, test_y = self._toy()
         result = classifiers.fit_text_classifier(
-            train_x, train_y, test_x, test_y,
+            train_x,
+            train_y,
+            test_x,
+            test_y,
             task_type="binary",
             feature_config=classifiers.FeatureConfig(vectorizer="count"),
             selection_config=classifiers.FeatureSelectionConfig(method="chi2", percentile=50),
@@ -170,7 +176,10 @@ class SupervisedSelectionFitTests(unittest.TestCase):
     def test_fitted_selector_round_trips_without_changing_features(self) -> None:
         train_x, train_y, test_x, test_y = self._toy()
         result = classifiers.fit_text_classifier(
-            train_x, train_y, test_x, test_y,
+            train_x,
+            train_y,
+            test_x,
+            test_y,
             task_type="binary",
             feature_config=classifiers.FeatureConfig(vectorizer="count"),
             selection_config=classifiers.FeatureSelectionConfig(method="mutual_info", k=3),

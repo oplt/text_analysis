@@ -21,4 +21,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_model_predictions_model_uncertainty_created", table_name="research_model_predictions")
+    op.drop_index(
+        "ix_model_predictions_model_uncertainty_created", table_name="research_model_predictions"
+    )

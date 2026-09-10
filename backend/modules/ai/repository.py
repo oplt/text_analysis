@@ -109,6 +109,30 @@ class AiRepository:
         stmt = select(AiRun).where(AiRun.user_id == user_id).order_by(AiRun.created_at.desc())
         return await paginate_scalars(self.db, stmt, limit=limit, offset=offset)
 
+    async def get_agent_run_for_user(self, user_id: str, run_id: str) -> AiRun | None:
+        result = await self.db.execute(
+            select(AiRun).where(
+                AiRun.user_id == user_id,
+                AiRun.id == run_id,
+                AiRun.agent_id.is_not(None),
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def list_agent_runs_for_user(
+        self,
+        user_id: str,
+        *,
+        limit: int = DEFAULT_PAGE_LIMIT,
+        offset: int = 0,
+    ) -> tuple[list[AiRun], int]:
+        stmt = (
+            select(AiRun)
+            .where(AiRun.user_id == user_id, AiRun.agent_id.is_not(None))
+            .order_by(AiRun.created_at.desc())
+        )
+        return await paginate_scalars(self.db, stmt, limit=limit, offset=offset)
+
     async def list_reviews_for_user(
         self,
         user_id: str,

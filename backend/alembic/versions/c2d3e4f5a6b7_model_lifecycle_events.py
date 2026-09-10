@@ -15,24 +15,50 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.execute("UPDATE research_trained_models SET lifecycle_status = 'production' WHERE lifecycle_status = 'approved'")
+    op.execute(
+        "UPDATE research_trained_models SET lifecycle_status = 'production' WHERE lifecycle_status = 'approved'"
+    )
     op.create_table(
         "research_model_lifecycle_events",
         sa.Column("id", sa.String(), primary_key=True),
-        sa.Column("model_id", sa.String(), sa.ForeignKey("research_trained_models.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "model_id",
+            sa.String(),
+            sa.ForeignKey("research_trained_models.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("from_status", sa.String(length=32), nullable=True),
         sa.Column("to_status", sa.String(length=32), nullable=False),
-        sa.Column("actor_id", sa.String(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "actor_id", sa.String(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        ),
         sa.Column("reason", sa.Text(), nullable=True),
-        sa.Column("run_id", sa.String(), sa.ForeignKey("research_analysis_runs.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "run_id",
+            sa.String(),
+            sa.ForeignKey("research_analysis_runs.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
         sa.Column("metadata_json", sa.Text(), nullable=False, server_default="{}"),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
     )
-    op.create_index("ix_research_model_lifecycle_events_model_id", "research_model_lifecycle_events", ["model_id"])
-    op.create_index("ix_research_model_lifecycle_events_actor_id", "research_model_lifecycle_events", ["actor_id"])
-    op.create_index("ix_research_model_lifecycle_events_run_id", "research_model_lifecycle_events", ["run_id"])
+    op.create_index(
+        "ix_research_model_lifecycle_events_model_id",
+        "research_model_lifecycle_events",
+        ["model_id"],
+    )
+    op.create_index(
+        "ix_research_model_lifecycle_events_actor_id",
+        "research_model_lifecycle_events",
+        ["actor_id"],
+    )
+    op.create_index(
+        "ix_research_model_lifecycle_events_run_id", "research_model_lifecycle_events", ["run_id"]
+    )
 
 
 def downgrade() -> None:
     op.drop_table("research_model_lifecycle_events")
-    op.execute("UPDATE research_trained_models SET lifecycle_status = 'approved' WHERE lifecycle_status = 'production'")
+    op.execute(
+        "UPDATE research_trained_models SET lifecycle_status = 'approved' WHERE lifecycle_status = 'production'"
+    )

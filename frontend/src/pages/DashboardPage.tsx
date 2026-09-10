@@ -99,11 +99,7 @@ export default function DashboardPage() {
                 sx={{
                     display: "grid",
                     gap: 2,
-                    gridTemplateColumns: {
-                        xs: "1fr",
-                        sm: "repeat(2, minmax(0, 1fr))",
-                        xl: "repeat(4, minmax(0, 1fr))",
-                    },
+                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
                 }}
             >
                 <StatCard
@@ -137,62 +133,18 @@ export default function DashboardPage() {
                 />
             </Box>
 
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: {
-                        xs: "1fr",
-                        lg: "minmax(0, 1.6fr) minmax(280px, 0.9fr)",
-                    },
-                    alignItems: "start",
-                }}
-            >
-                <Stack spacing={2}>
-                    <SectionCard
-                        title="Recent activity"
-                        description="The latest notifications and alerts across your account."
-                        action={
-                            <Button variant="text" onClick={() => navigate("/notifications")}>
-                                Open all
-                            </Button>
-                        }
-                    >
-                        <QueryBoundary
-                            isLoading={notificationsLoading}
-                            isError={notificationsIsError}
-                            error={notificationsError}
-                            errorFallback="Failed to load notifications."
-                            onRetry={() => void refetchNotifications()}
-                            isEmpty={recentNotifications.length === 0}
-                            emptyFallback={
-                                <EmptyState
-                                    icon={<NotificationsIcon />}
-                                    title="No notifications yet"
-                                    description="Updates, reminders, and account events will appear here as soon as the workspace becomes active."
-                                    action={
-                                        <Button
-                                            variant="outlined"
-                                            onClick={() => navigate("/projects")}
-                                        >
-                                            Explore workspace
-                                        </Button>
-                                    }
-                                />
-                            }
-                        >
-                            <Stack spacing={1.5} sx={{ maxHeight: 420, overflow: "auto" }}>
-                                {recentNotifications.map((notification) => (
-                                    <NotificationListItem
-                                        key={notification.id}
-                                        notification={notification}
-                                        variant="compact"
-                                    />
-                                ))}
-                            </Stack>
-                        </QueryBoundary>
-                    </SectionCard>
-
+            <Box sx={{ display: "grid", gap: 2 }}>
+                <Box
+                    sx={{
+                        display: "grid",
+                        gap: 2,
+                        gridTemplateColumns: {
+                            xs: "1fr",
+                            lg: "minmax(0, 1.6fr) minmax(280px, 0.9fr)",
+                        },
+                        alignItems: "stretch",
+                    }}
+                >
                     <SectionCard
                         title={`${coreDomainPlural} snapshot`}
                         description={`A quick look at the current ${coreDomainPlural.toLowerCase()} in your workspace.`}
@@ -260,6 +212,60 @@ export default function DashboardPage() {
                         </QueryBoundary>
                     </SectionCard>
 
+                    <SectionCard
+                        title="Account health"
+                        description="Settings that affect trust and security."
+                        compact
+                        contentSx={{ display: "flex", flexDirection: "column" }}
+                    >
+                        <Stack spacing={1.5} sx={{ flex: 1 }}>
+                            {accountChecks.map((item) => (
+                                <Box
+                                    key={item.label}
+                                    sx={(theme) => ({
+                                        p: 1.5,
+                                        borderRadius: 1,
+                                        flex: 1,
+                                        backgroundColor:
+                                            theme.palette.mode === "dark"
+                                                ? theme.palette.background.paper
+                                                : colors.white,
+                                    })}
+                                >
+                                    <Stack
+                                        direction="row"
+                                        justifyContent="space-between"
+                                        spacing={1}
+                                        sx={{ mb: 0.5 }}
+                                    >
+                                        <Typography variant="subtitle2">{item.label}</Typography>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{ color: item.color, fontWeight: 500 }}
+                                        >
+                                            {item.value}
+                                        </Typography>
+                                    </Stack>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {item.description}
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Stack>
+                    </SectionCard>
+                </Box>
+
+                <Box
+                    sx={{
+                        display: "grid",
+                        gap: 2,
+                        gridTemplateColumns: {
+                            xs: "1fr",
+                            md: "minmax(0, 1fr) minmax(0, 1fr)",
+                        },
+                        alignItems: "stretch",
+                    }}
+                >
                     <DashboardCalendar
                         projects={projects ?? []}
                         projectsLoading={projectsLoading}
@@ -267,47 +273,55 @@ export default function DashboardPage() {
                         allowedViews={["month"]}
                         initialView="month"
                     />
-                </Stack>
 
-                <SectionCard
-                    title="Account health"
-                    description="Settings that affect trust and security."
-                    compact
-                >
-                    <Stack spacing={1.5}>
-                        {accountChecks.map((item) => (
-                            <Box
-                                key={item.label}
-                                sx={(theme) => ({
-                                    p: 1.5,
-                                    borderRadius: 1,
-                                    backgroundColor:
-                                        theme.palette.mode === "dark"
-                                            ? theme.palette.background.paper
-                                            : colors.white,
-                                })}
+                    <SectionCard
+                        title="Recent activity"
+                        description="The latest notifications and alerts across your account."
+                        contentSx={{ display: "flex", flexDirection: "column", minHeight: 0 }}
+                        action={
+                            <Button variant="text" onClick={() => navigate("/notifications")}>
+                                Open all
+                            </Button>
+                        }
+                    >
+                        <QueryBoundary
+                            isLoading={notificationsLoading}
+                            isError={notificationsIsError}
+                            error={notificationsError}
+                            errorFallback="Failed to load notifications."
+                            onRetry={() => void refetchNotifications()}
+                            isEmpty={recentNotifications.length === 0}
+                            emptyFallback={
+                                <EmptyState
+                                    icon={<NotificationsIcon />}
+                                    title="No notifications yet"
+                                    description="Updates, reminders, and account events will appear here as soon as the workspace becomes active."
+                                    action={
+                                        <Button
+                                            variant="outlined"
+                                            onClick={() => navigate("/projects")}
+                                        >
+                                            Explore workspace
+                                        </Button>
+                                    }
+                                />
+                            }
+                        >
+                            <Stack
+                                spacing={1.5}
+                                sx={{ flex: 1, minHeight: 0, maxHeight: "100%", overflow: "auto" }}
                             >
-                                <Stack
-                                    direction="row"
-                                    justifyContent="space-between"
-                                    spacing={1}
-                                    sx={{ mb: 0.5 }}
-                                >
-                                    <Typography variant="subtitle2">{item.label}</Typography>
-                                    <Typography
-                                        variant="body2"
-                                        sx={{ color: item.color, fontWeight: 500 }}
-                                    >
-                                        {item.value}
-                                    </Typography>
-                                </Stack>
-                                <Typography variant="body2" color="text.secondary">
-                                    {item.description}
-                                </Typography>
-                            </Box>
-                        ))}
-                    </Stack>
-                </SectionCard>
+                                {recentNotifications.map((notification) => (
+                                    <NotificationListItem
+                                        key={notification.id}
+                                        notification={notification}
+                                        variant="compact"
+                                    />
+                                ))}
+                            </Stack>
+                        </QueryBoundary>
+                    </SectionCard>
+                </Box>
             </Box>
         </PageShell>
     );

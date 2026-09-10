@@ -56,6 +56,19 @@ class PlanGroupedSplitsTests(unittest.TestCase):
         self.assertEqual(planned["strategy"], "group_shuffle")
         self.assertTrue(any("falling back" in note.lower() for note in planned["notes"]))
 
+    def test_default_holdout_falls_back_when_five_stratified_folds_are_infeasible(self):
+        labels = ["a", "a", "b", "b"]
+        groups = ["g1", "g2", "g3", "g4"]
+
+        planned = plan_grouped_splits(labels, groups)
+
+        self.assertEqual(planned["strategy"], "group_shuffle")
+        self.assertFalse(planned["stratification_applied"])
+        self.assertEqual(
+            len(planned["train_index"]) + len(planned["val_index"]) + len(planned["test_index"]),
+            len(labels),
+        )
+
     def test_classifiers_integration(self):
         split = classifiers.grouped_train_val_test_split(
             self.texts,

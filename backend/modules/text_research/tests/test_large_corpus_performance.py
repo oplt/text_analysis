@@ -27,6 +27,11 @@ class LargeCorpusRepositoryContractTests(unittest.TestCase):
         self.assertIn("distinct", source.lower())
         self.assertNotIn("select(Annotation)", source)
 
+    def test_corpus_id_lookup_batches_large_assignment_inputs(self) -> None:
+        source = inspect.getsource(ResearchRepository.corpus_ids_for_text_units)
+        self.assertIn("iter_item_batches", source)
+        self.assertIn("_IN_CLAUSE_BATCH", source)
+
     def test_prediction_service_uses_projected_annotation_ids(self) -> None:
         source = inspect.getsource(prediction_service.PredictionService.execute_prediction)
         self.assertIn("list_annotated_text_unit_ids", source)

@@ -1,0 +1,333 @@
+Yes. The workflow rail is currently consuming too much vertical and horizontal space, and it creates a second navigation system next to your application navigation. I would redesign it rather substantially.
+
+The strongest pattern for this application is a **compact horizontal research-progress stepper + an expandable workflow drawer**, not a permanently visible vertical workflow.
+
+### What is problematic in the current screen
+
+From your screenshot, the page effectively has four navigation layers:
+
+`Global sidebar → Research workflow → Analysis/Corpus tools tabs → Overview/Frequencies/N-grams/... tabs`
+
+That is too much persistent navigation. The workflow column also consumes roughly 200+ px of valuable analysis width, while each stage uses several lines for status information. As a result, even on a large screen, `Analyze` is already near the bottom of the viewport and later stages disappear.
+
+There is also a semantic problem worth fixing. The UI says:
+
+> “Follow the stages in order.”
+
+But `Annotate` is only `3/20 completed`, while `Reliability` is marked complete/available and `Analyze` is active. If users are genuinely allowed to move non-linearly, this should not look like a strict wizard. Carbon explicitly recommends progress indicators for linear workflows and advises against them when steps can be completed in arbitrary order. ([Carbon Design System][1]) PatternFly similarly distinguishes a **progress stepper** for status/navigation from a **wizard** for prescriptive multi-screen tasks. ([PatternFly][2])
+
+## I would make the desktop UI look roughly like this
+
+```text
+←  Text Research · test                              4/7 stages   Workflow ▾
+   Corpus, annotation, analysis and exports
+
+ ✓ Corpus ── ✓ Prepare ── ✓ Codebook ── ⚠ Annotate ── ✓ Reliability ── ● Analyze ── ○ Export
+                                      3 / 20
+
+ Analysis   [Corpus tools]   Statistical model   Measurement   Dictionary manager ...
+ ─────────────────────────────────────────────────────────────────────────────────────
+
+ Overview   Frequencies   N-grams   KWIC   DFM   Keyness   Dictionaries   Co-occurrence ...
+
+ ┌────────────────────────────────────────────────────────────────────────────────────┐
+ │ Quantitative analysis                                                              │
+ │ ...                                                                                │
+ │                                                                                    │
+ │ [organization ▼] [organization type ▼] [publication year ▼] [country ▼] ...       │
+ │                                                                                    │
+ │ [preprocessing profile ▼]       Unit type: paragraph                               │
+ │                                                                                    │
+ │ [▶ Run Overview]                                                                   │
+ └────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+The workflow becomes about **56–72 px high instead of an entire sidebar**. You also recover roughly 200 px of horizontal workspace, which is especially valuable for DFM tables, KWIC results, charts and statistical outputs.
+
+This matches how current design systems treat progress indicators: short labels, clear completed/current/error states, and minimal secondary information. Carbon specifically recommends one- or two-word labels and supports completed, current, future, error and disabled states. ([Carbon Design System][1]) PatternFly likewise recommends compact steppers where space is constrained and minimal text around each stage. ([PatternFly][2])
+
+### Make each stage compact
+
+I would change your current entries from this:
+
+```text
+04 ⚠ Annotate
+   3/20 completed
+
+05 ✓ Reliability
+   κ available
+
+06 ● Analyze
+   No analysis runs yet
+```
+
+into:
+
+```text
+⚠ Annotate
+  3/20
+
+✓ Reliability
+  κ ready
+
+● Analyze
+```
+
+Or even more compact:
+
+```text
+⚠ Annotate 3/20
+```
+
+Long explanations do not belong permanently in the navigation.
+
+For example, clicking/hovering `Reliability` could reveal:
+
+```text
+Reliability
+───────────
+Cohen's κ available
+Krippendorff's α available
+2 annotators
+Last calculated 14:32
+
+Open reliability →
+```
+
+That is **progressive disclosure**: the navigation shows only what is necessary for orientation, while details appear on demand.
+
+---
+
+## The `Workflow` button should open a drawer
+
+The horizontal bar answers:
+
+> Where am I?
+
+A drawer answers:
+
+> What is the complete state of my research project?
+
+For example:
+
+```text
+Research workflow                              ×
+
+Project progress
+██████████████░░░░░░  63%
+
+1  ✓ Corpus
+      1 document
+      20 paragraphs
+
+2  ✓ Prepare
+      paragraph units
+      preprocessing profile: standard
+
+3  ✓ Codebook
+      test · v1.0 · draft
+      2 categories
+
+4  ⚠ Annotation
+      3 / 20 units completed
+      2 annotators
+      [Continue annotation]
+
+5  ✓ Reliability
+      Cohen's κ available
+      Krippendorff's α available
+      [View reliability]
+
+6  ● Analysis
+      No runs yet
+      [Start analysis]
+
+7  ○ Export
+      Available after analysis
+```
+
+A **right-side drawer around 320–380 px wide** works particularly well because opening it does not permanently shrink the analytical workspace.
+
+PatternFly explicitly supports wizard/detailed-step information in drawers and collapses workflow navigation on smaller screens. ([PatternFly][3])
+
+## There is one deeper change I would make
+
+I would question whether these should even be numbered `01–07`.
+
+Your application appears to be more like a **research workspace/pipeline** than a one-time onboarding wizard. Researchers will probably:
+
+* modify preprocessing,
+* return to the codebook,
+* annotate additional units,
+* recalculate reliability,
+* rerun models,
+* change a dictionary,
+* return to analysis,
+* export again.
+
+So instead of implying:
+
+```text
+1 → 2 → 3 → 4 → 5 → 6 → 7
+```
+
+you might represent it as a research pipeline:
+
+```text
+Corpus → Prepare → Codebook → Annotate → Reliability → Analyze → Export
+```
+
+Completed steps remain clickable. A warning means attention is needed, not necessarily that the whole workflow must stop.
+
+This distinction matters. If `Annotate 3/20` is acceptable for certain analyses, it should be a **warning**, not an incomplete mandatory wizard stage. If 20/20 annotation is required before reliability or analysis, then those downstream stages should actually be disabled.
+
+In other words, let your application logic determine:
+
+```text
+✓ Complete
+● Current
+○ Ready
+⚠ Attention
+⛔ Blocked
+```
+
+rather than just:
+
+```text
+✓ complete / not complete
+```
+
+That status model will scale much better.
+
+## I would also simplify the header navigation
+
+Your top area currently has two tab rows:
+
+```text
+Analysis | Corpus tools | Statistical model | Measurement | ...
+Overview | Frequencies | N-grams | KWIC | DFM | Keyness | ...
+```
+
+This is acceptable, but it is already close to the maximum hierarchy I would expose simultaneously. Carbon's current guidance explicitly distinguishes tabs for hierarchical content from progress indicators for step-by-step progress. ([Carbon Design System][4])
+
+So after moving the workflow into the header, I would use this hierarchy:
+
+```text
+Project
+  └── Research workflow
+       └── Module
+            └── Tool
+```
+
+Visually:
+
+```text
+Text Research · test
+[workflow stepper]
+
+Corpus tools | Statistical model | Measurement | ...
+Overview | Frequencies | N-grams | KWIC | ...
+```
+
+I would probably also rename `Analysis` in your first row. You currently have:
+
+```text
+Analysis | Corpus tools | Statistical model ...
+```
+
+while `Analysis` appears to behave differently from the other entries. If it is a dashboard, call it:
+
+```text
+Overview | Corpus tools | Statistical models | Measurement | Dictionaries | ...
+```
+
+This makes the information architecture clearer.
+
+## Responsive behaviour
+
+I would implement three states rather than trying to keep the same UI everywhere.
+
+**Large desktop, ≥1440 px**
+
+```text
+✓ Corpus — ✓ Prepare — ✓ Codebook — ⚠ Annotate 3/20 — ✓ Reliability — ● Analyze — ○ Export
+```
+
+All labels visible.
+
+**Laptop/tablet, roughly 900–1439 px**
+
+```text
+✓ Corpus  ✓ Prepare  ✓ Codebook  ⚠ Annotate  ● Analyze   [All stages ▾]
+```
+
+Secondary details disappear. Labels can truncate with tooltips; Carbon explicitly recommends shortening/truncating labels when space runs out. ([Carbon Design System][1])
+
+**Mobile/narrow**
+
+```text
+Research workflow
+Step 6 of 7 · Analyze                         ▾
+████████████████░░
+```
+
+Tapping it opens the complete workflow sheet/drawer. PatternFly uses essentially this responsive principle by hiding the step navigation behind a compact control on mobile. ([PatternFly][3])
+
+## Suggested dimensions
+
+For your particular application, I would use approximately:
+
+```text
+Workflow strip height       64 px
+Step icon                   20–24 px
+Step label                  13–14 px
+Secondary status            11–12 px
+Horizontal step gap         16–24 px
+Drawer width                360 px
+Primary module tabs         44–48 px
+Secondary tool tabs         40–44 px
+Page content max padding    24–32 px
+```
+
+Keep touch/click targets at least around 40–44 px even if the visible icon is smaller.
+
+I would **not** keep the current description:
+
+> Research workflow
+> Follow the stages in order. Status and counts update from the active corpus.
+
+permanently visible. It explains the UI rather than helping users operate it. Put that explanation behind an `ⓘ` tooltip or remove it once the workflow is self-explanatory.
+
+## My preferred final architecture
+
+The main screen would therefore become:
+
+```text
+┌───────────────┬──────────────────────────────────────────────────────────────┐
+│               │ Text Research · test                                       │
+│ Dashboard     │ Corpus, annotation, analysis and exports          Workflow │
+│ Projects      │                                                              │
+│ Text Research │ ✓ Corpus — ✓ Prepare — ✓ Codebook — ⚠ Annotate — ● Analyze │
+│               ├──────────────────────────────────────────────────────────────┤
+│               │ Overview | Corpus tools | Statistical models | Measurement │
+│               │                                                              │
+│               │ Overview | Frequencies | N-grams | KWIC | DFM | Keyness... │
+│               │                                                              │
+│               │                MAIN RESEARCH WORKSPACE                       │
+│               │                                                              │
+│               │                                                              │
+│               │                                                              │
+│               │                                                              │
+└───────────────┴──────────────────────────────────────────────────────────────┘
+```
+
+So I would make **one major change first**:
+
+**Delete the permanent `Research workflow` sidebar and replace it with a sticky horizontal progress/pipeline strip. Put the verbose workflow information in an on-demand drawer.**
+
+That gives `text_analysis` a much more contemporary research/SaaS feel, makes better use of widescreen displays, and leaves the left navigation exclusively responsible for application-level navigation. It also scales much better when you later add things such as **Literature Review**, AI-assisted coding, model runs, collaborative annotation, and additional export/reproducibility stages.
+
+[1]: https://carbondesignsystem.com/components/progress-indicator/usage/?utm_source=chatgpt.com "Carbon Design System"
+[2]: https://www.patternfly.org/components/progress-stepper/design-guidelines?utm_source=chatgpt.com "PatternFly • Progress stepper"
+[3]: https://www.patternfly.org/components/wizard/design-guidelines/?utm_source=chatgpt.com "PatternFly • Wizard"
+[4]: https://carbondesignsystem.com/components/tabs/usage/?utm_source=chatgpt.com "Carbon Design System"

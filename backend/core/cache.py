@@ -6,7 +6,7 @@ import logging
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from time import monotonic
-from typing import Any, TypeVar
+from typing import Any
 
 import redis.asyncio as redis
 from pydantic import BaseModel
@@ -40,8 +40,6 @@ LOCAL_ONLY_CACHE_KEYS = frozenset(
         OBSERVABILITY_STATUS_CACHE_KEY,
     }
 )
-
-T = TypeVar("T")
 
 
 class _LocalTTLCache:
@@ -284,7 +282,7 @@ async def cache_delete_pattern(pattern: str, *, batch_size: int = 100) -> None:
         logger.debug("cache delete pattern failed for pattern=%s", pattern, exc_info=True)
 
 
-async def cache_get_model(key: str, model: type[T]) -> T | None:  # noqa: UP047
+async def cache_get_model[T](key: str, model: type[T]) -> T | None:
     payload = await cache_get_json(key)
     if payload is None:
         return None

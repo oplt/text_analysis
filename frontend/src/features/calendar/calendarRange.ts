@@ -4,7 +4,7 @@ export type CalendarViewMode = "day" | "week" | "month" | "twelve_month";
 
 export function getMonthGridColumns(viewMode: CalendarViewMode) {
     return viewMode === "twelve_month"
-        ? ({ xs: "1fr", md: "repeat(2, minmax(0, 1fr))", xl: "repeat(4, minmax(0, 1fr))" } as const)
+        ? "repeat(3, minmax(0, 1fr))"
         : ({ xs: "1fr" } as const);
 }
 

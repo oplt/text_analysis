@@ -261,7 +261,7 @@ class ResearchRepository:
         if not document_ids:
             return []
         rows: list[CorpusDocument] = []
-        for batch in iter_item_batches(list(document_ids), _IN_CLAUSE_BATCH):
+        for batch in iter_item_batches(document_ids, _IN_CLAUSE_BATCH):
             result = await self.db.execute(
                 select(CorpusDocument).where(CorpusDocument.id.in_(list(batch)))
             )
@@ -504,8 +504,8 @@ class ResearchRepository:
         if not unit_ids:
             return []
         rows: list[TextUnit] = []
-        for batch in iter_item_batches(list(unit_ids), _IN_CLAUSE_BATCH):
-            result = await self.db.execute(select(TextUnit).where(TextUnit.id.in_(list(batch))))
+        for batch in iter_item_batches(unit_ids, _IN_CLAUSE_BATCH):
+            result = await self.db.execute(select(TextUnit).where(TextUnit.id.in_(batch)))
             rows.extend(result.scalars().all())
         return rows
 
@@ -545,13 +545,13 @@ class ResearchRepository:
                 result = await self.db.execute(stmt)
                 return list(result.scalars().all())
             rows: list[TextUnit] = []
-            for batch in iter_item_batches(list(document_ids), _IN_CLAUSE_BATCH):
+            for batch in iter_item_batches(document_ids, _IN_CLAUSE_BATCH):
                 batch_stmt = (
                     select(TextUnit)
                     .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
                     .where(
                         CorpusDocument.corpus_id == corpus_id,
-                        TextUnit.corpus_document_id.in_(list(batch)),
+                        TextUnit.corpus_document_id.in_(batch),
                     )
                 )
                 if unit_type:
@@ -640,13 +640,16 @@ class ResearchRepository:
     async def corpus_ids_for_text_units(self, unit_ids: list[str]) -> dict[str, str]:
         if not unit_ids:
             return {}
-        stmt = (
-            select(TextUnit.id, CorpusDocument.corpus_id)
-            .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
-            .where(TextUnit.id.in_(unit_ids))
-        )
-        result = await self.db.execute(stmt)
-        return {str(unit_id): str(corpus_id) for unit_id, corpus_id in result.all()}
+        result: dict[str, str] = {}
+        for batch in iter_item_batches(unit_ids, _IN_CLAUSE_BATCH):
+            stmt = (
+                select(TextUnit.id, CorpusDocument.corpus_id)
+                .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
+                .where(TextUnit.id.in_(batch))
+            )
+            rows = await self.db.execute(stmt)
+            result.update({str(unit_id): str(corpus_id) for unit_id, corpus_id in rows.all()})
+        return result
 
     async def get_corpus_id_for_document(self, corpus_document_id: str) -> str | None:
         result = await self.db.execute(
@@ -1205,7 +1208,7 @@ class ResearchRepository:
         if not text_unit_ids:
             return []
         rows: list[Annotation] = []
-        for batch in iter_item_batches(list(text_unit_ids), _IN_CLAUSE_BATCH):
+        for batch in iter_item_batches(text_unit_ids, _IN_CLAUSE_BATCH):
             stmt = select(Annotation).where(Annotation.text_unit_id.in_(batch))
             if campaign_id is not None:
                 stmt = stmt.where(Annotation.campaign_id == campaign_id)
@@ -1291,7 +1294,7 @@ class ResearchRepository:
             )
             return list(result.scalars().all())
         rows: list[Annotation] = []
-        for batch in iter_item_batches(list(text_unit_ids), _IN_CLAUSE_BATCH):
+        for batch in iter_item_batches(text_unit_ids, _IN_CLAUSE_BATCH):
             result = await self.db.execute(
                 select(Annotation).where(
                     Annotation.annotator_id == annotator_id,
@@ -1659,7 +1662,7 @@ class ResearchRepository:
         if not text_unit_ids:
             return []
         rows: list[ModelPrediction] = []
-        for batch in iter_item_batches(list(text_unit_ids), _IN_CLAUSE_BATCH):
+        for batch in iter_item_batches(text_unit_ids, _IN_CLAUSE_BATCH):
             result = await self.db.execute(
                 select(ModelPrediction).where(
                     ModelPrediction.trained_model_id == trained_model_id,

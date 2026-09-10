@@ -87,9 +87,7 @@ class FileStorageAdapter:
                 "Object storage is required to retain documents for asynchronous indexing"
             )
 
-        resolved_chunk_hint = chunk_size or getattr(
-            settings, "RAG_UPLOAD_CHUNK_SIZE", 256 * 1024
-        )
+        resolved_chunk_hint = chunk_size or getattr(settings, "RAG_UPLOAD_CHUNK_SIZE", 256 * 1024)
         # Keep at most one upload chunk in RAM before spilling to disk.
         spool_max = max(64 * 1024, min(int(resolved_chunk_hint), 1_048_576))
         hasher = hashlib.sha256()
@@ -102,9 +100,7 @@ class FileStorageAdapter:
                     continue
                 total += len(chunk)
                 if total > max_bytes:
-                    raise FileTooLargeError(
-                        f"Upload exceeds maximum size of {max_bytes} bytes"
-                    )
+                    raise FileTooLargeError(f"Upload exceeds maximum size of {max_bytes} bytes")
                 hasher.update(chunk)
                 spool.write(chunk)
 

@@ -127,7 +127,8 @@ export default function RagView() {
                 severity: "error",
             });
         }
-        setPollJobId(null);
+        const clearPoll = window.setTimeout(() => setPollJobId(null), 0);
+        return () => window.clearTimeout(clearPoll);
     }, [client, jobQuery.data, showToast]);
 
     const uploadMutation = useMutation({
@@ -205,7 +206,7 @@ export default function RagView() {
             }),
     });
 
-    const documents = documentsQuery.data?.items ?? [];
+    const documents = useMemo(() => documentsQuery.data?.items ?? [], [documentsQuery.data?.items]);
     const selectedDocument = useMemo(
         () => documents.find((d) => d.id === selectedDocumentId) ?? null,
         [documents, selectedDocumentId]

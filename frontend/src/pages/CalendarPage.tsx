@@ -49,7 +49,7 @@ export default function CalendarPage() {
                         projectsLoading
                         onOpenProjects={() => navigate("/projects")}
                         allowedViews={["day", "week", "month", "twelve_month"]}
-                        initialView="month"
+                        initialView="twelve_month"
                     />
                 }
             >
@@ -58,7 +58,7 @@ export default function CalendarPage() {
                     projectsLoading={false}
                     onOpenProjects={() => navigate("/projects")}
                     allowedViews={["day", "week", "month", "twelve_month"]}
-                    initialView="month"
+                    initialView="twelve_month"
                 />
             </QueryBoundary>
         </PageShell>

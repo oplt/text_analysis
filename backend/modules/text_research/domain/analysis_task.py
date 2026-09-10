@@ -7,11 +7,11 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from backend.modules.text_research.domain.analysis_specification import ANALYSIS_TYPE_ALIASES
-from backend.modules.text_research.infrastructure.execution_policy import (
+from backend.modules.text_research.domain.execution_defaults import (
+    computation_identity,
     retry_policy_for,
     timeout_for,
 )
-from backend.modules.text_research.infrastructure.pipeline_compiler import computation_identity
 
 __all__ = [
     "AnalysisTask",

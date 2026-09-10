@@ -68,11 +68,7 @@ def estimate_workload(
     pair_mode: str = "pairwise",
 ) -> WorkloadEstimate:
     """Build a :class:`WorkloadEstimate` from available request dimensions."""
-    tokens = (
-        int(estimated_tokens)
-        if estimated_tokens is not None
-        else estimate_token_count(texts)
-    )
+    tokens = int(estimated_tokens) if estimated_tokens is not None else estimate_token_count(texts)
     pairs = (
         int(estimated_pairs)
         if estimated_pairs is not None

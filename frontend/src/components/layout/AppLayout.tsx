@@ -54,8 +54,8 @@ import {
 import { NotificationNavBadge } from "./NotificationNavBadge";
 import { getInitials } from "../../utils/formatters";
 
-const DRAWER_WIDTH = 288;
-const COLLAPSED_DRAWER_WIDTH = 96;
+const DRAWER_WIDTH = 195;
+const COLLAPSED_DRAWER_WIDTH = 54;
 
 type NavItem = {
     label: string;

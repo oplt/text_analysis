@@ -752,7 +752,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         texts = [u.text for u in units]
 
         estimate = estimate_workload(
-            analysis_type='ngrams',
+            analysis_type="ngrams",
             n_units=len(units),
             texts=texts,
             requested_top_k=top_n,
@@ -762,7 +762,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 corpus,
                 AnalysisRunType.NGRAM_ANALYSIS,
                 user_id=user_id,
-                operation='ngrams',
+                operation="ngrams",
                 parameters={
                     "unit_type": unit_type,
                     "preprocessing_profile_id": preprocessing_profile_id,
@@ -770,7 +770,6 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                     "top_n": top_n,
                     "rate_per": rate_per,
                     "skip": skip,
-                    
                     "filters": filters,
                 },
                 estimate=estimate,
@@ -860,7 +859,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         texts = [u.text for u in units]
 
         estimate = estimate_workload(
-            analysis_type='dfm',
+            analysis_type="dfm",
             n_units=len(units),
             texts=texts,
         )
@@ -869,7 +868,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 corpus,
                 AnalysisRunType.DFM,
                 user_id=user_id,
-                operation='dfm',
+                operation="dfm",
                 parameters={
                     "unit_type": unit_type,
                     "preprocessing_profile_id": preprocessing_profile_id,
@@ -879,7 +878,6 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                     "smooth_idf": smooth_idf,
                     "force_sparse_only": force_sparse_only,
                     "trim": trim,
-                    
                     "filters": filters,
                 },
                 estimate=estimate,
@@ -1411,7 +1409,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         )
 
         estimate = estimate_workload(
-            analysis_type='cooccurrence',
+            analysis_type="cooccurrence",
             n_units=len(units),
             texts=[u.text for u in units],
             estimated_pairs=len(units) * max(window_size, 1),
@@ -1422,7 +1420,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 corpus,
                 AnalysisRunType.COOCCURRENCE,
                 user_id=user_id,
-                operation='cooccurrence',
+                operation="cooccurrence",
                 parameters={
                     "unit_type": unit_type,
                     "preprocessing_profile_id": preprocessing_profile_id,
@@ -1433,7 +1431,6 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                     "min_frequency": min_frequency,
                     "min_count": min_count,
                     "include_network": include_network,
-                    
                     "filters": filters,
                 },
                 estimate=estimate,
@@ -1554,7 +1551,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         texts = [u.text for u in units]
 
         estimate = estimate_workload(
-            analysis_type='similarity',
+            analysis_type="similarity",
             n_units=len(units),
             texts=texts,
             pair_mode=canonical_mode,
@@ -1565,7 +1562,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 corpus,
                 AnalysisRunType.SIMILARITY,
                 user_id=user_id,
-                operation='similarity',
+                operation="similarity",
                 parameters={
                     "unit_type": unit_type,
                     "preprocessing_profile_id": preprocessing_profile_id,
@@ -1577,7 +1574,6 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                     "centroid_target": centroid_target,
                     "query_text": query_text,
                     "query_unit_id": query_unit_id,
-                    
                     "filters": filters,
                 },
                 estimate=estimate,
@@ -1860,7 +1856,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         )
 
         estimate = estimate_workload(
-            analysis_type='clustering',
+            analysis_type="clustering",
             n_units=len(units),
             texts=[u.text for u in units],
             n_clusters=n_clusters,
@@ -1870,7 +1866,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 corpus,
                 AnalysisRunType.CLUSTERING,
                 user_id=user_id,
-                operation='clustering',
+                operation="clustering",
                 parameters={
                     "unit_type": unit_type,
                     "preprocessing_profile_id": preprocessing_profile_id,
@@ -1880,7 +1876,6 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                     "n_svd_components": n_svd_components,
                     "top_terms": top_terms,
                     "random_seed": random_seed,
-                    
                     "filters": filters,
                 },
                 estimate=estimate,
@@ -1973,7 +1968,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         )
 
         estimate = estimate_workload(
-            analysis_type='dimensionality_reduction',
+            analysis_type="dimensionality_reduction",
             n_units=len(units),
             texts=[u.text for u in units],
         )
@@ -1982,14 +1977,13 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 corpus,
                 AnalysisRunType.DIMENSIONALITY_REDUCTION,
                 user_id=user_id,
-                operation='dimensionality_reduction',
+                operation="dimensionality_reduction",
                 parameters={
                     "unit_type": unit_type,
                     "preprocessing_profile_id": preprocessing_profile_id,
                     "method": method,
                     "n_components": n_components,
                     "random_seed": random_seed,
-                    
                     "filters": filters,
                 },
                 estimate=estimate,

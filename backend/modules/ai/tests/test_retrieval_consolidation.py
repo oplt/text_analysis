@@ -113,6 +113,8 @@ class AgentRetrievalConsolidationTest(unittest.IsolatedAsyncioTestCase):
             document_ids=["doc-1"],
             top_k=3,
             review_required=False,
+            agent_id="research-agent",
+            run_id="memory-run-1",
         )
 
         builder.build.assert_awaited_once()
@@ -123,6 +125,8 @@ class AgentRetrievalConsolidationTest(unittest.IsolatedAsyncioTestCase):
         run_kwargs = service.ai.run_prompt.await_args.kwargs
         self.assertIsNone(run_kwargs["retrieval_query"])
         self.assertEqual(run_kwargs["additional_system_context"], "combined context")
+        self.assertEqual(run_kwargs["agent_id"], "research-agent")
+        self.assertEqual(run_kwargs["agent_run_id"], "memory-run-1")
 
     @patch("backend.modules.ai.application.agent_service.AgentPromptContextBuilder")
     async def test_agent_reuses_prompt_context_memories_without_second_recall(

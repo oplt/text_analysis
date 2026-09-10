@@ -101,6 +101,7 @@ def reset_hit_miss_counts_for_tests() -> None:
         _STAGE_CACHE_HITS = 0
         _STAGE_CACHE_MISSES = 0
 
+
 # Stages that must never be shared globally (train/test leakage risk).
 LEAKAGE_SENSITIVE_STAGES = frozenset(
     {

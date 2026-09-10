@@ -37,6 +37,7 @@ import {
     seedDemoCorpus,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { PageTabs } from "../../../components/ui/PageTabs";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
@@ -54,6 +55,15 @@ import type { CorpusDocument } from "../types";
 
 const PAGE_SIZE = 25;
 
+const CORPUS_TABS = ["management", "prepare", "documents"] as const;
+type CorpusTab = (typeof CORPUS_TABS)[number];
+
+const CORPUS_TAB_ITEMS: Array<{ value: CorpusTab; label: string }> = [
+    { value: "management", label: "Corpus management" },
+    { value: "prepare", label: "Prepare corpus" },
+    { value: "documents", label: "Documents" },
+];
+
 export default function CorpusView() {
     const ctx = useResearchContext();
     const client = useQueryClient();
@@ -61,6 +71,7 @@ export default function CorpusView() {
     const { showToast } = useSnackbar();
     const csvInputRef = useRef<HTMLInputElement>(null);
 
+    const [tab, setTab] = useState<CorpusTab>("management");
     const [createOpen, setCreateOpen] = useState(false);
     const [corpusName, setCorpusName] = useState("");
     const [corpusDescription, setCorpusDescription] = useState("");
@@ -216,241 +227,306 @@ export default function CorpusView() {
 
     return (
         <Stack spacing={2}>
-            <SectionCard
-                title="Corpus management"
-                description="Upload source documents through RAG ingestion, then manage research metadata."
-                action={
-                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        <Button
-                            variant="outlined"
-                            startIcon={<SeedIcon />}
-                            onClick={() => seedMutation.mutate()}
-                            disabled={seedMutation.isPending}
-                        >
-                            Seed demo
-                        </Button>
-                        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-                            New corpus
-                        </Button>
-                    </Stack>
-                }
-            >
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Active corpus: {ctx.selectedCorpus?.name ?? "None selected"}
-                </Typography>
-                <CorpusUploadPanel
-                    corpusId={ctx.selectedCorpusId}
-                    disabled={!ctx.selectedCorpusId}
-                    onComplete={invalidateCorpus}
-                />
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: 2 }}>
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        startIcon={<SegmentIcon />}
-                        onClick={() => navigate(`/research/${ctx.projectId}/prepare`)}
-                        disabled={!ctx.selectedCorpusId || documentCount === 0}
-                    >
-                        Prepare / Segment into {ctx.unitType}s
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        startIcon={<CsvIcon />}
-                        disabled={!ctx.selectedCorpusId || csvImportMutation.isPending}
-                        onClick={() => csvInputRef.current?.click()}
-                    >
-                        Import metadata CSV
-                    </Button>
-                    <Box
-                        component="input"
-                        ref={csvInputRef}
-                        type="file"
-                        accept=".csv,text/csv"
-                        hidden
-                        onChange={(event) => {
-                            const file = event.target.files?.[0];
-                            if (file) csvImportMutation.mutate(file);
-                            event.target.value = "";
-                        }}
-                    />
-                </Stack>
-            </SectionCard>
+            <PageTabs
+                value={tab}
+                onChange={setTab}
+                tabs={CORPUS_TAB_ITEMS}
+                ariaLabel="Corpus workflow"
+            />
 
-            {needsSegmentation ? (
-                <SectionCard title="Prepare corpus" description="Documents are ready — create research text units next.">
-                    <EmptyState
-                        icon={<SegmentIcon fontSize="large" />}
-                        title="Corpus not segmented yet"
-                        description={`${documentCount} document${documentCount === 1 ? "" : "s"} linked. Selected unit type: ${ctx.unitType}.`}
-                        action={
+            {tab === "management" ? (
+                <SectionCard
+                    title="Corpus management"
+                    description="Upload source documents through RAG ingestion, then manage research metadata."
+                    action={
+                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            <Button
+                                variant="outlined"
+                                startIcon={<SeedIcon />}
+                                onClick={() => seedMutation.mutate()}
+                                disabled={seedMutation.isPending}
+                            >
+                                Seed demo
+                            </Button>
                             <Button
                                 variant="contained"
-                                startIcon={<SegmentIcon />}
-                                onClick={() => navigate(`/research/${ctx.projectId}/prepare`)}
+                                startIcon={<AddIcon />}
+                                onClick={() => setCreateOpen(true)}
                             >
-                                Open preparation workspace
+                                New corpus
                             </Button>
-                        }
+                        </Stack>
+                    }
+                >
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Active corpus: {ctx.selectedCorpus?.name ?? "None selected"}
+                    </Typography>
+                    <CorpusUploadPanel
+                        corpusId={ctx.selectedCorpusId}
+                        disabled={!ctx.selectedCorpusId}
+                        onComplete={invalidateCorpus}
                     />
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mt: 2 }}>
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            startIcon={<SegmentIcon />}
+                            onClick={() => navigate(`/research/${ctx.projectId}/prepare`)}
+                            disabled={!ctx.selectedCorpusId || documentCount === 0}
+                        >
+                            Prepare / Segment into {ctx.unitType}s
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            startIcon={<CsvIcon />}
+                            disabled={!ctx.selectedCorpusId || csvImportMutation.isPending}
+                            onClick={() => csvInputRef.current?.click()}
+                        >
+                            Import metadata CSV
+                        </Button>
+                        <Box
+                            component="input"
+                            ref={csvInputRef}
+                            type="file"
+                            accept=".csv,text/csv"
+                            hidden
+                            onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (file) csvImportMutation.mutate(file);
+                                event.target.value = "";
+                            }}
+                        />
+                    </Stack>
                 </SectionCard>
             ) : null}
 
-            <SectionCard title="Documents" description="Server-paginated corpus documents. Select a row to edit metadata and preview source text.">
-                {!ctx.selectedCorpusId ? (
-                    <EmptyState
-                        icon={<DocsIcon fontSize="large" />}
-                        title="Select a corpus"
-                        description="Choose a corpus above, or create one to list and manage documents."
-                        action={
-                            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
-                                Create empty corpus
-                            </Button>
-                        }
-                    />
-                ) : (
-                    <Box
-                        sx={{
-                            display: "grid",
-                            gap: 2,
-                            gridTemplateColumns: { xs: "1fr", md: "220px 1fr" },
-                        }}
-                    >
-                        <CorpusDocumentFilters
-                            value={filters}
-                            onChange={(next) => {
-                                setPage(0);
-                                setFilters(next);
-                            }}
-                        />
-                        <Box>
-                            {selectedIds.length > 0 ? (
-                                <Stack
-                                    direction={{ xs: "column", sm: "row" }}
-                                    spacing={1}
-                                    sx={{ mb: 1.5 }}
-                                    alignItems={{ sm: "center" }}
+            {tab === "prepare" ? (
+                <SectionCard
+                    title="Prepare corpus"
+                    description={
+                        needsSegmentation
+                            ? "Documents are ready — create research text units next."
+                            : "Segment or re-prepare this corpus into research text units."
+                    }
+                >
+                    {needsSegmentation ? (
+                        <EmptyState
+                            icon={<SegmentIcon fontSize="large" />}
+                            title="Corpus not segmented yet"
+                            description={`${documentCount} document${documentCount === 1 ? "" : "s"} linked. Selected unit type: ${ctx.unitType}.`}
+                            action={
+                                <Button
+                                    variant="contained"
+                                    startIcon={<SegmentIcon />}
+                                    onClick={() => navigate(`/research/${ctx.projectId}/prepare`)}
                                 >
-                                    <Typography variant="body2">{selectedIds.length} selected</Typography>
-                                    <TextField
-                                        size="small"
-                                        label="Bulk organization"
-                                        value={bulkOrg}
-                                        onChange={(e) => setBulkOrg(e.target.value)}
-                                    />
-                                    <TextField
-                                        size="small"
-                                        label="Bulk year"
-                                        value={bulkYear}
-                                        onChange={(e) => setBulkYear(e.target.value)}
-                                        sx={{ width: 110 }}
-                                    />
-                                    <TextField
-                                        size="small"
-                                        label="Bulk language"
-                                        value={bulkLanguage}
-                                        onChange={(e) => setBulkLanguage(e.target.value)}
-                                        sx={{ width: 130 }}
-                                    />
-                                    <Button
-                                        size="small"
-                                        variant="outlined"
-                                        onClick={() => bulkMutation.mutate()}
-                                        disabled={bulkMutation.isPending}
-                                    >
-                                        Apply bulk update
-                                    </Button>
-                                </Stack>
-                            ) : null}
+                                    Open preparation workspace
+                                </Button>
+                            }
+                        />
+                    ) : (
+                        <EmptyState
+                            icon={<SegmentIcon fontSize="large" />}
+                            title={
+                                !ctx.selectedCorpusId
+                                    ? "Select a corpus"
+                                    : documentCount === 0
+                                      ? "Upload documents first"
+                                      : "Corpus already segmented"
+                            }
+                            description={
+                                !ctx.selectedCorpusId
+                                    ? "Choose a corpus in Corpus management, then prepare text units."
+                                    : documentCount === 0
+                                      ? "Add source documents before segmentation."
+                                      : `${unitCount} ${ctx.unitType}${unitCount === 1 ? "" : "s"} ready. Open preparation to adjust preprocessing or re-segment.`
+                            }
+                            action={
+                                <Button
+                                    variant="contained"
+                                    startIcon={<SegmentIcon />}
+                                    onClick={() => navigate(`/research/${ctx.projectId}/prepare`)}
+                                    disabled={!ctx.selectedCorpusId || documentCount === 0}
+                                >
+                                    Open preparation workspace
+                                </Button>
+                            }
+                        />
+                    )}
+                </SectionCard>
+            ) : null}
 
-                            <QueryBoundary
-                                isLoading={documentsQuery.isLoading}
-                                isError={documentsQuery.isError}
-                                error={documentsQuery.error}
-                                onRetry={() => void documentsQuery.refetch()}
-                            >
-                                {pageItems.length ? (
-                                    <>
-                                        <Box sx={{ overflowX: "auto" }}>
-                                            <Table size="small">
-                                                <TableHead>
-                                                    <TableRow>
-                                                        <TableCell padding="checkbox">
-                                                            <Checkbox
-                                                                size="small"
-                                                                checked={
-                                                                    pageItems.length > 0 &&
-                                                                    pageItems.every((doc) =>
-                                                                        selectedIds.includes(doc.id)
-                                                                    )
-                                                                }
-                                                                indeterminate={
-                                                                    pageItems.some((doc) =>
-                                                                        selectedIds.includes(doc.id)
-                                                                    ) &&
-                                                                    !pageItems.every((doc) =>
-                                                                        selectedIds.includes(doc.id)
-                                                                    )
-                                                                }
-                                                                onChange={toggleAllOnPage}
-                                                            />
-                                                        </TableCell>
-                                                        <TableCell>Title</TableCell>
-                                                        <TableCell>Organization</TableCell>
-                                                        <TableCell>Year</TableCell>
-                                                        <TableCell>Country</TableCell>
-                                                        <TableCell>Language</TableCell>
-                                                    </TableRow>
-                                                </TableHead>
-                                                <TableBody>
-                                                    {pageItems.map((doc) => (
-                                                        <TableRow
-                                                            key={doc.id}
-                                                            hover
-                                                            selected={selectedDoc?.id === doc.id}
-                                                            sx={{ cursor: "pointer" }}
-                                                            onClick={() => setSelectedDoc(doc)}
-                                                        >
-                                                            <TableCell
-                                                                padding="checkbox"
-                                                                onClick={(event) => event.stopPropagation()}
-                                                            >
+            {tab === "documents" ? (
+                <SectionCard
+                    title="Documents"
+                    description="Server-paginated corpus documents. Select a row to edit metadata and preview source text."
+                >
+                    {!ctx.selectedCorpusId ? (
+                        <EmptyState
+                            icon={<DocsIcon fontSize="large" />}
+                            title="Select a corpus"
+                            description="Choose a corpus in Corpus management, or create one to list and manage documents."
+                            action={
+                                <Button
+                                    variant="contained"
+                                    startIcon={<AddIcon />}
+                                    onClick={() => setCreateOpen(true)}
+                                >
+                                    Create empty corpus
+                                </Button>
+                            }
+                        />
+                    ) : (
+                        <Box
+                            sx={{
+                                display: "grid",
+                                gap: 2,
+                                gridTemplateColumns: { xs: "1fr", md: "220px 1fr" },
+                            }}
+                        >
+                            <CorpusDocumentFilters
+                                value={filters}
+                                onChange={(next) => {
+                                    setPage(0);
+                                    setFilters(next);
+                                }}
+                            />
+                            <Box>
+                                {selectedIds.length > 0 ? (
+                                    <Stack
+                                        direction={{ xs: "column", sm: "row" }}
+                                        spacing={1}
+                                        sx={{ mb: 1.5 }}
+                                        alignItems={{ sm: "center" }}
+                                    >
+                                        <Typography variant="body2">{selectedIds.length} selected</Typography>
+                                        <TextField
+                                            size="small"
+                                            label="Bulk organization"
+                                            value={bulkOrg}
+                                            onChange={(e) => setBulkOrg(e.target.value)}
+                                        />
+                                        <TextField
+                                            size="small"
+                                            label="Bulk year"
+                                            value={bulkYear}
+                                            onChange={(e) => setBulkYear(e.target.value)}
+                                            sx={{ width: 110 }}
+                                        />
+                                        <TextField
+                                            size="small"
+                                            label="Bulk language"
+                                            value={bulkLanguage}
+                                            onChange={(e) => setBulkLanguage(e.target.value)}
+                                            sx={{ width: 130 }}
+                                        />
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            onClick={() => bulkMutation.mutate()}
+                                            disabled={bulkMutation.isPending}
+                                        >
+                                            Apply bulk update
+                                        </Button>
+                                    </Stack>
+                                ) : null}
+
+                                <QueryBoundary
+                                    isLoading={documentsQuery.isLoading}
+                                    isError={documentsQuery.isError}
+                                    error={documentsQuery.error}
+                                    onRetry={() => void documentsQuery.refetch()}
+                                >
+                                    {pageItems.length ? (
+                                        <>
+                                            <Box sx={{ overflowX: "auto" }}>
+                                                <Table size="small">
+                                                    <TableHead>
+                                                        <TableRow>
+                                                            <TableCell padding="checkbox">
                                                                 <Checkbox
                                                                     size="small"
-                                                                    checked={selectedIds.includes(doc.id)}
-                                                                    onChange={() => toggleSelected(doc.id)}
+                                                                    checked={
+                                                                        pageItems.length > 0 &&
+                                                                        pageItems.every((doc) =>
+                                                                            selectedIds.includes(doc.id)
+                                                                        )
+                                                                    }
+                                                                    indeterminate={
+                                                                        pageItems.some((doc) =>
+                                                                            selectedIds.includes(doc.id)
+                                                                        ) &&
+                                                                        !pageItems.every((doc) =>
+                                                                            selectedIds.includes(doc.id)
+                                                                        )
+                                                                    }
+                                                                    onChange={toggleAllOnPage}
                                                                 />
                                                             </TableCell>
-                                                            <TableCell>{doc.title ?? doc.id.slice(0, 8)}</TableCell>
-                                                            <TableCell>{doc.organization ?? "—"}</TableCell>
-                                                            <TableCell>{doc.publication_year ?? "—"}</TableCell>
-                                                            <TableCell>{doc.country ?? "—"}</TableCell>
-                                                            <TableCell>{doc.language ?? "—"}</TableCell>
+                                                            <TableCell>Title</TableCell>
+                                                            <TableCell>Organization</TableCell>
+                                                            <TableCell>Year</TableCell>
+                                                            <TableCell>Country</TableCell>
+                                                            <TableCell>Language</TableCell>
                                                         </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
-                                        </Box>
-                                        <TablePagination
-                                            component="div"
-                                            count={documentsQuery.data?.total ?? 0}
-                                            page={page}
-                                            onPageChange={(_, next) => setPage(next)}
-                                            rowsPerPage={PAGE_SIZE}
-                                            rowsPerPageOptions={[PAGE_SIZE]}
+                                                    </TableHead>
+                                                    <TableBody>
+                                                        {pageItems.map((doc) => (
+                                                            <TableRow
+                                                                key={doc.id}
+                                                                hover
+                                                                selected={selectedDoc?.id === doc.id}
+                                                                sx={{ cursor: "pointer" }}
+                                                                onClick={() => setSelectedDoc(doc)}
+                                                            >
+                                                                <TableCell
+                                                                    padding="checkbox"
+                                                                    onClick={(event) =>
+                                                                        event.stopPropagation()
+                                                                    }
+                                                                >
+                                                                    <Checkbox
+                                                                        size="small"
+                                                                        checked={selectedIds.includes(doc.id)}
+                                                                        onChange={() => toggleSelected(doc.id)}
+                                                                    />
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    {doc.title ?? doc.id.slice(0, 8)}
+                                                                </TableCell>
+                                                                <TableCell>{doc.organization ?? "—"}</TableCell>
+                                                                <TableCell>
+                                                                    {doc.publication_year ?? "—"}
+                                                                </TableCell>
+                                                                <TableCell>{doc.country ?? "—"}</TableCell>
+                                                                <TableCell>{doc.language ?? "—"}</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </Box>
+                                            <TablePagination
+                                                component="div"
+                                                count={documentsQuery.data?.total ?? 0}
+                                                page={page}
+                                                onPageChange={(_, next) => setPage(next)}
+                                                rowsPerPage={PAGE_SIZE}
+                                                rowsPerPageOptions={[PAGE_SIZE]}
+                                            />
+                                        </>
+                                    ) : (
+                                        <EmptyState
+                                            icon={<DocsIcon fontSize="large" />}
+                                            title="No documents yet"
+                                            description="Upload source files in Corpus management, import a metadata CSV, or load the synthetic demo."
                                         />
-                                    </>
-                                ) : (
-                                    <EmptyState
-                                        icon={<DocsIcon fontSize="large" />}
-                                        title="No documents yet"
-                                        description="Upload source files above, import a metadata CSV, or load the synthetic demo."
-                                    />
-                                )}
-                            </QueryBoundary>
+                                    )}
+                                </QueryBoundary>
+                            </Box>
                         </Box>
-                    </Box>
-                )}
-            </SectionCard>
+                    )}
+                </SectionCard>
+            ) : null}
 
             <CorpusDocumentDrawer
                 open={Boolean(selectedDoc)}

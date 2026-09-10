@@ -5,6 +5,7 @@ from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.ai import metrics
@@ -87,6 +88,8 @@ class AgentService:
             memory_degraded=prompt_context.memory_degraded,
             degradation_reason=prompt_context.degradation_reason,
             injection_chunks_filtered=prompt_context.injection_chunks_filtered,
+            agent_id=agent_id,
+            agent_run_id=resolved_run_id,
         )
 
         if prompt_context.retrieval_degraded:
@@ -114,3 +117,12 @@ class AgentService:
 
         metrics.agent_run_latency_ms.observe((perf_counter() - started) * 1000)
         return run, resolved_run_id, working
+
+    async def list_runs(self, user: User, *, limit: int, offset: int):
+        return await self.ai.repo.list_agent_runs_for_user(user.id, limit=limit, offset=offset)
+
+    async def get_run(self, user: User, run_id: str):
+        run = await self.ai.repo.get_agent_run_for_user(user.id, run_id)
+        if run is None:
+            raise HTTPException(status_code=404, detail="Agent run not found")
+        return run

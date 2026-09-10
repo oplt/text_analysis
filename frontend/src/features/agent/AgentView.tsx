@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
     Alert,
     Box,
@@ -10,9 +10,9 @@ import {
     Typography,
 } from "@mui/material";
 import { SmartToy as AgentIcon, PlayArrow as RunIcon } from "@mui/icons-material";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSnackbar } from "../../app/snackbarContext";
-import { createAgentRun, type AgentRun } from "../../api/agent";
+import { createAgentRun, getAgentRun, listAgentRuns } from "../../api/agent";
 import { getAiOverview } from "../../api/ai";
 import { listProjects } from "../../api/projects";
 import { listRagDocuments } from "../../api/rag";
@@ -25,9 +25,11 @@ import { SettingsTabs } from "../../components/layout/SettingsTabs";
 import { queryKeys } from "../../config/queryKeys";
 import { getQueryErrorMessage } from "../../utils/queryErrors";
 import { AgentRunDetail } from "./AgentRunDetail";
+import { invalidateAgentRunQueries } from "./agentQueryUtils";
 
 export default function AgentView() {
     const { showToast } = useSnackbar();
+    const queryClient = useQueryClient();
 
     const [agentId, setAgentId] = useState("default");
     const [projectId, setProjectId] = useState("");
@@ -36,7 +38,6 @@ export default function AgentView() {
     const [retrievalQuery, setRetrievalQuery] = useState("");
     const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
     const [topK, setTopK] = useState(4);
-    const [history, setHistory] = useState<AgentRun[]>([]);
     const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
     const overviewQuery = useQuery({
@@ -59,6 +60,17 @@ export default function AgentView() {
             }),
     });
 
+    const runsQuery = useQuery({
+        queryKey: queryKeys.agent.runs,
+        queryFn: () => listAgentRuns({ limit: 20, offset: 0 }),
+    });
+
+    const selectedRunQuery = useQuery({
+        queryKey: queryKeys.agent.run(selectedRunId ?? ""),
+        queryFn: () => getAgentRun(selectedRunId!),
+        enabled: selectedRunId !== null,
+    });
+
     const templates = overviewQuery.data?.prompt_templates ?? [];
 
     const runMutation = useMutation({
@@ -76,9 +88,9 @@ export default function AgentView() {
                 top_k: topK,
             });
         },
-        onSuccess: (run) => {
-            setHistory((prev) => [run, ...prev.filter((item) => item.id !== run.id)]);
+        onSuccess: async (run) => {
             setSelectedRunId(run.id);
+            await invalidateAgentRunQueries(queryClient, run.id);
             showToast({ message: "Agent run completed.", severity: "success" });
         },
         onError: (error) =>
@@ -88,10 +100,8 @@ export default function AgentView() {
             }),
     });
 
-    const selectedRun = useMemo(
-        () => history.find((run) => run.id === selectedRunId) ?? history[0] ?? null,
-        [history, selectedRunId]
-    );
+    const history = runsQuery.data?.items ?? [];
+    const selectedRun = selectedRunQuery.data ?? null;
 
     function toggleDocument(id: string) {
         setSelectedDocumentIds((ids) =>
@@ -233,28 +243,58 @@ export default function AgentView() {
                     </Stack>
                 </SectionCard>
 
-                <SectionCard title="Run history (session)" description="Runs from this browser session.">
-                    {history.length === 0 ? (
-                        <EmptyState
-                            icon={<AgentIcon />}
-                            title="No agent runs yet"
-                            description="Submit a run to inspect response, citations, cost, and degradation."
-                        />
-                    ) : (
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                            {history.map((run) => (
-                                <Chip
-                                    key={run.id}
-                                    label={`${run.id.slice(0, 8)}… · ${run.status}`}
-                                    color={selectedRun?.id === run.id ? "primary" : "default"}
-                                    onClick={() => setSelectedRunId(run.id)}
+                <SectionCard
+                    title="Run history"
+                    description="Persisted runs for your account, including runs from earlier sessions."
+                >
+                    <Stack spacing={1.5}>
+                        <Button
+                            variant="text"
+                            size="small"
+                            onClick={() => void runsQuery.refetch()}
+                            disabled={runsQuery.isFetching}
+                            sx={{ alignSelf: "flex-start" }}
+                        >
+                            {runsQuery.isFetching ? "Refreshing…" : "Refresh history"}
+                        </Button>
+                        <QueryBoundary
+                            isLoading={runsQuery.isLoading}
+                            isError={runsQuery.isError}
+                            error={runsQuery.error}
+                            onRetry={() => void runsQuery.refetch()}
+                        >
+                            {history.length === 0 ? (
+                                <EmptyState
+                                    icon={<AgentIcon />}
+                                    title="No agent runs yet"
+                                    description="Submit a run to inspect response, citations, cost, and degradation."
                                 />
-                            ))}
-                        </Stack>
-                    )}
+                            ) : (
+                                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                    {history.map((run) => (
+                                        <Chip
+                                            key={run.id}
+                                            label={`${run.id.slice(0, 8)}… · ${run.status}`}
+                                            color={selectedRunId === run.id ? "primary" : "default"}
+                                            onClick={() => setSelectedRunId(run.id)}
+                                        />
+                                    ))}
+                                </Stack>
+                            )}
+                        </QueryBoundary>
+                    </Stack>
                 </SectionCard>
 
-                {selectedRun ? <AgentRunDetail run={selectedRun} /> : null}
+                {selectedRunId ? (
+                    <QueryBoundary
+                        isLoading={selectedRunQuery.isLoading}
+                        isError={selectedRunQuery.isError}
+                        error={selectedRunQuery.error}
+                        onRetry={() => void selectedRunQuery.refetch()}
+                    >
+                        {selectedRun ? <AgentRunDetail run={selectedRun} /> : null}
+                    </QueryBoundary>
+                ) : null}
             </Stack>
         </PageShell>
     );

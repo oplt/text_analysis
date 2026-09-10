@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
+from collections.abc import Sequence
 from pathlib import Path
 from unittest import mock
 
@@ -196,6 +197,26 @@ class FeatureCacheSpillTests(unittest.TestCase):
 
 
 class HashingDfmAndClusteringTests(unittest.TestCase):
+    def test_hashing_dfm_batches_without_copying_the_full_input_sequence(self) -> None:
+        class SliceOnlyTexts(Sequence[str]):
+            def __init__(self, values: list[str]) -> None:
+                self.values = values
+
+            def __len__(self) -> int:
+                return len(self.values)
+
+            def __getitem__(self, index):
+                return self.values[index]
+
+            def __iter__(self):
+                raise AssertionError("full input iteration would copy the corpus before batching")
+
+        matrix = build_hashing_matrix(
+            SliceOnlyTexts(["policy reform", "trade policy"]), batch_size=1
+        )
+
+        self.assertEqual(matrix.shape[0], 2)
+
     def test_hashing_dfm_stays_sparse(self) -> None:
         tokenized = [["policy", "reform"], ["trade", "market"], ["policy", "vote"]]
         result = quantitative.build_dfm_matrix(

@@ -5,10 +5,12 @@ import { runDimensionalityReduction } from "../../../api/textResearch";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import {
     PanelBody,
+} from "./advancedAnalysisShared";
+import {
     useAnalysisRun,
     useRunMutation,
     type AdvancedAnalysisBasePayload,
-} from "./advancedAnalysisShared";
+} from "./advancedAnalysisUtils";
 
 export default function DimensionalityReductionView({
     basePayload,

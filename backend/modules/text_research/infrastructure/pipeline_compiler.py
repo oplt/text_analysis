@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-import hashlib
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
+from backend.modules.text_research.domain.execution_defaults import (
+    ENGINE_VERSION,
+    computation_identity,
+)
 
-ENGINE_VERSION = "text_research.pipeline/1"
+__all__ = ["ENGINE_VERSION", "computation_identity"]
 
 BASE_STAGES: tuple[str, ...] = ("validate_spec", "resolve_corpus", "prepare_corpus")
 TERMINAL_STAGES: tuple[str, ...] = ("persist_run",)
@@ -71,13 +74,3 @@ def compile_plan(spec: AnalysisSpecification) -> ExecutionPlan:
         engine_version=ENGINE_VERSION,
         steps=steps,
     )
-
-
-def computation_identity(
-    spec_hash: str,
-    corpus_snapshot_hash: str,
-    engine_version: str = ENGINE_VERSION,
-) -> str:
-    """Stable identity for a prepared-corpus computation artifact."""
-    payload = f"{spec_hash}:{corpus_snapshot_hash}:{engine_version}"
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()

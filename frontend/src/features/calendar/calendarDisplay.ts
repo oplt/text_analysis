@@ -1,8 +1,16 @@
-import { alpha, type Theme } from "@mui/material/styles";
+import { alpha, type SxProps, type Theme } from "@mui/material/styles";
 import type { CalendarItem, CalendarItemType } from "../../api/calendar";
 import type { Project, ProjectTaskPriority } from "../../api/projects";
 import type { CalendarViewMode } from "./calendarRange";
-export type DashboardCalendarProps = { projects: Project[]; projectsLoading: boolean; onOpenProjects: () => void; allowedViews?: CalendarViewMode[]; initialView?: CalendarViewMode };
+export type DashboardCalendarProps = {
+    projects: Project[];
+    projectsLoading: boolean;
+    onOpenProjects: () => void;
+    allowedViews?: CalendarViewMode[];
+    initialView?: CalendarViewMode;
+    sx?: SxProps<Theme>;
+    contentSx?: SxProps<Theme>;
+};
 export type CalendarDraft = { type: CalendarItemType; title: string; description: string; start_time: string; end_time: string; project_id: string; priority: ProjectTaskPriority };
 export type CalendarFieldErrors = { title?: string; project_id?: string; start_time?: string; end_time?: string; general?: string };
 export const VIEW_OPTIONS: Array<{ value: CalendarViewMode; label: string }> = [{ value: "day", label: "Day" }, { value: "week", label: "Week" }, { value: "month", label: "Month" }, { value: "twelve_month", label: "12M" }];

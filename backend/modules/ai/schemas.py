@@ -149,6 +149,8 @@ class AiRunResponse(BaseModel):
     id: str
     prompt_template_id: str | None
     prompt_version_id: str | None
+    agent_id: str | None = None
+    agent_run_id: str | None = None
     provider_key: str
     model_name: str
     status: str

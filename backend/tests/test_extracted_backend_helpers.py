@@ -50,7 +50,7 @@ class RequestAuditLoggingTest(IsolatedAsyncioTestCase):
 
 
 class ProfileSerializerTest(TestCase):
-    def test_maps_profile_fields_without_changing_contract(self) -> None:
+    def test_uses_authenticated_avatar_content_endpoint_for_stored_avatar(self) -> None:
         profile = UserProfile(
             user_id="user-1",
             bio="Bio",
@@ -67,8 +67,18 @@ class ProfileSerializerTest(TestCase):
             {
                 "user_id": "user-1",
                 "bio": "Bio",
-                "avatar_url": "https://example.test/avatar.png",
+                "avatar_url": "/api/v1/profile/avatar/content",
                 "location": "Brussels",
                 "website": "https://example.test",
             },
         )
+
+    def test_preserves_external_avatar_url_without_storage_key(self) -> None:
+        profile = UserProfile(
+            user_id="user-1",
+            avatar_url="https://example.test/avatar.png",
+        )
+
+        response = profile_to_response(profile)
+
+        self.assertEqual(response.avatar_url, "https://example.test/avatar.png")
