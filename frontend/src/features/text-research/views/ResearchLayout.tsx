@@ -6,25 +6,18 @@ import {
     Drawer,
     IconButton,
     Stack,
-    Tooltip,
     Typography,
     useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import {
     Close as CloseIcon,
-    InfoOutlined as InfoIcon,
-    Science as LabIcon,
     Tune as ContextIcon,
 } from "@mui/icons-material";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { getProject } from "../../../api/projects";
-import { PageHeader } from "../../../components/ui/PageHeader";
 import { PageShell } from "../../../components/ui/PageShell";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
-import { queryKeys } from "../../../config/queryKeys";
 import { ResearchContextBar } from "../components/ResearchShared";
 import { ResearchWorkflowDrawer } from "../components/ResearchWorkflowDrawer";
 import { ResearchWorkflowStrip } from "../components/ResearchWorkflowStrip";
@@ -32,7 +25,6 @@ import { ResearchProvider, useResearchContext } from "../hooks/useResearchContex
 import { useResearchWorkflow } from "../hooks/useResearchWorkflow";
 import { setLastResearchProjectId } from "../researchProjectStorage";
 import { RESEARCH_TABS } from "../types";
-import { workflowProgress } from "../workflowDisplay";
 import {
     RESEARCH_WORKFLOW_STAGES,
     stageIdFromPath,
@@ -71,15 +63,8 @@ function ResearchLayoutInner() {
     const activeRoute = routeFromPath(location.pathname, projectId);
     const activeStageId = stageIdFromPath(location.pathname, projectId);
     const { stages } = useResearchWorkflow(activeRoute);
-    const progress = workflowProgress(stages);
     const [contextOpen, setContextOpen] = useState(false);
     const [workflowOpen, setWorkflowOpen] = useState(false);
-
-    const projectQuery = useQuery({
-        queryKey: queryKeys.projects.detail(projectId),
-        queryFn: () => getProject(projectId),
-        enabled: Boolean(projectId),
-    });
 
     useEffect(() => {
         if (projectId) {
@@ -134,25 +119,6 @@ function ResearchLayoutInner() {
                     </Button>
                 </Stack>
             ) : null}
-
-            <PageHeader
-                dense
-                icon={<LabIcon />}
-                title={`Text Research · ${projectQuery.data?.name ?? "workspace"}`}
-                description="Corpus, annotation, analysis, and exports"
-                actions={
-                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                        <Typography variant="body2" color="text.secondary">
-                            {progress.completed}/{progress.total} stages
-                        </Typography>
-                        <Tooltip title="Pipeline stages stay clickable when ready. Details open via All stages.">
-                            <IconButton size="small" aria-label="Workflow help">
-                                <InfoIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                    </Stack>
-                }
-            />
 
             <Box sx={{ mb: 1.5 }}>
                 <ResearchWorkflowStrip

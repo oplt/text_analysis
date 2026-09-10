@@ -25,7 +25,6 @@ import { useTheme } from "@mui/material/styles";
 import { listAdminUsers, updateUserStatus, type AdminUserListResponse } from "../api/admin";
 import { AdminSettingsTabs } from "../components/layout/AdminSettingsTabs";
 import { EmptyState } from "../components/ui/EmptyState";
-import { PageHeader } from "../components/ui/PageHeader";
 import { PageShell } from "../components/ui/PageShell";
 import { QueryBoundary } from "../components/ui/QueryBoundary";
 import { SectionCard } from "../components/ui/SectionCard";
@@ -90,29 +89,25 @@ export default function AdminUsersPage() {
         <PageShell width="wide">
             <AdminSettingsTabs />
 
-            <PageHeader
-                title="Users"
-                description="Search accounts and manage activation status."
-                actions={
-                    <TextField
-                        size="small"
-                        placeholder="Search users..."
-                        value={search}
-                        onChange={(event) => {
-                            setSearch(event.target.value);
-                            setPage(0);
-                        }}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon fontSize="small" />
-                                </InputAdornment>
-                            ),
-                        }}
-                        sx={{ width: { xs: "100%", sm: 280 } }}
-                    />
-                }
-            />
+            <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+                <TextField
+                    size="small"
+                    placeholder="Search users..."
+                    value={search}
+                    onChange={(event) => {
+                        setSearch(event.target.value);
+                        setPage(0);
+                    }}
+                    InputProps={{
+                        startAdornment: (
+                            <InputAdornment position="start">
+                                <SearchIcon fontSize="small" />
+                            </InputAdornment>
+                        ),
+                    }}
+                    sx={{ width: { xs: "100%", sm: 280 } }}
+                />
+            </Stack>
 
             <Box
                 sx={{

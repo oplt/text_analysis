@@ -17,7 +17,6 @@ import { getAiOverview } from "../../api/ai";
 import { listProjects } from "../../api/projects";
 import { listRagDocuments } from "../../api/rag";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { PageHeader } from "../../components/ui/PageHeader";
 import { PageShell } from "../../components/ui/PageShell";
 import { QueryBoundary } from "../../components/ui/QueryBoundary";
 import { SectionCard } from "../../components/ui/SectionCard";
@@ -112,12 +111,8 @@ export default function AgentView() {
     return (
         <PageShell maxWidth="xl">
             <SettingsTabs />
-            <PageHeader
-                title="Agent"
-                description="Run an agent prompt with optional RAG retrieval and memory. Long runs use the sync API with loading/error handling."
-            />
 
-            <Stack spacing={2} sx={{ mt: 2 }}>
+            <Stack spacing={2}>
                 <SectionCard
                     title="New agent run"
                     description="Configure agent ID, project, message, retrieval options, and selected RAG documents."

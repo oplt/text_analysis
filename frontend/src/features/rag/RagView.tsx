@@ -38,7 +38,6 @@ import {
     type RagRetrieveResult,
 } from "../../api/rag";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { PageHeader } from "../../components/ui/PageHeader";
 import { PageShell } from "../../components/ui/PageShell";
 import { QueryBoundary, QueryErrorAlert } from "../../components/ui/QueryBoundary";
 import { SectionCard } from "../../components/ui/SectionCard";
@@ -215,12 +214,8 @@ export default function RagView() {
     return (
         <PageShell maxWidth="xl">
             <SettingsTabs />
-            <PageHeader
-                title="RAG"
-                description="First-class retrieval documents, indexing, chunks, ask, and query history via /api/v1/rag."
-            />
 
-            <Stack spacing={2} sx={{ mt: 2 }}>
+            <Stack spacing={2}>
                 <SectionCard title="Project filter" description="Scope documents and retrieval to a project.">
                     <TextField
                         select

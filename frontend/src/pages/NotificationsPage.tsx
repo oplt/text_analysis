@@ -26,7 +26,6 @@ import { NotificationListItem } from "../components/notifications/NotificationLi
 import { EmptyState } from "../components/ui/EmptyState";
 import { useNotificationPreferences } from "../hooks/useNotificationPreferences";
 import { useNotifications } from "../hooks/useNotifications";
-import { PageHeader } from "../components/ui/PageHeader";
 import { PageShell } from "../components/ui/PageShell";
 import { QueryBoundary } from "../components/ui/QueryBoundary";
 import { SectionCard } from "../components/ui/SectionCard";
@@ -174,22 +173,18 @@ export default function NotificationsPage() {
 
     return (
         <PageShell width="wide">
-            <PageHeader
-                title="Notifications"
-                description="Inbox activity and delivery preferences."
-                actions={
-                    unreadCount > 0 ? (
-                        <Button
-                            variant="contained"
-                            startIcon={<DoneAllIcon />}
-                            disabled={markAllMutation.isPending}
-                            onClick={() => markAllMutation.mutate()}
-                        >
-                            {markAllMutation.isPending ? "Updating..." : "Mark all read"}
-                        </Button>
-                    ) : undefined
-                }
-            />
+            {unreadCount > 0 ? (
+                <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+                    <Button
+                        variant="contained"
+                        startIcon={<DoneAllIcon />}
+                        disabled={markAllMutation.isPending}
+                        onClick={() => markAllMutation.mutate()}
+                    >
+                        {markAllMutation.isPending ? "Updating..." : "Mark all read"}
+                    </Button>
+                </Stack>
+            ) : null}
 
             <Box
                 sx={{

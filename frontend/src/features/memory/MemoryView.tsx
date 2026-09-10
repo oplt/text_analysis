@@ -37,7 +37,6 @@ import {
     type MemoryItem,
 } from "../../api/memory";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { PageHeader } from "../../components/ui/PageHeader";
 import { PageShell } from "../../components/ui/PageShell";
 import { QueryBoundary, QueryErrorAlert } from "../../components/ui/QueryBoundary";
 import { SectionCard } from "../../components/ui/SectionCard";
@@ -143,12 +142,8 @@ export default function MemoryView() {
     return (
         <PageShell maxWidth="xl">
             <SettingsTabs />
-            <PageHeader
-                title="Memory"
-                description="List, search, inspect, and forget agent memory items with audit history."
-            />
 
-            <Stack spacing={2} sx={{ mt: 2 }}>
+            <Stack spacing={2}>
                 <SectionCard title="Filters & search" description="Scope by level, project, and agent.">
                     <Stack spacing={2}>
                         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap" useFlexGap>

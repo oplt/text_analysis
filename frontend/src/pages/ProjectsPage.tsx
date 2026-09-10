@@ -30,7 +30,6 @@ import { queryKeys } from "../config/queryKeys";
 import { QUERY_STALE_TIMES } from "../config/queryTiming";
 import { useSnackbar } from "../app/snackbarContext";
 import { EmptyState } from "../components/ui/EmptyState";
-import { PageHeader } from "../components/ui/PageHeader";
 import { PageShell } from "../components/ui/PageShell";
 import { QueryBoundary } from "../components/ui/QueryBoundary";
 import { SectionCard } from "../components/ui/SectionCard";
@@ -133,11 +132,6 @@ export default function ProjectsPage() {
 
     return (
         <PageShell width="wide">
-            <PageHeader
-                title={coreDomainPlural}
-                description={`Create and open ${coreDomainPlural.toLowerCase()} for research workspaces.`}
-            />
-
             <SectionCard
                 title={`Your ${coreDomainPlural}`}
                 description={`Browse the current ${coreDomainPlural.toLowerCase()} and scan for missing descriptions or naming gaps.`}

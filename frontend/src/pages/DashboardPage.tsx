@@ -6,7 +6,6 @@ import {
     Typography,
 } from "@mui/material";
 import {
-    ArrowForward as ArrowForwardIcon,
     FolderOpen as ProjectsIcon,
     Notifications as NotificationsIcon,
     Security as SecurityIcon,
@@ -18,7 +17,6 @@ import { listProjects } from "../api/projects";
 import { queryKeys } from "../config/queryKeys";
 import { DashboardCalendar } from "../components/dashboard/DashboardCalendar";
 import { NotificationListItem } from "../components/notifications/NotificationListItem";
-import { PageHeader } from "../components/ui/PageHeader";
 import { PageShell } from "../components/ui/PageShell";
 import { QueryBoundary } from "../components/ui/QueryBoundary";
 import { SectionCard } from "../components/ui/SectionCard";
@@ -76,24 +74,16 @@ export default function DashboardPage() {
 
     return (
         <PageShell width="wide">
-            <PageHeader
-                title="Dashboard"
-                description="Workspace health, recent activity, and quick entry points."
-                actions={
-                    <>
-                        <Button
-                            variant="contained"
-                            endIcon={<ArrowForwardIcon />}
-                            onClick={() => navigate("/projects")}
-                        >
-                            Open {coreDomainPlural}
-                        </Button>
-                        <Button variant="outlined" onClick={() => navigate("/notifications")}>
-                            View inbox
-                        </Button>
-                    </>
-                }
-            />
+            <Stack
+                direction="row"
+                spacing={1}
+                flexWrap="wrap"
+                useFlexGap
+                justifyContent="flex-end"
+                sx={{ mb: 2 }}
+            >
+
+            </Stack>
 
             <Box
                 sx={{

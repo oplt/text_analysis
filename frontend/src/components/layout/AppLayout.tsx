@@ -147,7 +147,7 @@ function NavBlock({
                             {!collapsed && (
                                 <ListItemText
                                     primary={item.label}
-                                    secondary={selected ? "Current section" : undefined}
+                                    // secondary={selected ? "Current section" : undefined}
                                     secondaryTypographyProps={{ sx: { fontSize: "0.74rem" } }}
                                 />
                             )}
@@ -311,14 +311,7 @@ export function AppLayout() {
                             >
                                 {appName}
                             </Typography>
-                            {platformMetadata?.module_pack && (
-                                <Chip
-                                    label={`Pack: ${platformMetadata.module_pack}`}
-                                    size="small"
-                                    variant="outlined"
-                                    sx={{ mt: 1.5 }}
-                                />
-                            )}
+
                         </Box>
                     )}
                 </Box>
@@ -359,7 +352,7 @@ export function AppLayout() {
                             <ListItemIcon sx={{ minWidth: 40 }}>{settingsNavItem.icon}</ListItemIcon>
                             <ListItemText
                                 primary={settingsNavItem.label}
-                                secondary={settingsSelected ? "Current section" : undefined}
+                                // secondary={settingsSelected ? "Current section" : undefined}
                                 secondaryTypographyProps={{ sx: { fontSize: "0.74rem" } }}
                             />
                         </ListItemButton>
@@ -464,9 +457,7 @@ export function AppLayout() {
                         </Tooltip>
                     )}
                     <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                        <Typography variant="caption" color="text.secondary">
-                            {appName}
-                        </Typography>
+                   
                         <Typography variant="h6" noWrap>
                             {pageTitle}
                         </Typography>
