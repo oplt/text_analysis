@@ -41,6 +41,7 @@ class AiRunService(AiPromptService, AiDocumentService):
         injection_chunks_filtered: int = 0,
         agent_id: str | None = None,
         agent_run_id: str | None = None,
+        commit: bool = True,
     ):
         template, version = await self._resolve_prompt_version(
             user,
@@ -126,6 +127,7 @@ class AiRunService(AiPromptService, AiDocumentService):
             rendered_system_prompt=rendered_system_prompt,
             rendered_user_prompt=rendered_user_prompt,
             review_required=review_required,
+            commit=commit,
         )
 
     @staticmethod
@@ -145,6 +147,7 @@ class AiRunService(AiPromptService, AiDocumentService):
         memory_degraded: bool = False,
         degradation_reason: str | None = None,
         injection_chunks_filtered: int = 0,
+        commit: bool = True,
     ) -> AiRun:
         prompt_spec = await resolve_rag_answer_prompt(self.repo, user)
 
@@ -185,6 +188,7 @@ class AiRunService(AiPromptService, AiDocumentService):
             rendered_system_prompt=rendered_system_prompt,
             rendered_user_prompt=rendered_user_prompt,
             review_required=review_required,
+            commit=commit,
         )
 
     async def _finalize_run_generation(
@@ -196,6 +200,7 @@ class AiRunService(AiPromptService, AiDocumentService):
         rendered_system_prompt: str,
         rendered_user_prompt: str,
         review_required: bool,
+        commit: bool,
     ) -> AiRun:
         provider = self.providers.get(run.provider_key)
         started = perf_counter()
@@ -227,14 +232,16 @@ class AiRunService(AiPromptService, AiDocumentService):
             run.status = "failed"
             run.error_message = exc.detail if isinstance(exc.detail, str) else str(exc.detail)
             run.completed_at = datetime.now(UTC)
-            await self.db.commit()
+            if commit:
+                await self.db.commit()
             raise
         except Exception as exc:
             metrics.ai_run_failed_total.inc()
             run.status = "failed"
             run.error_message = str(exc)
             run.completed_at = datetime.now(UTC)
-            await self.db.commit()
+            if commit:
+                await self.db.commit()
             raise HTTPException(status_code=502, detail="AI provider execution failed") from exc
 
         if review_required:
@@ -244,8 +251,9 @@ class AiRunService(AiPromptService, AiDocumentService):
                 status="pending",
             )
 
-        await self.db.commit()
-        await self.db.refresh(run)
+        if commit:
+            await self.db.commit()
+            await self.db.refresh(run)
         return run
 
     async def list_runs(

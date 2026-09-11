@@ -201,6 +201,7 @@ async def list_document_chunks(
                 content=chunk_content(chunk.content),
                 token_count=chunk.token_count,
                 metadata=json.loads(chunk.metadata_json or "{}"),
+                revision_id=chunk.revision_id,
             )
             for chunk in chunks
         ],
@@ -250,6 +251,10 @@ async def retrieve_chunks(
                 page_number=chunk.page_number,
                 rank=chunk.rank,
                 used_in_answer=chunk.used_in_answer,
+                index_revision_id=chunk.index_revision_id,
+                source_span_ids=(chunk.metadata or {}).get("source_span_ids"),
+                char_start=(chunk.metadata or {}).get("char_start"),
+                char_end=(chunk.metadata or {}).get("char_end"),
             )
             for chunk in outcome.chunks
         ],
@@ -261,6 +266,7 @@ async def retrieve_chunks(
         fusion_method=outcome.fusion_method,
         coverage=coverage,
         retrieval_trace_id=outcome.retrieval_trace_id,
+        index_revision_ids=outcome.index_revision_ids,
     )
 
 
@@ -311,6 +317,10 @@ async def ask_rag(
                 citation_number=c.citation_number,
                 used_in_answer=c.used_in_answer,
                 section_heading=c.section_heading,
+                char_start=c.char_start,
+                char_end=c.char_end,
+                source_span_ids=c.source_span_ids,
+                parent_context_id=c.parent_context_id,
             )
             for c in result.citations
         ],
@@ -324,6 +334,8 @@ async def ask_rag(
         degradation_reason=result.degradation_reason,
         injection_chunks_filtered=result.injection_chunks_filtered,
         retrieval_trace_id=result.retrieval_trace_id,
+        evidence_revision_hash=result.evidence_revision_hash,
+        index_revision_ids=result.index_revision_ids,
         citation_validation_failed=result.citation_validation_failed,
         coverage=coverage,
     )

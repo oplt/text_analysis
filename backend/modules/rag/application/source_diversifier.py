@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from backend.modules.rag.domain.models import RetrievedChunk, RetrievalCoverage
+from dataclasses import replace
+
+from backend.modules.rag.domain.models import RetrievalCoverage, RetrievedChunk
 
 
 def diversify_by_document(
@@ -19,21 +21,7 @@ def diversify_by_document(
         if count >= max_per_document:
             continue
         per_doc[chunk.document_id] = count + 1
-        selected.append(
-            RetrievedChunk(
-                chunk_id=chunk.chunk_id,
-                document_id=chunk.document_id,
-                content=chunk.content,
-                score=chunk.score,
-                filename=chunk.filename,
-                chunk_index=chunk.chunk_index,
-                page_number=chunk.page_number,
-                metadata=chunk.metadata,
-                rank=len(selected) + 1,
-                used_in_answer=chunk.used_in_answer,
-                retrieval_sources=chunk.retrieval_sources,
-            )
-        )
+        selected.append(replace(chunk, rank=len(selected) + 1))
         if len(selected) >= limit:
             break
 

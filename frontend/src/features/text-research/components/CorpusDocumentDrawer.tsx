@@ -55,9 +55,61 @@ type CorpusDocumentDrawerProps = {
     corpusId: string;
     onClose: () => void;
     highlightSnippet?: string | null;
-    /** Optional page number hint from a citation (display only; snippet highlight remains primary). */
+    /** Optional page number hint from a citation. */
     pageHint?: number | null;
+    charStart?: number | null;
+    charEnd?: number | null;
+    sourceSpanIds?: string[] | null;
 };
+
+type PageProvenance = {
+    page_number?: number | null;
+    char_start?: number | null;
+    char_end?: number | null;
+    source_span_ids?: string[] | null;
+};
+
+function validRange(
+    start: number | null | undefined,
+    end: number | null | undefined,
+    textLength: number
+): { start: number; end: number } | null {
+    if (
+        typeof start !== "number" ||
+        typeof end !== "number" ||
+        !Number.isInteger(start) ||
+        !Number.isInteger(end) ||
+        start < 0 ||
+        end <= start ||
+        end > textLength
+    ) {
+        return null;
+    }
+    return { start, end };
+}
+
+function resolveHighlightRange(
+    text: string,
+    charStart: number | null | undefined,
+    charEnd: number | null | undefined,
+    pageNumber: number | null | undefined,
+    pageProvenance: PageProvenance[] | undefined,
+    sourceSpanIds: string[] | null | undefined
+): { start: number; end: number } | null {
+    const offsetRange = validRange(charStart, charEnd, text.length);
+    if (offsetRange) return offsetRange;
+
+    const requestedSpans = new Set(sourceSpanIds ?? []);
+    if (pageNumber == null && requestedSpans.size === 0) return null;
+    const page = pageProvenance?.find(
+        (candidate) =>
+            ((pageNumber != null && candidate.page_number === pageNumber) ||
+                (requestedSpans.size > 0 &&
+                    (candidate.source_span_ids ?? []).some((id) => requestedSpans.has(id)))) &&
+            validRange(candidate.char_start, candidate.char_end, text.length)
+    );
+    return page ? validRange(page.char_start, page.char_end, text.length) : null;
+}
 
 export function CorpusDocumentDrawer({
     document,
@@ -73,6 +125,9 @@ function CorpusDocumentDrawerContent({
     onClose,
     highlightSnippet,
     pageHint,
+    charStart,
+    charEnd,
+    sourceSpanIds,
 }: CorpusDocumentDrawerProps) {
     const client = useQueryClient();
     const { showToast } = useSnackbar();
@@ -213,6 +268,11 @@ function CorpusDocumentDrawerContent({
                                             "No source text available yet."
                                         }
                                         snippet={highlightSnippet}
+                                        charStart={charStart}
+                                        charEnd={charEnd}
+                                        pageNumber={pageHint}
+                                        pageProvenance={sourceQuery.data?.page_provenance}
+                                        sourceSpanIds={sourceSpanIds}
                                     />
                                 </QueryBoundary>
                             )}
@@ -244,19 +304,38 @@ function CorpusDocumentDrawerContent({
 function HighlightedSourceText({
     text,
     snippet,
+    charStart,
+    charEnd,
+    pageNumber,
+    pageProvenance,
+    sourceSpanIds,
 }: {
     text: string;
     snippet?: string | null;
+    charStart?: number | null;
+    charEnd?: number | null;
+    pageNumber?: number | null;
+    pageProvenance?: PageProvenance[];
+    sourceSpanIds?: string[] | null;
 }) {
     const markRef = useRef<HTMLElement | null>(null);
     const needle = (snippet ?? "").trim();
     const lowerText = text.toLowerCase();
     const lowerNeedle = needle.toLowerCase();
-    const index = needle ? lowerText.indexOf(lowerNeedle) : -1;
+    const exactRange = resolveHighlightRange(
+        text,
+        charStart,
+        charEnd,
+        pageNumber,
+        pageProvenance,
+        sourceSpanIds
+    );
+    const index = exactRange?.start ?? (needle ? lowerText.indexOf(lowerNeedle) : -1);
+    const matchEnd = exactRange?.end ?? (index >= 0 ? index + needle.length : -1);
 
     useEffect(() => {
         markRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
-    }, [text, snippet]);
+    }, [text, snippet, exactRange?.start, exactRange?.end]);
 
     if (index < 0) {
         return (
@@ -279,8 +358,8 @@ function HighlightedSourceText({
     }
 
     const before = text.slice(0, index);
-    const match = text.slice(index, index + needle.length);
-    const after = text.slice(index + needle.length);
+    const match = text.slice(index, matchEnd);
+    const after = text.slice(matchEnd);
 
     return (
         <Box

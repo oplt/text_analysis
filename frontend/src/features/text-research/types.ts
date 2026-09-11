@@ -8,10 +8,30 @@ export type ResearchCorpus = {
     updated_at: string;
 };
 
+export type ResearchMemo = {
+    id: string;
+    project_id: string;
+    corpus_id: string | null;
+    user_id: string;
+    source_type: "manual" | "assistant_answer" | "analysis_result" | string;
+    status: "active" | "archived" | string;
+    title: string;
+    body: string;
+    originating_assistant_message_id: string | null;
+    originating_synthesis_run_id: string | null;
+    evidence_revision_hash: string | null;
+    citations: Array<Record<string, unknown>>;
+    claims: Array<Record<string, unknown>>;
+    provenance: Record<string, unknown>;
+    created_at: string;
+    updated_at: string;
+    archived_at: string | null;
+};
+
 export type CorpusDocument = {
     id: string;
     corpus_id: string;
-    rag_document_id: string;
+    rag_document_id: string | null;
     title: string | null;
     organization: string | null;
     organization_type: string | null;
@@ -60,6 +80,7 @@ export type AnalysisRun = {
     run_type: string;
     status: string;
     run_version?: number;
+    evidence_revision_hash?: string | null;
     progress_stage: string | null;
     parameters: Record<string, unknown> | null;
     metrics: Record<string, unknown> | null;

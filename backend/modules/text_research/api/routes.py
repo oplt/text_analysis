@@ -23,8 +23,9 @@ from backend.core.pagination import (
 )
 from backend.db.session import SessionLocal
 from backend.modules.identity_access.models import User
-from backend.modules.text_research.api.corpora import router as corpora_router
 from backend.modules.text_research.api.assistant_routes import router as assistant_router
+from backend.modules.text_research.api.corpora import router as corpora_router
+from backend.modules.text_research.api.memo_routes import router as memo_router
 from backend.modules.text_research.api.schemas import (
     ActiveLearningAssignRequest,
     AdjudicationSaveRequest,
@@ -173,6 +174,7 @@ from backend.modules.text_research.domain.models import (
 router = APIRouter()
 router.include_router(corpora_router)
 router.include_router(assistant_router)
+router.include_router(memo_router)
 
 
 def _loads(value: str | None, default: Any = None) -> Any:
@@ -214,6 +216,7 @@ def _run_response(run: AnalysisRun) -> AnalysisRunResponse:
         run_type=run.run_type,
         status=run.status,
         run_version=int(getattr(run, "run_version", 1) or 1),
+        evidence_revision_hash=getattr(run, "evidence_revision_hash", None),
         progress_stage=run.progress_stage,
         parameters=_loads(run.parameters_json),
         metrics=_loads(run.metrics_json),
@@ -610,6 +613,7 @@ async def get_source_text(
         canonical_text_checksum=source.canonical_text_checksum,
         parser_name=source.parser_name,
         parser_version=source.parser_version,
+        page_provenance=_loads(source.page_provenance_json, []),
         source="canonical",
     )
 

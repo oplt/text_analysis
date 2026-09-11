@@ -57,6 +57,7 @@ def serialize_retrieved_chunks(chunks: list[RetrievedChunk]) -> list[dict]:
             "chunk_index": chunk.chunk_index,
             "page_number": chunk.page_number,
             "metadata": chunk.metadata,
+            "index_revision_id": chunk.index_revision_id,
         }
         for chunk in chunks
     ]
@@ -75,6 +76,7 @@ def deserialize_retrieved_chunks(payload: list[dict] | None) -> list[RetrievedCh
             chunk_index=int(item["chunk_index"]),
             page_number=item.get("page_number"),
             metadata=item.get("metadata") or {},
+            index_revision_id=item.get("index_revision_id"),
         )
         for item in payload
     ]

@@ -1,9 +1,12 @@
 {
+  "schema_version": 2,
+  "description": "Deterministic retrieval and citation benchmark; no model or network calls.",
   "cases": [
     {
       "id": "activation-framing",
+      "category": "exact lexical matches",
       "question": "individual responsibility activation",
-      "k": 3,
+      "k": 5,
       "scoped_document_ids": ["d1", "d2", "d3", "d4"],
       "relevant_chunk_ids": ["c-rel-1", "c-rel-2"],
       "dense": [
@@ -18,6 +21,187 @@
         {"chunk_id": "c-lex-only", "document_id": "d4", "score": 0.40, "content": "responsibility of the individual"}
       ],
       "citation_raw": "{\"answer\":\"Activation emphasized individual responsibility.\",\"claims\":[{\"text\":\"Activation emphasized individual responsibility.\",\"chunk_ids\":[\"c-rel-1\"]}]}"
+    },
+    {
+      "id": "semantic-paraphrase",
+      "category": "semantic paraphrases",
+      "question": "How did the policy encourage self-sufficiency?",
+      "scoped_document_ids": ["d5", "d6"],
+      "relevant_chunk_ids": ["c-para"],
+      "dense": [
+        {"chunk_id": "c-para", "document_id": "d5", "score": 0.95, "content": "The programme promoted independence from state support."},
+        {"chunk_id": "c-para-noise", "document_id": "d6", "score": 0.42, "content": "The programme was announced in spring."}
+      ],
+      "lexical": [
+        {"chunk_id": "c-para-noise", "document_id": "d6", "score": 0.76, "content": "The programme was announced in spring."},
+        {"chunk_id": "c-para", "document_id": "d5", "score": 0.34, "content": "The programme promoted independence from state support."}
+      ]
+    },
+    {
+      "id": "multilingual-query",
+      "category": "multilingual queries",
+      "question": "Welche Position vertritt der Bericht zur sozialen Verantwortung?",
+      "scoped_document_ids": ["d7", "d8"],
+      "relevant_chunk_ids": ["c-de"],
+      "dense": [
+        {"chunk_id": "c-de", "document_id": "d7", "score": 0.89, "content": "Der Bericht beschreibt soziale Verantwortung als gemeinsame Aufgabe."},
+        {"chunk_id": "c-fr", "document_id": "d8", "score": 0.45, "content": "Le rapport décrit le calendrier."}
+      ],
+      "lexical": [
+        {"chunk_id": "c-fr", "document_id": "d8", "score": 0.60, "content": "Le rapport décrit le calendrier."},
+        {"chunk_id": "c-de", "document_id": "d7", "score": 0.30, "content": "Der Bericht beschreibt soziale Verantwortung als gemeinsame Aufgabe."}
+      ]
+    },
+    {
+      "id": "fact-lookup",
+      "category": "fact lookup",
+      "question": "What year was the commission established?",
+      "scoped_document_ids": ["d9", "d10"],
+      "relevant_chunk_ids": ["c-fact"],
+      "dense": [
+        {"chunk_id": "c-fact", "document_id": "d9", "score": 0.93, "content": "The commission was established in 1998."},
+        {"chunk_id": "c-fact-noise", "document_id": "d10", "score": 0.51, "content": "The commission met again in 2001."}
+      ],
+      "lexical": [
+        {"chunk_id": "c-fact-noise", "document_id": "d10", "score": 0.70, "content": "The commission met again in 2001."},
+        {"chunk_id": "c-fact", "document_id": "d9", "score": 0.69, "content": "The commission was established in 1998."}
+      ]
+    },
+    {
+      "id": "evidence-search",
+      "category": "evidence search",
+      "question": "Find evidence that the reform affected eligibility.",
+      "scoped_document_ids": ["d11", "d12"],
+      "relevant_chunk_ids": ["c-evidence-1", "c-evidence-2"],
+      "dense": [
+        {"chunk_id": "c-evidence-1", "document_id": "d11", "score": 0.86, "content": "Eligibility rules were narrowed after the reform."},
+        {"chunk_id": "c-evidence-2", "document_id": "d12", "score": 0.83, "content": "Applicants reported new eligibility barriers."},
+        {"chunk_id": "c-evidence-noise", "document_id": "d11", "score": 0.55, "content": "The reform office published a newsletter."}
+      ],
+      "lexical": [
+        {"chunk_id": "c-evidence-2", "document_id": "d12", "score": 0.82, "content": "Applicants reported new eligibility barriers."},
+        {"chunk_id": "c-evidence-1", "document_id": "d11", "score": 0.80, "content": "Eligibility rules were narrowed after the reform."}
+      ]
+    },
+    {
+      "id": "comparison",
+      "category": "comparison",
+      "question": "Compare the two reports' positions on enforcement.",
+      "scoped_document_ids": ["d13", "d14"],
+      "relevant_chunk_ids": ["c-comp-a", "c-comp-b"],
+      "relevant_document_ids": ["d13", "d14"],
+      "dense": [
+        {"chunk_id": "c-comp-a", "document_id": "d13", "score": 0.90, "content": "Report A recommends voluntary enforcement."},
+        {"chunk_id": "c-comp-noise", "document_id": "d13", "score": 0.88, "content": "Report A lists three agencies."},
+        {"chunk_id": "c-comp-b", "document_id": "d14", "score": 0.72, "content": "Report B recommends statutory enforcement."}
+      ],
+      "lexical": [
+        {"chunk_id": "c-comp-b", "document_id": "d14", "score": 0.88, "content": "Report B recommends statutory enforcement."},
+        {"chunk_id": "c-comp-a", "document_id": "d13", "score": 0.74, "content": "Report A recommends voluntary enforcement."}
+      ]
+    },
+    {
+      "id": "contradiction",
+      "category": "contradiction/counter-evidence",
+      "question": "Find counter-evidence to the claim that the programme was universal.",
+      "scoped_document_ids": ["d15", "d16"],
+      "relevant_chunk_ids": ["c-counter"],
+      "dense": [
+        {"chunk_id": "c-counter", "document_id": "d15", "score": 0.92, "content": "The programme excluded temporary workers."},
+        {"chunk_id": "c-universal", "document_id": "d16", "score": 0.60, "content": "Officials called the programme universal."}
+      ],
+      "lexical": [
+        {"chunk_id": "c-universal", "document_id": "d16", "score": 0.77, "content": "Officials called the programme universal."},
+        {"chunk_id": "c-counter", "document_id": "d15", "score": 0.43, "content": "The programme excluded temporary workers."}
+      ]
+    },
+    {
+      "id": "sparse-evidence",
+      "category": "sparse evidence",
+      "question": "What evidence links the pilot to rural uptake?",
+      "scoped_document_ids": ["d17", "d18", "d19"],
+      "relevant_chunk_ids": ["c-sparse"],
+      "dense": [
+        {"chunk_id": "c-sparse", "document_id": "d17", "score": 0.61, "content": "Only one rural survey records pilot uptake."},
+        {"chunk_id": "c-sparse-noise", "document_id": "d18", "score": 0.59, "content": "The pilot office was located in a rural county."}
+      ],
+      "lexical": [
+        {"chunk_id": "c-sparse-noise", "document_id": "d18", "score": 0.50, "content": "The pilot office was located in a rural county."},
+        {"chunk_id": "c-sparse", "document_id": "d17", "score": 0.49, "content": "Only one rural survey records pilot uptake."}
+      ]
+    },
+    {
+      "id": "no-evidence",
+      "category": "no evidence",
+      "question": "What does the corpus say about lunar eligibility?",
+      "scoped_document_ids": ["d20"],
+      "relevant_chunk_ids": [],
+      "dense": [
+        {"chunk_id": "c-no-evidence", "document_id": "d20", "score": 0.10, "content": "The corpus discusses terrestrial eligibility."}
+      ],
+      "lexical": [],
+      "citation_raw": "{\"answer\":\"No relevant evidence was found.\",\"no_evidence\":true}"
+    },
+    {
+      "id": "source-diversity",
+      "category": "source diversity",
+      "question": "Which sources independently report the change?",
+      "scoped_document_ids": ["d21", "d22", "d23"],
+      "relevant_chunk_ids": ["c-div-a", "c-div-b", "c-div-c"],
+      "relevant_document_ids": ["d21", "d22", "d23"],
+      "dense": [
+        {"chunk_id": "c-div-a", "document_id": "d21", "score": 0.91, "content": "Source one reports the change."},
+        {"chunk_id": "c-div-a2", "document_id": "d21", "score": 0.90, "content": "Source one repeats the change."},
+        {"chunk_id": "c-div-b", "document_id": "d22", "score": 0.80, "content": "Source two reports the change."},
+        {"chunk_id": "c-div-c", "document_id": "d23", "score": 0.79, "content": "Source three reports the change."}
+      ],
+      "lexical": [
+        {"chunk_id": "c-div-b", "document_id": "d22", "score": 0.86, "content": "Source two reports the change."},
+        {"chunk_id": "c-div-c", "document_id": "d23", "score": 0.85, "content": "Source three reports the change."},
+        {"chunk_id": "c-div-a", "document_id": "d21", "score": 0.70, "content": "Source one reports the change."}
+      ]
+    },
+    {
+      "id": "parent-context",
+      "category": "parent context",
+      "question": "What exception is described in the methods section?",
+      "scoped_document_ids": ["d24"],
+      "relevant_chunk_ids": ["c-child"],
+      "dense": [
+        {"chunk_id": "c-child", "document_id": "d24", "score": 0.88, "content": "The exception applies to regional pilots.", "parent_context_id": "c-parent"},
+        {"chunk_id": "c-parent", "document_id": "d24", "score": 0.40, "content": "Methods: the following exception applies to regional pilots."}
+      ],
+      "lexical": [
+        {"chunk_id": "c-child", "document_id": "d24", "score": 0.80, "content": "The exception applies to regional pilots.", "parent_context_id": "c-parent"}
+      ]
+    },
+    {
+      "id": "citation-fabrication",
+      "category": "citation fabrication",
+      "question": "What did the report conclude?",
+      "scoped_document_ids": ["d25"],
+      "relevant_chunk_ids": ["c-real"],
+      "dense": [
+        {"chunk_id": "c-real", "document_id": "d25", "score": 0.90, "content": "The report concluded that access improved."}
+      ],
+      "lexical": [
+        {"chunk_id": "c-real", "document_id": "d25", "score": 0.80, "content": "The report concluded that access improved."}
+      ],
+      "citation_raw": "{\"answer\":\"Access improved.\",\"claims\":[{\"text\":\"Access improved.\",\"chunk_ids\":[\"fabricated-chunk\"]}]}"
+    },
+    {
+      "id": "citation-omission",
+      "category": "citation omission",
+      "question": "What did the report conclude?",
+      "scoped_document_ids": ["d26"],
+      "relevant_chunk_ids": ["c-omitted"],
+      "dense": [
+        {"chunk_id": "c-omitted", "document_id": "d26", "score": 0.90, "content": "The report concluded that access improved."}
+      ],
+      "lexical": [
+        {"chunk_id": "c-omitted", "document_id": "d26", "score": 0.80, "content": "The report concluded that access improved."}
+      ],
+      "citation_raw": "{\"answer\":\"Access improved.\",\"claims\":[]}"
     }
   ]
 }

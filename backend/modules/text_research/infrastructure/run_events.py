@@ -53,6 +53,7 @@ def serialize_run(run: AnalysisRun) -> dict[str, Any]:
         "run_type": run.run_type,
         "status": run.status,
         "run_version": int(getattr(run, "run_version", 1) or 1),
+        "evidence_revision_hash": getattr(run, "evidence_revision_hash", None),
         "progress_stage": run.progress_stage,
         "parameters": loads(run.parameters_json),
         "metrics": loads(run.metrics_json),

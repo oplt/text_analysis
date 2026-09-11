@@ -37,7 +37,7 @@ class RagContextBuilder:
         selected: list[RetrievedChunk] = []
         used = 0
         for chunk in sorted(chunks, key=lambda item: item.score, reverse=True):
-            chunk_tokens = estimate_tokens(chunk.content) + 48
+            chunk_tokens = estimate_tokens(chunk.context_content or chunk.content) + 48
             if selected and used + chunk_tokens > budget:
                 continue
             if not selected and chunk_tokens > budget:
@@ -55,14 +55,28 @@ class RagContextBuilder:
         lines = [RAG_CONTEXT_HEADER, RAG_UNTRUSTED_CONTEXT_RULE, ""]
         for index, chunk in enumerate(chunks, start=1):
             page = chunk.page_number if chunk.page_number is not None else chunk.chunk_index
+            context_content = chunk.context_content or chunk.content
             lines.extend(
                 [
                     f"[Source {index}]",
                     f"document_id: {chunk.document_id}",
                     f"filename: {chunk.filename}",
                     f"chunk_id: {chunk.chunk_id}",
+                    *(
+                        [f"parent_context_id: {chunk.parent_context_id}"]
+                        if chunk.parent_context_id
+                        else []
+                    ),
                     f"page_number: {page}",
-                    f"content: {chunk.content}",
+                    f"content: {context_content}",
+                    *(
+                        [
+                            "citation_content: "
+                            f"{chunk.citation_content or chunk.content}"
+                        ]
+                        if chunk.context_content is not None
+                        else []
+                    ),
                     "",
                 ]
             )

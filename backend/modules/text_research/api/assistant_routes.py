@@ -15,10 +15,12 @@ from backend.modules.text_research.api.schemas import (
     AssistantMessageRequest,
     AssistantMessageResponse,
     AssistantRetrieveRequest,
+    AssistantScopeEventResponse,
     AssistantScopeResponse,
     AssistantSynthesizeRequest,
     AssistantThreadCreateRequest,
     AssistantThreadResponse,
+    AssistantThreadScopeUpdateRequest,
 )
 from backend.modules.text_research.application.corpus_assistant_service import (
     CorpusAssistantService,
@@ -37,6 +39,7 @@ def _thread_response(thread) -> AssistantThreadResponse:
         title=thread.title,
         created_at=thread.created_at,
         updated_at=thread.updated_at,
+        scope_mode=getattr(thread, "scope_mode", "fixed"),
     )
 
 
@@ -55,6 +58,7 @@ async def create_assistant_conversation(
         user=current_user,
         title=body.title,
         document_subset=body.document_ids,
+        scope_mode=body.scope_mode,
     )
     return _thread_response(thread)
 
@@ -85,8 +89,9 @@ async def get_assistant_conversation(
 ):
     service = CorpusAssistantService(db)
     thread, messages = await service.get_thread(thread_id, user_id=current_user.id)
-    scope = await CorpusScopeService(db).resolve(
-        corpus_id=thread.corpus_id, user_id=current_user.id
+    scope = await service.get_thread_scope(thread, user_id=current_user.id)
+    scope_events = await service.scope_service.list_scope_events(
+        thread.id, user_id=current_user.id
     )
     return AssistantConversationDetailResponse(
         thread=_thread_response(thread),
@@ -97,6 +102,7 @@ async def get_assistant_conversation(
                 "content": m.content,
                 "model_name": m.model_name,
                 "retrieval_trace_id": m.retrieval_trace_id,
+                "evidence_revision_hash": m.evidence_revision_hash,
                 "citations": json.loads(m.citations_json or "[]"),
                 "claims": json.loads(m.claims_json or "[]"),
                 "metadata": json.loads(m.metadata_json or "{}"),
@@ -105,7 +111,47 @@ async def get_assistant_conversation(
             for m in messages
         ],
         scope=AssistantScopeResponse(**scope.to_dict()),
+        scope_events=[
+            AssistantScopeEventResponse(
+                id=event.id,
+                thread_id=event.thread_id,
+                actor_id=event.actor_id,
+                action=event.action,
+                scope_mode=event.scope_mode,
+                corpus_id=event.corpus_id,
+                project_id=event.project_id,
+                previous_scope_hash=event.previous_scope_hash,
+                new_scope_hash=event.new_scope_hash,
+                evidence_revision_hash=event.evidence_revision_hash,
+                rag_document_ids=json.loads(event.rag_document_ids_json),
+                corpus_document_ids=json.loads(event.corpus_document_ids_json),
+                reason=event.reason,
+                created_at=event.created_at,
+            )
+            for event in scope_events
+        ],
     )
+
+
+@router.patch(
+    "/assistant/conversations/{thread_id}/scope",
+    response_model=AssistantScopeResponse,
+)
+async def update_assistant_conversation_scope(
+    thread_id: str,
+    body: AssistantThreadScopeUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    scope = await CorpusAssistantService(db).update_thread_scope(
+        thread_id=thread_id,
+        user=current_user,
+        document_subset=body.document_ids,
+        scope_mode=body.scope_mode,
+        reason=body.reason,
+    )
+    await db.commit()
+    return AssistantScopeResponse(**scope.to_dict())
 
 
 @router.post(
@@ -145,6 +191,7 @@ async def post_assistant_message(
         degradation_reason=result["degradation_reason"],
         citation_validation_failed=result["citation_validation_failed"],
         citation_validation_status=result.get("citation_validation_status", "valid"),
+        evidence_revision_hash=result.get("evidence_revision_hash"),
         injection_chunks_filtered=result["injection_chunks_filtered"],
         scope=AssistantScopeResponse(**result["scope"]),
         coverage=result["coverage"],
@@ -173,6 +220,7 @@ async def assistant_retrieve(
     return {
         "scope": scope.to_dict(),
         "retrieval_trace_id": outcome.retrieval_trace_id,
+        "evidence_revision_hash": outcome.evidence_revision_hash,
         "chunks": [
             {
                 "chunk_id": c.chunk_id,

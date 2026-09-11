@@ -37,6 +37,7 @@ class CollaboratorAclMatrixTests(unittest.IsolatedAsyncioTestCase):
         )
         rag_doc = MagicMock(id="rag-1", deleted_at=None, status="indexed")
         service.rag_repo.get_documents_by_ids = AsyncMock(return_value=[rag_doc])
+        service.rag_repo.list_evidence_revision_chunks = AsyncMock(return_value=[])
 
         scope = await service.resolve(corpus_id="corp-1", user_id="collaborator")
         self.assertEqual(scope.rag_document_ids, ["rag-1"])
@@ -94,7 +95,7 @@ class ParentExpandAllowListTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(expanded[0].content, "child-child-1")
 
-    async def test_parent_inside_allow_list_replaces_content(self):
+    async def test_parent_inside_allow_list_adds_generation_context(self):
         child = _chunk("child-1", "doc-a")
         repo = MagicMock()
         child_row = MagicMock(id="child-1", parent_chunk_id="parent-1", document_id="doc-a")
@@ -109,7 +110,10 @@ class ParentExpandAllowListTests(unittest.IsolatedAsyncioTestCase):
         expanded = await expand_parent_chunks(
             [child], repo=repo, document_ids=["doc-a"]
         )
-        self.assertEqual(expanded[0].content, "PARENT TEXT")
+        self.assertEqual(expanded[0].content, "child-child-1")
+        self.assertEqual(expanded[0].citation_content, "child-child-1")
+        self.assertEqual(expanded[0].context_content, "PARENT TEXT")
+        self.assertEqual(expanded[0].parent_context_id, "parent-1")
         self.assertIn("parent_expand", expanded[0].retrieval_sources)
 
 

@@ -12,12 +12,16 @@ import pytest
 from backend.modules.rag.application.citation_validation_service import CitationValidationService
 from backend.modules.rag.application.parent_context_service import expand_parent_chunks
 from backend.modules.rag.application.query_expansion_service import QueryExpansionService
+from backend.modules.rag.application.rag_context_builder import RagContextBuilder
 from backend.modules.rag.application.reranker_port import (
     NoOpReranker,
     UnicodeHeuristicReranker,
     build_reranker,
 )
-from backend.modules.rag.application.retrieval_service import RetrievalService, _actual_fusion_method
+from backend.modules.rag.application.retrieval_service import (
+    RetrievalService,
+    _actual_fusion_method,
+)
 from backend.modules.rag.domain.models import RetrievedChunk
 from backend.modules.rag.eval.retrieval_eval import run_ci_regression
 from backend.modules.rag.infrastructure.rag_config import RagConfig, validate_rag_config
@@ -70,6 +74,65 @@ def test_conversation_context_follow_up_rewrites_and_isolates_thread():
     empty = svc.build(original_query="Brand new topic about France", prior_messages=[])
     assert empty.prior_message_ids == []
     assert empty.resolved_retrieval_query == "Brand new topic about France"
+
+
+@pytest.mark.parametrize(
+    ("prior_query", "follow_up", "entity"),
+    [
+        ("How do papers discuss Germany?", "What evidence supports that?", "Germany"),
+        (
+            "Wie bewerten Studien den deutschen Föderalismus?",
+            "Was ist mit Österreich?",
+            "Österreich",
+        ),
+        ("Türkiye'de bu politika nasıl uygulanıyor?", "Peki İstanbul'da?", "İstanbul"),
+        ("Comment les études décrivent-elles la France?", "Et la Belgique?", "Belgique"),
+    ],
+)
+def test_query_rewrite_is_clean_and_preserves_multilingual_user_language(
+    prior_query, follow_up, entity
+):
+    svc = ConversationContextService(max_context_tokens=500, max_turns=4)
+    ctx = svc.build(
+        original_query=follow_up,
+        prior_messages=[
+            SimpleNamespace(id="u1", role="user", content=prior_query),
+            SimpleNamespace(
+                id="a1",
+                role="assistant",
+                content=(
+                    "Standalone research retrieval query. Prior assistant answer summary: "
+                    "unrelated prose."
+                ),
+            ),
+        ],
+    )
+
+    assert ctx.needs_rewrite
+    assert entity in ctx.resolved_retrieval_query
+    assert "Standalone research retrieval query" not in ctx.resolved_retrieval_query
+    assert "Prior assistant answer summary" not in ctx.resolved_retrieval_query
+    assert "unrelated prose" not in ctx.resolved_retrieval_query
+
+
+@pytest.mark.parametrize(
+    ("query", "language"),
+    [
+        ("Which evidence contradicts the Germany policy?", "en"),
+        ("Welche Belege widersprechen der deutschen Politik?", "de"),
+        ("Türkiye politikasını destekleyen kanıtlar hangileri?", "tr"),
+        ("Quelles preuves contredisent la politique française?", "fr"),
+    ],
+)
+def test_contradiction_expansion_keeps_lexical_queries_in_original_language(query, language):
+    variants = QueryExpansionService().expand_contradiction(query)
+
+    assert {variant.language for variant in variants} == {language}
+    assert all(variant.lexical_text == query for variant in variants)
+    assert all("Evidence supporting" not in (variant.lexical_text or "") for variant in variants)
+    assert all("Evidence contradicting" not in (variant.lexical_text or "") for variant in variants)
+    assert query in variants[1].dense_text
+    assert query in variants[2].dense_text
 
 
 def test_citation_unstructured_is_not_validated_success():
@@ -206,9 +269,55 @@ class ParentExpandTests(unittest.IsolatedAsyncioTestCase):
             repo=repo,
             document_ids=["d1"],
         )
-        parent_contents = [c.content for c in expanded if c.content == "PARENT CONTEXT WINDOW"]
-        self.assertEqual(len(parent_contents), 1)
+        self.assertEqual([c.content for c in expanded], [child_a.content, child_b.content])
+        self.assertEqual(
+            [c.context_content for c in expanded], ["PARENT CONTEXT WINDOW", None]
+        )
+        self.assertEqual([c.parent_context_id for c in expanded], ["parent-1", "parent-1"])
         self.assertTrue(any(c.metadata.get("parent_deduped") for c in expanded))
+
+        context = RagContextBuilder().build_document_context_block(expanded)
+        self.assertIn("PARENT CONTEXT WINDOW", context)
+        self.assertIn("citation_content: content child-a", context)
+
+    async def test_parent_context_keeps_exact_child_citation_locator(self):
+        child = _chunk("child-a", content="exact child passage")
+        child.page_number = 2
+        child.metadata = {"char_start": 120, "char_end": 141, "source_span_ids": ["span-2"]}
+        repo = MagicMock()
+        repo.get_chunks_by_ids = AsyncMock(
+            side_effect=[
+                [SimpleNamespace(id="child-a", parent_chunk_id="parent-1", document_id="d1")],
+                [
+                    SimpleNamespace(
+                        id="parent-1",
+                        document_id="d1",
+                        content="page one context\n\npage two context",
+                        chunk_index=-1,
+                    )
+                ],
+            ]
+        )
+
+        expanded = await expand_parent_chunks([child], repo=repo, document_ids=["d1"])
+        validated = CitationValidationService().validate(
+            raw_output=json.dumps(
+                {
+                    "answer": "The exact child passage.",
+                    "claims": [
+                        {"text": "The exact child passage.", "chunk_ids": ["child-a"]}
+                    ],
+                }
+            ),
+            retrieved_chunks=expanded,
+            allowed_document_ids=["d1"],
+        )
+
+        self.assertEqual(expanded[0].context_content, "page one context\n\npage two context")
+        self.assertEqual(validated.citations[0].snippet, "exact child passage")
+        self.assertEqual(validated.citations[0].page_number, 2)
+        self.assertEqual(validated.citations[0].char_start, 120)
+        self.assertEqual(validated.citations[0].char_end, 141)
 
 
 def test_unicode_reranker_handles_multilingual():

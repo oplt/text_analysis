@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from backend.core.config import settings
 
 SUPPORTED_VECTOR_BACKENDS = frozenset({"pgvector"})
 SUPPORTED_FUSION_METHODS = frozenset({"rrf"})
+SUPPORTED_PDF_PARSERS = frozenset({"auto", "pymupdf", "pypdf"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,11 +34,13 @@ class RagConfig:
     source_max_chunks_per_document: int = 3
     evidence_top_k: int = 12
     synthesis_max_documents: int = 25
+    synthesis_batch_size: int = 8
     synthesis_passages_per_document: int = 3
     parent_context_enabled: bool = False
+    pdf_parser: str = "auto"
     retrieval_algorithm_version: str = "hybrid-rrf-v1"
     chunker_version: str = "structure-v1"
-    parser_version: str = "pypdf-v1"
+    parser_version: str = "pdf-auto-v1"
     index_version: str = "pgvector-fts-v1"
     expected_vector_dimensions: int = 1536
     require_ann_index: bool = False
@@ -71,8 +75,10 @@ class RagConfig:
             source_max_chunks_per_document=max(1, settings.RAG_SOURCE_MAX_CHUNKS_PER_DOCUMENT),
             evidence_top_k=max(1, settings.RAG_EVIDENCE_TOP_K),
             synthesis_max_documents=max(1, settings.RAG_SYNTHESIS_MAX_DOCUMENTS),
+            synthesis_batch_size=max(1, settings.RAG_SYNTHESIS_BATCH_SIZE),
             synthesis_passages_per_document=max(1, settings.RAG_SYNTHESIS_PASSAGES_PER_DOCUMENT),
             parent_context_enabled=settings.RAG_PARENT_CONTEXT_ENABLED,
+            pdf_parser=settings.RAG_PDF_PARSER.strip().lower() or "auto",
             retrieval_algorithm_version=settings.RAG_RETRIEVAL_ALGORITHM_VERSION,
             chunker_version=settings.RAG_CHUNKER_VERSION,
             parser_version=settings.RAG_PARSER_VERSION,
@@ -99,6 +105,12 @@ def validate_rag_config(config: RagConfig | None = None) -> None:
             f"RAG_FUSION_METHOD={resolved.fusion_method!r} is not supported. "
             f"Supported methods: {supported}."
         )
+    if resolved.pdf_parser not in SUPPORTED_PDF_PARSERS:
+        supported = ", ".join(sorted(SUPPORTED_PDF_PARSERS))
+        raise RuntimeError(
+            f"RAG_PDF_PARSER={resolved.pdf_parser!r} is not supported. "
+            f"Supported parsers: {supported}."
+        )
     if resolved.dense_candidates < resolved.top_k:
         raise RuntimeError("RAG_DENSE_CANDIDATES must be >= RAG_TOP_K")
     if resolved.lexical_candidates < 1:
@@ -112,33 +124,93 @@ def validate_rag_config(config: RagConfig | None = None) -> None:
         )
 
 
-async def validate_rag_index_health(db) -> None:
-    """Ensure ANN index exists when required; always check embedding dim contract."""
-    config = RagConfig.from_settings()
+async def validate_rag_index_health(
+    db,
+    *,
+    config: RagConfig | None = None,
+    strict: bool | None = None,
+) -> None:
+    """Validate the pgvector schema when ANN health is required."""
+    config = config or RagConfig.from_settings()
     if not config.enabled:
         return
     validate_rag_config(config)
-    if not config.require_ann_index:
+    enforce_health = (
+        strict
+        if strict is not None
+        else config.require_ann_index or settings.is_production
+    )
+    if not enforce_health:
         return
     from sqlalchemy import text
 
-    result = await db.execute(
+    schema_result = await db.execute(
         text(
             """
-            SELECT indexname
-            FROM pg_indexes
-            WHERE tablename = 'rag_chunks'
-              AND (
-                indexdef ILIKE '%hnsw%'
-                OR indexdef ILIKE '%ivfflat%'
-                OR indexname ILIKE '%embedding%'
-              )
+            SELECT
+                EXISTS (
+                    SELECT 1
+                    FROM pg_extension
+                    WHERE extname = 'vector'
+                ) AS vector_extension,
+                (
+                    SELECT format_type(a.atttypid, a.atttypmod)
+                    FROM pg_attribute a
+                    JOIN pg_class c ON c.oid = a.attrelid
+                    JOIN pg_namespace n ON n.oid = c.relnamespace
+                    WHERE n.nspname = current_schema()
+                      AND c.relname = 'rag_chunks'
+                      AND a.attname = 'embedding'
+                      AND NOT a.attisdropped
+                ) AS embedding_type
             """
         )
     )
-    rows = result.fetchall()
-    if not rows:
+    schema = schema_result.mappings().one()
+    if not schema["vector_extension"]:
         raise RuntimeError(
-            "RAG requires an HNSW or IVFFlat index on rag_chunks.embedding; "
-            "none found. Refusing to start with RAG_REQUIRE_ANN_INDEX=true."
+            "RAG pgvector health check failed: the vector extension is missing. "
+            "Install pgvector and run the RAG migrations."
+        )
+
+    embedding_type = str(schema["embedding_type"] or "").strip().lower()
+    dimension_match = re.fullmatch(r"vector\((\d+)\)", embedding_type)
+    if dimension_match is None:
+        raise RuntimeError(
+            "RAG pgvector health check failed: rag_chunks.embedding column is missing or "
+            "is not a typed vector column."
+        )
+    actual_dimensions = int(dimension_match.group(1))
+    if actual_dimensions != config.expected_vector_dimensions:
+        raise RuntimeError(
+            "RAG pgvector health check failed: rag_chunks.embedding has dimension "
+            f"{actual_dimensions}, expected {config.expected_vector_dimensions}."
+        )
+
+    index_result = await db.execute(
+        text(
+            """
+            SELECT indexdef
+            FROM pg_indexes
+            WHERE schemaname = current_schema()
+              AND tablename = 'rag_chunks'
+            """
+        )
+    )
+    index_definitions = [str(indexdef).lower() for indexdef in index_result.scalars().all()]
+    ann_embedding_indexes = [
+        indexdef
+        for indexdef in index_definitions
+        if (" using hnsw " in indexdef or " using ivfflat " in indexdef)
+        and "(embedding" in indexdef
+    ]
+    if not ann_embedding_indexes:
+        raise RuntimeError(
+            "RAG pgvector health check failed: no HNSW or IVFFlat ANN index "
+            "on rag_chunks.embedding was found. Run the RAG migrations."
+        )
+    if not any("vector_cosine_ops" in indexdef for indexdef in ann_embedding_indexes):
+        raise RuntimeError(
+            "RAG pgvector health check failed: the ANN index on rag_chunks.embedding "
+            "does not use the required vector_cosine_ops operator class."
         )

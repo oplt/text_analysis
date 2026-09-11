@@ -30,7 +30,9 @@ from backend.modules.text_research.domain.models import (
     ModelPrediction,
     PredictionSet,
     PreprocessingProfile,
+    ResearchAssistantScopeSnapshot,
     ResearchCorpus,
+    ResearchMemo,
     TextUnit,
     TopicLabel,
     TrainedModel,
@@ -1438,6 +1440,64 @@ class ResearchRepository:
 
     async def get_run(self, run_id: str) -> AnalysisRun | None:
         result = await self.db.execute(select(AnalysisRun).where(AnalysisRun.id == run_id))
+        return result.scalar_one_or_none()
+
+    async def create_memo(self, memo: ResearchMemo) -> ResearchMemo:
+        self.db.add(memo)
+        await self.db.flush()
+        return memo
+
+    async def get_memo(self, memo_id: str) -> ResearchMemo | None:
+        result = await self.db.execute(select(ResearchMemo).where(ResearchMemo.id == memo_id))
+        return result.scalar_one_or_none()
+
+    async def list_memos(
+        self,
+        *,
+        project_id: str,
+        user_id: str,
+        corpus_id: str | None = None,
+        include_archived: bool = False,
+    ) -> list[ResearchMemo]:
+        stmt = select(ResearchMemo).where(
+            ResearchMemo.project_id == project_id,
+            ResearchMemo.user_id == user_id,
+        )
+        if corpus_id:
+            stmt = stmt.where(ResearchMemo.corpus_id == corpus_id)
+        if not include_archived:
+            stmt = stmt.where(ResearchMemo.status == "active")
+        stmt = stmt.order_by(ResearchMemo.updated_at.desc())
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_assistant_message_for_corpus(
+        self, *, message_id: str, corpus_id: str, user_id: str
+    ):
+        from backend.modules.rag.infrastructure.models import RagConversation, RagMessage
+        from backend.modules.text_research.domain.models import ResearchAssistantThread
+
+        result = await self.db.execute(
+            select(RagMessage)
+            .join(RagConversation, RagConversation.id == RagMessage.conversation_id)
+            .join(
+                ResearchAssistantThread,
+                ResearchAssistantThread.rag_conversation_id == RagConversation.id,
+            )
+            .where(
+                RagMessage.id == message_id,
+                ResearchAssistantThread.corpus_id == corpus_id,
+                ResearchAssistantThread.user_id == user_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_scope_snapshot_for_message(self, message_id: str):
+        result = await self.db.execute(
+            select(ResearchAssistantScopeSnapshot).where(
+                ResearchAssistantScopeSnapshot.rag_message_id == message_id
+            )
+        )
         return result.scalar_one_or_none()
 
     async def update_run(self, run: AnalysisRun, **fields: Any) -> AnalysisRun:

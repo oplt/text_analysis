@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -66,7 +66,7 @@ class CorpusDocumentUpdate(BaseModel):
 class CorpusDocumentResponse(BaseModel):
     id: str
     corpus_id: str
-    rag_document_id: str
+    rag_document_id: str | None
     title: str | None
     organization: str | None
     organization_type: str | None
@@ -103,6 +103,7 @@ class SourceTextResponse(BaseModel):
     canonical_text_checksum: str | None = None
     parser_name: str | None = None
     parser_version: str | None = None
+    page_provenance: list[dict[str, Any]] | None = None
     source: str = "canonical"
 
 
@@ -1148,6 +1149,7 @@ class AnalysisRunResponse(BaseModel):
     run_type: str
     status: str
     run_version: int = 1
+    evidence_revision_hash: str | None = None
     progress_stage: str | None
     parameters: dict[str, Any] | None = None
     metrics: dict[str, Any] | None = None
@@ -1270,6 +1272,16 @@ class AssistantSynthesizeRequest(BaseModel):
 class AssistantThreadCreateRequest(BaseModel):
     title: str | None = None
     document_ids: list[str] | None = None
+    scope_mode: Literal["fixed", "live"] = "fixed"
+
+
+class AssistantThreadScopeUpdateRequest(BaseModel):
+    document_ids: list[str] | None = Field(
+        default=None,
+        description="Optional corpus-document subset; omitted means the current full corpus",
+    )
+    scope_mode: Literal["fixed", "live"] | None = None
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class AssistantScopeResponse(BaseModel):
@@ -1281,12 +1293,16 @@ class AssistantScopeResponse(BaseModel):
     indexed_rag_document_ids: list[str]
     unavailable_rag_document_ids: list[str]
     scope_hash: str
+    evidence_revision_hash: str | None = None
     index_version: str | None = None
     retrieval_version: str | None = None
     total_documents: int
     indexed_count: int
     unavailable_count: int
+    unavailable_corpus_document_ids: list[str] = Field(default_factory=list)
+    unavailable_reasons: dict[str, str] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
+    scope_mode: Literal["fixed", "live"] = "fixed"
 
 
 class AssistantCitationResponse(BaseModel):
@@ -1304,6 +1320,7 @@ class AssistantCitationResponse(BaseModel):
     char_start: int | None = None
     char_end: int | None = None
     source_span_ids: list[str] | None = None
+    parent_context_id: str | None = None
 
 
 class AssistantClaimResponse(BaseModel):
@@ -1341,6 +1358,7 @@ class AssistantMessageResponse(BaseModel):
     degradation_reason: str | None = None
     citation_validation_failed: bool = False
     citation_validation_status: str = "valid"
+    evidence_revision_hash: str | None = None
     injection_chunks_filtered: int = 0
     scope: AssistantScopeResponse
     coverage: AssistantCoverageResponse
@@ -1357,9 +1375,76 @@ class AssistantThreadResponse(BaseModel):
     title: str
     created_at: datetime
     updated_at: datetime
+    scope_mode: Literal["fixed", "live"] = "fixed"
+
+
+class AssistantScopeEventResponse(BaseModel):
+    id: str
+    thread_id: str
+    actor_id: str | None = None
+    action: str
+    scope_mode: Literal["fixed", "live"]
+    corpus_id: str
+    project_id: str
+    previous_scope_hash: str | None = None
+    new_scope_hash: str
+    evidence_revision_hash: str | None = None
+    rag_document_ids: list[str]
+    corpus_document_ids: list[str]
+    reason: str | None = None
+    created_at: datetime
 
 
 class AssistantConversationDetailResponse(BaseModel):
     thread: AssistantThreadResponse
     messages: list[dict[str, Any]]
     scope: AssistantScopeResponse | None = None
+    scope_events: list[AssistantScopeEventResponse] = Field(default_factory=list)
+
+
+# --- Research memos ---
+
+
+class ResearchMemoCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=512)
+    body: str = Field(default="", max_length=200_000)
+    corpus_id: str | None = None
+    source_type: Literal["manual", "assistant_answer", "analysis_result"] = "manual"
+    citations: list[dict[str, Any]] = Field(default_factory=list)
+    claims: list[dict[str, Any]] = Field(default_factory=list)
+    provenance: dict[str, Any] = Field(default_factory=dict)
+    evidence_revision_hash: str | None = None
+    originating_assistant_message_id: str | None = None
+    originating_synthesis_run_id: str | None = None
+
+
+class ResearchMemoSourceRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=512)
+    body: str = Field(default="", max_length=200_000)
+    message_id: str | None = None
+    run_id: str | None = None
+
+
+class ResearchMemoUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=512)
+    body: str | None = Field(default=None, max_length=200_000)
+
+
+class ResearchMemoResponse(BaseModel):
+    id: str
+    project_id: str
+    corpus_id: str | None
+    user_id: str
+    source_type: str
+    status: str
+    title: str
+    body: str
+    originating_assistant_message_id: str | None
+    originating_synthesis_run_id: str | None
+    evidence_revision_hash: str | None
+    citations: list[dict[str, Any]]
+    claims: list[dict[str, Any]]
+    provenance: dict[str, Any]
+    created_at: datetime
+    updated_at: datetime
+    archived_at: datetime | None

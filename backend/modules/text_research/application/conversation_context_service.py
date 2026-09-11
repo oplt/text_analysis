@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass, field
 
 from backend.modules.rag.infrastructure.models import RagMessage
+from backend.modules.text_research.application.query_rewrite_service import QueryRewriteService
 
 # Rough char→token estimate for budget trimming.
 _CHARS_PER_TOKEN = 4
@@ -31,6 +32,7 @@ class ConversationContextService:
     def __init__(self, *, max_context_tokens: int = 1500, max_turns: int = 8):
         self.max_context_tokens = max_context_tokens
         self.max_turns = max_turns
+        self.query_rewriter = QueryRewriteService()
 
     def build(
         self,
@@ -70,7 +72,10 @@ class ConversationContextService:
 
         needs_rewrite = bool(trimmed) and self._looks_like_follow_up(original_query)
         if needs_rewrite:
-            resolved = self._resolve_query(original_query, trimmed)
+            resolved = self.query_rewriter.rewrite(
+                follow_up=original_query,
+                prior_turns=trimmed,
+            )
         else:
             resolved = original_query.strip()
 
@@ -96,28 +101,4 @@ class ConversationContextService:
         q = (query or "").strip()
         if len(q) < 80 and _FOLLOW_UP_RE.search(q):
             return True
-        if len(q.split()) <= 12 and "?" in q:
-            return True
-        return False
-
-    @staticmethod
-    def _resolve_query(query: str, turns: list[dict[str, str]]) -> str:
-        """Deterministic standalone retrieval query from recent thread context."""
-        recent_user = next(
-            (t["content"] for t in reversed(turns) if t["role"] == "user"),
-            "",
-        )
-        recent_assistant = next(
-            (t["content"] for t in reversed(turns) if t["role"] == "assistant"),
-            "",
-        )
-        parts = [
-            "Standalone research retrieval query resolving the follow-up against prior turns.",
-            f"Prior user question: {recent_user[:500]}" if recent_user else "",
-            f"Prior assistant answer summary: {recent_assistant[:700]}" if recent_assistant else "",
-            f"Follow-up: {query.strip()}",
-            f"Resolved search focus: {recent_user[:200]} — {query.strip()}"
-            if recent_user
-            else f"Resolved search focus: {query.strip()}",
-        ]
-        return "\n".join(p for p in parts if p)
+        return bool(len(q.split()) <= 12 and "?" in q)

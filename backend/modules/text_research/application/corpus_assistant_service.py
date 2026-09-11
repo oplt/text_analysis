@@ -3,8 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import UTC, datetime
 from uuid import uuid4
+
+from fastapi import HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.identity_access.models import User
 from backend.modules.rag.application.rag_answer_service import RagAnswerService
@@ -20,14 +25,14 @@ from backend.modules.text_research.application.corpus_scope_service import (
     CorpusScopeService,
     CorpusScopeSnapshot,
 )
+from backend.modules.text_research.domain.enums import AssistantScopeMode
 from backend.modules.text_research.domain.models import (
     CorpusDocument,
     ResearchAssistantScopeSnapshot,
     ResearchAssistantThread,
 )
-from fastapi import HTTPException
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 
 class CorpusAssistantService(ResearchAccessMixin):
@@ -49,12 +54,21 @@ class CorpusAssistantService(ResearchAccessMixin):
         user: User,
         title: str | None = None,
         document_subset: list[str] | None = None,
+        scope_mode: str = AssistantScopeMode.FIXED.value,
     ) -> tuple[ResearchAssistantThread, CorpusScopeSnapshot]:
+        if scope_mode not in {item.value for item in AssistantScopeMode}:
+            raise HTTPException(status_code=422, detail="scope_mode must be fixed or live")
+        if scope_mode == AssistantScopeMode.LIVE.value and document_subset is not None:
+            raise HTTPException(
+                status_code=422,
+                detail="A live thread follows the current corpus and cannot use a document subset",
+            )
         scope = await self.scope_service.resolve(
             corpus_id=corpus_id,
             user_id=user.id,
             document_subset=document_subset,
         )
+        scope.scope_mode = scope_mode
         conversation = await self.rag_repo.create_conversation(
             user_id=user.id,
             project_id=scope.project_id,
@@ -68,9 +82,18 @@ class CorpusAssistantService(ResearchAccessMixin):
             user_id=user.id,
             rag_conversation_id=conversation.id,
             title=conversation.title,
+            scope_mode=scope_mode,
+            evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
+            scope_snapshot_json=json.dumps(scope.to_dict(), ensure_ascii=True),
         )
         self.db.add(thread)
         await self.db.flush()
+        await self.scope_service.record_scope_event(
+            thread=thread,
+            actor_id=user.id,
+            action="thread_created",
+            scope=scope,
+        )
         await self.db.commit()
         return thread, scope
 
@@ -121,6 +144,7 @@ class CorpusAssistantService(ResearchAccessMixin):
             },
             intent=intent or RetrievalIntent.SEMANTIC_SEARCH,
             persist_trace=True,
+            evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
         )
         return scope, outcome
 
@@ -159,9 +183,59 @@ class CorpusAssistantService(ResearchAccessMixin):
                     "char_start": getattr(c, "char_start", None),
                     "char_end": getattr(c, "char_end", None),
                     "source_span_ids": getattr(c, "source_span_ids", None),
+                    "parent_context_id": getattr(c, "parent_context_id", None),
                 }
             )
         return enriched
+
+    @staticmethod
+    def _mark_turn_message(message, *, status: str, **fields: object) -> None:
+        try:
+            metadata = json.loads(getattr(message, "metadata_json", None) or "{}")
+        except (TypeError, json.JSONDecodeError):
+            metadata = {}
+        if not isinstance(metadata, dict):
+            metadata = {}
+        metadata["turn_status"] = status
+        metadata.update(fields)
+        message.metadata_json = json.dumps(metadata, ensure_ascii=True)
+
+    async def _persist_failed_turn(
+        self,
+        *,
+        conversation_id: str,
+        pending_user_message,
+        query: str,
+        original_query: str,
+        resolved_retrieval_query: str,
+        context_message_ids: list[str],
+        error: Exception,
+    ) -> None:
+        await self.db.rollback()
+        error_message = str(error)[:500] or type(error).__name__
+        failed_assistant = await self.rag_repo.create_message(
+            conversation_id=conversation_id,
+            role=MessageRole.ASSISTANT.value,
+            content="I couldn't complete this request. Please try again.",
+            model_name="error",
+            metadata={
+                "turn_status": "failed",
+                "error_type": type(error).__name__,
+                "error_message": error_message,
+                "original_query": original_query,
+                "resolved_retrieval_query": resolved_retrieval_query,
+                "context_message_ids": context_message_ids,
+                "query": query,
+            },
+        )
+        self._mark_turn_message(
+            pending_user_message,
+            status="failed",
+            failed_assistant_message_id=failed_assistant.id,
+            error_type=type(error).__name__,
+            error_message=error_message,
+        )
+        await self.db.commit()
 
     async def ask(
         self,
@@ -173,21 +247,31 @@ class CorpusAssistantService(ResearchAccessMixin):
         intent: str | None = None,
         document_subset: list[str] | None = None,
     ) -> dict:
+        """Run one turn with explicit pending, completed, and failed states.
+
+        The pending user message is committed before retrieval/generation. Those
+        downstream services run without committing, so the assistant message,
+        scope snapshot, and completed user state commit together. Failures roll
+        back uncommitted work and commit a failed assistant message.
+        """
         if not self.rag_config.enabled:
             raise HTTPException(status_code=503, detail="RAG is disabled")
-
-        scope = await self.scope_service.resolve(
-            corpus_id=corpus_id,
-            user_id=user.id,
-            document_subset=document_subset,
-        )
 
         if thread_id:
             thread = await self._get_thread_or_404(thread_id, user_id=user.id)
             if thread.corpus_id != corpus_id:
                 raise HTTPException(status_code=400, detail="Thread does not belong to this corpus")
+            if document_subset is not None:
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        "Update thread scope explicitly before sending a message "
+                        "with a new scope"
+                    ),
+                )
+            scope = await self.scope_service.resolve_for_thread(thread, user_id=user.id)
         else:
-            thread, _ = await self.create_thread(
+            thread, scope = await self.create_thread(
                 corpus_id=corpus_id,
                 user=user,
                 document_subset=document_subset,
@@ -202,64 +286,177 @@ class CorpusAssistantService(ResearchAccessMixin):
             prior_messages=prior_messages,
         )
 
-        await self.rag_repo.create_message(
+        pending_user_message = await self.rag_repo.create_message(
             conversation_id=conversation_id,
             role=MessageRole.USER.value,
             content=query,
             metadata={
+                "turn_status": "pending",
                 "original_query": ctx.original_query,
                 "resolved_retrieval_query": ctx.resolved_retrieval_query,
                 "context_message_ids": ctx.prior_message_ids,
             },
         )
+        # The pending user turn is durable before the external AI call starts.
+        await self.db.commit()
 
-        # I4: exactly one retrieve (resolved query), then answer_from_retrieval
-        outcome = await self.retrieval.retrieve(
-            ctx.resolved_retrieval_query,
-            user_id=user.id,
-            project_id=scope.project_id,
-            filters={
-                "document_ids": list(scope.rag_document_ids),
-                "owner_scoped": False,
-            },
-            intent=intent or RetrievalIntent.EVIDENCE,
-            conversation_id=conversation_id,
-            persist_trace=True,
-        )
+        try:
+            # I4: exactly one retrieve (resolved query), then answer_from_retrieval
+            outcome = await self.retrieval.retrieve(
+                ctx.resolved_retrieval_query,
+                user_id=user.id,
+                project_id=scope.project_id,
+                filters={
+                    "document_ids": list(scope.rag_document_ids),
+                    "owner_scoped": False,
+                },
+                intent=intent or RetrievalIntent.EVIDENCE,
+                conversation_id=conversation_id,
+                persist_trace=True,
+                evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
+            )
 
-        answer = await self.answers.answer_from_retrieval(
-            query,
-            outcome=outcome,
-            user=user,
-            project_id=scope.project_id,
-            document_ids=list(scope.rag_document_ids),
-            include_memory=False,
-            conversation_context=self.conversation_context.format_for_generation(ctx),
-            resolved_retrieval_query=ctx.resolved_retrieval_query,
-            context_message_ids=ctx.prior_message_ids,
-        )
+            answer = await self.answers.answer_from_retrieval(
+                query,
+                outcome=outcome,
+                user=user,
+                project_id=scope.project_id,
+                document_ids=list(scope.rag_document_ids),
+                include_memory=False,
+                conversation_context=self.conversation_context.format_for_generation(ctx),
+                resolved_retrieval_query=ctx.resolved_retrieval_query,
+                context_message_ids=ctx.prior_message_ids,
+                commit=False,
+            )
 
-        rag_to_corpus = await self._rag_to_corpus_document_map(corpus_id)
-        citation_payload = self._enrich_citations(answer.citations, rag_to_corpus=rag_to_corpus)
+            rag_to_corpus = await self._rag_to_corpus_document_map(corpus_id)
+            citation_payload = self._enrich_citations(answer.citations, rag_to_corpus=rag_to_corpus)
 
-        assistant_message = await self.rag_repo.create_message(
-            conversation_id=conversation_id,
-            role=MessageRole.ASSISTANT.value,
-            content=answer.answer,
-            model_name=answer.model_name,
-            prompt_template_id=answer.prompt_template_id,
-            prompt_version_id=answer.prompt_version_id,
-            retrieval_trace_id=answer.retrieval_trace_id,
-            citations=citation_payload,
-            claims=[
-                {
-                    "text": claim.text,
-                    "chunk_ids": claim.chunk_ids,
-                    "citation_numbers": claim.citation_numbers,
-                }
-                for claim in answer.claims
-            ],
-            metadata={
+            assistant_message = await self.rag_repo.create_message(
+                conversation_id=conversation_id,
+                role=MessageRole.ASSISTANT.value,
+                content=answer.answer,
+                model_name=answer.model_name,
+                prompt_template_id=answer.prompt_template_id,
+                prompt_version_id=answer.prompt_version_id,
+                retrieval_trace_id=answer.retrieval_trace_id,
+                evidence_revision_hash=getattr(answer, "evidence_revision_hash", None),
+                citations=citation_payload,
+                claims=[
+                    {
+                        "text": claim.text,
+                        "chunk_ids": claim.chunk_ids,
+                        "citation_numbers": claim.citation_numbers,
+                    }
+                    for claim in answer.claims
+                ],
+                metadata={
+                    "turn_status": "completed",
+                    "coverage": {
+                        "documents_in_scope": (
+                            answer.coverage.documents_in_scope if answer.coverage else 0
+                        ),
+                        "documents_with_retrieved_evidence": (
+                            answer.coverage.documents_with_retrieved_evidence
+                            if answer.coverage
+                            else 0
+                        ),
+                        "retrieved_passage_count": (
+                            answer.coverage.retrieved_passage_count if answer.coverage else 0
+                        ),
+                        "coverage_ratio": answer.coverage.coverage_ratio
+                        if answer.coverage
+                        else 0.0,
+                    },
+                    "citation_validation_failed": answer.citation_validation_failed,
+                    "citation_validation_status": answer.citation_validation_status,
+                    "no_context_found": answer.no_context_found,
+                    "retrieval_degraded": answer.retrieval_degraded,
+                    "degradation_reason": answer.degradation_reason,
+                    "ai_run_id": answer.ai_run_id,
+                    "original_query": ctx.original_query,
+                    "resolved_retrieval_query": ctx.resolved_retrieval_query,
+                    "context_message_ids": ctx.prior_message_ids,
+                    "scope_hash": scope.scope_hash,
+                    "evidence_revision_hash": getattr(scope, "evidence_revision_hash", None),
+                    "scope_mode": scope.scope_mode,
+                    "retrieval_algorithm_version": scope.retrieval_version,
+                    "index_version": scope.index_version,
+                    "fusion_method": outcome.fusion_method,
+                },
+            )
+
+            unavailable_corpus_document_ids = getattr(scope, "unavailable_corpus_document_ids", [])
+            if not isinstance(unavailable_corpus_document_ids, list):
+                unavailable_corpus_document_ids = []
+            unavailable_reasons = getattr(scope, "unavailable_reasons", {})
+            if not isinstance(unavailable_reasons, dict):
+                unavailable_reasons = {}
+
+            snapshot_row = ResearchAssistantScopeSnapshot(
+                id=str(uuid4()),
+                thread_id=thread.id,
+                rag_message_id=assistant_message.id,
+                retrieval_trace_id=answer.retrieval_trace_id,
+                corpus_id=scope.corpus_id,
+                project_id=scope.project_id,
+                scope_hash=scope.scope_hash,
+                rag_document_ids_json=json.dumps(scope.rag_document_ids, ensure_ascii=True),
+                corpus_document_ids_json=json.dumps(scope.corpus_document_ids, ensure_ascii=True),
+                indexed_rag_document_ids_json=json.dumps(
+                    scope.indexed_rag_document_ids, ensure_ascii=True
+                ),
+                unavailable_rag_document_ids_json=json.dumps(
+                    scope.unavailable_rag_document_ids, ensure_ascii=True
+                ),
+                unavailable_corpus_document_ids_json=json.dumps(
+                    unavailable_corpus_document_ids, ensure_ascii=True
+                ),
+                unavailable_reasons_json=json.dumps(unavailable_reasons, ensure_ascii=True),
+                scope_mode=scope.scope_mode,
+                index_version=scope.index_version,
+                retrieval_version=scope.retrieval_version,
+                evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
+                created_at=datetime.now(UTC),
+            )
+            self.db.add(snapshot_row)
+            thread.updated_at = datetime.now(UTC)
+            self._mark_turn_message(
+                pending_user_message,
+                status="completed",
+                assistant_message_id=assistant_message.id,
+            )
+            await self.db.commit()
+
+            return {
+                "thread_id": thread.id,
+                "conversation_id": conversation_id,
+                "message_id": assistant_message.id,
+                "retrieval_trace_id": answer.retrieval_trace_id,
+                "evidence_revision_hash": getattr(answer, "evidence_revision_hash", None),
+                "query": query,
+                "original_query": ctx.original_query,
+                "resolved_retrieval_query": ctx.resolved_retrieval_query,
+                "answer": answer.answer,
+                "citations": citation_payload,
+                "claims": [
+                    {
+                        "text": claim.text,
+                        "chunk_ids": claim.chunk_ids,
+                        "citation_numbers": claim.citation_numbers,
+                    }
+                    for claim in answer.claims
+                ],
+                "retrieved_chunk_ids": answer.retrieved_chunk_ids,
+                "model_name": answer.model_name,
+                "latency_ms": answer.latency_ms,
+                "no_context_found": answer.no_context_found,
+                "retrieval_degraded": answer.retrieval_degraded,
+                "degradation_reason": answer.degradation_reason,
+                "citation_validation_failed": answer.citation_validation_failed,
+                "citation_validation_status": answer.citation_validation_status,
+                "injection_chunks_filtered": answer.injection_chunks_filtered,
+                "scope": scope.to_dict(),
                 "coverage": {
                     "documents_in_scope": (
                         answer.coverage.documents_in_scope if answer.coverage else 0
@@ -272,90 +469,30 @@ class CorpusAssistantService(ResearchAccessMixin):
                     "retrieved_passage_count": (
                         answer.coverage.retrieved_passage_count if answer.coverage else 0
                     ),
-                    "coverage_ratio": answer.coverage.coverage_ratio if answer.coverage else 0.0,
+                    "coverage_ratio": answer.coverage.coverage_ratio
+                    if answer.coverage
+                    else 0.0,
                 },
-                "citation_validation_failed": answer.citation_validation_failed,
-                "citation_validation_status": answer.citation_validation_status,
-                "no_context_found": answer.no_context_found,
-                "retrieval_degraded": answer.retrieval_degraded,
-                "degradation_reason": answer.degradation_reason,
-                "ai_run_id": answer.ai_run_id,
-                "original_query": ctx.original_query,
-                "resolved_retrieval_query": ctx.resolved_retrieval_query,
                 "context_message_ids": ctx.prior_message_ids,
-                "scope_hash": scope.scope_hash,
-                "retrieval_algorithm_version": scope.retrieval_version,
-                "index_version": scope.index_version,
+                "ai_run_id": answer.ai_run_id,
                 "fusion_method": outcome.fusion_method,
-            },
-        )
-
-        snapshot_row = ResearchAssistantScopeSnapshot(
-            id=str(uuid4()),
-            thread_id=thread.id,
-            rag_message_id=assistant_message.id,
-            retrieval_trace_id=answer.retrieval_trace_id,
-            corpus_id=scope.corpus_id,
-            project_id=scope.project_id,
-            scope_hash=scope.scope_hash,
-            rag_document_ids_json=json.dumps(scope.rag_document_ids, ensure_ascii=True),
-            corpus_document_ids_json=json.dumps(scope.corpus_document_ids, ensure_ascii=True),
-            indexed_rag_document_ids_json=json.dumps(
-                scope.indexed_rag_document_ids, ensure_ascii=True
-            ),
-            unavailable_rag_document_ids_json=json.dumps(
-                scope.unavailable_rag_document_ids, ensure_ascii=True
-            ),
-            index_version=scope.index_version,
-            retrieval_version=scope.retrieval_version,
-            created_at=datetime.now(UTC),
-        )
-        self.db.add(snapshot_row)
-        thread.updated_at = datetime.now(UTC)
-        await self.db.commit()
-
-        return {
-            "thread_id": thread.id,
-            "conversation_id": conversation_id,
-            "message_id": assistant_message.id,
-            "retrieval_trace_id": answer.retrieval_trace_id,
-            "query": query,
-            "original_query": ctx.original_query,
-            "resolved_retrieval_query": ctx.resolved_retrieval_query,
-            "answer": answer.answer,
-            "citations": citation_payload,
-            "claims": [
-                {
-                    "text": claim.text,
-                    "chunk_ids": claim.chunk_ids,
-                    "citation_numbers": claim.citation_numbers,
-                }
-                for claim in answer.claims
-            ],
-            "retrieved_chunk_ids": answer.retrieved_chunk_ids,
-            "model_name": answer.model_name,
-            "latency_ms": answer.latency_ms,
-            "no_context_found": answer.no_context_found,
-            "retrieval_degraded": answer.retrieval_degraded,
-            "degradation_reason": answer.degradation_reason,
-            "citation_validation_failed": answer.citation_validation_failed,
-            "citation_validation_status": answer.citation_validation_status,
-            "injection_chunks_filtered": answer.injection_chunks_filtered,
-            "scope": scope.to_dict(),
-            "coverage": {
-                "documents_in_scope": answer.coverage.documents_in_scope if answer.coverage else 0,
-                "documents_with_retrieved_evidence": (
-                    answer.coverage.documents_with_retrieved_evidence if answer.coverage else 0
-                ),
-                "retrieved_passage_count": (
-                    answer.coverage.retrieved_passage_count if answer.coverage else 0
-                ),
-                "coverage_ratio": answer.coverage.coverage_ratio if answer.coverage else 0.0,
-            },
-            "context_message_ids": ctx.prior_message_ids,
-            "ai_run_id": answer.ai_run_id,
-            "fusion_method": outcome.fusion_method,
-        }
+            }
+        except Exception as exc:
+            try:
+                await self._persist_failed_turn(
+                    conversation_id=conversation_id,
+                    pending_user_message=pending_user_message,
+                    query=query,
+                    original_query=ctx.original_query,
+                    resolved_retrieval_query=ctx.resolved_retrieval_query,
+                    context_message_ids=ctx.prior_message_ids,
+                    error=exc,
+                )
+            except Exception:
+                logger.exception("Failed to persist failed assistant turn")
+            if isinstance(exc, HTTPException):
+                raise
+            raise HTTPException(status_code=502, detail="Assistant turn failed") from exc
 
     async def _get_thread_or_404(
         self, thread_id: str, *, user_id: str
@@ -370,3 +507,26 @@ class CorpusAssistantService(ResearchAccessMixin):
         if thread.user_id != user_id:
             raise HTTPException(status_code=404, detail="Assistant conversation not found")
         return thread
+
+    async def get_thread_scope(
+        self, thread: ResearchAssistantThread, *, user_id: str
+    ) -> CorpusScopeSnapshot:
+        return await self.scope_service.resolve_for_thread(thread, user_id=user_id)
+
+    async def update_thread_scope(
+        self,
+        *,
+        thread_id: str,
+        user: User,
+        document_subset: list[str] | None,
+        scope_mode: str | None,
+        reason: str | None,
+    ) -> CorpusScopeSnapshot:
+        thread = await self._get_thread_or_404(thread_id, user_id=user.id)
+        return await self.scope_service.update_thread_scope(
+            thread=thread,
+            user_id=user.id,
+            document_subset=document_subset,
+            scope_mode=scope_mode,
+            reason=reason,
+        )

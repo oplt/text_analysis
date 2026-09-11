@@ -22,6 +22,7 @@ from backend.modules.rag.infrastructure.models import (
     RagChunk,
     RagConversation,
     RagDocument,
+    RagDocumentRevision,
     RagIngestionJob,
     RagMessage,
     RagQueryRecord,
@@ -31,6 +32,8 @@ from sqlalchemy import delete, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
+
+_IN_CLAUSE_BATCH = 500
 
 
 class RagRepository:
@@ -80,18 +83,23 @@ class RagRepository:
         document_ids: list[str],
         *,
         user_id: str | None = None,
+        include_deleted: bool = False,
     ) -> list[RagDocument]:
-        """Fetch multiple documents in one query; optionally scoped to ``user_id``."""
+        """Fetch documents in bounded batches; optionally scope to ``user_id``."""
         if not document_ids:
             return []
-        stmt = select(RagDocument).where(
-            RagDocument.id.in_(document_ids),
-            RagDocument.deleted_at.is_(None),
-        )
-        if user_id is not None:
-            stmt = stmt.where(RagDocument.user_id == user_id)
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        rows: list[RagDocument] = []
+        for start in range(0, len(document_ids), _IN_CLAUSE_BATCH):
+            stmt = select(RagDocument).where(
+                RagDocument.id.in_(document_ids[start : start + _IN_CLAUSE_BATCH])
+            )
+            if not include_deleted:
+                stmt = stmt.where(RagDocument.deleted_at.is_(None))
+            if user_id is not None:
+                stmt = stmt.where(RagDocument.user_id == user_id)
+            result = await self.db.execute(stmt)
+            rows.extend(result.scalars().all())
+        return rows
 
     async def find_document_by_checksum(
         self,
@@ -204,6 +212,32 @@ class RagRepository:
         await self.db.flush()
         return document
 
+    async def create_document_revision(
+        self,
+        document: RagDocument,
+        *,
+        source_content_hash: str | None,
+        parser_version: str | None,
+        chunker_version: str | None,
+        index_version: str | None,
+    ) -> RagDocumentRevision:
+        revision = RagDocumentRevision(
+            document_id=document.id,
+            source_content_hash=source_content_hash,
+            parser_version=parser_version,
+            chunker_version=chunker_version,
+            index_version=index_version,
+        )
+        self.db.add(revision)
+        await self.db.flush()
+        return revision
+
+    async def activate_document_revision(
+        self, document: RagDocument, revision: RagDocumentRevision
+    ) -> None:
+        document.current_revision_id = revision.id
+        await self.db.flush()
+
     async def soft_delete_document(self, document: RagDocument) -> RagDocument:
         document.status = DocumentStatus.DELETED.value
         document.deleted_at = datetime.now(UTC)
@@ -215,11 +249,17 @@ class RagRepository:
         self,
         document: RagDocument,
         chunks: list[dict],
+        *,
+        revision_id: str | None = None,
     ) -> list[RagChunk]:
-        await self.db.execute(delete(RagChunk).where(RagChunk.document_id == document.id))
+        # Revisioned indexing appends immutable rows. Legacy callers without a
+        # revision retain the original replace semantics.
+        if revision_id is None:
+            await self.db.execute(delete(RagChunk).where(RagChunk.document_id == document.id))
         rows: list[RagChunk] = []
         for item in chunks:
             meta = item.get("metadata") or {}
+            embedding = item.get("embedding")
             row = RagChunk(
                 document_id=document.id,
                 user_id=document.user_id,
@@ -229,7 +269,11 @@ class RagRepository:
                 content=item["content"],
                 token_count=item["token_count"],
                 metadata_json=json.dumps(meta, ensure_ascii=True),
-                embedding_json=json.dumps(item.get("embedding", []), ensure_ascii=True),
+                embedding_json=(
+                    json.dumps(embedding, ensure_ascii=True)
+                    if embedding is not None
+                    else None
+                ),
                 vector_external_id=item.get("vector_external_id"),
                 content_hash=item.get("content_hash"),
                 parent_chunk_id=item.get("parent_chunk_id"),
@@ -237,6 +281,7 @@ class RagRepository:
                 or (meta.get("parser_version") if isinstance(meta, dict) else None),
                 chunker_version=item.get("chunker_version")
                 or (meta.get("chunker_version") if isinstance(meta, dict) else None),
+                revision_id=revision_id,
             )
             if item.get("id"):
                 row.id = item["id"]
@@ -262,10 +307,55 @@ class RagRepository:
             return []
         result = await self.db.execute(
             select(RagChunk)
+            .join(RagDocument, RagDocument.id == RagChunk.document_id)
             .where(RagChunk.document_id.in_(document_ids))
+            .where(
+                (RagChunk.revision_id == RagDocument.current_revision_id)
+                | (
+                    RagDocument.current_revision_id.is_(None)
+                    & RagChunk.revision_id.is_(None)
+                )
+            )
             .order_by(RagChunk.document_id, RagChunk.chunk_index)
         )
         return list(result.scalars().all())
+
+    async def list_evidence_revision_chunks(self, document_ids: list[str]) -> list[RagChunk]:
+        """Return indexed chunk identity fields for a reproducibility hash."""
+        if not document_ids:
+            return []
+        rows: list[RagChunk] = []
+        for start in range(0, len(document_ids), _IN_CLAUSE_BATCH):
+            result = await self.db.execute(
+                select(RagChunk)
+                .join(RagDocument, RagDocument.id == RagChunk.document_id)
+                .where(
+                    RagChunk.document_id.in_(
+                        document_ids[start : start + _IN_CLAUSE_BATCH]
+                    )
+                )
+                .where(
+                    (RagChunk.revision_id == RagDocument.current_revision_id)
+                    | (
+                        RagDocument.current_revision_id.is_(None)
+                        & RagChunk.revision_id.is_(None)
+                    )
+                )
+                .order_by(RagChunk.document_id, RagChunk.chunk_index, RagChunk.id)
+            )
+            rows.extend(result.scalars().all())
+        return rows
+
+    async def list_current_revision_ids(self, document_ids: list[str] | None) -> list[str]:
+        if not document_ids:
+            return []
+        result = await self.db.execute(
+            select(RagDocument.current_revision_id).where(
+                RagDocument.id.in_(document_ids),
+                RagDocument.current_revision_id.is_not(None),
+            )
+        )
+        return list(dict.fromkeys(result.scalars().all()))
 
     async def list_chunks_for_document(
         self,
@@ -276,7 +366,15 @@ class RagRepository:
     ) -> tuple[list[RagChunk], int]:
         stmt = (
             select(RagChunk)
-            .where(RagChunk.document_id == document_id)
+            .join(RagDocument, RagDocument.id == RagChunk.document_id)
+            .where(
+                RagChunk.document_id == document_id,
+                (RagChunk.revision_id == RagDocument.current_revision_id)
+                | (
+                    RagDocument.current_revision_id.is_(None)
+                    & RagChunk.revision_id.is_(None)
+                ),
+            )
             .order_by(RagChunk.chunk_index)
         )
         return await paginate_scalars(self.db, stmt, limit=limit, offset=offset)
@@ -306,6 +404,8 @@ class RagRepository:
         filters = [
             "d.status = 'indexed'",
             "d.deleted_at IS NULL",
+            "(d.current_revision_id = c.revision_id OR "
+            "(d.current_revision_id IS NULL AND c.revision_id IS NULL))",
         ]
         if owner_scoped:
             filters.append("c.user_id = :user_id")
@@ -370,6 +470,7 @@ class RagRepository:
                 c.content,
                 c.chunk_index,
                 c.metadata_json,
+                c.revision_id,
                 d.original_filename,
                 (1 - (c.embedding <=> CAST(:query_vec AS vector))) AS score
             FROM rag_chunks c
@@ -399,6 +500,7 @@ class RagRepository:
                     page_number=meta.get("page_number"),
                     metadata=meta,
                     retrieval_sources=("dense",),
+                    index_revision_id=row["revision_id"],
                 )
             )
         return retrieved
@@ -438,6 +540,7 @@ class RagRepository:
                 c.content,
                 c.chunk_index,
                 c.metadata_json,
+                c.revision_id,
                 c.embedding_json,
                 d.original_filename
             FROM rag_chunks c
@@ -454,6 +557,7 @@ class RagRepository:
                 "content": row["content"],
                 "chunk_index": row["chunk_index"],
                 "metadata_json": row["metadata_json"],
+                "revision_id": row["revision_id"],
                 "original_filename": row["original_filename"],
                 "embedding": parse_embedding_json(row["embedding_json"]),
             }
@@ -478,6 +582,7 @@ class RagRepository:
                 page_number=meta.get("page_number"),
                 metadata=meta,
                 retrieval_sources=("dense",),
+                index_revision_id=row.get("revision_id"),
             )
 
         return rank_embedding_matches(
@@ -523,6 +628,7 @@ class RagRepository:
                 c.content,
                 c.chunk_index,
                 c.metadata_json,
+                c.revision_id,
                 d.original_filename,
                 ts_rank_cd(
                     COALESCE(
@@ -562,6 +668,7 @@ class RagRepository:
                     metadata=meta,
                     rank=rank,
                     retrieval_sources=("lexical",),
+                    index_revision_id=row["revision_id"],
                 )
             )
         return retrieved
@@ -707,6 +814,8 @@ class RagRepository:
         query: str,
         intent: str | None,
         scope_hash: str | None,
+        evidence_revision_hash: str | None = None,
+        index_revision_ids: list[str] | None = None,
         document_ids: list[str] | None,
         retrieved_chunks: list[dict],
         coverage: dict | None,
@@ -724,6 +833,8 @@ class RagRepository:
             query=query,
             intent=intent,
             scope_hash=scope_hash,
+            evidence_revision_hash=evidence_revision_hash,
+            index_revision_ids_json=json.dumps(index_revision_ids or [], ensure_ascii=True),
             document_ids_json=json.dumps(document_ids, ensure_ascii=True)
             if document_ids is not None
             else None,
@@ -763,6 +874,7 @@ class RagRepository:
         resolved_retrieval_query: str | None = None,
         context_message_ids: list[str] | None = None,
         ai_run_id: str | None = None,
+        evidence_revision_hash: str | None = None,
     ) -> RagMessage:
         meta = metadata or {}
         row = RagMessage(
@@ -788,6 +900,7 @@ class RagRepository:
                 ensure_ascii=True,
             ),
             ai_run_id=ai_run_id or meta.get("ai_run_id"),
+            evidence_revision_hash=evidence_revision_hash or meta.get("evidence_revision_hash"),
         )
         self.db.add(row)
         await self.db.flush()
@@ -816,4 +929,3 @@ class RagRepository:
             return []
         result = await self.db.execute(select(RagChunk).where(RagChunk.id.in_(chunk_ids)))
         return list(result.scalars().all())
-

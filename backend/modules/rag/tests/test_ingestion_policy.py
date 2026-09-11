@@ -25,6 +25,10 @@ class IngestionPolicyTest(unittest.IsolatedAsyncioTestCase):
         service.repo.create_ingestion_job = AsyncMock(return_value=MagicMock(id="job-1"))
         service.repo.update_document_status = AsyncMock()
         service.repo.update_ingestion_job = AsyncMock()
+        service.repo.create_document_revision = AsyncMock(
+            return_value=MagicMock(id="revision-1")
+        )
+        service.repo.activate_document_revision = AsyncMock()
         service.repo.replace_chunks = AsyncMock(return_value=[])
         service.db.commit = AsyncMock()
         service.db.refresh = AsyncMock()
@@ -54,3 +58,8 @@ class IngestionPolicyTest(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertTrue(flagged_chunk.metadata.get("prompt_injection_suspected"))
+        self.assertEqual(
+            service.repo.replace_chunks.await_args.kwargs["revision_id"],
+            "revision-1",
+        )
+        service.repo.activate_document_revision.assert_awaited_once()

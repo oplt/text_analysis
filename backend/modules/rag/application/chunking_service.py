@@ -14,6 +14,7 @@ def _split_documents_with_token_counts(
     *,
     chunk_size: int,
     chunk_overlap: int,
+    document_revision: str | None = None,
 ) -> list[tuple[str, int, dict]]:
     return [
         (content, estimate_tokens(content), meta)
@@ -21,6 +22,7 @@ def _split_documents_with_token_counts(
             documents,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
+            document_revision=document_revision,
         )
     ]
 
@@ -39,8 +41,13 @@ def _attach_parent_windows(
     for start in range(0, len(leaves), window):
         group = leaves[start : start + window]
         parent_id = str(uuid4())
-        parent_content = "\n\n".join(c.content for c in group)
+        parent_content = _merge_non_overlapping_chunks(group)
         first = group[0]
+        source_indexes = []
+        source_span_ids = []
+        for child in group:
+            source_indexes.extend(child.metadata.get("source_paragraph_indexes") or [])
+            source_span_ids.extend(child.metadata.get("source_span_ids") or [])
         parent = DocumentChunk(
             id=parent_id,
             document_id=first.document_id,
@@ -55,6 +62,25 @@ def _attach_parent_windows(
                 **{k: v for k, v in first.metadata.items() if k != "paragraph_index"},
                 "chunk_role": "parent",
                 "child_count": len(group),
+                "source_paragraph_indexes": list(dict.fromkeys(source_indexes)),
+                "source_span_ids": list(dict.fromkeys(source_span_ids)),
+                "source_unit_ids": list(
+                    dict.fromkeys(
+                        source_unit_id
+                        for child in group
+                        for source_unit_id in child.metadata.get("source_unit_ids") or []
+                    )
+                ),
+                "block_ids": list(dict.fromkeys(source_span_ids)),
+                "char_start": first.metadata.get("char_start"),
+                "char_end": group[-1].metadata.get("char_end"),
+                "page_numbers": list(
+                    dict.fromkeys(
+                        child.metadata.get("page_number")
+                        for child in group
+                        if child.metadata.get("page_number") is not None
+                    )
+                ),
             },
         )
         parents.append(parent)
@@ -73,6 +99,29 @@ def _attach_parent_windows(
     return parents + out
 
 
+def _merge_non_overlapping_chunks(group: list[DocumentChunk]) -> str:
+    """Build a parent from canonical text, removing repeated child overlap."""
+    merged = ""
+    for child in group:
+        content = child.content
+        if not merged:
+            merged = content
+            continue
+        max_overlap = min(len(merged), len(content))
+        overlap = next(
+            (
+                size
+                for size in range(max_overlap, 7, -1)
+                if merged[-size:] == content[:size]
+            ),
+            0,
+        )
+        suffix = content[overlap:].lstrip("\n")
+        if suffix:
+            merged = f"{merged}\n\n{suffix}"
+    return merged
+
+
 class ChunkingService:
     def __init__(self, config: RagConfig | None = None):
         self.config = config or RagConfig.from_settings()
@@ -86,12 +135,14 @@ class ChunkingService:
         filename: str,
         project_id: str | None = None,
         organization_id: str | None = None,
+        document_revision: str | None = None,
     ) -> list[DocumentChunk]:
         pieces = await asyncio.to_thread(
             _split_documents_with_token_counts,
             documents,
             chunk_size=self.config.chunk_size,
             chunk_overlap=self.config.chunk_overlap,
+            document_revision=document_revision,
         )
         chunks: list[DocumentChunk] = []
         for index, (content, token_count, meta) in enumerate(pieces):
@@ -122,13 +173,17 @@ class ChunkingService:
                         "char_start": meta.get("char_start"),
                         "char_end": meta.get("char_end"),
                         "source_span_ids": meta.get("source_span_ids"),
+                        "source_unit_ids": meta.get("source_unit_ids"),
                         "block_ids": meta.get("block_ids"),
                         "content_hash": content_hash,
-                        "parser_version": self.config.parser_version,
-                        "chunker_version": self.config.chunker_version,
-                        "embedding_provider": self.config.embedding_provider,
-                        "embedding_model": self.config.embedding_model,
-                        "embedding_dimensions": self.config.embedding_dimensions,
+                        "offset_coordinate_system": meta.get("offset_coordinate_system"),
+                        "parser_version": getattr(self.config, "parser_version", None),
+                        "chunker_version": getattr(self.config, "chunker_version", None),
+                        "embedding_provider": getattr(self.config, "embedding_provider", None),
+                        "embedding_model": getattr(self.config, "embedding_model", None),
+                        "embedding_dimensions": getattr(
+                            self.config, "embedding_dimensions", None
+                        ),
                         "source_type": "upload",
                         **{
                             k: v
@@ -142,7 +197,9 @@ class ChunkingService:
                                 "char_start",
                                 "char_end",
                                 "source_span_ids",
+                                "source_unit_ids",
                                 "block_ids",
+                                "offset_coordinate_system",
                             }
                         },
                     },

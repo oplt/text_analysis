@@ -26,11 +26,14 @@ import {
     listAssistantThreads,
     postAssistantMessage,
     postAssistantSynthesize,
+    createResearchMemo,
+    saveAssistantAsResearchMemo,
     type AssistantCitation,
     type AssistantClaim,
     type AssistantMessageResult,
     type AssistantScope,
     type AssistantSynthesizeResult,
+    type AssistantSynthesisProvenance,
     type AssistantThread,
 } from "../../../../api/textResearch";
 import { getQueryErrorMessage } from "../../../../utils/queryErrors";
@@ -38,6 +41,7 @@ import { ResearchContextBar } from "../ResearchShared";
 import { useResearchContext } from "../../hooks/useResearchContext";
 import { useRunEvents } from "../../hooks/useRunEvents";
 import { activeRunRefetchInterval } from "../../runPolling";
+import { AssistantScopeControls } from "./AssistantScopeControls";
 
 type PanelMode = "context" | "ask" | "evidence";
 
@@ -69,6 +73,7 @@ type ConversationMessage = {
     content?: string;
     citations?: AssistantCitation[];
     claims?: AssistantClaim[];
+    evidence_revision_hash?: string | null;
     metadata?: Record<string, unknown>;
     created_at?: string;
 };
@@ -96,18 +101,22 @@ function emptyScope(partial?: Partial<AssistantScope> | null): AssistantScope {
         indexed_rag_document_ids: [],
         unavailable_rag_document_ids: [],
         scope_hash: "",
+        evidence_revision_hash: null,
         index_version: null,
         retrieval_version: null,
         total_documents: 0,
         indexed_count: 0,
         unavailable_count: 0,
+        unavailable_corpus_document_ids: [],
+        unavailable_reasons: {},
         warnings: [],
+        scope_mode: "fixed",
         ...partial,
     };
 }
 
 function citationValidationWarning(status: string | undefined | null): string | null {
-    if (!status || status === "valid") return null;
+    if (!status || status === "valid" || status === "no_evidence") return null;
     if (status === "unstructured") {
         return "Citation validation: answer citations were unstructured and could not be fully verified.";
     }
@@ -116,6 +125,18 @@ function citationValidationWarning(status: string | undefined | null): string | 
     }
     if (status === "partial") {
         return "Citation validation: some citations were only partially validated.";
+    }
+    if (status === "missing_claims") {
+        return "Citation validation: the answer did not contain any validated claims.";
+    }
+    if (status === "incomplete") {
+        return "Citation validation: one or more claims were structurally incomplete.";
+    }
+    if (status === "answer_mismatch") {
+        return "Citation validation: the answer contained statements not represented by its claims.";
+    }
+    if (status === "empty_answer") {
+        return "Citation validation: the model returned an empty answer.";
     }
     return `Citation validation status: ${status}.`;
 }
@@ -143,12 +164,18 @@ function messageToResult(
         retrieved_chunk_ids: [],
         model_name: "",
         latency_ms: 0,
-        no_context_found: Boolean(meta.no_context_found),
+        no_context_found:
+            Boolean(meta.no_context_found) || meta.citation_validation_status === "no_evidence",
         retrieval_degraded: Boolean(meta.retrieval_degraded),
         degradation_reason: (meta.degradation_reason as string | null | undefined) ?? null,
         citation_validation_failed: Boolean(meta.citation_validation_failed),
         citation_validation_status:
             (meta.citation_validation_status as string | undefined) ?? "valid",
+        evidence_revision_hash:
+            msg.evidence_revision_hash ??
+            (meta.evidence_revision_hash as string | null | undefined) ??
+            scope?.evidence_revision_hash ??
+            null,
         injection_chunks_filtered: 0,
         scope: emptyScope(scope),
         coverage,
@@ -178,20 +205,24 @@ function synthesizeSyncToResult(
         retrieved_chunk_ids: [],
         model_name: "",
         latency_ms: 0,
-        no_context_found: !result.answer,
+        no_context_found: !result.answer || result.citation_validation_status === "no_evidence",
         retrieval_degraded: false,
         degradation_reason: null,
         citation_validation_failed: Boolean(
             result.citation_validation_status &&
-                result.citation_validation_status !== "valid"
+                result.citation_validation_status !== "valid" &&
+                result.citation_validation_status !== "no_evidence"
         ),
         citation_validation_status: result.citation_validation_status ?? "valid",
+        evidence_revision_hash:
+            result.evidence_revision_hash ?? result.scope.evidence_revision_hash ?? null,
+        synthesis_provenance: result.synthesis_provenance,
         injection_chunks_filtered: 0,
         scope: result.scope,
         coverage: result.coverage,
         context_message_ids: [],
         ai_run_id: null,
-        fusion_method: "hierarchical_map_reduce",
+        fusion_method: "deterministic_map_reduce",
     };
 }
 
@@ -199,14 +230,26 @@ function ClaimsWithCitations({
     claims,
     citations,
     fallbackAnswer,
+    citationValidationFailed,
+    noContextFound,
     onOpenCitation,
 }: {
     claims: AssistantClaim[];
     citations: AssistantCitation[];
     fallbackAnswer: string;
+    citationValidationFailed: boolean;
+    noContextFound: boolean;
     onOpenCitation?: (citation: AssistantCitation) => void;
 }) {
     if (!claims.length) {
+        if (citationValidationFailed && !noContextFound) {
+            return (
+                <Alert severity="warning">
+                    A fully cited answer could not be generated. Retrieved evidence is shown
+                    separately below.
+                </Alert>
+            );
+        }
         return (
             <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
                 {fallbackAnswer}
@@ -261,6 +304,7 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
     const [synthesisRunId, setSynthesisRunId] = useState<string | null>(null);
     const [synthesisQuery, setSynthesisQuery] = useState("");
     const [synthesisError, setSynthesisError] = useState<string | null>(null);
+    const [lastSynthesisRunId, setLastSynthesisRunId] = useState<string | null>(null);
 
     const ctx = useResearchContext();
     const corpusId = ctx.selectedCorpus?.id ?? "";
@@ -300,6 +344,7 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
         setSynthesisRunId(null);
         setSynthesisQuery("");
         setSynthesisError(null);
+        setLastSynthesisRunId(null);
     }, [corpusId]);
 
     useEffect(() => {
@@ -332,6 +377,12 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                     retrieval_trace_id: (results.retrieval_trace_id as string | null) ?? null,
                     citation_validation_status:
                         (results.citation_validation_status as string | undefined) ?? "valid",
+                    evidence_revision_hash:
+                        (results.evidence_revision_hash as string | null | undefined) ??
+                        null,
+                    synthesis_provenance: results.synthesis_provenance as
+                        | AssistantSynthesisProvenance
+                        | undefined,
                 },
                 synthesisQuery
             );
@@ -378,6 +429,7 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
             if (result.mode === "async") {
                 setSynthesisQuery(variables.query);
                 setSynthesisRunId(result.run_id);
+                setLastSynthesisRunId(result.run_id);
                 setSynthesisError(null);
                 setMode("ask");
                 return;
@@ -385,6 +437,41 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
             setLastResult(synthesizeSyncToResult(result, variables.query));
             setSynthesisError(null);
             setMode("ask");
+        },
+    });
+
+    const saveMemoMutation = useMutation({
+        mutationFn: async () => {
+            if (!lastResult) throw new Error("There is no answer to save yet.");
+            const isSynthesis = Boolean(lastResult.synthesis_provenance) || Boolean(lastSynthesisRunId);
+            const title = isSynthesis ? "Corpus synthesis" : "Ask Corpus answer";
+            if (!isSynthesis && lastResult.message_id) {
+                return saveAssistantAsResearchMemo(corpusId, {
+                    message_id: lastResult.message_id,
+                    title,
+                    body: lastResult.answer,
+                });
+            }
+            return createResearchMemo(projectId, {
+                corpus_id: corpusId,
+                title,
+                body: lastResult.answer,
+                source_type: isSynthesis ? "analysis_result" : "manual",
+                citations: lastResult.citations as Array<Record<string, unknown>>,
+                claims: lastResult.claims as Array<Record<string, unknown>>,
+                provenance: {
+                    query: lastResult.query,
+                    scope: lastResult.scope,
+                    synthesis_provenance: lastResult.synthesis_provenance,
+                },
+                evidence_revision_hash: lastResult.evidence_revision_hash,
+                originating_synthesis_run_id: lastSynthesisRunId,
+            });
+        },
+        onSuccess: () => {
+            void queryClient.invalidateQueries({
+                queryKey: queryKeys.textResearch.memos(projectId, corpusId),
+            });
         },
     });
 
@@ -454,11 +541,23 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
         );
     }
 
-    const scope = scopeQuery.data ?? lastResult?.scope;
-    const liveHash = scopeQuery.data?.scope_hash;
-    const answerHash = lastResult?.scope?.scope_hash;
-    const corpusChangedSinceAnswer = Boolean(
-        liveHash && answerHash && liveHash !== answerHash
+    const threadScope = conversationQuery.data?.scope ?? (threadId ? lastResult?.scope : null);
+    const scope = threadScope ?? scopeQuery.data;
+    const answerScope = lastResult?.scope ?? threadScope;
+    const currentScope = scopeQuery.data;
+    const membershipChanged = Boolean(
+        answerScope &&
+            currentScope &&
+            answerScope.scope_hash &&
+            currentScope.scope_hash &&
+            answerScope.scope_hash !== currentScope.scope_hash
+    );
+    const evidenceRevisionChanged = Boolean(
+        answerScope &&
+            currentScope &&
+            answerScope.evidence_revision_hash &&
+            currentScope.evidence_revision_hash &&
+            answerScope.evidence_revision_hash !== currentScope.evidence_revision_hash
     );
     const citations = lastResult?.citations ?? [];
     const filteredCitations = citations.filter((c) => {
@@ -469,6 +568,7 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
     const conversationMessages = (conversationQuery.data?.messages ??
         []) as ConversationMessage[];
     const validationWarning = citationValidationWarning(lastResult?.citation_validation_status);
+    const synthesisProvenance = lastResult?.synthesis_provenance;
 
     return (
         <Stack spacing={1.5} sx={{ minHeight: 0 }}>
@@ -506,28 +606,50 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                             ))}
                         </Box>
                     ) : null}
-                    {corpusChangedSinceAnswer ? (
-                        <Alert
-                            severity="warning"
-                            action={
-                                <Button
-                                    color="inherit"
-                                    size="small"
-                                    onClick={() =>
-                                        submitQuestion(
-                                            lastResult?.query || question.trim(),
-                                            RESEARCHER_MODE_INTENT[researcherMode]
-                                        )
-                                    }
-                                    disabled={isBusy || !(lastResult?.query || question.trim())}
-                                >
-                                    Re-ask
-                                </Button>
-                            }
-                        >
-                            Corpus indexing or membership changed since this answer. Historical
-                            evidence still reflects the original scope snapshot; re-ask to use the
-                            current corpus.
+                    <AssistantScopeControls
+                        threadId={threadId}
+                        scope={scope ?? null}
+                        liveScope={scopeQuery.data ?? null}
+                        onUpdated={() => {
+                            setLastResult(null);
+                            void queryClient.invalidateQueries({
+                                queryKey: queryKeys.textResearch.assistantConversation(
+                                    threadId ?? ""
+                                ),
+                            });
+                            void queryClient.invalidateQueries({
+                                queryKey: queryKeys.textResearch.assistantThreads(corpusId),
+                            });
+                            void queryClient.invalidateQueries({
+                                queryKey: queryKeys.textResearch.assistantScope(corpusId),
+                            });
+                        }}
+                    />
+                    {membershipChanged ? (
+                        <Alert severity="warning">
+                            Current indexed document membership differs from this answer&apos;s
+                            evidence snapshot. The historical answer remains scoped to its
+                            original document membership.
+                        </Alert>
+                    ) : null}
+                    {evidenceRevisionChanged ? (
+                        <Alert severity="warning">
+                            Indexed evidence changed since this answer. Its historical evidence
+                            revision is preserved and it may not represent the current corpus.
+                        </Alert>
+                    ) : null}
+                    {synthesisProvenance ? (
+                        <Alert severity="info">
+                            Auditable synthesis · evidence revision{" "}
+                            {synthesisProvenance.evidence_revision_hash?.slice(0, 12) ?? "—"}
+                            {" · "}
+                            {synthesisProvenance.documents_considered?.length ?? 0} documents
+                            considered
+                            {(synthesisProvenance.documents_omitted?.length ?? 0) > 0
+                                ? ` · ${synthesisProvenance.documents_omitted?.length} omitted`
+                                : ""}
+                            . Per-document retrieval traces and structured map findings are
+                            preserved in run provenance.
                         </Alert>
                     ) : null}
 
@@ -678,6 +800,14 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                                 const status = meta.citation_validation_status as
                                     | string
                                     | undefined;
+                                const noContextFound =
+                                    Boolean(meta.no_context_found) || status === "no_evidence";
+                                const citationValidationFailed =
+                                    Boolean(meta.citation_validation_failed) ||
+                                    (status != null &&
+                                        status !== "valid" &&
+                                        status !== "no_evidence") ||
+                                    (!msgClaims.length && !noContextFound);
                                 const statusWarning = citationValidationWarning(status);
                                 return (
                                     <Box
@@ -708,6 +838,10 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                                                     claims={msgClaims}
                                                     citations={msgCitations}
                                                     fallbackAnswer={msg.content ?? ""}
+                                                    citationValidationFailed={
+                                                        citationValidationFailed
+                                                    }
+                                                    noContextFound={noContextFound}
                                                     onOpenCitation={onOpenCitation}
                                                 />
                                                 {msgCitations.filter((c) => c.used_in_answer)
@@ -768,7 +902,8 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                             ) : null}
                             {lastResult.citation_validation_failed ? (
                                 <Alert severity="warning">
-                                    Some model citations were discarded during validation.
+                                    A fully cited answer could not be generated. Retrieved
+                                    evidence is shown separately below.
                                 </Alert>
                             ) : null}
                             {validationWarning ? (
@@ -785,8 +920,29 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                                 claims={lastResult.claims}
                                 citations={lastResult.citations}
                                 fallbackAnswer={lastResult.answer}
+                                citationValidationFailed={
+                                    lastResult.citation_validation_failed ||
+                                    (!lastResult.claims.length && !lastResult.no_context_found)
+                                }
+                                noContextFound={lastResult.no_context_found}
                                 onOpenCitation={onOpenCitation}
                             />
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => saveMemoMutation.mutate()}
+                                disabled={saveMemoMutation.isPending}
+                            >
+                                {saveMemoMutation.isPending ? "Saving…" : "Save as research memo"}
+                            </Button>
+                            {saveMemoMutation.isError ? (
+                                <Alert severity="error">
+                                    Could not save memo: {getQueryErrorMessage(saveMemoMutation.error)}
+                                </Alert>
+                            ) : null}
+                            {saveMemoMutation.isSuccess ? (
+                                <Alert severity="success">Research memo saved.</Alert>
+                            ) : null}
                             <Divider />
                             <Typography variant="subtitle2">Sources</Typography>
                             {lastResult.citations

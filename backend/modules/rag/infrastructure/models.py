@@ -6,6 +6,24 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Te
 from sqlalchemy.orm import Mapped, mapped_column
 
 
+class RagDocumentRevision(Base):
+    """Immutable metadata for one completed or in-progress document index run."""
+
+    __tablename__ = "rag_document_revisions"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("rag_documents.id", ondelete="CASCADE"), index=True
+    )
+    source_content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    parser_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    chunker_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    index_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
+    )
+
+
 class RagDocument(Base):
     __tablename__ = "rag_documents"
 
@@ -29,6 +47,11 @@ class RagDocument(Base):
         onupdate=lambda: datetime.now(UTC),
     )
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    current_revision_id: Mapped[str | None] = mapped_column(
+        ForeignKey("rag_document_revisions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
 
 class RagChunk(Base):
@@ -51,6 +74,11 @@ class RagChunk(Base):
     parent_chunk_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     chunker_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     parser_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    revision_id: Mapped[str | None] = mapped_column(
+        ForeignKey("rag_document_revisions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
@@ -138,6 +166,10 @@ class RagRetrievalTrace(Base):
     query: Mapped[str] = mapped_column(Text)
     intent: Mapped[str | None] = mapped_column(String(64), nullable=True)
     scope_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    evidence_revision_hash: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    index_revision_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     document_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     retrieved_chunks_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     coverage_json: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -174,6 +206,9 @@ class RagMessage(Base):
     resolved_retrieval_query: Mapped[str | None] = mapped_column(Text, nullable=True)
     context_message_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     ai_run_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    evidence_revision_hash: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )

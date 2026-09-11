@@ -66,6 +66,7 @@ export const queryKeys = {
         corpus: (corpusId: string) => ["text-research", "corpus", corpusId] as const,
         documents: (corpusId: string, params?: Record<string, unknown>) =>
             ["text-research", "corpus", corpusId, "documents", params ?? {}] as const,
+        document: (documentId: string) => ["text-research", "document", documentId] as const,
         codebooks: (projectId: string) => ["text-research", projectId, "codebooks"] as const,
         /** Version-aware: keyed by codebook id (frozen versions keep stable ids). */
         labels: (codebookId: string) => ["text-research", "codebook", codebookId, "labels"] as const,
@@ -152,6 +153,9 @@ export const queryKeys = {
             ["text-research", "assistant", "threads", corpusId] as const,
         assistantConversation: (threadId: string) =>
             ["text-research", "assistant", "conversation", threadId] as const,
+        memos: (projectId: string, corpusId?: string) =>
+            ["text-research", projectId, "memos", corpusId ?? "all"] as const,
+        memo: (memoId: string) => ["text-research", "memo", memoId] as const,
     },
     rag: {
         all: ["rag"] as const,

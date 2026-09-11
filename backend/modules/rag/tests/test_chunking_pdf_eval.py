@@ -26,6 +26,45 @@ class StructureChunkingTests(unittest.TestCase):
         self.assertIn("content_hash", meta)
         self.assertEqual(meta.get("chunker_strategy"), "structure-v1")
 
+    def test_source_units_are_stable_across_overlapping_chunks(self):
+        document = ParsedDocument(
+            content="First paragraph with stable text.\n\nSecond paragraph with stable text.",
+            metadata={"checksum_sha256": "document-revision"},
+        )
+        first = split_documents([document], chunk_size=6, chunk_overlap=3)
+        second = split_documents([document], chunk_size=6, chunk_overlap=3)
+
+        first_ids = [meta["source_unit_ids"] for _content, meta in first]
+        second_ids = [meta["source_unit_ids"] for _content, meta in second]
+        self.assertEqual(first_ids, second_ids)
+        self.assertEqual(
+            len({source_id for ids in first_ids for source_id in ids}),
+            2,
+        )
+        self.assertTrue(
+            all(
+                meta["offset_coordinate_system"]
+                == "unicode_code_points_zero_based_end_exclusive"
+                for _content, meta in first
+            )
+        )
+
+    def test_recursive_pieces_have_piece_level_offsets(self):
+        text = "one two three four five six seven eight nine ten"
+        pieces = split_documents(
+            [ParsedDocument(content=text)], chunk_size=4, chunk_overlap=1
+        )
+
+        self.assertGreater(len(pieces), 1)
+        self.assertTrue(
+            all(text[meta["char_start"] : meta["char_end"]] == content for content, meta in pieces)
+        )
+        self.assertEqual(
+            len({meta["source_unit_ids"][0] for _content, meta in pieces}),
+            1,
+        )
+        self.assertGreater(len({meta["char_start"] for _content, meta in pieces}), 1)
+
 
 class PdfFallbackTests(unittest.TestCase):
     def test_basic_parser_on_empty_pdf_bytes_raises_or_empty(self):

@@ -545,6 +545,17 @@ def enrich_provenance_response(
     provenance.setdefault("corpus_id", getattr(run, "corpus_id", None))
     provenance.setdefault("project_id", getattr(run, "project_id", None))
     provenance.setdefault("random_seed", getattr(run, "random_seed", None))
+    provenance.setdefault(
+        "evidence_revision_hash",
+        getattr(run, "evidence_revision_hash", None)
+        or parameters.get("evidence_revision_hash")
+        or results.get("evidence_revision_hash"),
+    )
+    synthesis_provenance = results.get("synthesis_provenance") or parameters.get(
+        "synthesis_provenance"
+    )
+    if isinstance(synthesis_provenance, dict):
+        provenance.setdefault("synthesis_provenance", synthesis_provenance)
 
     artifact_meta = results.get("artifact_metadata")
     if isinstance(artifact_meta, dict) and not provenance.get("model_artifact_checksum"):
@@ -601,6 +612,8 @@ def extract_reproduce_request(
         or parameters.get("pipeline_checksum"),
         "corpus_snapshot_id": provenance.get("corpus_snapshot_id"),
         "corpus_snapshot_hash": provenance.get("corpus_snapshot_hash"),
+        "evidence_revision_hash": provenance.get("evidence_revision_hash")
+        or parameters.get("evidence_revision_hash"),
         "random_seeds": provenance.get("random_seeds")
         or {"analysis": parameters.get("random_seed")},
         "git_commit": provenance.get("git_commit"),

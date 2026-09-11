@@ -28,6 +28,7 @@ class GenerationPort(Protocol):
         memory_degraded: bool = False,
         degradation_reason: str | None = None,
         injection_chunks_filtered: int = 0,
+        commit: bool = True,
     ) -> RagGenerationResult: ...
 
 
@@ -52,6 +53,7 @@ class AiServiceGenerationPort:
         memory_degraded: bool = False,
         degradation_reason: str | None = None,
         injection_chunks_filtered: int = 0,
+        commit: bool = True,
     ) -> RagGenerationResult:
         run = await self._get_service().run_rag_answer(
             user,
@@ -63,6 +65,7 @@ class AiServiceGenerationPort:
             memory_degraded=memory_degraded,
             degradation_reason=degradation_reason,
             injection_chunks_filtered=injection_chunks_filtered,
+            commit=commit,
         )
         return RagGenerationResult(
             id=run.id,

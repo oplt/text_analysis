@@ -17,6 +17,7 @@ import type {
     ExportManifest,
     PreprocessingProfile,
     ResearchCorpus,
+    ResearchMemo,
     TrainedModel,
     TrainingDatasetSnapshot,
     IngestionQaDocument,
@@ -230,6 +231,10 @@ export async function listDocuments(
     return apiFetch(`${BASE}/corpora/${corpusId}/documents${qs ? `?${qs}` : ""}`, { signal });
 }
 
+export async function getDocument(documentId: string): Promise<CorpusDocument> {
+    return apiFetch(`${BASE}/documents/${documentId}`);
+}
+
 export async function addDocument(
     corpusId: string,
     payload: {
@@ -304,7 +309,16 @@ export async function importDocumentMetadataCsv(
     });
 }
 
-export async function getSourceText(documentId: string): Promise<{ document_id: string; text: string }> {
+export async function getSourceText(documentId: string): Promise<{
+    document_id: string;
+    text: string;
+    page_provenance?: Array<{
+        page_number?: number | null;
+        char_start?: number | null;
+        char_end?: number | null;
+        source_span_ids?: string[] | null;
+    }>;
+}> {
     return apiFetch(`${BASE}/documents/${documentId}/source-text`);
 }
 
@@ -1839,12 +1853,16 @@ export type AssistantScope = {
     indexed_rag_document_ids: string[];
     unavailable_rag_document_ids: string[];
     scope_hash: string;
+    evidence_revision_hash?: string | null;
     index_version: string | null;
     retrieval_version: string | null;
     total_documents: number;
     indexed_count: number;
     unavailable_count: number;
+    unavailable_corpus_document_ids: string[];
+    unavailable_reasons: Record<string, string>;
     warnings: string[];
+    scope_mode: "fixed" | "live";
 };
 
 export type AssistantCitation = {
@@ -1862,6 +1880,7 @@ export type AssistantCitation = {
     char_start?: number | null;
     char_end?: number | null;
     source_span_ids?: string[] | null;
+    parent_context_id?: string | null;
 };
 
 export type AssistantClaim = {
@@ -1875,6 +1894,21 @@ export type AssistantCoverage = {
     documents_with_retrieved_evidence: number;
     retrieved_passage_count: number;
     coverage_ratio: number;
+};
+
+export type AssistantSynthesisProvenance = {
+    schema_version?: string;
+    original_research_question?: string;
+    evidence_revision_hash?: string | null;
+    corpus_id?: string;
+    project_id?: string;
+    created_by?: string;
+    created_at?: string;
+    documents_in_scope?: string[];
+    documents_considered?: string[];
+    documents_omitted?: Array<{ rag_document_id: string; reason: string }>;
+    retrieval_trace_ids?: string[];
+    citation_validation_status?: string | null;
 };
 
 export type AssistantMessageResult = {
@@ -1896,12 +1930,14 @@ export type AssistantMessageResult = {
     degradation_reason: string | null;
     citation_validation_failed: boolean;
     citation_validation_status?: string;
+    evidence_revision_hash?: string | null;
     injection_chunks_filtered: number;
     scope: AssistantScope;
     coverage: AssistantCoverage;
     context_message_ids?: string[];
     ai_run_id?: string | null;
     fusion_method?: string | null;
+    synthesis_provenance?: AssistantSynthesisProvenance;
 };
 
 export type AssistantSynthesizeResult =
@@ -1919,7 +1955,9 @@ export type AssistantSynthesizeResult =
           truncated?: boolean;
           coverage: AssistantCoverage;
           retrieval_trace_id?: string | null;
+          evidence_revision_hash?: string | null;
           citation_validation_status?: string;
+          synthesis_provenance?: AssistantSynthesisProvenance;
       }
     | {
           mode: "async";
@@ -1937,6 +1975,7 @@ export type AssistantThread = {
     title: string;
     created_at: string;
     updated_at: string;
+    scope_mode: "fixed" | "live";
 };
 
 export async function getAssistantScope(corpusId: string): Promise<AssistantScope> {
@@ -1949,7 +1988,7 @@ export async function listAssistantThreads(corpusId: string): Promise<AssistantT
 
 export async function createAssistantThread(
     corpusId: string,
-    payload?: { title?: string; document_ids?: string[] }
+    payload?: { title?: string; document_ids?: string[]; scope_mode?: "fixed" | "live" }
 ): Promise<AssistantThread> {
     return apiFetch(`${BASE}/corpora/${corpusId}/assistant/conversations`, {
         method: "POST",
@@ -1961,8 +2000,40 @@ export async function getAssistantConversation(threadId: string): Promise<{
     thread: AssistantThread;
     messages: Array<Record<string, unknown>>;
     scope: AssistantScope | null;
+    scope_events: AssistantScopeEvent[];
 }> {
     return apiFetch(`${BASE}/assistant/conversations/${threadId}`);
+}
+
+export type AssistantScopeEvent = {
+    id: string;
+    thread_id: string;
+    actor_id: string | null;
+    action: string;
+    scope_mode: "fixed" | "live";
+    corpus_id: string;
+    project_id: string;
+    previous_scope_hash: string | null;
+    new_scope_hash: string;
+    evidence_revision_hash?: string | null;
+    rag_document_ids: string[];
+    corpus_document_ids: string[];
+    reason: string | null;
+    created_at: string;
+};
+
+export async function updateAssistantThreadScope(
+    threadId: string,
+    payload: {
+        document_ids?: string[] | null;
+        scope_mode?: "fixed" | "live" | null;
+        reason?: string | null;
+    }
+): Promise<AssistantScope> {
+    return apiFetch(`${BASE}/assistant/conversations/${threadId}/scope`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+    });
 }
 
 export async function postAssistantMessage(
@@ -1992,6 +2063,73 @@ export async function postAssistantSynthesize(
         method: "POST",
         body: JSON.stringify(payload),
     });
+}
+
+export async function listResearchMemos(
+    projectId: string,
+    corpusId?: string
+): Promise<ResearchMemo[]> {
+    const query = corpusId ? `?corpus_id=${encodeURIComponent(corpusId)}` : "";
+    return apiFetch(`${BASE}/projects/${projectId}/memos${query}`);
+}
+
+export async function getResearchMemo(memoId: string): Promise<ResearchMemo> {
+    return apiFetch(`${BASE}/memos/${memoId}`);
+}
+
+export async function createResearchMemo(
+    projectId: string,
+    payload: {
+        corpus_id?: string | null;
+        title: string;
+        body: string;
+        source_type?: string;
+        citations?: Array<Record<string, unknown>>;
+        claims?: Array<Record<string, unknown>>;
+        provenance?: Record<string, unknown>;
+        evidence_revision_hash?: string | null;
+        originating_assistant_message_id?: string | null;
+        originating_synthesis_run_id?: string | null;
+    }
+): Promise<ResearchMemo> {
+    return apiFetch(`${BASE}/projects/${projectId}/memos`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function saveAssistantAsResearchMemo(
+    corpusId: string,
+    payload: { message_id: string; title: string; body: string }
+): Promise<ResearchMemo> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/memos/from-assistant`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function saveSynthesisAsResearchMemo(
+    corpusId: string,
+    payload: { run_id: string; title: string; body: string }
+): Promise<ResearchMemo> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/memos/from-synthesis`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function updateResearchMemo(
+    memoId: string,
+    payload: { title?: string; body?: string }
+): Promise<ResearchMemo> {
+    return apiFetch(`${BASE}/memos/${memoId}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function archiveResearchMemo(memoId: string): Promise<ResearchMemo> {
+    return apiFetch(`${BASE}/memos/${memoId}/archive`, { method: "POST" });
 }
 
 export async function assistantRetrieve(

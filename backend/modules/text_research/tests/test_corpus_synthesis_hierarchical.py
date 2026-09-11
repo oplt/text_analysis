@@ -26,6 +26,7 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
         service.rag_config = SimpleNamespace(
             enabled=True,
             synthesis_max_documents=2,
+            synthesis_batch_size=2,
             synthesis_passages_per_document=2,
         )
 
@@ -43,6 +44,14 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
             content="Doc2 says Y",
             score=0.8,
             filename="b.pdf",
+            chunk_index=0,
+        )
+        chunk_c = RetrievedChunk(
+            chunk_id="cc",
+            document_id="d3",
+            content="Doc3 says Z",
+            score=0.7,
+            filename="c.pdf",
             chunk_index=0,
         )
 
@@ -64,13 +73,19 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
                     intent=RetrievalIntent.SYNTHESIS,
                     retrieval_trace_id="t2",
                 )
+            if doc_ids == ["d3"]:
+                return RetrievalOutcome(
+                    chunks=[chunk_c],
+                    intent=RetrievalIntent.SYNTHESIS,
+                    retrieval_trace_id="t3",
+                )
             raise AssertionError(f"unexpected retrieve scope: {doc_ids}")
 
         service.retrieval = SimpleNamespace(retrieve=fake_retrieve)
 
         async def fake_answer(query, *, outcome, **kwargs):
-            assert {c.chunk_id for c in outcome.chunks} == {"ca", "cb"}
-            assert outcome.fusion_method == "hierarchical_map_reduce"
+            assert {c.chunk_id for c in outcome.chunks} == {"ca", "cb", "cc"}
+            assert outcome.fusion_method == "deterministic_map_reduce"
             return RagAnswer(
                 query=query,
                 answer="Synthesized",
@@ -88,14 +103,14 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
                 claims=[
                     ClaimCitation(text="Synthesized", chunk_ids=["ca"], citation_numbers=[1])
                 ],
-                retrieved_chunk_ids=["ca", "cb"],
+                retrieved_chunk_ids=["ca", "cb", "cc"],
                 model_name="test",
                 latency_ms=1,
                 coverage=RetrievalCoverage(
                     documents_in_scope=3,
-                    documents_with_retrieved_evidence=2,
-                    retrieved_passage_count=2,
-                    coverage_ratio=2 / 3,
+                    documents_with_retrieved_evidence=3,
+                    retrieved_passage_count=3,
+                    coverage_ratio=1.0,
                 ),
                 citation_validation_status="valid",
                 retrieval_trace_id="t-answer",
@@ -104,6 +119,7 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
         service.answers = SimpleNamespace(answer_from_retrieval=fake_answer)
 
         scope = SimpleNamespace(
+            corpus_id="c1",
             project_id="p1",
             indexed_count=3,
             scope_hash="abc",
@@ -115,9 +131,30 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
             scope=scope,
             allow_list=["d1", "d2", "d3"],
         )
-        self.assertTrue(result["truncated"])
+        self.assertFalse(result["truncated"])
         self.assertEqual(result["documents_total"], 3)
-        self.assertEqual(result["documents_considered"], 2)
-        self.assertEqual(result["documents_with_evidence"], 2)
+        self.assertEqual(result["documents_considered"], 3)
+        self.assertEqual(result["documents_with_evidence"], 3)
         self.assertEqual(result["answer"], "Synthesized")
-        self.assertEqual(len(retrieve_calls), 2)
+        self.assertEqual(len(retrieve_calls), 3)
+        self.assertIsNone(result["retrieval_trace_id"])
+        self.assertEqual(result["retrieval_trace_ids"], ["t1", "t2", "t3"])
+        self.assertEqual(result["omitted_document_count"], 0)
+        self.assertEqual(result["omitted_document_ids"], [])
+        self.assertEqual(
+            result["synthesis_provenance"]["per_document_retrieval_trace_ids"],
+            [
+                {"rag_document_id": "d1", "retrieval_trace_id": "t1"},
+                {"rag_document_id": "d2", "retrieval_trace_id": "t2"},
+                {"rag_document_id": "d3", "retrieval_trace_id": "t3"},
+            ],
+        )
+        self.assertEqual(
+            result["synthesis_provenance"]["documents_considered"],
+            ["d1", "d2", "d3"],
+        )
+        self.assertEqual(result["synthesis_provenance"]["documents_omitted"], [])
+        self.assertEqual(
+            result["synthesis_provenance"]["map_stage"]["operation"],
+            "deterministic_evidence_collection",
+        )

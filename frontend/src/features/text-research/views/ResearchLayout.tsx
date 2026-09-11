@@ -19,6 +19,7 @@ import { PageShell } from "../../../components/ui/PageShell";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { CorpusAssistantPanel } from "../components/assistant/CorpusAssistantPanel";
+import { ResearchMemosPanel } from "../components/ResearchMemosPanel";
 import { CorpusDocumentDrawer } from "../components/CorpusDocumentDrawer";
 import { ResearchWorkflowDrawer } from "../components/ResearchWorkflowDrawer";
 import { ResearchWorkflowStrip } from "../components/ResearchWorkflowStrip";
@@ -31,10 +32,8 @@ import {
     stageIdFromPath,
     type WorkflowStageState,
 } from "../workflow";
-import { useQuery } from "@tanstack/react-query";
-import { listDocuments, type AssistantCitation } from "../../../api/textResearch";
+import { getDocument, type AssistantCitation } from "../../../api/textResearch";
 import type { CorpusDocument } from "../types";
-import { queryKeys } from "../../../config/queryKeys";
 
 const ANALYSIS_SUBLINKS = [
     { tab: "overview", label: "Corpus tools" },
@@ -73,37 +72,15 @@ function ResearchLayoutInner() {
     const [citationDoc, setCitationDoc] = useState<CorpusDocument | null>(null);
     const [citationSnippet, setCitationSnippet] = useState<string | null>(null);
     const [citationPage, setCitationPage] = useState<number | null>(null);
+    const [citationCharStart, setCitationCharStart] = useState<number | null>(null);
+    const [citationCharEnd, setCitationCharEnd] = useState<number | null>(null);
+    const [citationSourceSpanIds, setCitationSourceSpanIds] = useState<string[] | null>(null);
 
     useEffect(() => {
         if (ctx.askPanelOpenNonce > 0) {
             setContextOpen(true);
         }
     }, [ctx.askPanelOpenNonce]);
-
-    const docsQuery = useQuery({
-        queryKey: queryKeys.textResearch.documents(ctx.selectedCorpus?.id ?? "", {
-            limit: "all",
-            offset: 0,
-        }),
-        queryFn: async () => {
-            const pageSize = 200; // must stay ≤ backend MAX_PAGE_LIMIT
-            const corpusId = ctx.selectedCorpus!.id;
-            const first = await listDocuments(corpusId, { limit: pageSize, offset: 0 });
-            if (first.items.length >= first.total) {
-                return first;
-            }
-            const items = [...first.items];
-            let offset = first.items.length;
-            while (offset < first.total) {
-                const page = await listDocuments(corpusId, { limit: pageSize, offset });
-                items.push(...page.items);
-                if (!page.items.length) break;
-                offset += page.items.length;
-            }
-            return { ...first, items, limit: items.length };
-        },
-        enabled: Boolean(ctx.selectedCorpus?.id),
-    });
 
     useEffect(() => {
         if (projectId) {
@@ -119,17 +96,18 @@ function ResearchLayoutInner() {
         navigate(`/research/${projectId}/${stage.route}`);
     }
 
-    function handleOpenCitation(citation: AssistantCitation) {
-        const docs = docsQuery.data?.items ?? [];
-        const match =
-            (citation.corpus_document_id
-                ? docs.find((d) => d.id === citation.corpus_document_id)
-                : undefined) ??
-            docs.find((d) => d.rag_document_id === citation.document_id);
-        if (match) {
-            setCitationDoc(match);
+    async function handleOpenCitation(citation: AssistantCitation) {
+        if (!citation.corpus_document_id) return;
+        try {
+            const document = await getDocument(citation.corpus_document_id);
+            setCitationDoc(document);
             setCitationSnippet(citation.snippet);
             setCitationPage(citation.page_number ?? null);
+            setCitationCharStart(citation.char_start ?? null);
+            setCitationCharEnd(citation.char_end ?? null);
+            setCitationSourceSpanIds(citation.source_span_ids ?? null);
+        } catch {
+            // Preserve the existing no-op behavior when a citation is no longer accessible.
         }
     }
 
@@ -285,6 +263,7 @@ function ResearchLayoutInner() {
                         isLoading={ctx.corporaLoading && ctx.corpora.length === 0}
                         variant="inline"
                     >
+                        <ResearchMemosPanel onOpenCitation={handleOpenCitation} />
                         <Outlet />
                     </QueryBoundary>
                 </Box>
@@ -321,10 +300,16 @@ function ResearchLayoutInner() {
                 corpusId={ctx.selectedCorpus?.id ?? ""}
                 highlightSnippet={citationSnippet}
                 pageHint={citationPage}
+                charStart={citationCharStart}
+                charEnd={citationCharEnd}
+                sourceSpanIds={citationSourceSpanIds}
                 onClose={() => {
                     setCitationDoc(null);
                     setCitationSnippet(null);
                     setCitationPage(null);
+                    setCitationCharStart(null);
+                    setCitationCharEnd(null);
+                    setCitationSourceSpanIds(null);
                 }}
             />
 

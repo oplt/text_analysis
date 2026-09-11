@@ -31,7 +31,9 @@ Offline ranking comparison (no paid APIs):
 backend/.venv/bin/python -m backend.modules.rag.eval.retrieval_eval
 ```
 
-Chunking is structure-aware (`structure-v1`); PDFs use enhanced parser with pypdf fallback.
+Chunking is structure-aware (`structure-v1`). PDFs use the configured parser with a
+reliable pypdf fallback. Install the optional enhanced parser with
+`uv sync --extra pdf`; it is selected by default when available.
 
 ## Architecture
 
@@ -81,10 +83,16 @@ RAG_RRF_K=60
 RAG_SOURCE_MAX_CHUNKS_PER_DOCUMENT=3
 RAG_EVIDENCE_TOP_K=12
 RAG_ALLOWED_FILE_TYPES=pdf,txt,md,docx,csv
+RAG_PDF_PARSER=auto             # auto | pymupdf | pypdf
 RAG_MAX_FILE_BYTES=10485760
 ```
 
 Embeddings use the same provider registry as `/api/v1/ai` — no hardcoded API keys.
+
+PDF metadata reports the parser used, parser quality, layout/table extraction
+capabilities, and whether OCR ran. PyMuPDF block extraction does not perform OCR
+or table extraction; those fields therefore remain false/unavailable rather than
+claiming that tables were detected.
 
 ## Vector backend
 

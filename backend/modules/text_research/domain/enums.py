@@ -155,3 +155,8 @@ class ResearchMemoSourceType(StrEnum):
 class ResearchMemoStatus(StrEnum):
     ACTIVE = "active"
     ARCHIVED = "archived"
+
+
+class AssistantScopeMode(StrEnum):
+    FIXED = "fixed"
+    LIVE = "live"

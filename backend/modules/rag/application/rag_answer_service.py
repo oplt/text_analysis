@@ -23,19 +23,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 NO_CONTEXT_ANSWER = (
     "I could not find relevant document context for your question in the indexed documents."
 )
+CITATION_FAILURE_ANSWER = (
+    "I could not generate a fully cited answer from the retrieved evidence. "
+    "The retrieved evidence is shown separately below."
+)
 
 STRUCTURED_CLAIM_INSTRUCTION = (
     "Respond with a single JSON object only, of the form:\n"
-    '{"answer":"...","claims":[{"text":"...","chunk_ids":["chunk-id"]}]}.\n'
+    '{"answer":"...","claims":[{"text":"...","chunk_ids":["chunk-id"]}],'
+    '"no_evidence":false}.\n'
+    "Every substantive answer statement must be repeated in a cited claim. "
     "Every claim must cite chunk_ids from the provided sources. "
     "Do not invent chunk IDs. If evidence is insufficient, say so in answer "
-    "and use an empty claims array."
+    "and set no_evidence to true with an empty claims array."
 )
 
 STRUCTURED_REPAIR_INSTRUCTION = (
-    "Your previous reply was not valid JSON with claim citations. "
+    "Your previous reply failed citation validation. "
     "Reply again with ONLY the JSON object "
-    '{"answer":"...","claims":[{"text":"...","chunk_ids":["chunk-id"]}]}.'
+    '{"answer":"...","claims":[{"text":"...","chunk_ids":["chunk-id"]}],'
+    '"no_evidence":false}. Every answer statement must appear in a cited claim. '
+    "If evidence is insufficient, set no_evidence to true and claims to []."
 )
 
 
@@ -72,6 +80,7 @@ class RagAnswerService:
         owner_scoped: bool = True,
         conversation_id: str | None = None,
         include_memory: bool = True,
+        commit: bool = True,
     ) -> RagAnswer:
         """Convenience wrapper: retrieve once, then answer_from_retrieval (I4)."""
         if not self.config.enabled:
@@ -103,6 +112,7 @@ class RagAnswerService:
             document_ids=document_ids,
             organization_id=organization_id,
             include_memory=include_memory,
+            commit=commit,
         )
 
     async def answer_from_retrieval(
@@ -120,6 +130,7 @@ class RagAnswerService:
         conversation_context: str | None = None,
         resolved_retrieval_query: str | None = None,
         context_message_ids: list[str] | None = None,
+        commit: bool = True,
     ) -> RagAnswer:
         """Generate from an existing retrieval outcome — never re-retrieves (I4)."""
         if not self.config.enabled:
@@ -145,6 +156,8 @@ class RagAnswerService:
                 model_name="none",
                 latency_ms=latency_ms,
             )
+            if commit:
+                await self.db.commit()
             return RagAnswer(
                 query=query,
                 answer=NO_CONTEXT_ANSWER,
@@ -161,8 +174,10 @@ class RagAnswerService:
                 retrieval_trace_id=outcome.retrieval_trace_id,
                 coverage=outcome.coverage,
                 citation_validation_status="valid",
+                evidence_revision_hash=outcome.evidence_revision_hash,
                 resolved_retrieval_query=resolved_retrieval_query or query,
                 context_message_ids=list(context_message_ids or []),
+                index_revision_ids=list(outcome.index_revision_ids),
             )
 
         document_context = self.context_builder.build_document_context_block(bounded_chunks)
@@ -204,6 +219,7 @@ class RagAnswerService:
             memory_degraded=memory_degraded,
             degradation_reason=outcome.degradation_reason,
             injection_chunks_filtered=outcome.injection_chunks_filtered,
+            commit=commit,
         )
 
         validated = self.citation_validator.validate(
@@ -212,8 +228,8 @@ class RagAnswerService:
             allowed_document_ids=document_ids,
         )
 
-        # At most one bounded repair/retry for unstructured output.
-        if validated.citation_validation_status == "unstructured":
+        # At most one bounded repair/retry for any citation-validation failure.
+        if validated.citation_validation_failed:
             repair_context = (
                 f"{combined}\n\n{STRUCTURED_REPAIR_INSTRUCTION}\n\n"
                 f"Previous invalid output:\n{(ai_run.output_text or '')[:2000]}"
@@ -227,12 +243,20 @@ class RagAnswerService:
                 memory_degraded=memory_degraded,
                 degradation_reason=outcome.degradation_reason,
                 injection_chunks_filtered=outcome.injection_chunks_filtered,
+                commit=commit,
             )
             validated = self.citation_validator.validate(
                 raw_output=ai_run.output_text or "",
                 retrieved_chunks=bounded_chunks,
                 allowed_document_ids=document_ids,
             )
+
+        if validated.citation_validation_failed:
+            validated.answer = CITATION_FAILURE_ANSWER
+            validated.claims = []
+            for citation in validated.citations:
+                citation.used_in_answer = False
+                citation.citation_number = None
 
         latency_ms = int((perf_counter() - started) * 1000)
         metrics.rag_answer_latency_ms.observe(latency_ms)
@@ -247,6 +271,8 @@ class RagAnswerService:
             model_name=ai_run.model_name,
             latency_ms=latency_ms,
         )
+        if commit:
+            await self.db.commit()
 
         prompt_template_id = getattr(ai_run, "prompt_template_id", None)
         prompt_version_id = getattr(ai_run, "prompt_version_id", None)
@@ -258,7 +284,7 @@ class RagAnswerService:
             retrieved_chunk_ids=chunk_ids,
             model_name=ai_run.model_name,
             latency_ms=latency_ms,
-            no_context_found=False,
+            no_context_found=validated.no_evidence,
             ai_run_id=ai_run.id,
             retrieval_degraded=outcome.degraded,
             memory_degraded=memory_degraded,
@@ -269,10 +295,12 @@ class RagAnswerService:
             coverage=outcome.coverage,
             citation_validation_failed=validated.citation_validation_failed,
             citation_validation_status=validated.citation_validation_status,
+            evidence_revision_hash=outcome.evidence_revision_hash,
             prompt_template_id=prompt_template_id,
             prompt_version_id=prompt_version_id,
             resolved_retrieval_query=resolved_retrieval_query or query,
             context_message_ids=list(context_message_ids or []),
+            index_revision_ids=list(outcome.index_revision_ids),
         )
 
     async def _log_query(
@@ -297,4 +325,3 @@ class RagAnswerService:
             model_name=model_name,
             latency_ms=latency_ms,
         )
-        await self.db.commit()

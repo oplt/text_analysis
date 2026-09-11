@@ -135,7 +135,7 @@ jobs:
           cache-dependency-glob: backend/uv.lock
       - name: Install backend (frozen lock)
         working-directory: backend
-        run: uv sync --frozen --extra dev
+        run: uv sync --frozen --extra dev --extra pdf
       - name: Pytest RAG (+ shared pool/cache smoke)
         run: |
           backend/.venv/bin/pytest \
@@ -144,6 +144,8 @@ jobs:
             backend/tests/test_pool_observability.py \
             backend/tests/test_database_pool.py \
             -q
+      - name: Enhanced PDF parser smoke
+        run: backend/.venv/bin/pytest backend/modules/rag/tests/test_parser_adapters.py -q
 
   backend-memory-agent-tests:
     name: Backend memory + agent unit tests

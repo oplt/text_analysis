@@ -23,6 +23,7 @@ class RagDocumentResponse(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime
+    current_revision_id: str | None = None
 
 
 class RagDocumentUploadResponse(BaseModel):
@@ -37,6 +38,7 @@ class RagChunkResponse(BaseModel):
     content: str
     token_count: int
     metadata: dict[str, Any] = Field(default_factory=dict)
+    revision_id: str | None = None
 
 
 class RagIngestionJobResponse(BaseModel):
@@ -72,6 +74,10 @@ class RagRetrievedChunkResponse(BaseModel):
     page_number: int | None = None
     rank: int | None = None
     used_in_answer: bool = False
+    index_revision_id: str | None = None
+    source_span_ids: list[str] | None = None
+    char_start: int | None = None
+    char_end: int | None = None
 
 
 class RagCoverageResponse(BaseModel):
@@ -91,6 +97,7 @@ class RagRetrieveResponse(BaseModel):
     fusion_method: str | None = None
     coverage: RagCoverageResponse | None = None
     retrieval_trace_id: str | None = None
+    index_revision_ids: list[str] = Field(default_factory=list)
 
 
 class RagAskRequest(RequestModel):
@@ -113,6 +120,10 @@ class RagCitationResponse(BaseModel):
     citation_number: int | None = None
     used_in_answer: bool = False
     section_heading: str | None = None
+    char_start: int | None = None
+    char_end: int | None = None
+    source_span_ids: list[str] | None = None
+    parent_context_id: str | None = None
 
 
 class RagAskResponse(BaseModel):
@@ -129,8 +140,10 @@ class RagAskResponse(BaseModel):
     degradation_reason: str | None = None
     injection_chunks_filtered: int = 0
     retrieval_trace_id: str | None = None
+    evidence_revision_hash: str | None = None
     citation_validation_failed: bool = False
     coverage: RagCoverageResponse | None = None
+    index_revision_ids: list[str] = Field(default_factory=list)
 
 
 class RagQueryResponse(BaseModel):

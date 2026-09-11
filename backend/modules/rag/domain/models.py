@@ -4,7 +4,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from backend.modules.rag.domain.enums import DocumentStatus, IngestionJobStatus, RetrievalIntent, SourceType
+from backend.modules.rag.domain.enums import (
+    DocumentStatus,
+    IngestionJobStatus,
+    RetrievalIntent,
+    SourceType,
+)
 
 
 @dataclass(slots=True)
@@ -44,6 +49,13 @@ class RetrievedChunk:
     rank: int | None = None
     used_in_answer: bool = False
     retrieval_sources: tuple[str, ...] = ()
+    # ``content`` remains the exact retrieved evidence. Parent expansion may
+    # add generation-only context without changing citation provenance.
+    citation_content: str | None = None
+    citation_chunk_id: str | None = None
+    context_content: str | None = None
+    parent_context_id: str | None = None
+    index_revision_id: str | None = None
 
 
 @dataclass(slots=True)
@@ -69,6 +81,8 @@ class RetrievalOutcome:
     fused_candidate_count: int = 0
     retrieval_trace_id: str | None = None
     scope_hash: str | None = None
+    evidence_revision_hash: str | None = None
+    index_revision_ids: list[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -94,6 +108,7 @@ class Citation:
     char_end: int | None = None
     source_span_ids: list[str] | None = None
     corpus_document_id: str | None = None
+    parent_context_id: str | None = None
 
 
 @dataclass(slots=True)
@@ -115,10 +130,12 @@ class RagAnswer:
     coverage: RetrievalCoverage | None = None
     citation_validation_failed: bool = False
     citation_validation_status: str = "valid"
+    evidence_revision_hash: str | None = None
     prompt_template_id: str | None = None
     prompt_version_id: str | None = None
     resolved_retrieval_query: str | None = None
     context_message_ids: list[str] = field(default_factory=list)
+    index_revision_ids: list[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)

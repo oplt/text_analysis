@@ -61,7 +61,7 @@ async def lifespan(app: FastAPI):
             await validate_rag_index_health(db)
         except Exception:
             logger.exception("RAG index/schema health check failed")
-            if settings.APP_ENV == "production" or settings.RAG_REQUIRE_ANN_INDEX:
+            if settings.is_production or settings.RAG_REQUIRE_ANN_INDEX:
                 raise
     logger.info("Application startup complete")
     yield

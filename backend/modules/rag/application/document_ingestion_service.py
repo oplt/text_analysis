@@ -309,6 +309,15 @@ class DocumentIngestionService:
             await self.repo.update_document_status(document, DocumentStatus.CHUNKING)
             await self.db.commit()
 
+            document_metadata = json.loads(document.metadata_json or "{}")
+            index_revision = await self.repo.create_document_revision(
+                document,
+                source_content_hash=document_metadata.get("checksum_sha256"),
+                parser_version=getattr(self.config, "parser_version", None),
+                chunker_version=getattr(self.config, "chunker_version", None),
+                index_version=getattr(self.config, "index_version", None),
+            )
+
             chunks = await self.chunker.chunk(
                 parsed,
                 document_id=document.id,
@@ -316,6 +325,7 @@ class DocumentIngestionService:
                 filename=document.original_filename,
                 project_id=document.project_id,
                 organization_id=document.organization_id,
+                document_revision=index_revision.id,
             )
             injection_flags = 0
             for chunk in chunks:
@@ -337,17 +347,19 @@ class DocumentIngestionService:
             await self.repo.update_document_status(document, DocumentStatus.EMBEDDING)
             await self.db.commit()
 
-            texts = [chunk.content for chunk in chunks]
-            vectors = await self.embeddings.embed_texts(texts)
-            for chunk, vector in zip(chunks, vectors, strict=True):
-                # Parents are expansion context only — do not index as retrieval candidates.
-                if (
-                    chunk.chunk_index < 0
-                    or (chunk.metadata or {}).get("chunk_role") == "parent"
-                ):
-                    chunk.embedding = []
-                else:
-                    chunk.embedding = vector
+            retrieval_chunks = [
+                chunk
+                for chunk in chunks
+                if chunk.chunk_index >= 0
+                and (chunk.metadata or {}).get("chunk_role") != "parent"
+            ]
+            for chunk in chunks:
+                chunk.embedding = None
+            vectors = await self.embeddings.embed_texts(
+                [chunk.content for chunk in retrieval_chunks]
+            )
+            for chunk, vector in zip(retrieval_chunks, vectors, strict=True):
+                chunk.embedding = vector
 
             chunk_rows = await self.repo.replace_chunks(
                 document,
@@ -358,7 +370,7 @@ class DocumentIngestionService:
                         "content": c.content,
                         "token_count": c.token_count,
                         "metadata": c.metadata,
-                        "embedding": c.embedding or [],
+                        "embedding": c.embedding,
                         "vector_external_id": c.id,
                         "content_hash": c.content_hash,
                         "parent_chunk_id": c.parent_chunk_id,
@@ -367,7 +379,9 @@ class DocumentIngestionService:
                     }
                     for c in chunks
                 ],
+                revision_id=index_revision.id,
             )
+            await self.repo.activate_document_revision(document, index_revision)
 
             await self.repo.update_document_status(document, DocumentStatus.INDEXED)
             metadata = json.loads(document.metadata_json or "{}")

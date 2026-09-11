@@ -383,6 +383,12 @@ export default function RunsView() {
                                                 provenanceQuery.data.provenance?.pipeline_checksum,
                                             analysis_spec_hash:
                                                 provenanceQuery.data.reproduce?.analysis_spec_hash,
+                                            evidence_revision_hash:
+                                                provenanceQuery.data.provenance
+                                                    ?.evidence_revision_hash,
+                                            synthesis_provenance:
+                                                provenanceQuery.data.provenance
+                                                    ?.synthesis_provenance,
                                             git_commit:
                                                 provenanceQuery.data.provenance?.git_commit,
                                             container_image_digest:

@@ -9,15 +9,18 @@ from backend.lib.retrieval_cache import get_cached_retrieval, set_cached_retriev
 from backend.lib.vectors import can_index_embedding
 from backend.modules.rag.application.document_scope import document_ids_is_empty_allow_list
 from backend.modules.rag.application.embedding_service import EmbeddingService
+from backend.modules.rag.application.evidence_revision import (
+    build_retrieved_evidence_revision_hash,
+)
 from backend.modules.rag.application.parent_context_service import expand_parent_chunks
 from backend.modules.rag.application.query_expansion_service import (
     QUERY_EXPANSION_VERSION,
     QueryExpansionService,
 )
+from backend.modules.rag.application.reranker_port import build_reranker
 from backend.modules.rag.application.retrieval_filters import exclude_injection_flagged_chunks
 from backend.modules.rag.application.retrieval_fusion import reciprocal_rank_fusion
 from backend.modules.rag.application.retrieval_planner import plan_retrieval
-from backend.modules.rag.application.reranker_port import build_reranker
 from backend.modules.rag.application.source_diversifier import (
     diversify_by_document,
     filter_to_allow_list,
@@ -106,6 +109,7 @@ class RetrievalService:
         intent: RetrievalIntent | str | None = None,
         conversation_id: str | None = None,
         persist_trace: bool = False,
+        evidence_revision_hash: str | None = None,
     ) -> RetrievalOutcome:
         if not self.config.enabled:
             return RetrievalOutcome(chunks=[], no_matches=True)
@@ -132,6 +136,14 @@ class RetrievalService:
                 fusion_method="none",
                 coverage=coverage,
                 scope_hash=scope_hash_for_document_ids(document_ids),
+            )
+            outcome.evidence_revision_hash = evidence_revision_hash or (
+                build_retrieved_evidence_revision_hash(
+                    project_id=project_id,
+                    document_ids=document_ids,
+                    chunks=outcome.chunks,
+                    config=self.config,
+                )
             )
             if persist_trace:
                 outcome = await self._persist_trace(
@@ -195,6 +207,11 @@ class RetrievalService:
                 if removed:
                     metrics.rag_injection_chunks_filtered_total.inc(removed)
                 metrics.rag_retrieved_chunks.observe(len(filtered))
+                if exclude_parents and filtered:
+                    filtered = await expand_parent_chunks(
+                        filtered, repo=self.repo, document_ids=document_ids
+                    )
+                    filtered = filter_to_allow_list(filtered, document_ids)
                 outcome = RetrievalOutcome(
                     chunks=filtered,
                     injection_chunks_filtered=removed,
@@ -203,6 +220,14 @@ class RetrievalService:
                     fusion_method="cached",
                     coverage=coverage,
                     scope_hash=scope_hash_for_document_ids(document_ids),
+                )
+                outcome.evidence_revision_hash = evidence_revision_hash or (
+                    build_retrieved_evidence_revision_hash(
+                        project_id=project_id,
+                        document_ids=document_ids,
+                        chunks=outcome.chunks,
+                        config=self.config,
+                    )
                 )
                 if persist_trace:
                     outcome = await self._persist_trace(
@@ -228,13 +253,20 @@ class RetrievalService:
             dense_attempted = plan.dense_candidates > 0
             lexical_attempted = plan.lexical_candidates > 0
             branch_errors: list[str] = []
+            lexical_queries_seen: set[str] = set()
 
             for variant in variants:
                 query_variants_meta.append(
-                    {"label": variant.label, "text": variant.text}
+                    {
+                        "label": variant.label,
+                        "text": variant.text,
+                        "dense_text": variant.dense_text or variant.text,
+                        "lexical_text": variant.lexical_text or variant.text,
+                        "language": variant.language,
+                    }
                 )
                 dense, dense_ok, dense_err = await self._dense_branch(
-                    variant.text,
+                    variant.dense_text or variant.text,
                     user_id=user_id,
                     project_id=project_id,
                     document_ids=document_ids,
@@ -242,15 +274,20 @@ class RetrievalService:
                     top_k=plan.dense_candidates,
                     exclude_parents=exclude_parents,
                 )
-                lexical, lexical_ok, lexical_err = await self._lexical_branch(
-                    variant.text,
-                    user_id=user_id,
-                    project_id=project_id,
-                    document_ids=document_ids,
-                    owner_scoped=owner_scoped,
-                    top_k=plan.lexical_candidates,
-                    exclude_parents=exclude_parents,
-                )
+                lexical_query = variant.lexical_text or variant.text
+                if lexical_query in lexical_queries_seen:
+                    lexical, lexical_ok, lexical_err = [], True, None
+                else:
+                    lexical_queries_seen.add(lexical_query)
+                    lexical, lexical_ok, lexical_err = await self._lexical_branch(
+                        lexical_query,
+                        user_id=user_id,
+                        project_id=project_id,
+                        document_ids=document_ids,
+                        top_k=plan.lexical_candidates,
+                        owner_scoped=owner_scoped,
+                        exclude_parents=exclude_parents,
+                    )
                 if dense_err:
                     branch_errors.append(f"dense:{dense_err}")
                 if lexical_err:
@@ -378,6 +415,14 @@ class RetrievalService:
                 degraded=degraded,
                 degradation_reason=degradation_reason,
             )
+            outcome.evidence_revision_hash = evidence_revision_hash or (
+                build_retrieved_evidence_revision_hash(
+                    project_id=project_id,
+                    document_ids=document_ids,
+                    chunks=outcome.chunks,
+                    config=self.config,
+                )
+            )
             if outcome.no_matches and fused and removed == len(fused):
                 outcome.degradation_reason = "injection_filtered_all_matches"
                 outcome.degraded = True
@@ -419,6 +464,14 @@ class RetrievalService:
                 intent=plan.intent,
                 fusion_method="none",
                 scope_hash=scope_hash_for_document_ids(document_ids),
+            )
+            outcome.evidence_revision_hash = evidence_revision_hash or (
+                build_retrieved_evidence_revision_hash(
+                    project_id=project_id,
+                    document_ids=document_ids,
+                    chunks=outcome.chunks,
+                    config=self.config,
+                )
             )
             if persist_trace:
                 try:
@@ -518,6 +571,17 @@ class RetrievalService:
         query_variants: list[dict] | None = None,
         branch_errors: list[str] | None = None,
     ) -> RetrievalOutcome:
+        chunk_revision_ids = list(
+            dict.fromkeys(
+                chunk.index_revision_id
+                for chunk in outcome.chunks
+                if chunk.index_revision_id
+            )
+        )
+        outcome.index_revision_ids = (
+            chunk_revision_ids
+            or await self.repo.list_current_revision_ids(document_ids)
+        )
         coverage = outcome.coverage
         trace = await self.repo.create_retrieval_trace(
             user_id=user_id,
@@ -526,17 +590,34 @@ class RetrievalService:
             query=query,
             intent=outcome.intent.value if outcome.intent else None,
             scope_hash=outcome.scope_hash,
+            evidence_revision_hash=outcome.evidence_revision_hash,
+            index_revision_ids=outcome.index_revision_ids,
             document_ids=document_ids,
             retrieved_chunks=[
                 {
                     "chunk_id": c.chunk_id,
+                    "citation_chunk_id": c.citation_chunk_id or c.chunk_id,
                     "document_id": c.document_id,
                     "score": c.score,
                     "rank": c.rank,
                     "filename": c.filename,
                     "chunk_index": c.chunk_index,
                     "page_number": c.page_number,
-                    "snippet": c.content[:400],
+                    "citation_content": c.citation_content or c.content,
+                    "snippet": (c.citation_content or c.content)[:400],
+                    "char_start": (c.metadata or {}).get("char_start"),
+                    "char_end": (c.metadata or {}).get("char_end"),
+                    "source_unit_ids": (c.metadata or {}).get("source_unit_ids")
+                    or (c.metadata or {}).get("source_span_ids"),
+                    "offset_coordinate_system": (c.metadata or {}).get(
+                        "offset_coordinate_system"
+                    ),
+                    "parent_context_id": c.parent_context_id,
+                    "index_revision_id": c.index_revision_id,
+                    "context_content": c.context_content,
+                    "context_snippet": (
+                        c.context_content[:400] if c.context_content is not None else None
+                    ),
                     "retrieval_sources": list(c.retrieval_sources),
                 }
                 for c in outcome.chunks

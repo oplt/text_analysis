@@ -51,8 +51,8 @@ class CorpusDocument(Base):
     corpus_id: Mapped[str] = mapped_column(
         ForeignKey("research_corpora.id", ondelete="CASCADE"), index=True
     )
-    rag_document_id: Mapped[str] = mapped_column(
-        ForeignKey("rag_documents.id", ondelete="CASCADE"), index=True
+    rag_document_id: Mapped[str | None] = mapped_column(
+        ForeignKey("rag_documents.id", ondelete="CASCADE"), index=True, nullable=True
     )
     title: Mapped[str | None] = mapped_column(String(512), nullable=True)
     organization: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
@@ -439,6 +439,9 @@ class AnalysisRun(Base):
     run_type: Mapped[str] = mapped_column(String(64), index=True)
     status: Mapped[str] = mapped_column(String(32), default="queued", index=True)
     run_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    evidence_revision_hash: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
     progress_stage: Mapped[str | None] = mapped_column(String(64), nullable=True)
     parameters_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     metrics_json: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -454,6 +457,42 @@ class AnalysisRun(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class ResearchMemo(Base):
+    """User-owned research note with an immutable evidence/provenance snapshot."""
+
+    __tablename__ = "research_memos"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    corpus_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_corpora.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    source_type: Mapped[str] = mapped_column(String(32), index=True)
+    status: Mapped[str] = mapped_column(String(32), index=True)
+    title: Mapped[str] = mapped_column(String(512))
+    body: Mapped[str] = mapped_column(Text)
+    originating_assistant_message_id: Mapped[str | None] = mapped_column(
+        ForeignKey("rag_messages.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    originating_synthesis_run_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_analysis_runs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    evidence_revision_hash: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    citations_json: Mapped[str] = mapped_column(Text, default="[]", server_default="[]")
+    claims_json: Mapped[str] = mapped_column(Text, default="[]", server_default="[]")
+    provenance_json: Mapped[str] = mapped_column(Text, default="{}", server_default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class TrainedModel(Base):
@@ -641,6 +680,11 @@ class ResearchAssistantThread(Base):
         ForeignKey("rag_conversations.id", ondelete="CASCADE"), unique=True, index=True
     )
     title: Mapped[str] = mapped_column(String(512), default="Ask Corpus")
+    scope_mode: Mapped[str] = mapped_column(String(16), default="fixed", server_default="fixed")
+    evidence_revision_hash: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    scope_snapshot_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
@@ -669,10 +713,45 @@ class ResearchAssistantScopeSnapshot(Base):
     corpus_id: Mapped[str] = mapped_column(String, nullable=False)
     project_id: Mapped[str] = mapped_column(String, nullable=False)
     scope_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    evidence_revision_hash: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
     rag_document_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
     corpus_document_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
     indexed_rag_document_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
     unavailable_rag_document_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
+    unavailable_corpus_document_ids_json: Mapped[str] = mapped_column(
+        Text, nullable=False, default="[]", server_default="[]"
+    )
+    unavailable_reasons_json: Mapped[str] = mapped_column(
+        Text, nullable=False, default="{}", server_default="{}"
+    )
+    scope_mode: Mapped[str] = mapped_column(String(16), default="fixed", server_default="fixed")
     index_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     retrieval_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class ResearchAssistantScopeEvent(Base):
+    """Append-only audit trail for explicit assistant scope changes."""
+
+    __tablename__ = "research_assistant_scope_events"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    thread_id: Mapped[str] = mapped_column(
+        ForeignKey("research_assistant_threads.id", ondelete="CASCADE"), index=True
+    )
+    actor_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    action: Mapped[str] = mapped_column(String(32), nullable=False)
+    scope_mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    corpus_id: Mapped[str] = mapped_column(String, nullable=False)
+    project_id: Mapped[str] = mapped_column(String, nullable=False)
+    previous_scope_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    new_scope_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    evidence_revision_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    rag_document_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
+    corpus_document_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

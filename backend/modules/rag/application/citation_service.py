@@ -9,9 +9,10 @@ class CitationService:
                 chunk_id=chunk.chunk_id,
                 filename=chunk.filename,
                 score=chunk.score,
-                snippet=chunk.content[:400],
+                snippet=(chunk.citation_content or chunk.content)[:400],
                 page_number=chunk.page_number,
                 chunk_index=chunk.chunk_index,
+                parent_context_id=chunk.parent_context_id,
             )
             for chunk in chunks
         ]

@@ -3,9 +3,11 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from backend.modules.rag.application.chunking_service import ChunkingService
+from backend.modules.rag.application.document_ingestion_service import DocumentIngestionService
 from backend.modules.rag.application.document_parser_service import DocumentParserService
 from backend.modules.rag.domain.enums import DocumentStatus
-from backend.modules.rag.domain.models import ParsedDocument
+from backend.modules.rag.domain.models import DocumentChunk, ParsedDocument
+from backend.modules.rag.infrastructure.repositories import RagRepository
 
 
 class IngestionParserTest(unittest.IsolatedAsyncioTestCase):
@@ -134,6 +136,127 @@ class UploadCreatesDocumentTest(unittest.IsolatedAsyncioTestCase):
         service.repo.create_document.assert_awaited_once()
         metadata = service.repo.create_document.await_args.kwargs["metadata"]
         self.assertEqual(metadata["checksum_sha256"], "deadbeef")
+
+
+class ParentChunkEmbeddingTest(unittest.IsolatedAsyncioTestCase):
+    @patch(
+        "backend.modules.rag.application.document_ingestion_service"
+        ".invalidate_retrieval_cache_for_document"
+    )
+    async def test_embedding_provider_receives_only_retrieval_children(self, invalidate_cache):
+        service = DocumentIngestionService.__new__(DocumentIngestionService)
+        service.db = MagicMock()
+        service.db.commit = AsyncMock()
+        service.db.refresh = AsyncMock()
+        service.config = SimpleNamespace(
+            parser_version="test-parser",
+            chunker_version="test-chunker",
+            index_version="test-index",
+        )
+        service.repo = MagicMock()
+        service.parser = MagicMock()
+        service.chunker = MagicMock()
+        service.embeddings = MagicMock()
+        service.policy = MagicMock()
+        service.policy.contains_prompt_injection.return_value = False
+
+        document = SimpleNamespace(
+            id="doc-1",
+            user_id="user-1",
+            project_id=None,
+            organization_id=None,
+            original_filename="notes.txt",
+            content_type="text/plain",
+            storage_path=None,
+            metadata_json="{}",
+        )
+        job = SimpleNamespace(id="job-1", document_id=document.id)
+        revision = SimpleNamespace(id="revision-1")
+        parent = DocumentChunk(
+            id="parent-1",
+            document_id=document.id,
+            user_id=document.user_id,
+            chunk_index=-1,
+            content="parent context must not be embedded",
+            token_count=6,
+            metadata={"chunk_role": "parent"},
+        )
+        child = DocumentChunk(
+            id="child-1",
+            document_id=document.id,
+            user_id=document.user_id,
+            chunk_index=0,
+            content="retrieval child",
+            token_count=2,
+            metadata={"chunk_role": "child"},
+        )
+        service._get_document_for_indexing = AsyncMock(return_value=document)
+        service.repo.create_ingestion_job = AsyncMock(return_value=job)
+        service.repo.create_document_revision = AsyncMock(return_value=revision)
+        service.repo.replace_chunks = AsyncMock(
+            return_value=[SimpleNamespace(id=parent.id), SimpleNamespace(id=child.id)]
+        )
+        service.repo.update_document_status = AsyncMock()
+        service.repo.update_ingestion_job = AsyncMock()
+        service.repo.activate_document_revision = AsyncMock()
+        service.parser.parse_bytes = AsyncMock(return_value=[ParsedDocument(content="source")])
+        service.chunker.chunk = AsyncMock(return_value=[parent, child])
+        service.embeddings.embed_texts = AsyncMock(return_value=[[0.1, 0.2]])
+
+        await service.index_document(
+            document_id=document.id,
+            user_id=document.user_id,
+            file_content=b"source",
+        )
+
+        service.embeddings.embed_texts.assert_awaited_once_with([child.content])
+        persisted_chunks = service.repo.replace_chunks.await_args.args[1]
+        self.assertIsNone(persisted_chunks[0]["embedding"])
+        self.assertEqual(persisted_chunks[1]["embedding"], [0.1, 0.2])
+
+    @patch(
+        "backend.modules.rag.infrastructure.repositories.store_chunk_embeddings_batch",
+        new_callable=AsyncMock,
+    )
+    async def test_parent_embedding_is_persisted_as_null_and_not_indexed(self, store_embeddings):
+        db = MagicMock()
+        db.flush = AsyncMock()
+        repo = RagRepository(db)
+        document = SimpleNamespace(
+            id="doc-1",
+            user_id="user-1",
+            organization_id=None,
+            project_id=None,
+        )
+
+        rows = await repo.replace_chunks(
+            document,
+            [
+                {
+                    "id": "parent-1",
+                    "chunk_index": -1,
+                    "content": "parent",
+                    "token_count": 1,
+                    "embedding": None,
+                },
+                {
+                    "id": "child-1",
+                    "chunk_index": 0,
+                    "content": "child",
+                    "token_count": 1,
+                    "embedding": [0.1, 0.2],
+                },
+            ],
+            revision_id="revision-1",
+        )
+
+        self.assertIsNone(rows[0].embedding_json)
+        self.assertEqual(rows[1].embedding_json, "[0.1, 0.2]")
+        store_embeddings.assert_awaited_once_with(
+            db,
+            table="rag_chunks",
+            items=[("parent-1", []), ("child-1", [0.1, 0.2])],
+        )
 
 
 class EmbeddingAdapterTest(unittest.IsolatedAsyncioTestCase):

@@ -210,12 +210,16 @@ class Settings(BaseSettings):
     RAG_RRF_K: int = 60
     RAG_SOURCE_MAX_CHUNKS_PER_DOCUMENT: int = 3
     RAG_EVIDENCE_TOP_K: int = 12
+    # Retained for configuration compatibility; synthesis processes the full
+    # authorized corpus and uses RAG_SYNTHESIS_BATCH_SIZE for bounded work.
     RAG_SYNTHESIS_MAX_DOCUMENTS: int = 25
+    RAG_SYNTHESIS_BATCH_SIZE: int = 8
     RAG_SYNTHESIS_PASSAGES_PER_DOCUMENT: int = 3
     RAG_PARENT_CONTEXT_ENABLED: bool = False
     RAG_RETRIEVAL_ALGORITHM_VERSION: str = "hybrid-rrf-v1"
     RAG_CHUNKER_VERSION: str = "structure-v1"
-    RAG_PARSER_VERSION: str = "pypdf-v1"
+    RAG_PDF_PARSER: str = "auto"
+    RAG_PARSER_VERSION: str = "pdf-auto-v1"
     RAG_INDEX_VERSION: str = "pgvector-fts-v1"
 
     # Text Research (text research) model/vectorizer artifact storage

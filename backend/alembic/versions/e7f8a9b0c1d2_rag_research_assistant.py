@@ -40,7 +40,13 @@ def upgrade() -> None:
             DO $$
             BEGIN
                 IF NOT EXISTS (
-                    SELECT 1 FROM pg_indexes WHERE indexname = 'ix_rag_chunks_embedding_hnsw'
+                    SELECT 1
+                    FROM pg_indexes
+                    WHERE tablename = 'rag_chunks'
+                      AND (
+                        indexdef ILIKE '%USING hnsw%embedding%'
+                        OR indexdef ILIKE '%USING ivfflat%embedding%'
+                      )
                 ) THEN
                     BEGIN
                         CREATE INDEX ix_rag_chunks_embedding_hnsw
@@ -52,7 +58,9 @@ def upgrade() -> None:
                             ON rag_chunks USING ivfflat (embedding vector_cosine_ops)
                             WITH (lists = 100);
                         EXCEPTION WHEN OTHERS THEN
-                            NULL;
+                            RAISE EXCEPTION
+                                'Unable to create an HNSW or IVFFlat ANN index on '
+                                'rag_chunks.embedding';
                         END;
                     END;
                 END IF;

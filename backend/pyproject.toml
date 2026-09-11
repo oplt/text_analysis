@@ -59,6 +59,7 @@ dev = [
     "ruff>=0.11.2",
 ]
 nlp = ["spacy>=3.7"]
+pdf = ["pymupdf>=1.24"]
 bertopic = ["bertopic", "umap-learn", "hdbscan"]
 transformers = ["torch", "transformers"]
 

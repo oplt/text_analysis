@@ -1,8 +1,11 @@
-"""Bounded hierarchical corpus synthesis (still corpus allow-list scoped)."""
+"""Auditable corpus synthesis with deterministic map and structured reduction."""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
+
+from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.identity_access.models import User
 from backend.modules.rag.application.rag_answer_service import RagAnswerService
@@ -12,17 +15,19 @@ from backend.modules.rag.domain.models import RetrievalOutcome, RetrievedChunk
 from backend.modules.rag.infrastructure.rag_config import RagConfig
 from backend.modules.text_research.application.access import ResearchAccessMixin
 from backend.modules.text_research.application.corpus_scope_service import CorpusScopeService
+from backend.modules.text_research.application.corpus_synthesis_provenance import (
+    build_document_map_finding,
+    build_synthesis_provenance,
+)
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import AnalysisRun, dumps, loads
-from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 
 # Auto-enqueue when indexed allow-list is large enough to fan out many retrieves.
 _ASYNC_DOC_THRESHOLD = 8
 
 
 class CorpusSynthesisService(ResearchAccessMixin):
-    """Document-aware map/reduce synthesis under I1–I5 invariants."""
+    """Document-aware deterministic-map/LLM-reduction under I1–I5 invariants."""
 
     def __init__(self, db: AsyncSession):
         super().__init__(db)
@@ -50,16 +55,32 @@ class CorpusSynthesisService(ResearchAccessMixin):
         )
         allow_list = list(scope.rag_document_ids)
         if not allow_list:
+            provenance = build_synthesis_provenance(
+                original_question=query,
+                evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
+                corpus_id=scope.corpus_id,
+                project_id=scope.project_id,
+                user_id=user.id,
+                documents_in_scope=[],
+                documents_considered=[],
+                omitted_documents=[],
+                findings=[],
+                retrieval_trace_ids=[],
+            )
             return {
                 "mode": "sync",
                 "answer": "No indexed documents are available for corpus synthesis.",
                 "scope": scope.to_dict(),
+                "evidence_revision_hash": getattr(scope, "evidence_revision_hash", None),
                 "document_findings": [],
                 "retrieval_trace_ids": [],
                 "documents_total": 0,
                 "documents_considered": 0,
                 "documents_with_evidence": 0,
                 "truncated": False,
+                "omitted_document_count": 0,
+                "omitted_document_ids": [],
+                "synthesis_provenance": provenance,
                 "coverage": {
                     "documents_in_scope": 0,
                     "documents_with_retrieved_evidence": 0,
@@ -81,12 +102,17 @@ class CorpusSynthesisService(ResearchAccessMixin):
                 query=query,
                 document_subset=document_subset,
                 scope_hash=scope.scope_hash,
+                evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
+                documents_in_scope=allow_list,
+                documents_considered=allow_list,
+                omitted_documents=[],
             )
             return {
                 "mode": "async",
                 "run_id": run.id,
                 "status": run.status,
                 "scope": scope.to_dict(),
+                "evidence_revision_hash": getattr(scope, "evidence_revision_hash", None),
                 "message": "Corpus synthesis queued; stream progress via research run events.",
             }
 
@@ -113,8 +139,9 @@ class CorpusSynthesisService(ResearchAccessMixin):
         document_subset = params.get("document_subset")
         user_id = run.created_by
 
-        from backend.modules.identity_access.models import User
         from sqlalchemy import select
+
+        from backend.modules.identity_access.models import User
 
         user_result = await self.db.execute(select(User).where(User.id == user_id))
         user = user_result.scalar_one_or_none()
@@ -144,6 +171,7 @@ class CorpusSynthesisService(ResearchAccessMixin):
                 completed_at=datetime.now(UTC),
                 results_json=dumps(result),
                 metrics_json=dumps(result.get("coverage") or {}),
+                evidence_revision_hash=result.get("evidence_revision_hash"),
             )
             await self.db.commit()
         except Exception as exc:
@@ -169,6 +197,10 @@ class CorpusSynthesisService(ResearchAccessMixin):
         query: str,
         document_subset: list[str] | None,
         scope_hash: str,
+        evidence_revision_hash: str | None,
+        documents_in_scope: list[str],
+        documents_considered: list[str],
+        omitted_documents: list[dict[str, str]],
     ) -> AnalysisRun:
         from backend.modules.text_research.application.execution_service import ExecutionService
 
@@ -184,8 +216,22 @@ class CorpusSynthesisService(ResearchAccessMixin):
                         "query": query,
                         "document_subset": document_subset,
                         "scope_hash": scope_hash,
+                        "evidence_revision_hash": evidence_revision_hash,
+                        "synthesis_provenance": build_synthesis_provenance(
+                            original_question=query,
+                            evidence_revision_hash=evidence_revision_hash,
+                            corpus_id=corpus_id,
+                            project_id=project_id,
+                            user_id=user_id,
+                            documents_in_scope=documents_in_scope,
+                            documents_considered=documents_considered,
+                            omitted_documents=omitted_documents,
+                            findings=[],
+                            retrieval_trace_ids=[],
+                        ),
                     }
                 ),
+                evidence_revision_hash=evidence_revision_hash,
                 created_by=user_id,
             )
         )
@@ -205,109 +251,73 @@ class CorpusSynthesisService(ResearchAccessMixin):
         scope,
         allow_list: list[str],
     ) -> dict:
-        max_docs = min(len(allow_list), self.rag_config.synthesis_max_documents)
-        considered_ids = allow_list[:max_docs]
-        truncated = len(allow_list) > max_docs
+        considered_ids = list(allow_list)
+        truncated = False
         per_doc = self.rag_config.synthesis_passages_per_document
         findings: list[dict] = []
         trace_ids: list[str] = []
         map_chunks: list[RetrievedChunk] = []
         seen_chunk_ids: set[str] = set()
 
-        # Map phase: per-document findings with raw chunk provenance.
-        for rag_document_id in considered_ids:
-            outcome = await self.retrieval.retrieve(
-                query,
-                user_id=user.id,
-                project_id=scope.project_id,
-                top_k=per_doc,
-                filters={
-                    "document_ids": [rag_document_id],
-                    "owner_scoped": False,
-                },
-                intent=RetrievalIntent.SYNTHESIS,
-                persist_trace=True,
-            )
-            if outcome.retrieval_trace_id:
-                trace_ids.append(outcome.retrieval_trace_id)
-            if not outcome.chunks:
-                findings.append(
-                    {
-                        "rag_document_id": rag_document_id,
-                        "filename": None,
-                        "finding": "No relevant passages retrieved for this document.",
-                        "agreements": [],
-                        "disagreements": [],
-                        "exceptions": [],
-                        "missing_evidence": True,
-                        "passages": [],
-                        "retrieval_trace_id": outcome.retrieval_trace_id,
-                    }
+        # Map phase: bounded, deterministic evidence collection per document.
+        batch_size = max(1, int(getattr(self.rag_config, "synthesis_batch_size", 8)))
+        for batch_start in range(0, len(considered_ids), batch_size):
+            document_batch = considered_ids[batch_start : batch_start + batch_size]
+            for rag_document_id in document_batch:
+                outcome = await self.retrieval.retrieve(
+                    query,
+                    user_id=user.id,
+                    project_id=scope.project_id,
+                    top_k=per_doc,
+                    filters={
+                        "document_ids": [rag_document_id],
+                        "owner_scoped": False,
+                    },
+                    intent=RetrievalIntent.SYNTHESIS,
+                    persist_trace=True,
+                    evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
                 )
-                continue
+                if outcome.retrieval_trace_id:
+                    trace_ids.append(outcome.retrieval_trace_id)
+                finding = build_document_map_finding(
+                    question=query,
+                    rag_document_id=rag_document_id,
+                    outcome=outcome,
+                )
+                findings.append(finding)
+                for chunk_id in finding["supporting_chunk_ids"]:
+                    chunk = next(c for c in outcome.chunks if c.chunk_id == chunk_id)
+                    if chunk.chunk_id not in seen_chunk_ids:
+                        seen_chunk_ids.add(chunk.chunk_id)
+                        map_chunks.append(chunk)
 
-            for chunk in outcome.chunks:
-                if chunk.chunk_id not in seen_chunk_ids:
-                    seen_chunk_ids.add(chunk.chunk_id)
-                    map_chunks.append(chunk)
-
-            passage_blob = "\n".join(
-                f"- [{c.chunk_id}] {c.content[:350]}" for c in outcome.chunks
-            )
-            findings.append(
-                {
-                    "rag_document_id": rag_document_id,
-                    "filename": outcome.chunks[0].filename,
-                    "finding": (
-                        f"Document evidence for synthesis query.\n{passage_blob}"
-                    ),
-                    "agreements": [],
-                    "disagreements": [],
-                    "exceptions": [],
-                    "missing_evidence": False,
-                    "passages": [
-                        {
-                            "chunk_id": c.chunk_id,
-                            "snippet": c.content[:400],
-                            "score": c.score,
-                            "page_number": c.page_number,
-                        }
-                        for c in outcome.chunks
-                    ],
-                    "chunk_ids": [c.chunk_id for c in outcome.chunks],
-                    "retrieval_trace_id": outcome.retrieval_trace_id,
-                }
-            )
-
-        # Reduce phase: synthesize ONLY from map findings / mapped chunks (no union retrieve).
+        # Reduce phase: synthesize only from structured map findings (no union retrieve).
         findings_with_evidence = [f for f in findings if not f.get("missing_evidence")]
-        reduce_prompt_parts = [
-            f"Research question: {query}",
-            (
-                f"You are reducing {len(findings_with_evidence)} document-level findings "
-                f"from {len(considered_ids)} considered documents "
-                f"({len(allow_list)} indexed in scope"
-                f"{'; truncated' if truncated else ''})."
-            ),
-            "Explicitly identify agreements, disagreements, exceptions, missing evidence, "
-            "and coverage limits. Cite only the provided chunk_ids.",
-            "Document findings:",
-        ]
-        for finding in findings_with_evidence:
-            reduce_prompt_parts.append(
-                f"\n### {finding.get('filename') or finding['rag_document_id']}\n"
-                f"{finding['finding']}"
-            )
-        reduce_query = "\n".join(reduce_prompt_parts)
+        reduce_query = "\n".join(
+            [
+                f"Research question: {query}",
+                (
+                    f"Reduce {len(findings_with_evidence)} structured document findings "
+                    f"from {len(considered_ids)} considered documents "
+                    f"({len(allow_list)} indexed in scope"
+                    f"{'; truncated' if truncated else ''})."
+                ),
+                "Identify agreements, disagreements, exceptions, missing evidence, and "
+                "coverage limits. Cite only supporting_chunk_ids from the JSON findings.",
+                "Structured map findings JSON:",
+                dumps(findings_with_evidence),
+            ]
+        )
 
         # Build a synthetic outcome from map chunks — never a second corpus-wide retrieve.
         map_outcome = RetrievalOutcome(
             chunks=map_chunks,
             intent=RetrievalIntent.SYNTHESIS,
-            fusion_method="hierarchical_map_reduce",
+            fusion_method="deterministic_map_reduce",
             coverage=None,
-            retrieval_trace_id=trace_ids[-1] if trace_ids else None,
+            retrieval_trace_id=None,
             scope_hash=scope.scope_hash,
+            evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
         )
 
         answer = await self.answers.answer_from_retrieval(
@@ -318,16 +328,38 @@ class CorpusSynthesisService(ResearchAccessMixin):
             document_ids=allow_list,
             include_memory=False,
         )
-        if answer.retrieval_trace_id:
-            trace_ids.append(answer.retrieval_trace_id)
-
+        rag_to_corpus_document = {
+            rag_document_id: corpus_document_id
+            for rag_document_id, corpus_document_id in zip(
+                getattr(scope, "rag_document_ids", []),
+                getattr(scope, "corpus_document_ids", []),
+                strict=False,
+            )
+        }
         docs_with_evidence = len(findings_with_evidence)
+        provenance = build_synthesis_provenance(
+            original_question=query,
+            evidence_revision_hash=getattr(answer, "evidence_revision_hash", None)
+            or getattr(scope, "evidence_revision_hash", None),
+            corpus_id=scope.corpus_id,
+            project_id=scope.project_id,
+            user_id=user.id,
+            documents_in_scope=allow_list,
+            documents_considered=considered_ids,
+            omitted_documents=[],
+            findings=findings,
+            retrieval_trace_ids=trace_ids,
+            reduction_prompt=reduce_query,
+            answer=answer,
+            created_at=datetime.now(UTC),
+        )
         return {
             "mode": "sync",
             "answer": answer.answer,
             "citations": [
                 {
                     "document_id": c.document_id,
+                    "corpus_document_id": rag_to_corpus_document.get(c.document_id),
                     "chunk_id": c.chunk_id,
                     "filename": c.filename,
                     "snippet": c.snippet,
@@ -335,6 +367,10 @@ class CorpusSynthesisService(ResearchAccessMixin):
                     "used_in_answer": c.used_in_answer,
                     "page_number": c.page_number,
                     "section_heading": c.section_heading,
+                    "char_start": getattr(c, "char_start", None),
+                    "char_end": getattr(c, "char_end", None),
+                    "source_span_ids": getattr(c, "source_span_ids", None),
+                    "parent_context_id": getattr(c, "parent_context_id", None),
                 }
                 for c in answer.citations
             ],
@@ -347,12 +383,15 @@ class CorpusSynthesisService(ResearchAccessMixin):
                 for claim in answer.claims
             ],
             "scope": scope.to_dict(),
+            "evidence_revision_hash": getattr(answer, "evidence_revision_hash", None),
             "document_findings": findings,
             "retrieval_trace_ids": trace_ids,
             "documents_total": len(allow_list),
             "documents_considered": len(considered_ids),
             "documents_with_evidence": docs_with_evidence,
             "truncated": truncated,
+            "omitted_document_count": 0,
+            "omitted_document_ids": [],
             "coverage": {
                 "documents_in_scope": len(allow_list),
                 "documents_with_retrieved_evidence": docs_with_evidence,
@@ -364,6 +403,9 @@ class CorpusSynthesisService(ResearchAccessMixin):
                 "documents_considered": len(considered_ids),
                 "truncated": truncated,
             },
-            "retrieval_trace_id": answer.retrieval_trace_id,
+            # A synthesis has no single retrieval trace; use the per-document
+            # trace IDs in the explicit provenance artifact instead.
+            "retrieval_trace_id": None,
             "citation_validation_status": answer.citation_validation_status,
+            "synthesis_provenance": provenance,
         }
