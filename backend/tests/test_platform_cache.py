@@ -53,7 +53,7 @@ class PlatformConfigCacheTest(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch("backend.core.cache.settings") as mock_settings,
-            patch("backend.core.cache.redis_client", redis_client),
+            patch("backend.core.cache.get_async_redis_client", return_value=redis_client),
         ):
             mock_settings.CACHE_ENABLED = True
             mock_settings.CACHE_PLATFORM_TTL_SECONDS = 300
@@ -136,7 +136,10 @@ class PlatformConfigCacheTest(unittest.IsolatedAsyncioTestCase):
     async def test_invalidate_platform_caches_clears_local_entries(self):
         with (
             patch("backend.core.cache.settings") as mock_settings,
-            patch("backend.core.cache.redis_client", AsyncMock()) as redis_client,
+            patch(
+                "backend.core.cache.get_async_redis_client",
+                return_value=AsyncMock(),
+            ) as get_redis_client,
         ):
             mock_settings.CACHE_ENABLED = True
             await cache_set_json(PLATFORM_FEATURE_FLAGS_CACHE_KEY, [{"key": "ai"}], ttl_seconds=300)
@@ -145,7 +148,7 @@ class PlatformConfigCacheTest(unittest.IsolatedAsyncioTestCase):
             value = await cache_get_json(PLATFORM_FEATURE_FLAGS_CACHE_KEY)
 
         self.assertIsNone(value)
-        redis_client.delete.assert_awaited_once_with(
+        get_redis_client.return_value.delete.assert_awaited_once_with(
             PLATFORM_CONFIG_CACHE_KEY,
             PLATFORM_FEATURE_FLAGS_CACHE_KEY,
         )

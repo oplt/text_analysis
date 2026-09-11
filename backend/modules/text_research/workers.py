@@ -169,8 +169,28 @@ def r_quantitative_analysis_sync(*, run_id: str, user_id: str) -> None:
 
 
 def engine_comparison_sync(*, run_id: str, user_id: str) -> None:
-    """The comparison worker creates two independent child runs and persists their diff."""
+    """Parent orchestration: create child runs, stamp IDs, exit (no polling)."""
     quantitative_analysis_sync(run_id=run_id, user_id=user_id)
+
+
+def engine_comparison_finalize_sync(*, parent_run_id: str, user_id: str) -> None:
+    """Fresh-session finalizer invoked after each comparison child becomes terminal."""
+    from backend.modules.text_research.application.quantitative_analysis_service import (
+        QuantitativeAnalysisService,
+    )
+
+    async def _execute(db):
+        await QuantitativeAnalysisService(db).finalize_engine_comparison(parent_run_id)
+
+    try:
+        logger.info("Engine comparison finalize started parent=%s user=%s", parent_run_id, user_id)
+        _run_with_session(_execute)
+        logger.info("Engine comparison finalize finished parent=%s", parent_run_id)
+    except Exception:
+        logger.exception(
+            "Engine comparison finalize failed parent=%s user=%s", parent_run_id, user_id
+        )
+        raise
 
 
 def queue_segmentation(*, run_id: str, user_id: str) -> None:
@@ -300,6 +320,20 @@ def queue_engine_comparison(*, run_id: str, user_id: str) -> None:
         celery_kwargs={"run_id": run_id, "user_id": user_id},
         queue=queue_for_resource_class("research_cpu"),
         job_name="research-engine-comparison",
+    )
+
+
+def queue_engine_comparison_finalize(*, parent_run_id: str, user_id: str) -> None:
+    """Schedule finalization on a light queue so it never holds a CPU worker."""
+    from backend.workers.tasks import research_engine_comparison_finalize_task
+
+    return dispatch_background_sync_job(
+        target=engine_comparison_finalize_sync,
+        kwargs={"parent_run_id": parent_run_id, "user_id": user_id},
+        celery_task=research_engine_comparison_finalize_task,
+        celery_kwargs={"parent_run_id": parent_run_id, "user_id": user_id},
+        queue=queue_for_resource_class("research_light"),
+        job_name="research-engine-comparison-finalize",
     )
 
 

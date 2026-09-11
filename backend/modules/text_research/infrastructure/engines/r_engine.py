@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from backend.modules.text_research.domain.analysis_result import AnalysisResult
-from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
+from backend.modules.text_research.domain.analysis_specification import (
+    AnalysisSpecification,
+    canonical_implementation_for,
+)
 from backend.modules.text_research.domain.exceptions import RUnsupportedAnalysis
+from backend.modules.text_research.domain.execution_defaults import R_ENGINE_VERSION
 from backend.modules.text_research.domain.prepared_corpus import PreparedCorpusArtifact
 from backend.modules.text_research.infrastructure.prepared_corpus_builder import prepare_texts
 from backend.modules.text_research.infrastructure.r_runtime.capabilities import r_feature_enabled
@@ -16,10 +21,27 @@ from backend.modules.text_research.infrastructure.r_runtime.runner import (
 )
 from backend.modules.text_research.infrastructure.r_runtime.serializer import serialize_r_job
 
+# Headless / CLI executions without a persisted AnalysisRun.
+IN_MEMORY_ANALYSIS_RUN_ID = "in-memory"
+
+
+def resolve_analysis_run_id(
+    *,
+    run_id: Any = None,
+    pipeline_context: Mapping[str, Any] | None = None,
+) -> str:
+    """Resolve the AnalysisRun id for R I/O; never infer from a workdir name."""
+    candidates = (run_id, (pipeline_context or {}).get("run_id"))
+    for candidate in candidates:
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate.strip()
+    return IN_MEMORY_ANALYSIS_RUN_ID
+
 
 class RAnalysisEngine:
     name = "r"
-    implementation_version = "r-quanteda-1"
+    implementation = canonical_implementation_for("r")
+    implementation_version = R_ENGINE_VERSION
     supported_analyses = frozenset(
         {"frequencies", "dfm", "kwic", "dictionary", "keyness", "cooccurrence"}
     )
@@ -61,11 +83,15 @@ class RAnalysisEngine:
                 force_in_memory=pipeline_context.get("force_in_memory", False),
             )
             pipeline_context["prepared_b"] = comparison_prepared
+        analysis_run_id = resolve_analysis_run_id(
+            run_id=context.get("run_id"),
+            pipeline_context=pipeline_context if isinstance(pipeline_context, Mapping) else None,
+        )
         bundle = serialize_r_job(
             specification=specification,
             prepared=prepared,
             comparison_prepared=comparison_prepared,
-            run_id=str(context.get("run_id") or "in-memory"),
+            run_id=analysis_run_id,
             engine_version=self.implementation_version,
         )
         return run_r_job(bundle, expected_engine_version=self.implementation_version)

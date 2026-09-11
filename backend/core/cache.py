@@ -3,10 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+from asyncio import AbstractEventLoop, get_running_loop
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
+from threading import RLock
 from time import monotonic
 from typing import Any
+from weakref import WeakKeyDictionary
 
 import redis.asyncio as redis
 from pydantic import BaseModel
@@ -15,7 +18,34 @@ from backend.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+_async_redis_clients: WeakKeyDictionary[AbstractEventLoop, redis.Redis] = WeakKeyDictionary()
+_async_redis_clients_lock = RLock()
+
+
+def get_async_redis_client() -> redis.Redis:
+    """Return the Redis client owned by the currently running event loop."""
+    loop = get_running_loop()
+    with _async_redis_clients_lock:
+        client = _async_redis_clients.get(loop)
+        if client is None:
+            client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+            _async_redis_clients[loop] = client
+        return client
+
+
+async def close_current_async_redis_client() -> None:
+    """Close and discard the Redis client owned by the current event loop."""
+    loop = get_running_loop()
+    with _async_redis_clients_lock:
+        client = _async_redis_clients.pop(loop, None)
+    if client is not None:
+        await client.aclose()
+
+
+async def reset_async_redis_clients_for_tests() -> None:
+    """Dispose the active loop's Redis client between isolated async tests."""
+    await close_current_async_redis_client()
+
 
 CACHE_NAMESPACE = "ga"
 PLATFORM_CONFIG_CACHE_KEY = f"{CACHE_NAMESPACE}:platform:config"
@@ -143,7 +173,7 @@ async def cache_get_json(key: str) -> Any | None:
     if not _uses_redis_cache(key):
         return None
     try:
-        raw = await redis_client.get(key)
+        raw = await get_async_redis_client().get(key)
         if raw is None:
             return None
         value = json.loads(raw)
@@ -161,7 +191,7 @@ async def cache_set_json(key: str, value: Any, *, ttl_seconds: int) -> None:
     if not _uses_redis_cache(key):
         return
     try:
-        await redis_client.setex(
+        await get_async_redis_client().setex(
             key,
             ttl_seconds,
             json.dumps(value, ensure_ascii=True, default=str),
@@ -195,7 +225,7 @@ async def cache_mget_json(keys: list[str]) -> list[Any | None]:
         return results
 
     try:
-        raw_values = await redis_client.mget(redis_keys)
+        raw_values = await get_async_redis_client().mget(redis_keys)
     except Exception:
         logger.debug("cache mget failed for %s keys", len(redis_keys), exc_info=True)
         return results
@@ -231,7 +261,7 @@ async def cache_mset_json(items: list[tuple[str, Any]], *, ttl_seconds: int) -> 
         return
 
     try:
-        pipe = redis_client.pipeline(transaction=False)
+        pipe = get_async_redis_client().pipeline(transaction=False)
         for key, value in redis_items:
             pipe.setex(
                 key,
@@ -250,19 +280,19 @@ async def cache_delete(*keys: str) -> None:
     if not redis_keys:
         return
     try:
-        await redis_client.delete(*redis_keys)
+        await get_async_redis_client().delete(*redis_keys)
     except Exception:
         logger.debug("cache delete failed for keys=%s", redis_keys, exc_info=True)
 
 
-async def _unlink_keys(keys: list[str]) -> None:
+async def _unlink_keys(client: redis.Redis, keys: list[str]) -> None:
     """Prefer non-blocking UNLINK; fall back to DELETE."""
     if not keys:
         return
     try:
-        await redis_client.unlink(*keys)
+        await client.unlink(*keys)
     except Exception:
-        await redis_client.delete(*keys)
+        await client.delete(*keys)
 
 
 async def cache_delete_pattern(pattern: str, *, batch_size: int = 100) -> None:
@@ -270,14 +300,15 @@ async def cache_delete_pattern(pattern: str, *, batch_size: int = 100) -> None:
     if not settings.CACHE_ENABLED:
         return
     try:
+        client = get_async_redis_client()
         batch: list[str] = []
-        async for key in redis_client.scan_iter(match=pattern, count=batch_size):
+        async for key in client.scan_iter(match=pattern, count=batch_size):
             batch.append(key)
             if len(batch) >= batch_size:
-                await _unlink_keys(batch)
+                await _unlink_keys(client, batch)
                 batch.clear()
         if batch:
-            await _unlink_keys(batch)
+            await _unlink_keys(client, batch)
     except Exception:
         logger.debug("cache delete pattern failed for pattern=%s", pattern, exc_info=True)
 

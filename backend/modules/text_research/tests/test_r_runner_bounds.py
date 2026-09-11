@@ -5,8 +5,6 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-import pytest
-
 from backend.modules.text_research.domain.exceptions import (
     NON_RETRYABLE_RESEARCH_ERRORS,
     RExecutionFailed,
@@ -23,7 +21,11 @@ def test_non_retryable_errors_include_deterministic_r_failures() -> None:
 
 
 def test_execution_failed_is_safe_for_clients() -> None:
-    exc = RExecutionFailed("R_ANALYSIS_FAILED: R analysis failed (exit code 1)", run_id="job-1", exit_code=1)
+    exc = RExecutionFailed(
+        "R_ANALYSIS_FAILED: R analysis failed (exit code 1)",
+        run_id="job-1",
+        exit_code=1,
+    )
     assert "R_ANALYSIS_FAILED" in str(exc)
     assert exc.run_id == "job-1"
     assert "/tmp" not in str(exc)
@@ -34,9 +36,7 @@ def test_communicate_bounded_caps_noisy_stderr(tmp_path: Path) -> None:
 
     script = tmp_path / "noisy.py"
     script.write_text(
-        "import sys\n"
-        "sys.stderr.write('x' * (2 * 1024 * 1024))\n"
-        "sys.stderr.flush()\n",
+        "import sys\nsys.stderr.write('x' * (2 * 1024 * 1024))\nsys.stderr.flush()\n",
         encoding="utf-8",
     )
     proc = subprocess.Popen(

@@ -20,6 +20,7 @@ ARTIFACT_KINDS = frozenset(
         "topic_matrix",
         "export",
         "manifest",
+        "r_artifact",
     }
 )
 

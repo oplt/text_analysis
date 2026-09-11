@@ -9,12 +9,12 @@ import {
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import {
-    StatusIcon,
     STATUS_LABEL,
     stageActionLabel,
     statusAccent,
     workflowProgress,
 } from "../workflowDisplay";
+import { StatusIcon } from "../StatusIcon";
 import type { WorkflowStageState } from "../workflow";
 
 type ResearchWorkflowDrawerProps = {

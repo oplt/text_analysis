@@ -97,7 +97,7 @@ class SettingsCacheTest(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch("backend.core.cache.settings") as mock_settings,
-            patch("backend.core.cache.redis_client", redis_client),
+            patch("backend.core.cache.get_async_redis_client", return_value=redis_client),
         ):
             mock_settings.CACHE_ENABLED = True
             mock_settings.CACHE_SETTINGS_TTL_SECONDS = 60
@@ -140,7 +140,7 @@ class SettingsCacheTest(unittest.IsolatedAsyncioTestCase):
         service._build_status = AsyncMock(return_value=status)
         redis_client = AsyncMock()
 
-        with patch("backend.core.cache.redis_client", redis_client):
+        with patch("backend.core.cache.get_async_redis_client", return_value=redis_client):
             first = await service.get_status()
             second = await service.get_status()
 

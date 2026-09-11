@@ -1,5 +1,8 @@
 name: R runtime quality gates
 
+# Prefer the production R-worker image over a host-equivalent rocker restore.
+# Cache keys include R 4.4.0 + renv.lock (and uv.lock for the Python layer).
+
 on:
   workflow_dispatch:
   schedule:
@@ -7,56 +10,185 @@ on:
   pull_request:
     paths:
       - "r_engine/**"
-      - "backend/modules/text_research/infrastructure/r_runtime/**"
-      - "backend/modules/text_research/infrastructure/engines/r_engine.py"
-      - "backend/modules/text_research/tests/parity/**"
-      - "backend/modules/text_research/application/engine_comparison.py"
+      - "backend/modules/text_research/**"
+      - "backend/workers/**"
+      - "backend/core/config.py"
+      - "infra/docker-compose.yml"
+      - "infra/.env.example"
+      - "Procfile.dev"
+      - "Makefile.local"
       - ".github/workflows/quanteda-parity.yml"
+      - "frontend/src/api/textResearch.ts"
+      - "frontend/src/features/text-research/analysisEngine.ts"
+      - "frontend/src/features/text-research/analysisEngine.test.ts"
+      - "frontend/src/features/text-research/views/AnalysisView.tsx"
   push:
     branches: [main, master]
     paths:
       - "r_engine/**"
-      - "backend/modules/text_research/infrastructure/r_runtime/**"
-      - "backend/modules/text_research/infrastructure/engines/r_engine.py"
-      - "backend/modules/text_research/tests/parity/**"
-      - "backend/modules/text_research/application/engine_comparison.py"
+      - "backend/modules/text_research/**"
+      - "backend/workers/**"
+      - "backend/core/config.py"
+      - "infra/docker-compose.yml"
+      - "infra/.env.example"
+      - "Procfile.dev"
+      - "Makefile.local"
       - ".github/workflows/quanteda-parity.yml"
+      - "frontend/src/api/textResearch.ts"
+      - "frontend/src/features/text-research/analysisEngine.ts"
+      - "frontend/src/features/text-research/analysisEngine.test.ts"
+      - "frontend/src/features/text-research/views/AnalysisView.tsx"
+
+env:
+  R_WORKER_IMAGE: text-analysis-r-worker:ci
+  # Must match r_engine/Dockerfile + renv.lock (never drift to another R minor).
+  R_VERSION: "4.4.0"
 
 jobs:
-  quanteda-parity:
+  r-worker-production-image:
     runs-on: ubuntu-latest
-    container:
-      # Keep in lockstep with r_engine/Dockerfile and renv.lock (R 4.4.0).
-      image: rocker/r-ver:4.4.0
-    defaults:
-      run:
-        working-directory: backend
+    timeout-minutes: 120
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Python + locked deps
-        run: |
-          apt-get update
-          apt-get install -y curl python3 python3-venv
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          export PATH="$HOME/.local/bin:$PATH"
-          uv sync --frozen --extra dev
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Restore locked R dependencies
+      - name: Compute dependency cache scope
+        id: cache_scope
         run: |
-          Rscript -e 'install.packages("renv", repos="https://cloud.r-project.org")'
-          Rscript -e 'renv::restore(project = "../r_engine", prompt = FALSE)'
+          RENV_SHA=$(sha256sum r_engine/renv.lock | cut -d' ' -f1 | cut -c1-16)
+          UV_SHA=$(sha256sum backend/uv.lock | cut -d' ' -f1 | cut -c1-16)
+          echo "scope=r-worker-r${R_VERSION}-renv${RENV_SHA}-uv${UV_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Cache scope: r-worker-r${R_VERSION}-renv${RENV_SHA}-uv${UV_SHA}"
 
-      - name: R testthat contracts
-        working-directory: r_engine
-        run: Rscript -e 'renv::load("."); testthat::test_dir("tests/testthat")'
+      - name: Build production R worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: r_engine/Dockerfile
+          load: true
+          tags: ${{ env.R_WORKER_IMAGE }}
+          # Layer cache keyed by R release + lockfile digests (Arrow uses LIBARROW_BINARY
+          # in the Dockerfile — same semantics as production, not a host-only restore).
+          cache-from: type=gha,scope=${{ steps.cache_scope.outputs.scope }}
+          cache-to: type=gha,mode=max,scope=${{ steps.cache_scope.outputs.scope }}
 
-      - name: Run cross-runtime parity tests
-        env:
-          RESEARCH_R_ENABLED: "true"
-          RESEARCH_R_ENGINE_ENTRYPOINT: ../r_engine/run_analysis.R
-          PYTHONPATH: ..
+      - name: Smoke — R version and locked packages
         run: |
-          . .venv/bin/activate
-          python -m pytest modules/text_research/tests/parity/test_r_parity.py -q
+          docker run --rm --entrypoint Rscript "${R_WORKER_IMAGE}" --version | tee /tmp/r-version.txt
+          grep -F "${R_VERSION}" /tmp/r-version.txt
+          docker run --rm -e RESEARCH_R_NO_INSTALL=1 --entrypoint Rscript "${R_WORKER_IMAGE}" --vanilla -e '
+            renv::load("/opt/r_engine")
+            pkgs <- names(renv::lockfile_read("/opt/r_engine/renv.lock")$Packages)
+            missing <- setdiff(pkgs, rownames(installed.packages()))
+            if (length(missing)) {
+              stop("missing packages after image restore: ", paste(missing, collapse = ", "))
+            }
+            cat("renv restore verified (", length(pkgs), " packages)\n", sep = "")
+            stopifnot(requireNamespace("quanteda", quietly = TRUE))
+            stopifnot(requireNamespace("arrow", quietly = TRUE))
+            x <- quanteda::dfm(quanteda::tokens(c("a b", "b c")))
+            stopifnot(nrow(x) == 2L, ncol(x) == 3L)
+          '
+
+      - name: Smoke — Python / Celery import in image
+        run: |
+          docker run --rm \
+            -e DATABASE_URL=postgresql+asyncpg://text_analysis:text_analysis@postgres:5432/text_analysis \
+            -e REDIS_URL=redis://redis:6379/0 \
+            -e JWT_SECRET=ci-only-r-worker-secret \
+            -e JWT_ALGORITHM=HS256 \
+            -e ACCESS_TOKEN_EXPIRE_MINUTES=30 \
+            -e REFRESH_TOKEN_EXPIRE_DAYS=7 \
+            -e RESEARCH_R_ENABLED=true \
+            -e RESEARCH_R_ENGINE_ENTRYPOINT=/opt/r_engine/run_analysis.R \
+            -e RESEARCH_R_NO_INSTALL=1 \
+            "${R_WORKER_IMAGE}" \
+            uv --directory /app/backend run python -c \
+              'from backend.core.config import settings; from backend.workers.celery_app import celery_app; assert settings.RESEARCH_R_ENABLED and celery_app.main == "app_backend"'
+
+      - name: Smoke — R readiness heartbeat against live Redis
+        run: |
+          docker run --rm --network host \
+            -e RESEARCH_R_ENABLED=true \
+            -e RESEARCH_R_NO_INSTALL=1 \
+            -e RESEARCH_RSCRIPT_PATH=Rscript \
+            -e RESEARCH_R_ENGINE_ENTRYPOINT=/opt/r_engine/run_analysis.R \
+            -e RESEARCH_QUEUE_R=research_r \
+            -e REDIS_URL=redis://127.0.0.1:6379/0 \
+            -e PYTHONPATH=/app \
+            -e DATABASE_URL=postgresql+asyncpg://text_analysis:text_analysis@127.0.0.1:5432/text_analysis \
+            -e JWT_SECRET=ci-only-r-worker-secret \
+            -e JWT_ALGORITHM=HS256 \
+            -e ACCESS_TOKEN_EXPIRE_MINUTES=30 \
+            -e REFRESH_TOKEN_EXPIRE_DAYS=7 \
+            "${R_WORKER_IMAGE}" \
+            uv --directory /app/backend run python -c "
+          import asyncio, redis
+          from backend.modules.text_research.infrastructure.plugin_registry import resolve_execution_engine
+          from backend.modules.text_research.infrastructure.r_runtime.capabilities import (
+              get_live_r_worker_capabilities,
+              publish_r_worker_capabilities,
+              r_worker_capabilities_key,
+          )
+          descriptor = resolve_execution_engine('r')
+          publish_r_worker_capabilities(
+              ready=True,
+              analyses=sorted(descriptor.supported_analyses),
+              worker_id='ci-r-worker',
+              queues=['research_r'],
+          )
+          client = redis.from_url('redis://127.0.0.1:6379/0', decode_responses=True)
+          assert client.get(r_worker_capabilities_key('ci-r-worker')), 'missing heartbeat key'
+          live = asyncio.run(get_live_r_worker_capabilities())
+          assert any(row.get('worker_id') == 'ci-r-worker' for row in live), live
+          print('R readiness heartbeat OK', live[0].get('implementation_version'))
+          "
+
+      - name: R testthat contracts (inside production image)
+        run: |
+          docker run --rm \
+            -e RESEARCH_R_NO_INSTALL=1 \
+            -v "${{ github.workspace }}/r_engine/tests:/opt/r_engine/tests:ro" \
+            -w /opt/r_engine \
+            --entrypoint Rscript \
+            "${R_WORKER_IMAGE}" \
+            -e 'renv::load("."); testthat::test_dir("tests/testthat")'
+
+      - name: Cross-runtime Python↔R parity (inside production image)
+        run: |
+          docker run --rm \
+            -e RESEARCH_R_ENABLED=true \
+            -e RESEARCH_R_NO_INSTALL=1 \
+            -e RESEARCH_RSCRIPT_PATH=Rscript \
+            -e RESEARCH_R_ENGINE_ENTRYPOINT=/opt/r_engine/run_analysis.R \
+            -e PYTHONPATH=/app \
+            -e PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+            -e DATABASE_URL=postgresql+asyncpg://text_analysis:text_analysis@postgres:5432/text_analysis \
+            -e REDIS_URL=redis://redis:6379/0 \
+            -e JWT_SECRET=ci-only-r-worker-secret \
+            -e JWT_ALGORITHM=HS256 \
+            -e ACCESS_TOKEN_EXPIRE_MINUTES=30 \
+            -e REFRESH_TOKEN_EXPIRE_DAYS=7 \
+            -v "${{ github.workspace }}/backend/modules/text_research/tests:/app/backend/modules/text_research/tests:ro" \
+            -w /app/backend \
+            "${R_WORKER_IMAGE}" \
+            bash -lc '
+              set -euo pipefail
+              # Dev extras (pytest) only for the quality gate — production image stays --no-dev.
+              uv sync --frozen --extra dev
+              uv run python -c "from backend.modules.text_research.infrastructure.engines.r_engine import RAnalysisEngine; assert RAnalysisEngine.runtime_ready(), \"R runtime not ready inside worker image\""
+              uv run pytest modules/text_research/tests/parity/test_r_parity.py -q --tb=short
+            '

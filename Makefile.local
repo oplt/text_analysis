@@ -1,5 +1,6 @@
 .PHONY: \
 	local-dev \
+	local-dev-r \
 	local-dev-no-observability \
 	db-migrate \
 	kill-dev \
@@ -10,6 +11,7 @@
 	check-ports \
 	list-ports \
 	check-local-tools \
+	check-r-runtime \
 	observability-dirs \
 	observability-up \
 	observability-down \
@@ -38,6 +40,11 @@ TEMPO_PORT ?= 3200
 OTLP_GRPC_PORT ?= 4317
 OTLP_HTTP_PORT ?= 4318
 OPEN_BROWSER ?= 1
+ENABLE_R ?= 0
+RESEARCH_R_ENABLED ?= false
+RESEARCH_RSCRIPT_PATH ?= Rscript
+RESEARCH_R_ENGINE_ENTRYPOINT ?= ../r_engine/run_analysis.R
+RESEARCH_QUEUE_R ?= research_r
 
 # Local observability stack managed by systemd.
 OBSERVABILITY_STACK_ENABLED ?= 1
@@ -71,7 +78,13 @@ DEV_PORTS := \
 	$(FRONTEND_PORT) \
 	$(REDIS_PORT)
 
-DEV_PROCS := redis backend worker worker-r frontend
+DEV_PROCS := redis backend worker frontend
+ifeq ($(ENABLE_R),1)
+override RESEARCH_R_ENABLED := true
+DEV_PROCS += worker-r
+CELERY_R_CONCURRENCY ?= 1
+export CELERY_R_CONCURRENCY
+endif
 ifeq ($(OPEN_BROWSER),1)
 DEV_PROCS += browser
 endif
@@ -103,6 +116,11 @@ export TEMPO_PUBLIC_URL
 export REDIS_URL
 export CELERY_BROKER_URL
 export CELERY_RESULT_BACKEND
+export ENABLE_R
+export RESEARCH_R_ENABLED
+export RESEARCH_RSCRIPT_PATH
+export RESEARCH_R_ENGINE_ENTRYPOINT
+export RESEARCH_QUEUE_R
 
 check-local-tools:
 	@$(PYTHON) -c 'import honcho.command' >/dev/null 2>&1 || { echo "honcho is not installed for $(PYTHON). Install with: $(PYTHON) -m pip install honcho"; exit 1; }
@@ -113,6 +131,11 @@ check-local-tools:
 	fi
 	@command -v npm >/dev/null 2>&1 || { echo "npm is not installed."; exit 1; }
 	@command -v redis-server >/dev/null 2>&1 || { echo "redis-server is required."; exit 1; }
+
+check-r-runtime:
+	@command -v "$(RESEARCH_RSCRIPT_PATH)" >/dev/null 2>&1 || { echo "Rscript is required when ENABLE_R=1."; exit 1; }
+	@test -f r_engine/renv.lock && test -f r_engine/run_analysis.R || { echo "The r_engine renv project is incomplete."; exit 1; }
+	@R_LIBS_USER="$${R_LIBS_USER:-$$(pwd)/r_engine/renv/library}" "$(RESEARCH_RSCRIPT_PATH)" -e 'if (!requireNamespace("renv", quietly = TRUE)) stop("renv is not installed"); renv::load(project = "r_engine"); if (!requireNamespace("quanteda", quietly = TRUE)) stop("quanteda is not installed"); renv::status(project = "r_engine")'
 
 # -----------------------------------------------------------------------------
 # Diagnostics
@@ -290,12 +313,16 @@ db-migrate: backend/.env
 	@cd backend && $(PYTHON) -m alembic upgrade head
 
 local-dev: check-local-tools
+	@$(if $(filter 1,$(ENABLE_R)),$(MAKE) -f $(LOCAL_MAKEFILE) check-r-runtime, true)
 	@echo "[dev] stopping existing local development processes and clearing ports"
 	@$(MAKE) -f $(LOCAL_MAKEFILE) kill-dev
 	@$(MAKE) -f $(LOCAL_MAKEFILE) db-migrate
 	@$(MAKE) -f $(LOCAL_MAKEFILE) start-observability-stack
 	@echo "[dev] starting Redis, backend, worker, and frontend"
 	$(HONCHO) -f Procfile.dev start $(DEV_PROCS)
+
+local-dev-r:
+	@$(MAKE) -f $(LOCAL_MAKEFILE) ENABLE_R=1 local-dev
 
 local-dev-no-observability:
 	$(MAKE) -f $(LOCAL_MAKEFILE) OBSERVABILITY_ENABLED=false OBSERVABILITY_STACK_ENABLED=0 local-dev

@@ -69,13 +69,45 @@ def test_frequency_counts_match_for_standardized_tokens() -> None:
 
 
 def test_dfm_dimensions_and_cells_match_for_standardized_tokens() -> None:
-    texts = ["alpha beta", "beta gamma", "don't well-being"]
+    from backend.modules.text_research.application.engine_comparison import compare_engine_results
+
+    texts = [
+        "alpha beta beta",
+        "don't well-being café",
+        "",
+        "punct: hello, world!",
+        " ".join(f"tok{i}" for i in range(120)),
+    ]
     python = _run("dfm", texts, runtime="python", parameters={"weighting": "count"})
     r = _run("dfm", texts, runtime="r", parameters={"weighting": "count"})
     python_dfm = python["results"]["dfm"]
-    assert r["results"]["dimensions"]["documents"] == python_dfm["dimensions"]["units"]
-    assert r["results"]["dimensions"]["features"] == python_dfm["dimensions"]["features"]
-    assert set(r["results"]["feature_names"]) == set(python_dfm["feature_names"])
+    r_dfm = r["results"]
+    assert r_dfm["dimensions"]["documents"] == python_dfm["dimensions"]["units"]
+    assert r_dfm["dimensions"]["features"] == python_dfm["dimensions"]["features"]
+    assert set(r_dfm["feature_names"]) == set(python_dfm["feature_names"])
+    assert python_dfm.get("matrix_checksum_complete") is True
+    assert r_dfm.get("matrix_checksum_complete") is True
+    assert int(python_dfm["nnz"]) > 200
+    assert int(r_dfm["nnz"]) > 200
+    assert r_dfm["sparse_coo"].get("preview_only") is True
+
+    comparison = compare_engine_results("dfm", {"dfm": python_dfm}, r_dfm)
+    assert comparison["comparison_complete"] is True
+    assert comparison["matrix_checksum_equal"] is True
+    assert comparison["cells_equal"] is True
+    assert comparison["units_equal"] is True
+    assert comparison["vocabulary_equal"] is True
+    assert comparison["python_nnz"] == comparison["r_nnz"]
+
+    small = ["alpha beta", "beta gamma", "don't well-being"]
+    python_small = _run("dfm", small, runtime="python", parameters={"weighting": "count"})
+    r_small = _run("dfm", small, runtime="r", parameters={"weighting": "count"})
+    small_cmp = compare_engine_results(
+        "dfm", {"dfm": python_small["results"]["dfm"]}, r_small["results"]
+    )
+    assert small_cmp["comparison_complete"] is True
+    assert small_cmp["cells_equal"] is True
+    assert small_cmp["cell_difference_count"] == 0
 
 
 def test_kwic_occurrence_multiset_matches_for_standardized_tokens() -> None:
@@ -130,9 +162,7 @@ def test_dictionary_spans_categories_and_document_prevalence_match() -> None:
     r_results = r["results"]
     assert r_results["total_hits"] == python_results["total_hits"]
     assert _almost_equal(r_results["unit_prevalence"], python_results["unit_prevalence"])
-    assert _almost_equal(
-        r_results["document_prevalence"], python_results["document_prevalence"]
-    )
+    assert _almost_equal(r_results["document_prevalence"], python_results["document_prevalence"])
     # Two of three documents contain hits (d1 and d3); d2 does not.
     assert python_results["document_prevalence"] == pytest.approx(2 / 3)
     assert python_results["document_prevalence"] != python_results["unit_prevalence"]
@@ -228,9 +258,7 @@ def test_cooccurrence_association_metrics_match(association_method: str) -> None
     python = _run("cooccurrence", texts, runtime="python", parameters=parameters)
     r = _run("cooccurrence", texts, runtime="r", parameters=parameters)
     assert r["results"]["association_method"] == association_method
-    python_pairs = {
-        (row["term_a"], row["term_b"]): row for row in python["results"]["pairs"]
-    }
+    python_pairs = {(row["term_a"], row["term_b"]): row for row in python["results"]["pairs"]}
     r_pairs = {(row["term_a"], row["term_b"]): row for row in r["results"]["pairs"]}
     assert set(r_pairs) == set(python_pairs)
     for key, left in python_pairs.items():

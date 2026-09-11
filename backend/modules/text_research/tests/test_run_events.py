@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import unittest
 from datetime import UTC, datetime
@@ -95,7 +96,7 @@ class RunEventPublishTests(unittest.IsolatedAsyncioTestCase):
             run,
             previous={"status": "running", "progress_stage": "training", "artifact_path": None},
         )
-        with patch("backend.core.cache.redis_client", client):
+        with patch("backend.core.cache.get_async_redis_client", return_value=client):
             await run_events.publish_run_event_envelope(envelope)
         self.assertEqual(name, "progress")
         client.publish.assert_awaited_once()
@@ -105,9 +106,14 @@ class RunEventPublishTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(envelope["event"], "progress")
         self.assertEqual(envelope["run"]["progress_stage"], "saving")
 
-    def test_publish_without_an_event_loop_only_serializes(self):
-        name = run_events.publish_run_event(_orm_run(status="completed"), previous=None)
+    def test_publish_without_an_event_loop_uses_worker_runtime(self):
+        with patch("backend.workers.async_dispatch.run_async_in_sync_context") as run_async:
+            name = run_events.publish_run_event(_orm_run(status="completed"), previous=None)
         self.assertEqual(name, "completed")
+        run_async.assert_called_once()
+        coro = run_async.call_args.args[0]
+        self.assertTrue(asyncio.iscoroutine(coro))
+        coro.close()
 
     async def test_rollback_discards_queued_event_and_commit_publishes_it(self):
         from backend.db import session as db_session

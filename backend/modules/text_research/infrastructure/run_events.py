@@ -13,7 +13,6 @@ Envelope::
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import json
 import logging
 from datetime import UTC, datetime
@@ -110,7 +109,7 @@ def run_event_envelope(
 async def publish_run_event_envelope(envelope: dict[str, Any]) -> None:
     """Publish through the async Redis client; failures leave DB reconciliation intact."""
     try:
-        from backend.core.cache import redis_client
+        from backend.core.cache import get_async_redis_client
         from backend.core.config import settings
 
         if not getattr(settings, "CACHE_ENABLED", True):
@@ -118,7 +117,7 @@ async def publish_run_event_envelope(envelope: dict[str, Any]) -> None:
         run_id = str((envelope.get("run") or {}).get("id") or "")
         if not run_id:
             return
-        await redis_client.publish(
+        await get_async_redis_client().publish(
             run_events_channel(run_id),
             json.dumps(envelope, ensure_ascii=True, default=str),
         )
@@ -128,16 +127,31 @@ async def publish_run_event_envelope(envelope: dict[str, Any]) -> None:
         logger.debug("run events: async publish failed", exc_info=True)
 
 
+def _schedule_run_event_publish(envelope: dict[str, Any]) -> None:
+    """Publish on the current loop, or the dedicated worker loop when sync.
+
+    Never borrows another loop's Redis client: ``get_async_redis_client`` is
+    always resolved on the loop that actually awaits the coroutine.
+    """
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        from backend.workers.async_dispatch import run_async_in_sync_context
+
+        run_async_in_sync_context(publish_run_event_envelope(envelope))
+        return
+    loop.create_task(publish_run_event_envelope(envelope))
+
+
 def publish_run_event(
     run: AnalysisRun,
     *,
     previous: dict[str, Any] | None = None,
     event: str | None = None,
 ) -> str:
-    """Schedule asynchronous publication when called from an event loop."""
+    """Schedule publication on the owning event loop (API or worker)."""
     event_name, envelope = run_event_envelope(run, previous=previous, event=event)
-    with contextlib.suppress(RuntimeError):
-        asyncio.get_running_loop().create_task(publish_run_event_envelope(envelope))
+    _schedule_run_event_publish(envelope)
     return event_name
 
 

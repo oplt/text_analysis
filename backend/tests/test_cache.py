@@ -25,7 +25,7 @@ class CacheHelpersTest(unittest.IsolatedAsyncioTestCase):
         client = AsyncMock()
         with (
             patch("backend.core.cache.settings") as mock_settings,
-            patch("backend.core.cache.redis_client", client),
+            patch("backend.core.cache.get_async_redis_client", return_value=client),
         ):
             mock_settings.CACHE_ENABLED = False
             await cache_set_json("ga:test", {"ok": True}, ttl_seconds=60)
@@ -36,7 +36,7 @@ class CacheHelpersTest(unittest.IsolatedAsyncioTestCase):
         client.get = AsyncMock(return_value=None)
         with (
             patch("backend.core.cache.settings") as mock_settings,
-            patch("backend.core.cache.redis_client", client),
+            patch("backend.core.cache.get_async_redis_client", return_value=client),
         ):
             mock_settings.CACHE_ENABLED = True
             await cache_set_json("ga:test", {"count": 2}, ttl_seconds=30)
@@ -56,7 +56,7 @@ class CacheHelpersTest(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch("backend.core.cache.settings") as mock_settings,
-            patch("backend.core.cache.redis_client", client),
+            patch("backend.core.cache.get_async_redis_client", return_value=client),
         ):
             mock_settings.CACHE_ENABLED = True
             values = await cache_mget_json(["ga:a", "ga:b"])
@@ -91,7 +91,7 @@ class CacheHelpersTest(unittest.IsolatedAsyncioTestCase):
         client = AsyncMock()
         with (
             patch("backend.core.cache.settings") as mock_settings,
-            patch("backend.core.cache.redis_client", client),
+            patch("backend.core.cache.get_async_redis_client", return_value=client),
         ):
             mock_settings.CACHE_ENABLED = True
             await invalidate_platform_caches()
@@ -126,7 +126,7 @@ class CacheHelpersTest(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch("backend.core.cache.settings") as mock_settings,
-            patch("backend.core.cache.redis_client", client),
+            patch("backend.core.cache.get_async_redis_client", return_value=client),
         ):
             mock_settings.CACHE_ENABLED = True
             await cache_delete_pattern("ga:projects:list:user-1:*", batch_size=2)

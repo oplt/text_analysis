@@ -61,19 +61,16 @@ def unique_email(prefix: str = "integration") -> str:
 
 async def prepare_integration_runtime() -> None:
     """
-    Rebind Redis and SQLAlchemy to the current event loop.
+    Rebind SQLAlchemy and clear this loop's Redis client for integration tests.
 
-    unittest.IsolatedAsyncioTestCase creates a fresh loop per test; the module-level
-    clients must be recreated to avoid 'Event loop is closed' failures.
+    ``unittest.IsolatedAsyncioTestCase`` creates a fresh loop per test. Async Redis
+    clients are loop-owned, so a stale client is closed before each test runtime.
     """
-    import redis.asyncio as redis
-
     from backend.core import cache
     from backend.db import session as db_session
 
     with suppress(Exception):
-        await cache.redis_client.aclose()
-    cache.redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+        await cache.reset_async_redis_clients_for_tests()
 
     with suppress(Exception):
         await db_session.engine.dispose()

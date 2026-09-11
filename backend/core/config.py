@@ -247,7 +247,18 @@ class Settings(BaseSettings):
     RESEARCH_R_TIMEOUT_SECONDS: int = 600
     RESEARCH_R_MAX_OUTPUT_MB: int = 100
     RESEARCH_R_WORK_DIR: str = "/tmp/text-analysis-r"
+    # Durable R artifact collection limits (worker job artifacts/ directory).
+    RESEARCH_R_MAX_ARTIFACTS: int = 32
+    RESEARCH_R_MAX_ARTIFACT_MB: int = 100
+    RESEARCH_R_MAX_ARTIFACTS_TOTAL_MB: int = 250
     RESEARCH_QUEUE_R: str = "research_r"
+    # Operator-declared R worker isolation (mirrored from Compose/K8s limits).
+    # Enforceable limits live in the container cgroup; these fields stamp provenance
+    # and document intent. ExecutionSpec.cpu / memory_mb remain advisory only.
+    CELERY_R_CONCURRENCY: int = 1
+    RESEARCH_R_WORKER_MEMORY_LIMIT: str = ""
+    RESEARCH_R_WORKER_CPUS: str = ""
+    RESEARCH_R_WORKER_PIDS_LIMIT: int | None = None
 
     CORS_ALLOWED_ORIGINS: Annotated[list[str], NoDecode] = Field(default_factory=list)
 

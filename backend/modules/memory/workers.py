@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from backend.core.cache import redis_client
+from backend.core.cache import get_async_redis_client
 from backend.core.config import settings
 from backend.workers.async_dispatch import dispatch_background_sync_job, run_async_in_sync_context
 
@@ -25,7 +25,7 @@ def extract_turn_memories_sync(
     async def _run() -> None:
         completion_key = f"memory:turn-extraction:complete:{source_message_id}"
         try:
-            if await redis_client.get(completion_key):
+            if await get_async_redis_client().get(completion_key):
                 logger.info(
                     "Memory extraction already complete source_message=%s", source_message_id
                 )
@@ -44,7 +44,7 @@ def extract_turn_memories_sync(
                 source_message_id=source_message_id,
             )
         try:
-            await redis_client.set(completion_key, "1", ex=30 * 24 * 60 * 60)
+            await get_async_redis_client().set(completion_key, "1", ex=30 * 24 * 60 * 60)
         except Exception:
             logger.warning("Memory extraction completion cache unavailable", exc_info=True)
 

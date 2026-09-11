@@ -59,6 +59,47 @@ class StageRunnerFrequenciesTests(unittest.TestCase):
         self.assertIn("prepare_corpus", result["stage_timings"])
         self.assertIn("frequencies", result["stage_timings"])
         self.assertIn("manifest", result)
+        # Manifest must capture real computational timings (not an empty post-loop attach).
+        manifest_timings = result["manifest"]["stage_timings"]
+        for stage in (
+            "validate_spec",
+            "resolve_corpus",
+            "prepare_corpus",
+            "frequencies",
+            "persist_run",
+        ):
+            self.assertIn(stage, manifest_timings)
+            self.assertIsInstance(manifest_timings[stage], float)
+            self.assertGreaterEqual(manifest_timings[stage], 0.0)
+        self.assertEqual(
+            result["manifest"]["provenance"]["extra"]["stage_timings"],
+            manifest_timings,
+        )
+        # build_manifest runs after the snapshot it embeds; its own duration is
+        # recorded on context afterwards but is not required inside the manifest.
+        self.assertIn("build_manifest", result["stage_timings"])
+
+    def test_manifest_timings_match_completed_computational_stages(self) -> None:
+        texts = ["alpha beta", "beta gamma"]
+        result = run_prepared_analysis(
+            self._spec(),
+            texts,
+            unit_ids=["u1", "u2"],
+            config=PreprocessingConfig(),
+            use_stage_cache=False,
+        )
+        expected = [
+            stage
+            for stage in compile_plan(self._spec().normalize()).stages
+            if stage != "build_manifest"
+        ]
+        for stage in expected:
+            self.assertIn(stage, result["manifest"]["stage_timings"])
+        # No fabricated keys beyond stages that actually ran before finalization.
+        self.assertEqual(
+            set(result["manifest"]["stage_timings"]),
+            set(expected),
+        )
 
     def test_same_spec_texts_yield_same_pipeline_checksum(self) -> None:
         texts = ["hello world", "foo bar baz"]

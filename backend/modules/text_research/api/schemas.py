@@ -689,7 +689,7 @@ class CooccurrenceRequest(AnalysisRequest):
 class EngineComparisonRequest(AnalysisRequest):
     """Submit two independently persisted Python/R runs and their deterministic diff."""
 
-    analysis_type: Literal["frequencies", "dfm", "kwic"]
+    analysis_type: Literal["frequencies", "dfm", "kwic", "dictionary", "keyness", "cooccurrence"]
     analysis_parameters: dict[str, Any] = Field(default_factory=dict)
 
 

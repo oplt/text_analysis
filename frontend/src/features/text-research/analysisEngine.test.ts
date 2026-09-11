@@ -10,6 +10,7 @@ describe("R analysis engine selector", () => {
         name: "r" as const,
         implementation: "quanteda",
         available: true,
+        ready: true,
         analyses: ["frequencies", "dfm", "kwic", "dictionary", "keyness", "cooccurrence"],
     };
 
@@ -21,8 +22,14 @@ describe("R analysis engine selector", () => {
         expect(rEngineSelectionState([{ ...rEngine, available: false }], "frequencies")).toBe("unavailable");
     });
 
+    it("keeps configured R disabled until a worker is ready", () => {
+        expect(rEngineSelectionState([{ ...rEngine, ready: false }], "frequencies")).toBe("not_ready");
+        expect(rEngineOptionLabel("not_ready")).toContain("worker offline");
+    });
+
     it("enables supported analyses and disables unsupported ones", () => {
         expect(rEngineSelectionState([rEngine], "dictionary")).toBe("available");
+        expect(rEngineSelectionState([rEngine], "dictionaries")).toBe("available");
         expect(rEngineSelectionState([rEngine], "ngrams")).toBe("unsupported");
         expect(rEngineOptionLabel("unsupported")).toContain("not supported");
     });

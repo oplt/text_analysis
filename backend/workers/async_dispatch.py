@@ -30,9 +30,10 @@ class _WorkerAsyncRuntime:
     def __init__(self) -> None:
         self._ready = Event()
         self._loop: asyncio.AbstractEventLoop | None = None
+        self._engine: Any = None
         self._sessionmaker: Any = None
         self._startup_error: BaseException | None = None
-        self._jobs: Queue[tuple[Coroutine[Any, Any, Any], Future[Any]]] = Queue()
+        self._jobs: Queue[tuple[Coroutine[Any, Any, Any] | None, Future[Any]]] = Queue()
         self._thread = Thread(target=self._run, name="research-worker-async", daemon=True)
         self._thread.start()
         self._ready.wait()
@@ -46,7 +47,7 @@ class _WorkerAsyncRuntime:
         try:
             from backend.db.session import create_worker_sessionmaker
 
-            _engine, self._sessionmaker = create_worker_sessionmaker()
+            self._engine, self._sessionmaker = create_worker_sessionmaker()
             self._loop = loop
         except BaseException as exc:  # noqa: BLE001
             self._startup_error = exc
@@ -56,6 +57,15 @@ class _WorkerAsyncRuntime:
             return
         while True:
             coro, future = self._jobs.get()
+            if coro is None:
+                try:
+                    loop.run_until_complete(self._shutdown())
+                    future.set_result(None)
+                except BaseException as exc:  # noqa: BLE001
+                    future.set_exception(exc)
+                finally:
+                    loop.close()
+                return
             if future.set_running_or_notify_cancel():
                 try:
                     future.set_result(loop.run_until_complete(self._execute(coro)))
@@ -76,6 +86,19 @@ class _WorkerAsyncRuntime:
         self._jobs.put((coro, future))
         return future.result()
 
+    async def _shutdown(self) -> None:
+        from backend.core.cache import close_current_async_redis_client
+
+        await close_current_async_redis_client()
+        if self._engine is not None:
+            await self._engine.dispose()
+
+    def close(self) -> None:
+        future: Future[None] = Future()
+        self._jobs.put((None, future))
+        future.result()
+        self._thread.join()
+
 
 def _get_worker_runtime() -> _WorkerAsyncRuntime:
     global _worker_runtime
@@ -93,6 +116,16 @@ def run_async_in_sync_context[T](coro: Coroutine[Any, Any, T]) -> T:
     subsequent jobs, so connection pools are not recreated per execution.
     """
     return _get_worker_runtime().run(coro)
+
+
+def shutdown_worker_async_runtime() -> None:
+    """Close loop-local Redis and database clients when a worker process exits."""
+    global _worker_runtime
+    with _worker_runtime_lock:
+        runtime = _worker_runtime
+        _worker_runtime = None
+    if runtime is not None:
+        runtime.close()
 
 
 def _eager_executor_for_settings() -> tuple[ThreadPoolExecutor, BoundedSemaphore]:

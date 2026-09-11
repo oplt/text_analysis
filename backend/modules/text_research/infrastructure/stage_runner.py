@@ -6,6 +6,10 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+from backend.modules.text_research.domain.analysis_result import (
+    build_scientific_inputs,
+    scientific_inputs_as_dicts,
+)
 from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
 from backend.modules.text_research.domain.prepared_corpus import PreparedCorpusArtifact
 from backend.modules.text_research.infrastructure import artifact_registry, stage_cache
@@ -21,6 +25,80 @@ StageHandler = Callable[[dict[str, Any], ExecutionPlan], None]
 DELEGATED_ANALYSES: frozenset[str] = frozenset(
     {"classification", "topic_model", "measurement_validation"}
 )
+
+
+def _bind_scientific_inputs(context: dict[str, Any], plan: ExecutionPlan) -> None:
+    """Attach canonical scientific inputs and recompute computation identity."""
+    prepared: PreparedCorpusArtifact | None = context.get("prepared")
+    if prepared is None:
+        return
+    reference: PreparedCorpusArtifact | None = context.get("prepared_b")
+    inputs = build_scientific_inputs(
+        target_corpus_checksum=prepared.corpus_checksum,
+        target_pipeline_checksum=prepared.pipeline_checksum,
+        reference_corpus_checksum=(reference.corpus_checksum if reference is not None else None),
+        reference_pipeline_checksum=(
+            reference.pipeline_checksum if reference is not None else None
+        ),
+    )
+    inputs_payload = scientific_inputs_as_dicts(inputs)
+    context["scientific_inputs"] = inputs_payload
+    checksums = dict(context.get("checksums") or {})
+    checksums["corpus_checksum"] = prepared.corpus_checksum
+    checksums["pipeline_checksum"] = prepared.pipeline_checksum
+    checksums["analysis_spec_hash"] = plan.spec_hash
+    checksums["engine_name"] = plan.engine_name
+    checksums["engine_version"] = plan.engine_version
+    checksums["scientific_inputs"] = inputs_payload
+    if reference is not None:
+        checksums["reference_corpus_checksum"] = reference.corpus_checksum
+        checksums["reference_pipeline_checksum"] = reference.pipeline_checksum
+    context["checksums"] = checksums
+    identity = computation_identity(
+        plan.spec_hash,
+        prepared.corpus_checksum,
+        engine_version=plan.engine_version,
+        engine_name=plan.engine_name,
+        pipeline_checksum=prepared.pipeline_checksum,
+        scientific_inputs=inputs,
+    )
+    context["computation_identity"] = identity
+    if context.get("remember_computation", False):
+        stage_cache.remember_computation(
+            spec_hash=plan.spec_hash,
+            corpus_snapshot_hash=prepared.corpus_checksum,
+            engine_version=plan.engine_version,
+            engine_name=plan.engine_name,
+            pipeline_checksum=prepared.pipeline_checksum,
+            scientific_inputs=inputs_payload,
+            meta={
+                "prepared_artifact_id": context.get("prepared_artifact_id"),
+                "pipeline_checksum": prepared.pipeline_checksum,
+                "scientific_inputs": inputs_payload,
+            },
+            payload={"unit_count": len(prepared.unit_ids)},
+            payload_format="json",
+        )
+
+
+def _ensure_keyness_reference(context: dict[str, Any]) -> PreparedCorpusArtifact | None:
+    """Materialize prepared_b for keyness when texts_b is provided."""
+    prepared_b: PreparedCorpusArtifact | None = context.get("prepared_b")
+    if prepared_b is not None:
+        return prepared_b
+    texts_b = context.get("texts_b")
+    if not texts_b:
+        return None
+    prepared_a: PreparedCorpusArtifact = context.get("prepared_a") or context["prepared"]
+    prepared_b = prepare_texts(
+        texts_b,
+        prepared_a.preprocessing_profile,
+        unit_ids=context.get("unit_ids_b"),
+        document_ids=context.get("document_ids_b"),
+        force_in_memory=context.get("force_in_memory", False),
+    )
+    context["prepared_b"] = prepared_b
+    return prepared_b
 
 
 def _resolve_group_value(doc: Any, group_by: str) -> str:
@@ -160,28 +238,10 @@ def _stage_prepare_corpus(context: dict[str, Any], plan: ExecutionPlan) -> None:
                 },
                 payload_format="json",
             )
-        snapshot_hash = prepared.corpus_checksum
-        context["computation_identity"] = computation_identity(
-            plan.spec_hash,
-            snapshot_hash,
-            engine_version=plan.engine_version,
-            engine_name=plan.engine_name,
-            pipeline_checksum=prepared.pipeline_checksum,
-        )
-        if context.get("remember_computation", False):
-            stage_cache.remember_computation(
-                spec_hash=plan.spec_hash,
-                corpus_snapshot_hash=snapshot_hash,
-                engine_version=plan.engine_version,
-                engine_name=plan.engine_name,
-                pipeline_checksum=prepared.pipeline_checksum,
-                meta={
-                    "prepared_artifact_id": artifact_id,
-                    "pipeline_checksum": prepared.pipeline_checksum,
-                },
-                payload={"unit_count": len(prepared.unit_ids)},
-                payload_format="json",
-            )
+
+    if spec.analysis.type == "keyness":
+        _ensure_keyness_reference(context)
+    _bind_scientific_inputs(context, plan)
 
 
 def _run_frequencies(context: dict[str, Any], _plan: ExecutionPlan) -> None:
@@ -310,22 +370,14 @@ def _run_dictionary(context: dict[str, Any], _plan: ExecutionPlan) -> None:
     context["results"] = result
 
 
-def _run_keyness(context: dict[str, Any], _plan: ExecutionPlan) -> None:
+def _run_keyness(context: dict[str, Any], plan: ExecutionPlan) -> None:
     from backend.modules.text_research.infrastructure.keyness import keyness_report
 
     prepared_a: PreparedCorpusArtifact = context.get("prepared_a") or context["prepared"]
-    prepared_b: PreparedCorpusArtifact | None = context.get("prepared_b")
+    prepared_b = _ensure_keyness_reference(context)
     if prepared_b is None:
-        texts_b = context.get("texts_b")
-        if not texts_b:
-            raise ValueError("keyness requires context['texts_b'] or context['prepared_b']")
-        prepared_b = prepare_texts(
-            texts_b,
-            prepared_a.preprocessing_profile,
-            unit_ids=context.get("unit_ids_b"),
-            force_in_memory=context.get("force_in_memory", False),
-        )
-        context["prepared_b"] = prepared_b
+        raise ValueError("keyness requires context['texts_b'] or context['prepared_b']")
+    _bind_scientific_inputs(context, plan)
 
     params = context["spec"].analysis.parameters
     report = keyness_report(
@@ -498,20 +550,32 @@ def _run_delegated(context: dict[str, Any], plan: ExecutionPlan) -> None:
 def _execute_selected_engine(context: dict[str, Any], plan: ExecutionPlan) -> None:
     """Select exactly one runtime after canonical preprocessing is complete."""
     from backend.modules.text_research.infrastructure.plugin_registry import (
-        ensure_builtins_registered,
-        get_plugin,
+        resolve_execution_engine,
     )
 
-    ensure_builtins_registered()
-    engine_factory = get_plugin("execution_engine", plan.engine_name)
-    engine = engine_factory()
+    descriptor = resolve_execution_engine(plan.engine_name)
+    if descriptor.implementation_version != plan.engine_version:
+        raise ValueError(
+            f"engine version drift: plan={plan.engine_version!r} "
+            f"registry={descriptor.implementation_version!r}"
+        )
+    engine = descriptor.create()
     spec: AnalysisSpecification = context["spec"]
-    if not engine.supports(spec.analysis.type):
+    if not descriptor.supports(spec.analysis.type):
         raise ValueError(f"Engine {plan.engine_name!r} does not support {spec.analysis.type!r}")
-    result = engine.execute(spec, context["prepared"], pipeline_context=context, plan=plan)
+    result = engine.execute(
+        spec,
+        context["prepared"],
+        pipeline_context=context,
+        plan=plan,
+        run_id=context.get("run_id"),
+    )
     context["analysis_result"] = result
     # Existing callers consume this payload directly; retain that contract.
     context["results"] = result.results
+    # R keyness may materialize prepared_b inside the engine; rebind identity.
+    if context.get("prepared_b") is not None:
+        _bind_scientific_inputs(context, plan)
 
 
 def execute_python_analysis(context: dict[str, Any], plan: ExecutionPlan) -> dict[str, Any]:
@@ -549,7 +613,9 @@ def _stage_build_manifest(context: dict[str, Any], plan: ExecutionPlan) -> None:
     from backend.modules.text_research.infrastructure.provenance import build_run_provenance
 
     prepared: PreparedCorpusArtifact | None = context.get("prepared")
+    prepared_b: PreparedCorpusArtifact | None = context.get("prepared_b")
     checksums = dict(context.get("checksums") or {})
+    scientific_inputs = context.get("scientific_inputs") or checksums.get("scientific_inputs")
     spec = context.get("spec")
     parent_ids: list[str] = []
     if prepared is not None:
@@ -557,6 +623,13 @@ def _stage_build_manifest(context: dict[str, Any], plan: ExecutionPlan) -> None:
             prepared.corpus_checksum,
             prepared.pipeline_checksum,
         ]
+    if prepared_b is not None:
+        parent_ids.extend(
+            [
+                prepared_b.corpus_checksum,
+                prepared_b.pipeline_checksum,
+            ]
+        )
     for key in ("parent_artifact_checksums", "input_artifact_ids"):
         extra_parents = context.get(key)
         if isinstance(extra_parents, list):
@@ -569,6 +642,7 @@ def _stage_build_manifest(context: dict[str, Any], plan: ExecutionPlan) -> None:
         pipeline_checksum=checksums.get("pipeline_checksum")
         or (prepared.pipeline_checksum if prepared else None),
         parent_artifact_checksums=parent_ids,
+        scientific_inputs=scientific_inputs if isinstance(scientific_inputs, list) else None,
         preprocessing_config=(
             prepared.preprocessing_profile
             if prepared is not None and isinstance(prepared.preprocessing_profile, dict)
@@ -579,6 +653,7 @@ def _stage_build_manifest(context: dict[str, Any], plan: ExecutionPlan) -> None:
         extra={
             "engine_name": plan.engine_name,
             "stage_timings": dict(context.get("stage_timings") or {}),
+            "computation_identity": context.get("computation_identity"),
             "runtime": (
                 context["analysis_result"].runtime.model_dump(mode="json")
                 if context.get("analysis_result") is not None
@@ -592,6 +667,8 @@ def _stage_build_manifest(context: dict[str, Any], plan: ExecutionPlan) -> None:
         "analysis_spec_hash": plan.spec_hash,
         "stages": list(plan.stages),
         "checksums": checksums,
+        "scientific_inputs": scientific_inputs,
+        "computation_identity": context.get("computation_identity"),
         "stage_timings": dict(context.get("stage_timings") or {}),
         "delegated": bool(context.get("delegated")),
         "provenance": provenance,
@@ -603,6 +680,13 @@ def _stage_build_manifest(context: dict[str, Any], plan: ExecutionPlan) -> None:
             "pipeline_checksum": prepared.pipeline_checksum,
             "vocabulary_size": len(prepared.vocabulary),
             "provenance": prepared.provenance,
+        }
+    if prepared_b is not None:
+        manifest["prepared_reference"] = {
+            "unit_count": len(prepared_b.unit_ids),
+            "corpus_checksum": prepared_b.corpus_checksum,
+            "pipeline_checksum": prepared_b.pipeline_checksum,
+            "vocabulary_size": len(prepared_b.vocabulary),
         }
     context["manifest"] = manifest
     context.setdefault("run_record", {})["provenance"] = provenance
@@ -629,6 +713,9 @@ BASE_STAGE_HANDLERS: dict[str, StageHandler] = {
     "build_manifest": _stage_build_manifest,
 }
 
+# Manifest/provenance must run after computational timings are recorded.
+FINALIZATION_STAGES: frozenset[str] = frozenset({"build_manifest"})
+
 
 class StageRunner:
     """Run an :class:`ExecutionPlan` against a mutable context dict."""
@@ -645,16 +732,35 @@ class StageRunner:
         if delegate_callback is not None:
             self.context["delegate_callback"] = delegate_callback
 
+    def _execute_stage(self, stage: str) -> None:
+        if stage in BASE_STAGE_HANDLERS:
+            BASE_STAGE_HANDLERS[stage](self.context, self.plan)
+        elif stage == self.context["spec"].analysis.type:
+            _execute_selected_engine(self.context, self.plan)
+        else:
+            raise ValueError(f"Unknown pipeline stage {stage!r}")
+
     def run(self) -> dict[str, Any]:
+        """Execute computational stages, then finalize manifest/provenance.
+
+        ``stage_timings`` is a mutable dict bound into context before any stage
+        runs and updated after each stage so ``build_manifest`` always sees
+        real timings for completed work (never fabricated values).
+        """
         timings: dict[str, float] = {}
-        for stage in self.plan.stages:
-            started = time.perf_counter()
-            if stage in BASE_STAGE_HANDLERS:
-                BASE_STAGE_HANDLERS[stage](self.context, self.plan)
-            elif stage == self.context["spec"].analysis.type:
-                _execute_selected_engine(self.context, self.plan)
-            else:
-                raise ValueError(f"Unknown pipeline stage {stage!r}")
-            timings[stage] = time.perf_counter() - started
         self.context["stage_timings"] = timings
+
+        computational = [stage for stage in self.plan.stages if stage not in FINALIZATION_STAGES]
+        finalization = [stage for stage in self.plan.stages if stage in FINALIZATION_STAGES]
+
+        for stage in computational:
+            started = time.perf_counter()
+            self._execute_stage(stage)
+            timings[stage] = time.perf_counter() - started
+
+        for stage in finalization:
+            started = time.perf_counter()
+            self._execute_stage(stage)
+            timings[stage] = time.perf_counter() - started
+
         return self.context

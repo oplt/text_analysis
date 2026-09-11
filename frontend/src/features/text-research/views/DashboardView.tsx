@@ -28,8 +28,7 @@ import { queryKeys } from "../../../config/queryKeys";
 import { NoCorpusEmptyState } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 
-const DETAIL_TABS = ["units", "runs", "reliability"] as const;
-type DetailTab = (typeof DETAIL_TABS)[number];
+type DetailTab = "units" | "runs" | "reliability";
 
 const DETAIL_TAB_ITEMS: Array<{ value: DetailTab; label: string }> = [
     { value: "units", label: "Text units" },

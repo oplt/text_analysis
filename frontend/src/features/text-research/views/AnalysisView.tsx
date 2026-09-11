@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import {
     Alert,
     Button,
@@ -500,16 +500,34 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                         },
                         {
                             label: "Equal",
-                            value:
-                                comparison?.matches_equal === true ||
-                                comparison?.count_equal === true ||
-                                comparison?.cells_equal === true
-                                    ? "yes"
-                                    : comparison?.matches_equal === false ||
-                                        comparison?.count_equal === false ||
-                                        comparison?.cells_equal === false
-                                      ? "no"
-                                      : "—",
+                            value: (() => {
+                                if (comparison?.comparison_status === "inconclusive") {
+                                    return "inconclusive";
+                                }
+                if (
+                                    comparison?.comparison_status === "equal" ||
+                                    comparison?.matches_equal === true ||
+                                    comparison?.count_equal === true ||
+                                    comparison?.cells_equal === true ||
+                                    comparison?.features_equal === true ||
+                                    comparison?.pairs_equal === true ||
+                                    comparison?.spans_equal === true
+                                ) {
+                                    return "yes";
+                                }
+                                if (
+                                    comparison?.comparison_status === "unequal" ||
+                                    comparison?.matches_equal === false ||
+                                    comparison?.count_equal === false ||
+                                    comparison?.cells_equal === false ||
+                                    comparison?.features_equal === false ||
+                                    comparison?.pairs_equal === false ||
+                                    comparison?.spans_equal === false
+                                ) {
+                                    return "no";
+                                }
+                                return "—";
+                            })(),
                         },
                         {
                             label: "Python run",
@@ -941,21 +959,6 @@ export default function AnalysisView() {
     const [metadataFilters, setMetadataFilters] = useState<Record<string, string>>({});
     const [engineRuntime, setEngineRuntime] = useState<"python" | "r">("python");
 
-    useEffect(() => {
-        if (engineRuntime !== "r") return;
-        setKwicQueryMode("word");
-        setDfmConfig((current) => ({
-            ...current,
-            weighting: "count",
-            forceSparseOnly: false,
-            minTermFrequency: "",
-            maxTermFrequency: "",
-            minDocumentFrequency: "",
-            maxDocumentFrequency: "",
-            topN: "",
-        }));
-    }, [engineRuntime]);
-
     const enginesQuery = useQuery({
         queryKey: ["text-research", "analysis-engines"],
         queryFn: listAnalysisEngines,
@@ -991,15 +994,20 @@ export default function AnalysisView() {
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });
 
-    const rSelectionState = rEngineSelectionState(enginesQuery.data?.engines, tab);
+    const engineCapabilities =
+        enginesQuery.isError && !enginesQuery.data ? [] : enginesQuery.data?.engines;
+    const rSelectionState = rEngineSelectionState(engineCapabilities, tab);
     const selectedEngineSupportsTab =
         engineRuntime === "python" || rSelectionState === "available";
-    const basePayload = {
+    const commonPayload = {
         unit_type: ctx.unitType,
         ...metadataFilters,
         ...(profileId ? { preprocessing_profile_id: profileId } : {}),
+    };
+    const basePayload = {
+        ...commonPayload,
         ...(engineRuntime === "r"
-            ? { engine: { runtime: "r" as const, implementation: "quanteda", preprocessing_mode: "standardized" as const } }
+            ? { engine: { runtime: "r" as const, preprocessing_mode: "standardized" as const } }
             : {}),
     };
 
@@ -1084,7 +1092,6 @@ export default function AnalysisView() {
                     ? {
                           engine: {
                               runtime: "r" as const,
-                              implementation: "quanteda",
                               preprocessing_mode: "standardized" as const,
                           },
                       }
@@ -1131,27 +1138,68 @@ export default function AnalysisView() {
         onError: (error) => onRunError(error, "Failed to run co-occurrence."),
     });
 
-    const compareCompatible =
-        (tab === "frequencies" || tab === "dfm" || tab === "kwic") &&
-        rSelectionState === "available";
+    const compareSupportedTab =
+        tab === "frequencies" ||
+        tab === "dfm" ||
+        tab === "kwic" ||
+        tab === "keyness" ||
+        tab === "dictionaries" ||
+        tab === "cooccurrence";
+    const compareCompatible = compareSupportedTab && rSelectionState === "available";
 
     const compareMutation = useMutation({
         mutationFn: () => {
-            const analysis_type = tab as "frequencies" | "dfm" | "kwic";
-            const analysis_parameters: Record<string, unknown> =
-                analysis_type === "frequencies"
-                    ? { top_n: topN }
-                    : analysis_type === "dfm"
-                      ? { weighting: "count" }
-                      : {
-                            keyword: kwicKeyword.trim(),
-                            window_size: kwicWindow,
-                            case_sensitive: kwicCaseSensitive,
-                            query_mode: "word",
-                        };
-            const { engine: _engine, ...compareBase } = basePayload;
+            const analysis_type =
+                tab === "dictionaries"
+                    ? "dictionary"
+                    : (tab as
+                          | "frequencies"
+                          | "dfm"
+                          | "kwic"
+                          | "keyness"
+                          | "cooccurrence");
+            let analysis_parameters: Record<string, unknown> = {};
+            if (analysis_type === "frequencies") {
+                analysis_parameters = { top_n: topN };
+            } else if (analysis_type === "dfm") {
+                analysis_parameters = { weighting: "count" };
+            } else if (analysis_type === "kwic") {
+                analysis_parameters = {
+                    keyword: kwicKeyword.trim(),
+                    window_size: kwicWindow,
+                    case_sensitive: kwicCaseSensitive,
+                    query_mode: "word",
+                };
+            } else if (analysis_type === "keyness") {
+                analysis_parameters = {
+                    filters_a: { [keynessField]: keynessA.trim() },
+                    filters_b: { [keynessField]: keynessB.trim() },
+                    group_field: keynessField,
+                    method: keynessMethod,
+                    correction: keynessCorrection,
+                    top_n: topN,
+                };
+            } else if (analysis_type === "dictionary") {
+                const selected = dictionariesQuery.data?.find((d) => d.id === dictionaryId);
+                const terms = parseCommaTerms(dictionaryTerms);
+                const resolvedTerms = terms.length > 0 ? terms : (selected?.terms ?? []);
+                analysis_parameters = {
+                    ...(dictionaryId ? { dictionary_id: dictionaryId } : {}),
+                    ...(resolvedTerms.length ? { dictionary_terms: resolvedTerms } : {}),
+                };
+            } else if (analysis_type === "cooccurrence") {
+                analysis_parameters = {
+                    window_size: coocWindow,
+                    top_n: topN,
+                    association_method: coocMethod,
+                    directional: coocDirectional,
+                    min_frequency: coocMinFreq,
+                    min_count: coocMinCount,
+                    include_network: false,
+                };
+            }
             return runEngineComparison(ctx.selectedCorpusId, {
-                ...compareBase,
+                ...commonPayload,
                 analysis_type,
                 analysis_parameters,
             });
@@ -1315,7 +1363,7 @@ export default function AnalysisView() {
 
                     {engineRuntime === "r" && !selectedEngineSupportsTab ? (
                         <Alert severity="info">
-                            R / quanteda supports frequencies, DFM, KWIC, dictionaries, keyness, and co-occurrence when available.
+                            {rEngineOptionLabel(rSelectionState)}. Select Python or wait until the R worker is ready.
                         </Alert>
                     ) : null}
 
@@ -1610,13 +1658,22 @@ export default function AnalysisView() {
                         >
                             Run {runLabel}
                         </Button>
-                        {compareCompatible ? (
+                        {compareSupportedTab ? (
                             <Button
                                 variant="outlined"
                                 onClick={() => compareMutation.mutate()}
                                 disabled={
+                                    !compareCompatible ||
                                     compareMutation.isPending ||
-                                    (tab === "kwic" && !kwicKeyword.trim())
+                                    (tab === "kwic" && !kwicKeyword.trim()) ||
+                                    (tab === "keyness" &&
+                                        !(keynessA.trim() && keynessB.trim())) ||
+                                    (tab === "dictionaries" && !hasDictionaryInput)
+                                }
+                                title={
+                                    compareCompatible
+                                        ? undefined
+                                        : rEngineOptionLabel(rSelectionState)
                                 }
                             >
                                 Compare Python ↔ R

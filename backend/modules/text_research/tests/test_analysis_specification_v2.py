@@ -8,7 +8,11 @@ from backend.modules.text_research.application.analysis_executor import (
     attach_run_identity,
     build_spec_from_request,
 )
-from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
+from backend.modules.text_research.domain.analysis_specification import (
+    AnalysisSpecification,
+    EngineSpec,
+)
+from backend.modules.text_research.infrastructure.engines.r_engine import RAnalysisEngine
 from backend.modules.text_research.infrastructure.pipeline_compiler import (
     ENGINE_VERSION,
     compile_plan,
@@ -131,10 +135,52 @@ class AnalysisSpecificationV2Tests(unittest.TestCase):
         # 2.0 omits engine from the hash; 2.1 includes it — hashes must differ.
         self.assertNotEqual(modern.normalize().spec_hash(), legacy.normalize().spec_hash())
         left_legacy = legacy.normalize().spec_hash()
-        right_legacy = legacy.model_copy(
-            update={"engine": legacy.engine.model_copy(update={"implementation": "other"})}
-        ).normalize().spec_hash()
+        right_legacy = (
+            legacy.model_copy(update={"engine": EngineSpec(runtime="r")}).normalize().spec_hash()
+        )
         self.assertEqual(left_legacy, right_legacy)
+
+    def test_absent_and_canonical_implementation_hash_identically(self) -> None:
+        absent = AnalysisSpecification.from_flat(
+            corpus_id="c1",
+            analysis_type="frequencies",
+            engine={"runtime": "r"},
+        )
+        canonical = AnalysisSpecification.from_flat(
+            corpus_id="c1",
+            analysis_type="frequencies",
+            engine={"runtime": "r", "implementation": "quanteda"},
+        )
+        self.assertEqual(absent.engine.implementation, "quanteda")
+        self.assertEqual(canonical.engine.implementation, "quanteda")
+        self.assertEqual(absent.spec_hash(), canonical.spec_hash())
+
+    def test_arbitrary_implementation_rejected(self) -> None:
+        with self.assertRaises(Exception) as ctx:
+            AnalysisSpecification.from_flat(
+                corpus_id="c1",
+                analysis_type="frequencies",
+                engine={"runtime": "r", "implementation": "foo"},
+            )
+        self.assertIn("incompatible", str(ctx.exception).lower())
+
+    def test_runtime_change_changes_spec_identity(self) -> None:
+        python = AnalysisSpecification.from_flat(
+            corpus_id="c1",
+            analysis_type="frequencies",
+            engine={"runtime": "python"},
+        )
+        r = AnalysisSpecification.from_flat(
+            corpus_id="c1",
+            analysis_type="frequencies",
+            engine={"runtime": "r"},
+        )
+        self.assertNotEqual(python.spec_hash(), r.spec_hash())
+        self.assertEqual(python.engine.implementation, "python")
+        self.assertEqual(r.engine.implementation, "quanteda")
+        plan = compile_plan(r)
+        self.assertEqual(plan.engine_name, "r")
+        self.assertEqual(plan.engine_version, RAnalysisEngine.implementation_version)
 
 
 if __name__ == "__main__":

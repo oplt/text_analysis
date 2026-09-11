@@ -3,8 +3,16 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Mapping, Sequence
+from typing import Any
+
+from backend.modules.text_research.domain.analysis_result import (
+    AnalysisInputIdentity,
+    scientific_inputs_digest,
+)
 
 ENGINE_VERSION = "text_research.pipeline/1"
+R_ENGINE_VERSION = "r-quanteda-2"
 
 DEFAULT_RETRY_POLICIES: dict[str, dict[str, int]] = {
     "research_light": {"max_retries": 3, "countdown": 5},
@@ -42,22 +50,27 @@ def computation_identity(
     engine_version: str = ENGINE_VERSION,
     engine_name: str = "python",
     pipeline_checksum: str | None = None,
+    scientific_inputs: Sequence[AnalysisInputIdentity | Mapping[str, Any]] | None = None,
 ) -> str:
     """Canonical computation identity used by cache, idempotency, and provenance.
 
     Always includes ``engine_name`` and server-owned ``engine_version``. Optional
     ``pipeline_checksum`` scopes the identity to a prepared-corpus pipeline.
+    Multi-input analyses (e.g. keyness) also fold a digest of all scientific
+    inputs so changing only the reference corpus invalidates the identity.
     """
-    payload = ":".join(
-        (
-            spec_hash,
-            corpus_snapshot_hash,
-            pipeline_checksum or "",
-            engine_name,
-            engine_version,
-        )
-    )
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    parts = [
+        spec_hash,
+        corpus_snapshot_hash,
+        pipeline_checksum or "",
+        engine_name,
+        engine_version,
+    ]
+    # Append only when multi-input so single-corpus identities stay stable.
+    digest = scientific_inputs_digest(scientific_inputs)
+    if digest:
+        parts.append(digest)
+    return hashlib.sha256(":".join(parts).encode("utf-8")).hexdigest()
 
 
 def build_computation_identity(
@@ -67,6 +80,7 @@ def build_computation_identity(
     engine_name: str,
     engine_version: str,
     pipeline_checksum: str | None = None,
+    scientific_inputs: Sequence[AnalysisInputIdentity | Mapping[str, Any]] | None = None,
 ) -> str:
     """Keyword-only wrapper for the canonical identity builder."""
     return computation_identity(
@@ -75,4 +89,5 @@ def build_computation_identity(
         engine_version=engine_version,
         engine_name=engine_name,
         pipeline_checksum=pipeline_checksum,
+        scientific_inputs=scientific_inputs,
     )

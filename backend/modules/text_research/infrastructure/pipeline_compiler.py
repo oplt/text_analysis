@@ -27,6 +27,8 @@ class PipelineStep:
 
 @dataclass(frozen=True)
 class ResourceProfile:
+    """Queue/class routing profile. ``cpu`` / ``memory_mb`` are advisory hints."""
+
     resource_class: str
     cpu: int | None = None
     memory_mb: int | None = None
@@ -80,13 +82,12 @@ def compile_plan(spec: AnalysisSpecification) -> ExecutionPlan:
 
 
 def _resolve_engine_version(runtime: str) -> str:
-    """Server-owned engine version; clients must not supply version strings."""
-    if runtime == "r":
-        from backend.modules.text_research.infrastructure.engines.r_engine import RAnalysisEngine
-
-        return RAnalysisEngine.implementation_version
-    from backend.modules.text_research.infrastructure.engines.python_engine import (
-        PythonAnalysisEngine,
+    """Server-owned engine version via the authoritative execution-engine resolver."""
+    from backend.modules.text_research.infrastructure.plugin_registry import (
+        resolve_execution_engine,
     )
 
-    return PythonAnalysisEngine.implementation_version
+    try:
+        return resolve_execution_engine(runtime).implementation_version
+    except KeyError as exc:
+        raise ValueError(f"unknown execution engine runtime: {runtime!r}") from exc

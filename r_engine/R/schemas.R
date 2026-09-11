@@ -15,7 +15,12 @@ runtime_info <- function() {
   packages <- c("quanteda", "quanteda.textstats", "arrow", "jsonlite")
   versions <- lapply(packages, function(pkg) as.character(utils::packageVersion(pkg)))
   names(versions) <- packages
-  list(engine = "r", implementation = "quanteda", runtime_version = R.version.string, package_versions = versions)
+  list(
+    engine = "r",
+    implementation = "quanteda",
+    runtime_version = R.version.string,
+    package_versions = versions
+  )
 }
 
 new_result <- function(manifest, results, warnings = list(), diagnostics = list(), artifacts = list()) list(

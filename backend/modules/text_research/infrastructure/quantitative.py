@@ -967,6 +967,7 @@ def build_dfm_matrix(
         result["out_of_core_notes"] = out_of_core_notes
     if include_dense:
         result["dense_matrix"] = matrix.toarray().tolist()
+    result = _with_dfm_matrix_checksum(result, matrix=matrix)
     if trim_config:
         if resolved_vectorizer == "hashing":
             result["trim_skipped"] = "trim requires a vocabulary; ignored for hashing DFM"
@@ -979,7 +980,37 @@ def build_dfm_matrix(
                 **trim_config,
             )
             result["weighting_scheme"] = weighting_meta
+            result = _with_dfm_matrix_checksum(result)
     return result
+
+
+def _with_dfm_matrix_checksum(
+    payload: dict[str, Any],
+    *,
+    matrix: Any | None = None,
+) -> dict[str, Any]:
+    """Attach canonical full-matrix checksum independent of truncated JSON COO."""
+    from backend.modules.text_research.infrastructure.dfm_matrix_identity import (
+        attach_matrix_checksum_fields,
+        extract_inline_coo_triples,
+        matrix_checksum_from_coo,
+        matrix_checksum_from_csr,
+    )
+
+    unit_ids = [str(uid) for uid in (payload.get("unit_ids") or [])]
+    feature_names = [str(name) for name in (payload.get("feature_names") or [])]
+    if matrix is not None:
+        checksum, cells = matrix_checksum_from_csr(
+            matrix, unit_ids=unit_ids, feature_names=feature_names
+        )
+    else:
+        sparse = payload.get("sparse") if isinstance(payload.get("sparse"), dict) else {}
+        checksum, cells = matrix_checksum_from_coo(
+            unit_ids=unit_ids,
+            feature_names=feature_names,
+            triples=extract_inline_coo_triples(sparse),
+        )
+    return attach_matrix_checksum_fields(payload, checksum=checksum, cells_compared=cells)
 
 
 def _config_dict(config: PreprocessingConfig | dict[str, Any] | None) -> dict[str, Any]:

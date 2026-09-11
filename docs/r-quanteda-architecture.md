@@ -12,6 +12,16 @@ The supported R analyses are `frequencies`, count-weighted `dfm`, word-query
 remains the default runtime. Topic models and other analyses remain
 Python-only until an equivalent R method and parity contract are added.
 
+## Engine registry (authoritative resolution)
+
+Internal consumers must resolve Python/R engines through
+`plugin_registry.resolve_execution_engine` (or `list_execution_engines`), which
+returns runtime name, implementation family, implementation version, supported
+analyses, and the engine factory. Version strings such as `r-quanteda-2` live on
+the engine class / `execution_defaults` once; compiler plans, StageRunner,
+`/analysis-engines`, R worker heartbeats, and provenance all read them via the
+resolver so they cannot drift.
+
 ## Data and execution boundary
 
 ```text
@@ -49,7 +59,7 @@ code, a command, a script path, or package-install requests. The bridge uses
 validation, and cleanup. Failures surface as safe R runtime errors rather than
 raw environment data or stack traces.
 
-Engine **version** strings (`r-quanteda-1`, Python `ENGINE_VERSION`) are always
+Engine **version** strings (`r-quanteda-2`, Python `ENGINE_VERSION`) are always
 resolved server-side from the registered engine. Clients may send
 `engine.runtime` and an optional implementation *family* (`quanteda`), never a
 version used as provenance/cache identity.
@@ -61,9 +71,30 @@ pipeline checksum, engine name/version, runtime version and package versions.
 Engine selection participates in normalized specification and computation
 identity, so Python and R cannot reuse each other's cached results.
 
-`r_engine/renv.lock` pins the intended R package set (`quanteda`,
-`quanteda.textstats`, `arrow`, `jsonlite`, and `testthat`). The supplied
-Dockerfile is for the R-capable Celery worker image; it is not an R HTTP API.
+`r_engine/renv.lock` is a full scientific lockfile: R 4.4.0 plus the resolved
+transitive dependency graph for `quanteda`, `quanteda.textstats`, `arrow`,
+`jsonlite`, and `testthat`. Do not hand-edit it. Regenerate with:
+
+```bash
+./r_engine/scripts/regenerate_renv_lock.sh
+```
+
+### CRAN / repository strategy
+
+* Repository: CRAN via `https://cloud.r-project.org` (recorded in `renv.lock`).
+* R release: **4.4.0** everywhere (Dockerfile `FROM rocker/r-ver:4.4.0`, CI
+  container, lockfile `R.Version`).
+* Arrow binaries: `LIBARROW_BINARY=true` at build time so CI/production avoid
+  compiling Arrow from source when binaries exist.
+* Restore happens **only at image build** (`renv::restore`). Runtime sets
+  `RESEARCH_R_NO_INSTALL=1` and blocks `install.packages`.
+* Deployment: pin published worker images by **immutable digest** when the
+  registry provides one (for example
+  `text-analysis-r-worker@sha256:…`), not only a mutable `:latest` tag.
+
+Run provenance records `r_package_lock_checksum` (SHA-256 of `renv.lock`)
+alongside Python `package_lock_checksum`, container digest, and R
+`package_versions` from the analysis result runtime block.
 
 ## Parity
 
@@ -81,6 +112,8 @@ R co-occurrence implements `count`, PMI, NPMI, Dice, logDice, and t-score.
 Build the combined Python+R Celery worker from the repository root:
 
 ```bash
+cp infra/.env.example infra/.env
+# Set JWT_SECRET and storage credentials in infra/.env; do not put them in the image.
 docker build -f r_engine/Dockerfile -t text-analysis-r-worker:local .
 # or via Compose profile:
 docker compose -f infra/docker-compose.yml --profile r up --build worker-r
@@ -97,9 +130,69 @@ that consumes `research_r`.
 The container restores R packages solely from `renv.lock` at build time;
 production workers must not install R packages at runtime.
 
+### CI: production image, not host-equivalent restore
+
+`.github/workflows/quanteda-parity.yml` builds `r_engine/Dockerfile` (same image
+as deployment) and runs smoke checks, `testthat`, and Python↔R parity **inside
+that image**. Path filters cover `r_engine/**`, `backend/modules/text_research/**`,
+`backend/workers/**`, `backend/core/config.py`, Compose/env, and R-facing
+frontend analysis files. Buildx GHA layer cache is keyed by R 4.4.0 +
+`renv.lock` + `uv.lock` digests so Arrow/`renv::restore` work is not repeated
+from scratch on every PR when locks are unchanged.
+
+The Compose `worker-r` service uses the shared backend environment contract:
+database, Redis/Celery, JWT, and object-storage settings are supplied through
+`infra/.env`. The service waits for healthy PostgreSQL and Redis dependencies;
+it does not contain production secrets in the Dockerfile or image layers.
+
+### Resource isolation (container cgroup)
+
+Enforceable limits for the dedicated R worker are applied at the **container**
+layer, not via unsafe `preexec_fn` rlimits inside the multi-threaded Celery
+process:
+
+| Control | Compose / env | Default |
+| --- | --- | --- |
+| Memory | `mem_limit` / `WORKER_R_MEMORY_LIMIT` | `4g` |
+| CPU | `cpus` / `WORKER_R_CPUS` | `2.0` |
+| PIDs | `pids_limit` / `WORKER_R_PIDS_LIMIT` | `256` |
+| Celery concurrency | `--concurrency` / `CELERY_R_CONCURRENCY` | `1` |
+
+Mirror the same values into `RESEARCH_R_WORKER_*` env vars (Compose does this)
+so run provenance can stamp operator intent even when cgroup files are opaque.
+`provenance.resource_limits` records cgroup observations when available, plus
+`execution_spec_policy: advisory`.
+
+`ExecutionSpec.cpu` and `ExecutionSpec.memory_mb` on an analysis specification
+are **advisory hints only** — they do not configure cgroups and must not be
+treated as guarantees. Subprocess timeout and process-group kill remain in
+`r_runtime/runner.py`.
+
+For Kubernetes (or similar), set equivalent pod `resources.limits` and
+`CELERY_R_CONCURRENCY`, and pass the intended values through the
+`RESEARCH_R_WORKER_*` settings so provenance stays accurate.
+
+Local development is Python-only by default. Start the R worker explicitly
+after installing the pinned local R environment:
+
+```bash
+make -f Makefile.local local-dev-r
+```
+
+This verifies `Rscript`, `renv::status(project = "r_engine")`, and the R
+project files before starting both the API and the dedicated worker with
+`RESEARCH_R_ENABLED=true`. Use `make -f Makefile.local local-dev` for the
+normal Python-only development stack.
+
 Before rollout, run `Rscript -e 'renv::status()'`,
 `Rscript -e 'testthat::test_dir("/opt/r_engine/tests/testthat")'`, and the
 cross-runtime pytest suite with `RESEARCH_R_ENABLED=true`. Confirm the
 `analysis-engines` endpoint lists R as available, submit an R analysis from
 the frontend, and verify the completed `AnalysisRun` includes the canonical
 runtime, identity, and artifact provenance.
+
+Optional Playwright R gate (local/CI with a live `research_r` worker):
+
+```bash
+E2E_R_ENABLED=1 npx playwright test e2e/research-flow.spec.ts -g "R frequencies"
+```

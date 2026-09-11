@@ -53,6 +53,9 @@ celery_app.conf.update(
         "backend.workers.tasks.research_engine_comparison_task": {
             "queue": settings.RESEARCH_QUEUE_CPU
         },
+        "backend.workers.tasks.research_engine_comparison_finalize_task": {
+            "queue": settings.RESEARCH_QUEUE_LIGHT
+        },
     },
     task_serializer="json",
     accept_content=["json"],

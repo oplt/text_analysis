@@ -1,5 +1,26 @@
 version: "3.9"
 
+x-backend-environment: &backend-environment
+  APP_ENV: ${APP_ENV:-production}
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:?set in infra/.env}:${POSTGRES_PASSWORD:?set in infra/.env}@postgres:5432/${POSTGRES_DB:?set in infra/.env}
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_RESULT_BACKEND: redis://redis:6379/1
+  JWT_SECRET: ${JWT_SECRET:?set in infra/.env}
+  JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+  ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+  REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+  STORAGE_BUCKET: ${STORAGE_BUCKET:?set in infra/.env}
+  STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
+  STORAGE_ENDPOINT_URL: ${STORAGE_ENDPOINT_URL:-http://minio:9000}
+  STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:?set in infra/.env}
+  STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:?set in infra/.env}
+  STORAGE_USE_SSL: ${STORAGE_USE_SSL:-false}
+  STORAGE_FORCE_PATH_STYLE: ${STORAGE_FORCE_PATH_STYLE:-true}
+  STORAGE_AUTO_CREATE_BUCKET: ${STORAGE_AUTO_CREATE_BUCKET:-true}
+  RESEARCH_R_ENABLED: ${RESEARCH_R_ENABLED:-false}
+  RESEARCH_QUEUE_R: ${RESEARCH_QUEUE_R:-research_r}
+
 services:
   postgres:
     image: postgres:16
@@ -8,6 +29,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?set in infra/.env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in infra/.env}
       POSTGRES_DB: ${POSTGRES_DB:?set in infra/.env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -46,6 +72,7 @@ services:
 
   # Optional dedicated R Celery worker (Python orchestration + pinned R/quanteda).
   # Build from repo root: docker compose -f infra/docker-compose.yml build worker-r
+  # Hard isolation is at the container/cgroup layer (not per-subprocess rlimits).
   worker-r:
     profiles: ["r"]
     build:
@@ -54,21 +81,48 @@ services:
     image: text-analysis-r-worker:local
     container_name: app_worker_r
     environment:
+      <<: *backend-environment
       RESEARCH_R_ENABLED: "true"
       RESEARCH_RSCRIPT_PATH: Rscript
       RESEARCH_R_ENGINE_ENTRYPOINT: /opt/r_engine/run_analysis.R
       RESEARCH_QUEUE_R: research_r
-      REDIS_URL: redis://redis:6379/0
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/1
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:?set in infra/.env}:${POSTGRES_PASSWORD:?set in infra/.env}@postgres:5432/${POSTGRES_DB:?set in infra/.env}
+      RESEARCH_ARTIFACT_DIR: /var/research_artifacts
+      RESEARCH_R_WORK_DIR: /tmp/text-analysis-r
+      # Mirrored into run provenance; keep in sync with the limits below.
+      CELERY_R_CONCURRENCY: ${CELERY_R_CONCURRENCY:-1}
+      RESEARCH_R_WORKER_MEMORY_LIMIT: ${WORKER_R_MEMORY_LIMIT:-4g}
+      RESEARCH_R_WORKER_CPUS: ${WORKER_R_CPUS:-2.0}
+      RESEARCH_R_WORKER_PIDS_LIMIT: ${WORKER_R_PIDS_LIMIT:-256}
+    # Compose applies these as cgroup limits on `docker compose up` (no Swarm required).
+    mem_limit: ${WORKER_R_MEMORY_LIMIT:-4g}
+    cpus: ${WORKER_R_CPUS:-2.0}
+    pids_limit: ${WORKER_R_PIDS_LIMIT:-256}
+    command:
+      - uv
+      - --directory
+      - /app/backend
+      - run
+      - celery
+      - -A
+      - backend.workers.celery_app:celery_app
+      - worker
+      - --loglevel=INFO
+      - --hostname=worker-r@%h
+      - --queues=research_r
+      - --concurrency=${CELERY_R_CONCURRENCY:-1}
+    volumes:
+      # Shared with API/workers so R artifacts survive container replacement.
+      - research_artifacts:/var/research_artifacts
     depends_on:
       redis:
         condition: service_healthy
       postgres:
+        condition: service_healthy
+      minio:
         condition: service_started
     restart: unless-stopped
 
 volumes:
   postgres_data:
   minio_data:
+  research_artifacts:

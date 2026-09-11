@@ -8,7 +8,7 @@ from sqlalchemy import text
 from backend.core.cache import (
     OBSERVABILITY_STATUS_CACHE_KEY,
     cache_get_or_load_model,
-    redis_client,
+    get_async_redis_client,
 )
 from backend.core.config import Settings
 from backend.db.session import engine
@@ -183,7 +183,7 @@ class ObservabilityService:
 
     async def _cache_status(self, checked_at: str) -> ObservabilityStatusItem:
         try:
-            await redis_client.ping()
+            await get_async_redis_client().ping()
             return ObservabilityStatusItem(
                 status="healthy",
                 detail="Redis connection OK",

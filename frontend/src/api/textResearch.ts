@@ -682,7 +682,12 @@ export type CorpusFilterParams = {
 export type AnalysisBasePayload = {
     unit_type: UnitType;
     preprocessing_profile_id?: string;
-    engine?: { runtime: "python" | "r"; implementation?: string; preprocessing_mode?: "standardized" };
+    engine?: {
+        runtime: "python" | "r";
+        /** Optional; server canonicalizes (python→python, r→quanteda). */
+        implementation?: string;
+        preprocessing_mode?: "standardized";
+    };
 } & CorpusFilterParams;
 
 export type AnalysisEngineCapability = {
@@ -690,7 +695,8 @@ export type AnalysisEngineCapability = {
     implementation: string;
     implementation_version?: string;
     available: boolean;
-    ready?: boolean;
+    /** Runtime readiness; for R this means at least one live worker exists. */
+    ready: boolean;
     analyses: string[];
 };
 
@@ -779,7 +785,13 @@ export async function runKwic(
 export async function runEngineComparison(
     corpusId: string,
     payload: AnalysisBasePayload & {
-        analysis_type: "frequencies" | "dfm" | "kwic";
+        analysis_type:
+            | "frequencies"
+            | "dfm"
+            | "kwic"
+            | "dictionary"
+            | "keyness"
+            | "cooccurrence";
         analysis_parameters?: Record<string, unknown>;
     }
 ): Promise<AnalysisRun> {

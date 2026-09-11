@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.core.cache import redis_client
+from backend.core.cache import get_async_redis_client
 from backend.core.config import settings
 from backend.core.security import (
     generate_refresh_token,
@@ -156,12 +156,12 @@ class IdentityService:
     async def _store_verification_token(self, user_id: str) -> str:
         token = secrets.token_urlsafe(32)
         key = f"verify:{_hash_token(token)}"
-        await redis_client.setex(key, settings.VERIFICATION_TOKEN_TTL, user_id)
+        await get_async_redis_client().setex(key, settings.VERIFICATION_TOKEN_TTL, user_id)
         return token
 
     async def verify_email(self, token: str) -> None:
         key = f"verify:{_hash_token(token)}"
-        user_id = await redis_client.get(key)
+        user_id = await get_async_redis_client().get(key)
         if not user_id:
             raise HTTPException(status_code=400, detail="Invalid or expired verification token")
 
@@ -171,7 +171,7 @@ class IdentityService:
 
         user.is_verified = True
         await self.db.commit()
-        await redis_client.delete(key)
+        await get_async_redis_client().delete(key)
 
     async def resend_verification(self, email: str) -> None:
         if not settings.REQUIRE_EMAIL_VERIFICATION:
@@ -215,7 +215,7 @@ class IdentityService:
 
         token = secrets.token_urlsafe(32)
         key = f"pwd_reset:{_hash_token(token)}"
-        await redis_client.setex(key, settings.PASSWORD_RESET_TOKEN_TTL, user.id)
+        await get_async_redis_client().setex(key, settings.PASSWORD_RESET_TOKEN_TTL, user.id)
 
         reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
         app_name = await self._get_platform_app_name()
@@ -248,7 +248,7 @@ class IdentityService:
 
     async def reset_password(self, token: str, new_password: str) -> None:
         key = f"pwd_reset:{_hash_token(token)}"
-        user_id = await redis_client.get(key)
+        user_id = await get_async_redis_client().get(key)
         if not user_id:
             raise HTTPException(status_code=400, detail="Invalid or expired reset token")
 
@@ -259,7 +259,7 @@ class IdentityService:
         user.password_hash = await hash_password_async(new_password)
         await self.repo.revoke_all_refresh_sessions_for_user(user.id)
         await self.db.commit()
-        await redis_client.delete(key)
+        await get_async_redis_client().delete(key)
 
     # ------------------------------------------------------------------ MFA (TOTP)
 
@@ -274,7 +274,7 @@ class IdentityService:
         secret = pyotp.random_base32()
         # Store temporarily until the user verifies with the first TOTP code
         key = f"mfa_pending:{user.id}"
-        await redis_client.setex(key, 600, secret)  # 10 min to complete setup
+        await get_async_redis_client().setex(key, 600, secret)  # 10 min to complete setup
 
         totp = pyotp.TOTP(secret)
         uri = totp.provisioning_uri(
@@ -289,7 +289,7 @@ class IdentityService:
             raise HTTPException(status_code=501, detail="MFA not available") from None
 
         key = f"mfa_pending:{user.id}"
-        secret = await redis_client.get(key)
+        secret = await get_async_redis_client().get(key)
         if not secret:
             raise HTTPException(status_code=400, detail="MFA setup session expired. Start again.")
 
@@ -299,7 +299,7 @@ class IdentityService:
         user.mfa_secret = secret
         user.mfa_enabled = True
         await self.db.commit()
-        await redis_client.delete(key)
+        await get_async_redis_client().delete(key)
 
     async def mfa_disable(self, user: User, code: str) -> None:
         try:

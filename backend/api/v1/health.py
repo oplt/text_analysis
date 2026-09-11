@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
 
-from backend.core.cache import redis_client
+from backend.core.cache import get_async_redis_client
 from backend.core.config import settings
 from backend.db.session import engine
 
@@ -27,7 +27,7 @@ async def ready():
         checks["db"] = "error"
 
     try:
-        await redis_client.ping()
+        await get_async_redis_client().ping()
         checks["redis"] = "ok"
     except Exception:
         checks["redis"] = "error"

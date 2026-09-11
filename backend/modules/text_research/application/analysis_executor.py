@@ -53,6 +53,7 @@ def attach_run_identity(
     preprocessing_config: dict[str, Any] | None = None,
     nlp_model: dict[str, Any] | None = None,
     implementation_version: str | None = None,
+    scientific_inputs: list[dict[str, Any]] | None = None,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Augment run parameters with stable spec identity and full provenance (§23)."""
@@ -67,6 +68,7 @@ def attach_run_identity(
         preprocessing_config=preprocessing_config,
         nlp_model=nlp_model,
         implementation_version=implementation_version,
+        scientific_inputs=scientific_inputs,
         extra=extra,
     )
 
@@ -76,6 +78,8 @@ def plan_and_task(
     *,
     corpus_snapshot_hash: str | None = None,
     input_artifact_ids: list[str] | None = None,
+    pipeline_checksum: str | None = None,
+    scientific_inputs: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Compile an execution plan, AnalysisTask, and optional stage-cache hit."""
     normalized = spec.normalize()
@@ -93,12 +97,16 @@ def plan_and_task(
             corpus_snapshot_hash,
             engine_version=plan.engine_version,
             engine_name=plan.engine_name,
+            pipeline_checksum=pipeline_checksum,
+            scientific_inputs=scientific_inputs,
         )
         cache_hit = is_idempotent_hit(
             spec_hash=plan.spec_hash,
             corpus_snapshot_hash=corpus_snapshot_hash,
             engine_version=plan.engine_version,
             engine_name=plan.engine_name,
+            pipeline_checksum=pipeline_checksum,
+            scientific_inputs=scientific_inputs,
             stage_cache_get=stage_cache.get_stage,
         )
     return {

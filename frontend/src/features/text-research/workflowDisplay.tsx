@@ -1,10 +1,3 @@
-import {
-    CheckCircle as CompleteIcon,
-    ErrorOutline as BlockedIcon,
-    RadioButtonUnchecked as IncompleteIcon,
-    WarningAmber as WarningIcon,
-    Circle as CurrentIcon,
-} from "@mui/icons-material";
 import type { WorkflowStageState, WorkflowStatus } from "./workflow";
 
 export const STATUS_LABEL: Record<WorkflowStatus, string> = {
@@ -14,27 +7,6 @@ export const STATUS_LABEL: Record<WorkflowStatus, string> = {
     blocked: "Blocked",
     warning: "Attention",
 };
-
-export function StatusIcon({
-    status,
-    size = "small",
-}: {
-    status: WorkflowStatus;
-    size?: "inherit" | "small" | "medium" | "large";
-}) {
-    switch (status) {
-        case "complete":
-            return <CompleteIcon color="success" fontSize={size} />;
-        case "current":
-            return <CurrentIcon color="primary" fontSize={size} />;
-        case "warning":
-            return <WarningIcon color="warning" fontSize={size} />;
-        case "blocked":
-            return <BlockedIcon color="disabled" fontSize={size} />;
-        default:
-            return <IncompleteIcon color="action" fontSize={size} />;
-    }
-}
 
 export function statusAccent(status: WorkflowStatus): string {
     switch (status) {

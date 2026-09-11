@@ -598,6 +598,7 @@ def compute_identity_lookup(
     *,
     engine_name: str = "python",
     pipeline_checksum: str | None = None,
+    scientific_inputs: list | None = None,
 ) -> str:
     """Wrap :func:`computation_identity` for prepared-corpus stage lookups.
 
@@ -610,6 +611,7 @@ def compute_identity_lookup(
         engine_version=engine_version,
         engine_name=engine_name,
         pipeline_checksum=pipeline_checksum,
+        scientific_inputs=scientific_inputs,
     )
 
 
@@ -644,6 +646,8 @@ def _payload_extension(payload_format: str) -> str:
         return ".joblib"
     if payload_format == "npz":
         return ".npz"
+    if payload_format == "bytes":
+        return ".bin"
     raise ValueError(f"Unsupported payload_format {payload_format!r}")
 
 
@@ -670,6 +674,10 @@ def _serialize_payload(payload: Any, payload_format: str) -> bytes:
         else:
             np.savez_compressed(buf, data=payload)
         return buf.getvalue()
+    if payload_format == "bytes":
+        if isinstance(payload, (bytes, bytearray, memoryview)):
+            return bytes(payload)
+        raise TypeError("bytes payload_format requires a bytes-like payload")
     raise ValueError(f"Unsupported payload_format {payload_format!r}")
 
 
@@ -681,6 +689,8 @@ def _deserialize_payload(data: bytes, payload_format: str) -> Any:
     if payload_format == "npz":
         loaded = np.load(io.BytesIO(data), allow_pickle=False)
         return {name: loaded[name] for name in loaded.files}
+    if payload_format == "bytes":
+        return data
     raise ValueError(f"Unsupported payload_format {payload_format!r}")
 
 
@@ -692,6 +702,8 @@ def _load_payload_from_disk(path: Path, payload_format: str) -> Any:
     if payload_format == "npz":
         loaded = np.load(path, allow_pickle=False)
         return {name: loaded[name] for name in loaded.files}
+    if payload_format == "bytes":
+        return path.read_bytes()
     raise ValueError(f"Unsupported payload_format {payload_format!r}")
 
 
@@ -905,6 +917,7 @@ def remember_computation(
     payload_format: PayloadFormat = "json",
     engine_name: str = "python",
     pipeline_checksum: str | None = None,
+    scientific_inputs: list | None = None,
 ) -> str:
     """Store a full-analysis result under its computation identity key."""
     key = compute_identity_lookup(
@@ -913,6 +926,7 @@ def remember_computation(
         engine_version,
         engine_name=engine_name,
         pipeline_checksum=pipeline_checksum,
+        scientific_inputs=scientific_inputs,
     )
     sidecar = dict(meta)
     sidecar.setdefault("stage_name", "computation")
@@ -922,6 +936,8 @@ def remember_computation(
     sidecar["engine_name"] = engine_name
     if pipeline_checksum is not None:
         sidecar["pipeline_checksum"] = pipeline_checksum
+    if scientific_inputs is not None:
+        sidecar["scientific_inputs"] = scientific_inputs
     sidecar["cache_generation"] = _cache_generation()
     return put_stage(key, meta=sidecar, payload=payload, payload_format=payload_format)
 

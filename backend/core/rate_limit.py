@@ -2,7 +2,7 @@ import logging
 
 from fastapi import HTTPException, Request
 
-from backend.core.cache import redis_client
+from backend.core.cache import get_async_redis_client
 
 logger = logging.getLogger("backend.rate_limit")
 
@@ -17,11 +17,12 @@ def _build_rate_limit_exception(ttl: int) -> HTTPException:
 
 async def check_rate_limit(key: str, max_attempts: int, window_seconds: int) -> None:
     try:
-        count = await redis_client.incr(key)
+        client = get_async_redis_client()
+        count = await client.incr(key)
         if count == 1:
-            await redis_client.expire(key, window_seconds)
+            await client.expire(key, window_seconds)
         if count > max_attempts:
-            ttl = await redis_client.ttl(key)
+            ttl = await client.ttl(key)
             raise _build_rate_limit_exception(ttl)
     except HTTPException:
         raise
@@ -31,11 +32,12 @@ async def check_rate_limit(key: str, max_attempts: int, window_seconds: int) -> 
 
 async def enforce_rate_limit(key: str, max_attempts: int) -> None:
     try:
-        count = await redis_client.get(key)
+        client = get_async_redis_client()
+        count = await client.get(key)
         if count is None:
             return
         if int(count) > max_attempts:
-            ttl = await redis_client.ttl(key)
+            ttl = await client.ttl(key)
             raise _build_rate_limit_exception(ttl)
     except HTTPException:
         raise
@@ -45,9 +47,10 @@ async def enforce_rate_limit(key: str, max_attempts: int) -> None:
 
 async def increment_rate_limit(key: str, window_seconds: int) -> int:
     try:
-        count = await redis_client.incr(key)
+        client = get_async_redis_client()
+        count = await client.incr(key)
         if count == 1:
-            await redis_client.expire(key, window_seconds)
+            await client.expire(key, window_seconds)
         return count
     except Exception:
         logger.warning("rate limit increment skipped for key=%s", key, exc_info=True)
@@ -56,7 +59,7 @@ async def increment_rate_limit(key: str, window_seconds: int) -> int:
 
 async def clear_rate_limit(key: str) -> None:
     try:
-        await redis_client.delete(key)
+        await get_async_redis_client().delete(key)
     except Exception:
         logger.warning("rate limit clear skipped for key=%s", key, exc_info=True)
 

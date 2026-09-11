@@ -82,6 +82,7 @@ def is_idempotent_hit(
     engine_version: str = ENGINE_VERSION,
     engine_name: str = "python",
     pipeline_checksum: str | None = None,
+    scientific_inputs: list | None = None,
     stage_cache_get: Callable[[str], Any] | None = None,
 ) -> str | None:
     """Return computation identity when an identical cached result exists."""
@@ -91,6 +92,7 @@ def is_idempotent_hit(
         engine_version=engine_version,
         engine_name=engine_name,
         pipeline_checksum=pipeline_checksum,
+        scientific_inputs=scientific_inputs,
     )
     getter = stage_cache_get
     if getter is None:

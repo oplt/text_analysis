@@ -1,8 +1,12 @@
-"""Controlled Rscript runner with time, output, and cleanup limits."""
+"""Controlled Rscript runner with time, output, and cleanup limits.
+
+Hard memory/CPU/PID isolation for the dedicated R worker is applied at the
+container/cgroup layer (Compose/K8s), not via ``preexec_fn`` rlimits in this
+multi-threaded Celery process. See ``resource_isolation.effective_resource_limits``.
+"""
 
 from __future__ import annotations
 
-import hashlib
 import logging
 import os
 import selectors
@@ -10,6 +14,7 @@ import shutil
 import signal
 import subprocess
 import time
+from contextlib import suppress
 from pathlib import Path
 
 from backend.core.config import settings
@@ -50,10 +55,8 @@ def _kill_process_group(proc: subprocess.Popen[bytes]) -> None:
     try:
         os.killpg(proc.pid, signal.SIGKILL)
     except (ProcessLookupError, PermissionError, OSError):
-        try:
+        with suppress(OSError):
             proc.kill()
-        except OSError:
-            pass
 
 
 def _append_bounded(chunks: list[bytes], total: int, data: bytes, limit: int) -> int:
@@ -120,33 +123,12 @@ def _sanitize_stderr_for_logs(stderr: str) -> str:
 
 
 def _persist_job_artifacts(bundle: RJobBundle, result: AnalysisResult) -> AnalysisResult:
-    """Move durable R artifacts out of the ephemeral job directory before cleanup."""
-    artifacts_dir = bundle.workdir / "artifacts"
-    if not artifacts_dir.is_dir():
-        return result
-    durable_root = (
-        Path(settings.RESEARCH_R_WORK_DIR).expanduser() / "artifacts" / bundle.workdir.name
+    """Move durable R artifacts into shared application storage before cleanup."""
+    from backend.modules.text_research.infrastructure.r_runtime.artifacts import (
+        collect_and_persist_r_artifacts,
     )
-    durable_root.mkdir(parents=True, exist_ok=True)
-    persisted: list[dict] = list(result.artifacts)
-    for path in sorted(artifacts_dir.rglob("*")):
-        if not path.is_file():
-            continue
-        relative = path.relative_to(artifacts_dir)
-        target = durable_root / relative
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(path, target)
-        digest = hashlib.sha256(target.read_bytes()).hexdigest()
-        persisted.append(
-            {
-                "kind": "r_artifact",
-                "name": relative.as_posix(),
-                "path": str(target),
-                "sha256": digest,
-                "bytes": target.stat().st_size,
-            }
-        )
-    return result.model_copy(update={"artifacts": persisted})
+
+    return collect_and_persist_r_artifacts(bundle, result)
 
 
 def run_r_job(bundle: RJobBundle, *, expected_engine_version: str) -> AnalysisResult:
@@ -155,8 +137,31 @@ def run_r_job(bundle: RJobBundle, *, expected_engine_version: str) -> AnalysisRe
     try:
         if not r_runtime_available():
             raise RRuntimeUnavailable("R analysis runtime is not available")
+        try:
+            from backend.modules.text_research.infrastructure.resource_isolation import (
+                effective_resource_limits,
+            )
+
+            limits = effective_resource_limits()
+            logger.info(
+                "R job start run_id=%s job=%s resource_limits=%s",
+                bundle.analysis_run_id,
+                bundle.workdir.name,
+                {
+                    "enforcement": limits.get("enforcement"),
+                    "celery_concurrency": limits.get("celery_concurrency"),
+                    "memory_mb": limits.get("memory_mb") or limits.get("configured_memory_limit"),
+                    "cpu_cores": limits.get("cpu_cores") or limits.get("configured_cpu_limit"),
+                    "pids_max": limits.get("pids_max") or limits.get("configured_pids_limit"),
+                    "timeout_seconds": limits.get("timeout_seconds"),
+                },
+            )
+        except Exception:  # noqa: BLE001
+            logger.debug("Unable to resolve R worker resource_limits for logging", exc_info=True)
         max_bytes = settings.RESEARCH_R_MAX_OUTPUT_MB * 1024 * 1024
         try:
+            # start_new_session → process-group kill on timeout. Do not add
+            # preexec_fn rlimits here; container cgroups own hard isolation.
             proc = subprocess.Popen(
                 [
                     settings.RESEARCH_RSCRIPT_PATH,
@@ -182,7 +187,8 @@ def run_r_job(bundle: RJobBundle, *, expected_engine_version: str) -> AnalysisRe
         stderr_text = stderr_raw.decode("utf-8", errors="replace")
         if stderr_text:
             logger.warning(
-                "R stderr job=%s exit=%s detail=%s",
+                "R stderr run_id=%s job=%s exit=%s detail=%s",
+                bundle.analysis_run_id,
                 bundle.workdir.name,
                 proc.returncode,
                 _sanitize_stderr_for_logs(stderr_text)[:2048],
@@ -190,7 +196,7 @@ def run_r_job(bundle: RJobBundle, *, expected_engine_version: str) -> AnalysisRe
         if proc.returncode != 0:
             raise RExecutionFailed(
                 f"{_USER_ERROR_CODE}: R analysis failed (exit code {proc.returncode})",
-                run_id=bundle.workdir.name,
+                run_id=bundle.analysis_run_id,
                 exit_code=proc.returncode,
             )
 
@@ -204,7 +210,20 @@ def run_r_job(bundle: RJobBundle, *, expected_engine_version: str) -> AnalysisRe
             expected_identity=expected_identity,
             max_bytes=max_bytes,
         )
-        return _persist_job_artifacts(bundle, result)
+        try:
+            return _persist_job_artifacts(bundle, result)
+        except Exception as exc:
+            from backend.modules.text_research.infrastructure.r_runtime.artifacts import (
+                RArtifactSecurityError,
+            )
+
+            if isinstance(exc, RArtifactSecurityError):
+                raise RExecutionFailed(
+                    f"{_USER_ERROR_CODE}: {exc}",
+                    run_id=bundle.analysis_run_id,
+                    exit_code=proc.returncode if proc is not None else None,
+                ) from exc
+            raise
     finally:
         if proc is not None and proc.poll() is None:
             _kill_process_group(proc)

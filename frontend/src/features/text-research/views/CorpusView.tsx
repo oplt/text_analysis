@@ -55,8 +55,7 @@ import type { CorpusDocument } from "../types";
 
 const PAGE_SIZE = 25;
 
-const CORPUS_TABS = ["management", "prepare", "documents"] as const;
-type CorpusTab = (typeof CORPUS_TABS)[number];
+type CorpusTab = "management" | "prepare" | "documents";
 
 const CORPUS_TAB_ITEMS: Array<{ value: CorpusTab; label: string }> = [
     { value: "management", label: "Corpus management" },

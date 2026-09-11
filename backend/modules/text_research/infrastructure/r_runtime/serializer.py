@@ -7,10 +7,16 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from backend.core.config import settings
+from backend.modules.text_research.domain.analysis_result import (
+    build_analysis_identity,
+    build_scientific_inputs,
+)
 from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
 from backend.modules.text_research.domain.prepared_corpus import PreparedCorpusArtifact
 from backend.modules.text_research.infrastructure.parquet_artifacts import (
+    DEFAULT_PARQUET_ROW_BATCH,
     parquet_available,
+    save_token_table,
     save_unit_table,
 )
 from backend.modules.text_research.infrastructure.r_runtime.manifest import (
@@ -24,22 +30,7 @@ class RJobBundle:
     workdir: Path
     manifest_path: Path
     result_path: Path
-
-
-def _token_columns(
-    unit_ids: tuple[str, ...] | list[str],
-    token_sequences: tuple | list,
-) -> dict[str, list]:
-    """Build columnar token arrays without a per-token dict list."""
-    out_unit_ids: list[str] = []
-    positions: list[int] = []
-    tokens: list[str] = []
-    for unit_id, sequence in zip(unit_ids, token_sequences, strict=True):
-        for position, token in enumerate(sequence):
-            out_unit_ids.append(unit_id)
-            positions.append(position)
-            tokens.append(token)
-    return {"unit_id": out_unit_ids, "token_position": positions, "token": tokens}
+    analysis_run_id: str
 
 
 def serialize_r_job(
@@ -49,6 +40,7 @@ def serialize_r_job(
     comparison_prepared: PreparedCorpusArtifact | None = None,
     run_id: str,
     engine_version: str,
+    parquet_batch_size: int = DEFAULT_PARQUET_ROW_BATCH,
 ) -> RJobBundle:
     """Create tabular R inputs; no user field is ever interpreted as code."""
     if not parquet_available():
@@ -68,14 +60,22 @@ def serialize_r_job(
             "original_text": list(prepared.original_units),
             "cleaned_text": list(prepared.cleaned_units),
         },
+        chunk_size=parquet_batch_size,
     )
-    save_unit_table(tokens_path, columns=_token_columns(prepared.unit_ids, prepared.token_sequences))
+    # Token rows can be millions — stream bounded batches, never full column lists.
+    save_token_table(
+        tokens_path,
+        prepared.unit_ids,
+        prepared.token_sequences,
+        batch_size=parquet_batch_size,
+    )
     save_unit_table(
         metadata_path,
-        [
+        (
             {"unit_id": unit_id, **prepared.metadata_by_unit.get(unit_id, {})}
             for unit_id in prepared.unit_ids
-        ],
+        ),
+        chunk_size=parquet_batch_size,
     )
     result_path = workdir / "result.json"
     manifest_path = workdir / "manifest.json"
@@ -93,12 +93,13 @@ def serialize_r_job(
                 "unit_id": list(comparison_prepared.unit_ids),
                 "document_id": list(comparison_prepared.document_ids),
             },
+            chunk_size=parquet_batch_size,
         )
-        save_unit_table(
+        save_token_table(
             tokens_b_path,
-            columns=_token_columns(
-                comparison_prepared.unit_ids, comparison_prepared.token_sequences
-            ),
+            comparison_prepared.unit_ids,
+            comparison_prepared.token_sequences,
+            batch_size=parquet_batch_size,
         )
         inputs.update({"units_b": units_b_path.name, "tokens_b": tokens_b_path.name})
     write_manifest(
@@ -118,33 +119,32 @@ def serialize_r_job(
                 else None
             ),
             "random_seed": specification.random_seed,
-            "identity": {
-                "spec_hash": specification.spec_hash(),
-                "corpus_checksum": prepared.corpus_checksum,
-                "pipeline_checksum": prepared.pipeline_checksum,
-                "engine_name": "r",
-                "engine_version": engine_version,
-                **(
-                    {
-                        "inputs": [
-                            {
-                                "role": "target",
-                                "corpus_checksum": prepared.corpus_checksum,
-                                "pipeline_checksum": prepared.pipeline_checksum,
-                            },
-                            {
-                                "role": "reference",
-                                "corpus_checksum": comparison_prepared.corpus_checksum,
-                                "pipeline_checksum": comparison_prepared.pipeline_checksum,
-                            },
-                        ]
-                    }
-                    if comparison_prepared is not None
-                    else {}
+            "identity": build_analysis_identity(
+                spec_hash=specification.spec_hash(),
+                engine_name="r",
+                engine_version=engine_version,
+                inputs=build_scientific_inputs(
+                    target_corpus_checksum=prepared.corpus_checksum,
+                    target_pipeline_checksum=prepared.pipeline_checksum,
+                    reference_corpus_checksum=(
+                        comparison_prepared.corpus_checksum
+                        if comparison_prepared is not None
+                        else None
+                    ),
+                    reference_pipeline_checksum=(
+                        comparison_prepared.pipeline_checksum
+                        if comparison_prepared is not None
+                        else None
+                    ),
                 ),
-            },
+            ).model_dump(mode="json"),
             "inputs": inputs,
             "output": {"result": result_path.name, "artifacts_directory": "artifacts"},
         },
     )
-    return RJobBundle(workdir=workdir, manifest_path=manifest_path, result_path=result_path)
+    return RJobBundle(
+        workdir=workdir,
+        manifest_path=manifest_path,
+        result_path=result_path,
+        analysis_run_id=run_id,
+    )

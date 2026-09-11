@@ -94,8 +94,40 @@ class ValidationSpec(BaseModel):
 
 
 class ExecutionSpec(BaseModel):
-    cpu: int | None = None
-    memory_mb: int | None = None
+    """Requested resource *hints* for planning/UI — advisory only.
+
+    These fields are **not** enforced by the analysis runtime. Hard isolation for
+    the dedicated R worker comes from container/cgroup limits (memory, CPU,
+    PIDs) and Celery ``--concurrency``, recorded under provenance
+    ``resource_limits``. Do not treat ``cpu`` / ``memory_mb`` as guarantees.
+    """
+
+    cpu: int | None = Field(
+        default=None,
+        description="Advisory CPU hint (not enforced; container cgroup is authoritative).",
+    )
+    memory_mb: int | None = Field(
+        default=None,
+        description=(
+            "Advisory memory hint in MiB (not enforced; container cgroup is authoritative)."
+        ),
+    )
+
+
+# Server-owned family labels. Clients may omit ``implementation`` or send the
+# canonical value; arbitrary strings must not participate in scientific identity.
+CANONICAL_IMPLEMENTATION_BY_RUNTIME: dict[str, str] = {
+    "python": "python",
+    "r": "quanteda",
+}
+
+
+def canonical_implementation_for(runtime: str) -> str:
+    """Return the sole allowed implementation family for a runtime."""
+    try:
+        return CANONICAL_IMPLEMENTATION_BY_RUNTIME[runtime]
+    except KeyError as exc:
+        raise ValueError(f"unsupported engine.runtime: {runtime!r}") from exc
 
 
 class EngineSpec(BaseModel):
@@ -105,14 +137,30 @@ class EngineSpec(BaseModel):
     intentionally not implemented yet: both initial engines consume the same
     prepared token sequences.
 
-    ``implementation`` is an optional *family* hint (e.g. ``quanteda``), not a
-    version.  Engine version strings are always resolved server-side from the
-    registered execution engine.
+    ``implementation`` is an optional *family* hint kept for backward
+    compatibility.  It is always canonicalized server-side (Python →
+    ``python``, R → ``quanteda``).  Unknown values are rejected.  Engine
+    *version* strings are resolved from the registered execution engine.
     """
 
     runtime: Literal["python", "r"] = "python"
     implementation: str | None = None
     preprocessing_mode: Literal["standardized", "native"] = "standardized"
+
+    @model_validator(mode="after")
+    def _canonicalize_implementation(self) -> EngineSpec:
+        canonical = canonical_implementation_for(self.runtime)
+        raw = self.implementation
+        if raw is None or not str(raw).strip():
+            self.implementation = canonical
+            return self
+        if str(raw).strip() != canonical:
+            raise ValueError(
+                f"engine.implementation {raw!r} is incompatible with "
+                f"runtime {self.runtime!r}; expected {canonical!r}"
+            )
+        self.implementation = canonical
+        return self
 
 
 class AnalysisBlock(BaseModel):

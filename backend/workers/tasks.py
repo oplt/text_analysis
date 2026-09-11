@@ -4,6 +4,7 @@ from backend.modules.text_research.domain.exceptions import NON_RETRYABLE_RESEAR
 from backend.modules.text_research.infrastructure.execution_policy import retry_policy_for
 from backend.modules.text_research.workers import (
     classifier_training_sync,
+    engine_comparison_finalize_sync,
     engine_comparison_sync,
     prediction_sync,
     quantitative_analysis_sync,
@@ -201,11 +202,15 @@ def research_quantitative_analysis_task(self, *, run_id: str, user_id: str) -> N
     **_research_task_options("research_cpu", allow_deterministic_retry=False),
 )
 def research_r_quantitative_analysis_task(self, *, run_id: str, user_id: str) -> None:
+    from backend.core.config import settings
     from backend.modules.text_research.infrastructure.r_runtime.capabilities import (
         refresh_r_worker_heartbeat_if_local_runtime_ready,
     )
 
-    refresh_r_worker_heartbeat_if_local_runtime_ready()
+    refresh_r_worker_heartbeat_if_local_runtime_ready(
+        worker_id=getattr(self.request, "hostname", None),
+        queues=[settings.RESEARCH_QUEUE_R],
+    )
     r_quantitative_analysis_sync(run_id=run_id, user_id=user_id)
 
 
@@ -215,3 +220,11 @@ def research_r_quantitative_analysis_task(self, *, run_id: str, user_id: str) ->
 )
 def research_engine_comparison_task(self, *, run_id: str, user_id: str) -> None:
     engine_comparison_sync(run_id=run_id, user_id=user_id)
+
+
+@celery_app.task(
+    name="backend.workers.tasks.research_engine_comparison_finalize_task",
+    **_research_task_options("research_light", allow_deterministic_retry=True),
+)
+def research_engine_comparison_finalize_task(self, *, parent_run_id: str, user_id: str) -> None:
+    engine_comparison_finalize_sync(parent_run_id=parent_run_id, user_id=user_id)

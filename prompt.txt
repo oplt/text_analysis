@@ -1,0 +1,335 @@
+## Objective
+
+Finish the R-engine implementation so that it is production-safe, research-reproducible, operationally deployable, scientifically comparable with the Python engine, and fully integrated into the existing execution/cache/provenance/artifact/frontend infrastructure.
+
+Do not implement superficial workarounds solely to make tests green.
+
+Do not:
+
+* weaken tests;
+* skip failing CI jobs;
+* increase Playwright timeouts to hide application failures;
+* disable Redis/rate limiting to avoid concurrency defects;
+* suppress Pydantic validation;
+* bypass the generic execution-engine abstraction;
+* silently ignore unsupported R options;
+* leave worker-local filesystem paths as durable research artifacts;
+* claim parity based only on previews;
+* introduce a second artifact/cache/provenance system when the repository already has one.
+
+Preserve existing Python behavior and backward compatibility unless a change is explicitly needed to correct incorrect scientific identity or execution semantics.
+
+At completion, all current quality gates must be green.
+
+---
+
+# 1. P0 — Repair the currently broken HEAD before doing further refactoring
+
+
+**DONE.** AnalysisIdentity Literal + regression tests; Ruff/ESLint green (`make check`).
+
+# 2. P0 — Eliminate cross-event-loop reuse of the global async Redis client
+
+
+**DONE.** Per-loop `get_async_redis_client`; run-events never borrow another loop; isolation regression.
+
+# 3. P0 — Make R-worker readiness a real continuously maintained liveness signal
+
+
+**DONE.** Per-worker Redis heartbeat TTL 90s / 30s idle timer in logging_hooks.
+
+# 4. P0 — Enforce readiness when submitting an R analysis
+
+
+**DONE.** Queued R requires live worker (503); inline requires local runtime_ready.
+
+# 5. P0 — Finish frontend R readiness handling
+
+
+**DONE.** Frontend unavailable vs not_ready; no useEffect form wipe; submit-time R constraints.
+
+# 6. P0 — Fix the dedicated R-worker deployment configuration end-to-end
+
+
+**DONE.** Compose worker-r + shared env; CI image smoke + Redis heartbeat smoke.
+
+# 7. P1 — Remove client-controlled implementation identity completely
+
+
+**DONE.** Server-canonical EngineSpec implementation; clients cannot set identity.
+
+# 8. P1 — Finish multi-input identity for keyness across every layer
+
+
+**DONE.** Keyness multi-input identity across engines/cache/provenance/tests.
+
+# 9. P1 — Replace blocking engine-comparison polling with event-driven finalization
+
+
+**DONE.** Event-driven engine comparison finalize (no parent poll).
+
+# 10. P1 — Make R-generated artifacts durable and accessible outside the worker container
+
+
+**DONE.** Durable R artifacts via ArtifactStore; workdir wiped; path/size bounds.
+
+# 11. P1 — Make DFM parity/comparison prove equality of the full matrix
+
+
+**DONE.** Full DFM matrix checksum equality; preview-only → inconclusive.
+
+# 12. P1 — Make R Parquet serialization genuinely streaming/bounded-memory
+
+
+**DONE.** Streaming Parquet batch writers for R serialization.
+
+# 13. P1 — Preserve the actual AnalysisRun ID through the R subprocess boundary
+
+
+**DONE.** AnalysisRun id preserved through R boundary (never workdir-inferred).
+
+# 14. P1 — Finish StageRunner timing/provenance finalization
+
+
+**DONE.** StageRunner timings finalized into manifest after compute stages.
+
+# 15. P2 — Extend the user-facing engine comparator to every scientifically supported R analysis
+
+
+**DONE.** Comparator + UI for all six R analyses with explicit tolerances.
+
+# 16. P2 — Complete R dependency reproducibility
+
+
+**DONE.** Full renv.lock restore at build; RESEARCH_R_NO_INSTALL; lock checksum in provenance.
+
+# 17. P2 — Test the production R worker image, not just an equivalent host environment
+
+**DONE.** Workflow builds `r_engine/Dockerfile`, runs smoke/testthat/parity inside that image.
+Path triggers expanded; Buildx GHA cache scoped by R 4.4.0 + `renv.lock` + `uv.lock`.
+Host rocker restore parity job removed. Docs note in `docs/r-quanteda-architecture.md`.
+
+---
+
+# 18. P2 — Add real resource isolation for the dedicated R worker
+
+**DONE.** Compose `worker-r`: `mem_limit` / `cpus` / `pids_limit` + conservative
+`CELERY_R_CONCURRENCY=1`. Provenance stamps `resource_limits` (cgroup + configured).
+`ExecutionSpec.cpu` / `memory_mb` documented as advisory only (not enforced).
+No `preexec_fn` rlimits in the Celery R runner.
+
+---
+
+# 19. P2 — Make engine registry resolution authoritative
+
+**DONE.** `resolve_execution_engine` / `list_execution_engines` are the single
+source for runtime, implementation, version, supported analyses, and factory.
+Compiler, StageRunner, `/analysis-engines`, R capability heartbeats, and
+provenance stamp engine metadata through that resolver (no ad-hoc version drift).
+
+---
+
+# 20. Repair and strengthen the current Playwright research workflow
+
+**DONE.** `waitForRun` fails immediately on terminal failure with run id /
+`error_message` / `progress_stage` (no silent poll-to-timeout). Redis loop
+isolation regression fixed (settings mock no longer breaks worker runtime);
+sync run-event publish uses worker loop when no API loop. AnalysisIdentity
+Pydantic schema/round-trip tests strengthened. Optional R E2E
+(`E2E_R_ENABLED=1`) covers corpus → R frequencies → provenance runtime `r`.
+
+---
+
+# Definition of Done
+
+Do not report this work as complete until all of the following are true.
+
+### Backend correctness
+
+* `AnalysisIdentity` works normally under Pydantic.
+* Existing Python analyses remain functional.
+* All research unit tests pass.
+* Cache identity is engine-aware and multi-input-aware.
+* Changing only keyness reference corpus B changes computation identity.
+* R runtime errors remain sanitized.
+* Deterministic R failures are not retried.
+* Async Redis clients are never shared across event loops.
+* No eager-worker operation can corrupt FastAPI Redis state.
+
+### R worker
+
+* actual Docker image builds;
+* Celery app imports;
+* worker consumes only intended R queue;
+* idle worker continuously maintains readiness;
+* ordinary workers cannot overwrite R readiness;
+* API can detect worker disappearance;
+* queued R requests require a live worker;
+* worker-local R runtime validation remains in place.
+
+### Scientific correctness
+
+* standardized preprocessing remains shared;
+* R DFM never retokenizes standardized tokens;
+* DFM full matrix equality is actually verified;
+* KWIC occurrence multiplicity/spans are preserved;
+* dictionary document prevalence remains document-based;
+* keyness tracks both scientific inputs;
+* dictionary/keyness/co-occurrence parity tests remain;
+* all numerical comparison tolerances are explicit.
+
+### Reproducibility
+
+* spec 2.0 compatibility remains stable;
+* current spec identity is deterministic;
+* implementation/version is server-authoritative;
+* R lock contains reproducible dependency resolution;
+* provenance records:
+
+  * git SHA;
+  * spec hash;
+  * all scientific input checksums;
+  * preprocessing identity;
+  * authoritative engine version;
+  * R/runtime package versions;
+  * R lock checksum;
+  * stage timing;
+  * run ID;
+  * artifact checksums.
+
+### Artifacts
+
+* full R DFM artifacts survive worker-container termination;
+* artifacts use the existing durable artifact/object-storage abstraction;
+* no internal ephemeral worker path is required by API consumers;
+* artifact hashing is streaming;
+* file count/size/path boundaries are enforced.
+
+### Frontend
+
+* lint passes;
+* R selector distinguishes unavailable vs worker-not-ready;
+* unsupported R parameters cannot be silently submitted;
+* switching engines does not destroy Python form state;
+* comparison UI never labels a partial DFM comparison “equal”.
+
+### CI
+
+Run the existing repository's exact commands, not approximations.
+
+At minimum verify:
+
+Backend dependency lock.
+
+Backend Ruff check and formatting check.
+
+Complete text-research unit suite.
+
+Relevant worker tests.
+
+Frontend:
+
+* install from lock;
+* ESLint;
+* unit tests;
+* TypeScript build.
+
+R:
+
+* clean `renv::restore`;
+* `renv::status`;
+* R `testthat`;
+* complete Python↔R parity pytest suite.
+
+Infrastructure:
+
+* build R-worker Docker image;
+* run R-worker startup/heartbeat smoke.
+
+End-to-end:
+
+* existing Playwright research workflow passes without timeout inflation.
+
+The aggregate Current-HEAD quality gate must be green.
+
+### Verification (this workspace)
+
+* `make check` — green (Ruff check + format, frontend ESLint, `tsc --noEmit`)
+* `pytest modules/text_research/tests` — **726 passed**, 17 skipped
+* `vitest` analysisEngine — 4 passed
+* CI workflow includes production image build + Redis readiness heartbeat smoke
+* Soft remaining (documented, not blocking): peak-memory Parquet stress optional; deploy image digest pin is documented for operators
+
+---
+
+# Implementation discipline
+
+Work incrementally but continue until the entire task is complete.
+
+After each architectural fix, run the smallest relevant test suite before proceeding.
+
+Do not perform unrelated aesthetic refactors.
+
+Preserve backwards compatibility for stored runs/specifications.
+
+Where a database migration is genuinely required, create a proper Alembic migration rather than modifying old migrations.
+
+Use immutable/content-addressed identity for scientific artifacts.
+
+Use the existing repository abstractions for:
+
+* artifact storage;
+* object storage;
+* execution;
+* provenance;
+* caching;
+* run lifecycle.
+
+Do not add parallel infrastructure unless the existing abstraction fundamentally cannot support the requirement.
+
+Before finishing, search the repository for:
+
+`TODO`
+
+`FIXME`
+
+`in-memory`
+
+`implementation`
+
+`r-quanteda-1`
+
+`research_r`
+
+`redis_client`
+
+`AnalysisIdentity`
+
+`corpus_checksum`
+
+`pipeline_checksum`
+
+`cells_equal`
+
+`artifact_path`
+
+and inspect every relevant occurrence to ensure no legacy R-specific bypass or single-input assumption remains.
+
+---
+
+# Final report required from Codex
+
+When implementation is complete, provide:
+
+1. Exact HEAD SHA reviewed/modified.
+2. Concise summary of every issue fixed.
+3. Files changed grouped by subsystem.
+4. Architecture decisions made.
+5. New/updated tests.
+6. Exact commands run.
+7. Test/lint/build results with pass counts where available.
+8. Docker/R parity verification results.
+9. Any remaining limitation that is deliberately unsupported, with the API/UI explicitly rejecting or disabling it.
+10. Confirmation that no failing quality gate was disabled, skipped, weakened or hidden.
+
+Do not state that the integration is complete while any required CI gate remains red.

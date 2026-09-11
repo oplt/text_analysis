@@ -8,11 +8,14 @@ import {
     createProject,
     freezeDataset,
     getDashboard,
+    getRun,
+    listAnalysisEngines,
     listClassifiers,
     listPredictions,
     listTextUnitIdsFromExport,
     predictWithModel,
     previewDataset,
+    runFrequencies,
     saveAnnotations,
     segmentCorpus,
     seedDemoCorpus,
@@ -26,8 +29,16 @@ import {
 /**
  * Research E2E is stateful and chatty against a shared API IP.
  * Prefer unique users per test; run this file serially (also workers:1 in CI).
+ *
+ * Retries (playwright.config) cover browser flakiness only — waitForRun fails
+ * immediately on terminal application failures with run diagnostics.
  */
 test.describe.configure({ mode: "serial" });
+
+/** Opt-in R path: requires RESEARCH_R_ENABLED + a live research_r worker. */
+const rE2EEnabled = ["1", "true", "yes"].includes(
+    (process.env.E2E_R_ENABLED ?? "").trim().toLowerCase()
+);
 
 function credentialsForTest(testInfo: {
     workerIndex: number;
@@ -184,7 +195,7 @@ test.describe("Text Research workflow", () => {
             });
 
             await page.getByRole("tab", { name: "Classify" }).click();
-            await expect(page.getByText(/Trained models/i )).toBeVisible();
+            await expect(page.getByText(/Trained models/i)).toBeVisible();
             await expect(page.getByText(models[0].name ?? "E2E Classifier")).toBeVisible({
                 timeout: 15_000,
             });
@@ -194,6 +205,87 @@ test.describe("Text Research workflow", () => {
 
             await context.close();
         } finally {
+            await closeApi(api);
+        }
+    });
+
+    test("API frequencies complete with diagnostic polling", async ({ browser }, testInfo) => {
+        // Keep under the file's existing budget — do not inflate timeouts to hide failures.
+        test.setTimeout(90_000);
+        const credentials = credentialsForTest(testInfo);
+        const api = await createAuthenticatedApiContext(browser, credentials, undefined, {
+            provision: true,
+        });
+        try {
+            const project = await createProject(api, `E2E Freq ${Date.now()}`);
+            const corpus = await seedDemoCorpus(api, project.id);
+            const segmentRun = await segmentCorpus(api, corpus.id, "paragraph");
+            if (segmentRun.status !== "completed") {
+                await waitForRun(api, segmentRun.id);
+            }
+            const run = await runFrequencies(api, corpus.id, {
+                unit_type: "paragraph",
+                engine: { runtime: "python" },
+                run_async: true,
+            });
+            expect(run.status).toBe("completed");
+            expect(run.results).toBeTruthy();
+            const persisted = await getRun(api, run.id);
+            expect(persisted.status).toBe("completed");
+            expect(persisted.error_message ?? null).toBeNull();
+        } finally {
+            await closeApi(api);
+        }
+    });
+
+    test("R frequencies when worker ready", async ({ browser }, testInfo) => {
+        test.skip(
+            !rE2EEnabled,
+            "Set E2E_R_ENABLED=1 with RESEARCH_R_ENABLED and a live research_r worker"
+        );
+        test.setTimeout(120_000);
+        const credentials = credentialsForTest(testInfo);
+        const api = await createAuthenticatedApiContext(browser, credentials, undefined, {
+            provision: true,
+        });
+        try {
+            const engines = await listAnalysisEngines(api);
+            const rEngine = engines.engines.find((engine) => engine.name === "r");
+            expect(rEngine, "R engine missing from /analysis-engines").toBeTruthy();
+            expect(rEngine?.available).toBe(true);
+            expect(rEngine?.ready).toBe(true);
+            expect(rEngine?.analyses ?? []).toContain("frequencies");
+
+            const project = await createProject(api, `E2E R ${Date.now()}`);
+            const corpus = await seedDemoCorpus(api, project.id);
+            const segmentRun = await segmentCorpus(api, corpus.id, "paragraph");
+            if (segmentRun.status !== "completed") {
+                await waitForRun(api, segmentRun.id);
+            }
+
+            const run = await runFrequencies(api, corpus.id, {
+                unit_type: "paragraph",
+                engine: { runtime: "r", preprocessing_mode: "standardized" },
+                run_async: true,
+            });
+            expect(run.status).toBe("completed");
+            expect(run.results).toBeTruthy();
+
+            const persisted = await getRun(api, run.id);
+            expect(persisted.status).toBe("completed");
+            const provenance = (
+                persisted.parameters as { provenance?: Record<string, unknown> } | undefined
+            )?.provenance;
+            const analysisSpec = provenance?.analysis_specification as
+                | { engine?: { runtime?: string } }
+                | undefined;
+            expect(
+                analysisSpec?.engine?.runtime,
+                `expected R engine in run ${persisted.id}; provenance keys=${Object.keys(provenance ?? {}).join(",")}`
+            ).toBe("r");
+            expect(String(provenance?.engine_version ?? "")).toMatch(/r-quanteda/);
+            expect(rEngine?.implementation_version).toBeTruthy();
+            expect(Object.keys(persisted.results ?? {}).length).toBeGreaterThan(0);        } finally {
             await closeApi(api);
         }
     });

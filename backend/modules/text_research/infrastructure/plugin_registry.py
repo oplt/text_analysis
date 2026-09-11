@@ -1,8 +1,14 @@
-"""Pluggable registry for research analysis engines and transforms."""
+"""Pluggable registry for research analysis engines and transforms.
+
+Execution engines (Python / R) are resolved through
+:func:`resolve_execution_engine` — the single authoritative source for runtime
+name, implementation family, version, supported analyses, and factory.
+"""
 
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 
 PluginFactory = Callable[..., Any]
@@ -17,6 +23,23 @@ _REGISTRY: dict[str, dict[str, dict[str, Any]]] = {
 }
 
 _BUILTINS_REGISTERED = False
+
+
+@dataclass(frozen=True)
+class ExecutionEngineDescriptor:
+    """Authoritative metadata + factory for one scientific execution runtime."""
+
+    runtime: str
+    implementation: str
+    implementation_version: str
+    supported_analyses: frozenset[str]
+    factory: PluginFactory
+
+    def create(self) -> Any:
+        return self.factory()
+
+    def supports(self, analysis_type: str) -> bool:
+        return analysis_type in self.supported_analyses
 
 
 def register_plugin(
@@ -39,6 +62,14 @@ def get_plugin(kind: str, name: str) -> PluginFactory:
     return bucket[name]["factory"]
 
 
+def get_plugin_metadata(kind: str, name: str) -> dict[str, Any]:
+    """Return registration metadata for a plugin (empty dict when unset)."""
+    bucket = _REGISTRY.get(kind)
+    if bucket is None or name not in bucket:
+        raise KeyError(f"unknown plugin {kind!r}:{name!r}")
+    return dict(bucket[name].get("metadata") or {})
+
+
 def list_plugins(kind: str | None = None) -> dict[str, list[str]]:
     """List registered plugin names, optionally scoped to one kind."""
     if kind is not None:
@@ -51,6 +82,57 @@ def unregister_plugin(kind: str, name: str) -> None:
     bucket = _REGISTRY.get(kind)
     if bucket is not None:
         bucket.pop(name, None)
+
+
+def _descriptor_from_engine_class(engine_cls: type) -> ExecutionEngineDescriptor:
+    analyses = getattr(engine_cls, "supported_analyses", None)
+    if analyses is None:
+        supported: frozenset[str] = frozenset()
+    else:
+        supported = frozenset(analyses)
+    return ExecutionEngineDescriptor(
+        runtime=str(engine_cls.name),
+        implementation=str(engine_cls.implementation),
+        implementation_version=str(engine_cls.implementation_version),
+        supported_analyses=supported,
+        factory=engine_cls,
+    )
+
+
+def resolve_execution_engine(runtime: str) -> ExecutionEngineDescriptor:
+    """Resolve one execution engine through the registry (authoritative).
+
+    Compiler, StageRunner, capability advertising, and provenance must use this
+    (or :func:`list_execution_engines`) rather than hard-coding version strings
+    or importing engine classes ad hoc.
+    """
+    ensure_builtins_registered()
+    try:
+        factory = get_plugin("execution_engine", runtime)
+    except KeyError as exc:
+        raise KeyError(f"unknown execution engine runtime: {runtime!r}") from exc
+    meta = get_plugin_metadata("execution_engine", runtime)
+    # Prefer live class attributes (single source on the engine) when present.
+    if hasattr(factory, "name") and hasattr(factory, "implementation_version"):
+        return _descriptor_from_engine_class(factory)
+    analyses = meta.get("supported_analyses") or ()
+    return ExecutionEngineDescriptor(
+        runtime=str(meta.get("runtime") or runtime),
+        implementation=str(meta.get("implementation") or runtime),
+        implementation_version=str(meta.get("implementation_version") or ""),
+        supported_analyses=frozenset(analyses),
+        factory=factory,
+    )
+
+
+def list_execution_engines() -> list[ExecutionEngineDescriptor]:
+    """Return descriptors for every registered execution runtime (stable order)."""
+    ensure_builtins_registered()
+    names = list_plugins("execution_engine").get("execution_engine") or []
+    preferred = ("python", "r")
+    ordered = [name for name in preferred if name in names]
+    ordered.extend(sorted(name for name in names if name not in preferred))
+    return [resolve_execution_engine(name) for name in ordered]
 
 
 def register_builtins() -> None:
@@ -68,8 +150,19 @@ def register_builtins() -> None:
     from backend.modules.text_research.infrastructure.pipeline_compiler import compile_plan
     from backend.modules.text_research.infrastructure.topic_engines import get_topic_engine
 
-    register_plugin("execution_engine", "python", PythonAnalysisEngine)
-    register_plugin("execution_engine", "r", RAnalysisEngine)
+    for engine_cls in (PythonAnalysisEngine, RAnalysisEngine):
+        descriptor = _descriptor_from_engine_class(engine_cls)
+        register_plugin(
+            "execution_engine",
+            descriptor.runtime,
+            descriptor.factory,
+            metadata={
+                "runtime": descriptor.runtime,
+                "implementation": descriptor.implementation,
+                "implementation_version": descriptor.implementation_version,
+                "supported_analyses": sorted(descriptor.supported_analyses),
+            },
+        )
 
     for engine_name in ("sklearn_lda", "sklearn_nmf", "bertopic", "semantic_stack"):
         register_plugin(

@@ -15,6 +15,7 @@ from celery.signals import (
     task_prerun,
     worker_process_init,
     worker_ready,
+    worker_shutdown,
 )
 
 from backend.core.config import settings
@@ -25,6 +26,7 @@ logger = logging.getLogger("backend.worker")
 
 _task_started_at: dict[str, float] = {}
 _task_correlation_tokens: dict[str, Any] = {}
+_r_worker_heartbeat_handles: dict[str, Any] = {}
 
 CORRELATION_HEADER = "correlation_id"
 ENQUEUED_AT_HEADER = "enqueued_at"
@@ -44,6 +46,49 @@ def _safe_worker_metrics():
         return None
 
 
+def _worker_queue_names(sender: Any) -> list[str]:
+    """Read queues from the live Celery consumer, rather than configuration intent."""
+    consumer = getattr(sender, "task_consumer", sender)
+    queues = getattr(consumer, "queues", ())
+    values = queues.values() if isinstance(queues, dict) else queues
+    return sorted({str(getattr(queue, "name", queue)) for queue in values})
+
+
+def _worker_id(sender: Any) -> str | None:
+    hostname = getattr(sender, "hostname", None)
+    return str(hostname) if hostname else None
+
+
+def _start_r_worker_heartbeat(sender: Any) -> None:
+    from backend.modules.text_research.infrastructure.r_runtime.capabilities import (
+        R_WORKER_HEARTBEAT_INTERVAL_SECONDS,
+        r_feature_enabled,
+        refresh_r_worker_heartbeat_if_local_runtime_ready,
+        worker_consumes_r_queue,
+        worker_id_for_runtime,
+    )
+
+    queues = _worker_queue_names(sender)
+    if not r_feature_enabled() or not worker_consumes_r_queue(queues):
+        return
+    worker_id = worker_id_for_runtime(_worker_id(sender))
+    ready = refresh_r_worker_heartbeat_if_local_runtime_ready(
+        worker_id=worker_id,
+        queues=queues,
+    )
+    logger.info("R worker capability heartbeat published worker=%s ready=%s", worker_id, ready)
+
+    timer = getattr(sender, "timer", None)
+    if timer is None or worker_id in _r_worker_heartbeat_handles:
+        return
+    _r_worker_heartbeat_handles[worker_id] = timer.call_repeatedly(
+        R_WORKER_HEARTBEAT_INTERVAL_SECONDS,
+        refresh_r_worker_heartbeat_if_local_runtime_ready,
+        kwargs={"worker_id": worker_id, "queues": queues},
+        priority=10,
+    )
+
+
 @worker_process_init.connect
 def configure_worker_process(**_kwargs) -> None:
     """Per-child init: cap BLAS/OpenMP/sklearn/joblib to avoid nested oversubscription."""
@@ -59,7 +104,7 @@ def configure_worker_process(**_kwargs) -> None:
 
 
 @worker_ready.connect
-def configure_worker_logging(**_kwargs) -> None:
+def configure_worker_logging(sender: Any = None, **_kwargs) -> None:
     setup_logging()
     from backend.workers.parallelism import (
         configure_worker_parallelism,
@@ -80,14 +125,26 @@ def configure_worker_logging(**_kwargs) -> None:
         },
     )
     with contextlib.suppress(Exception):
+        _start_r_worker_heartbeat(sender)
+
+
+@worker_shutdown.connect
+def close_worker_async_runtime(**_kwargs: Any) -> None:
+    """Release clients owned by the dedicated worker event loop on exit."""
+    with contextlib.suppress(Exception):
         from backend.modules.text_research.infrastructure.r_runtime.capabilities import (
-            refresh_r_worker_heartbeat_if_local_runtime_ready,
-            r_feature_enabled,
+            remove_r_worker_capabilities,
         )
 
-        if r_feature_enabled():
-            ready = refresh_r_worker_heartbeat_if_local_runtime_ready()
-            logger.info("R worker capability heartbeat published ready=%s", ready)
+        for worker_id, handle in _r_worker_heartbeat_handles.items():
+            with contextlib.suppress(Exception):
+                handle.cancel()
+            remove_r_worker_capabilities(worker_id)
+        _r_worker_heartbeat_handles.clear()
+    with contextlib.suppress(Exception):
+        from backend.workers.async_dispatch import shutdown_worker_async_runtime
+
+        shutdown_worker_async_runtime()
 
 
 @before_task_publish.connect

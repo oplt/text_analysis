@@ -145,14 +145,12 @@ def _publish_research_run_events_after_commit(session: Any) -> None:
     events = session.info.pop("research_run_events", [])
     if not events:
         return
-    from backend.modules.text_research.infrastructure.run_events import publish_run_event_envelope
+    from backend.modules.text_research.infrastructure.run_events import (
+        _schedule_run_event_publish,
+    )
 
-    try:
-        loop = __import__("asyncio").get_running_loop()
-    except RuntimeError:
-        return
     for envelope in events:
-        loop.create_task(publish_run_event_envelope(envelope))
+        _schedule_run_event_publish(envelope)
 
 
 @event.listens_for(AsyncSession.sync_session_class, "after_rollback")

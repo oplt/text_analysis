@@ -21,7 +21,6 @@ from pathlib import Path
 from typing import Any
 
 from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
-from backend.modules.text_research.infrastructure.pipeline_compiler import ENGINE_VERSION
 from backend.modules.text_research.infrastructure.preprocessing import (
     PREPROCESSING_IMPLEMENTATION,
     PREPROCESSING_IMPLEMENTATION_VERSION,
@@ -147,7 +146,7 @@ def python_version() -> str:
 
 
 def package_lock_checksum(*, search_roots: list[Path] | None = None) -> dict[str, Any] | None:
-    """Hash the first dependency lockfile found (uv.lock preferred).
+    """Hash the first Python dependency lockfile found (uv.lock preferred).
 
     Returns ``None`` when no lockfile exists. Phase 14 commits ``backend/uv.lock``;
     CI installs with ``uv sync --frozen``.
@@ -184,7 +183,51 @@ def package_lock_checksum(*, search_roots: list[Path] | None = None) -> dict[str
     return None
 
 
+def r_package_lock_checksum(*, search_roots: list[Path] | None = None) -> dict[str, Any] | None:
+    """Hash the committed R ``r_engine/renv.lock`` used by the quanteda worker."""
+    roots = list(search_roots or [])
+    if not roots:
+        here = Path(__file__).resolve()
+        repo_root = here.parents[4] if len(here.parents) >= 5 else Path.cwd()
+        roots = [repo_root, repo_root / "r_engine", Path.cwd(), Path.cwd() / "r_engine"]
+
+    seen: set[Path] = set()
+    for root in roots:
+        try:
+            root = root.resolve()
+        except Exception:  # noqa: BLE001
+            continue
+        if root in seen or not root.is_dir():
+            continue
+        seen.add(root)
+        for path in (root / "renv.lock", root / "r_engine" / "renv.lock"):
+            try:
+                if not path.is_file():
+                    continue
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                rel = "r_engine/renv.lock" if path.parent.name == "r_engine" else "renv.lock"
+                return {
+                    "path": rel,
+                    "sha256": digest,
+                    "bytes": path.stat().st_size,
+                }
+            except Exception:  # noqa: BLE001
+                continue
+    return None
+
+
 def runtime_environment() -> dict[str, Any]:
+    from backend.modules.text_research.infrastructure.plugin_registry import (
+        resolve_execution_engine,
+    )
+    from backend.modules.text_research.infrastructure.resource_isolation import (
+        effective_resource_limits,
+    )
+
+    # Default runtime stamp is the Python execution engine (compatibility path).
+    # R runs override via StageRunner / attach_provenance with plan.engine_version.
+    python_engine = resolve_execution_engine("python")
+
     return {
         "package_versions": library_versions(),
         "library_versions": library_versions(),
@@ -192,11 +235,15 @@ def runtime_environment() -> dict[str, Any]:
         "application_version": application_version(),
         "python_version": python_version(),
         "package_lock_checksum": package_lock_checksum(),
+        "r_package_lock_checksum": r_package_lock_checksum(),
         "container_image_digest": container_image_digest(),
         "docker_image_digest": container_image_digest(),
-        "engine_version": ENGINE_VERSION,
+        "engine_version": python_engine.implementation_version,
+        "engine_runtime": python_engine.runtime,
+        "engine_implementation": python_engine.implementation,
         "preprocessing_implementation": PREPROCESSING_IMPLEMENTATION,
         "preprocessing_implementation_version": PREPROCESSING_IMPLEMENTATION_VERSION,
+        "resource_limits": effective_resource_limits(),
         "captured_at": datetime.now(UTC).isoformat(),
     }
 
@@ -270,6 +317,7 @@ def build_run_provenance(
     model_artifact_checksum: str | None = None,
     input_artifact_checksums: list[str] | None = None,
     output_artifact_checksums: list[str] | None = None,
+    scientific_inputs: list[dict[str, Any]] | None = None,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Assemble the canonical provenance block for a run or artifact manifest."""
@@ -326,6 +374,14 @@ def build_run_provenance(
         for checksum in input_artifact_checksums:
             if checksum and checksum not in parents:
                 parents.append(checksum)
+    if scientific_inputs:
+        for item in scientific_inputs:
+            if not isinstance(item, dict):
+                continue
+            for key in ("corpus_checksum", "pipeline_checksum", "snapshot_hash"):
+                value = item.get(key)
+                if isinstance(value, str) and value and value not in parents:
+                    parents.append(value)
 
     snapshot_hash = corpus_snapshot_hash or corpus_checksum or pipeline_checksum
 
@@ -336,14 +392,18 @@ def build_run_provenance(
         "application_version": runtime["application_version"],
         "python_version": runtime["python_version"],
         "package_lock_checksum": runtime["package_lock_checksum"],
+        "r_package_lock_checksum": runtime.get("r_package_lock_checksum"),
         "container_image_digest": runtime["container_image_digest"],
         "docker_image_digest": runtime["docker_image_digest"],
         "package_versions": runtime["package_versions"],
         "library_versions": runtime["library_versions"],
         "engine_version": runtime["engine_version"],
+        "resource_limits": runtime.get("resource_limits"),
         # Corpus / annotation identity
+        # corpus_checksum / pipeline_checksum = target-input compatibility fields
         "corpus_checksum": corpus_checksum,
         "pipeline_checksum": pipeline_checksum,
+        "scientific_inputs": scientific_inputs,
         "corpus_snapshot_id": corpus_snapshot_id or from_spec.get("corpus_snapshot_id"),
         "corpus_snapshot_hash": snapshot_hash,
         "campaign_id": campaign_id,
@@ -428,12 +488,17 @@ def attach_provenance(
     model_artifact_checksum: str | None = None,
     input_artifact_checksums: list[str] | None = None,
     output_artifact_checksums: list[str] | None = None,
+    scientific_inputs: list[dict[str, Any]] | None = None,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return parameters with a full ``provenance`` block and identity fields."""
     payload = dict(parameters)
     resolved_corpus = corpus_checksum or payload.get("corpus_checksum")
     resolved_pipeline = pipeline_checksum or payload.get("pipeline_checksum")
+    resolved_inputs = scientific_inputs
+    if resolved_inputs is None:
+        existing_inputs = payload.get("scientific_inputs")
+        resolved_inputs = list(existing_inputs) if isinstance(existing_inputs, list) else None
     parents = parent_artifact_checksums
     if parents is None:
         existing = payload.get("parent_artifact_checksums")
@@ -470,6 +535,7 @@ def attach_provenance(
         model_artifact_checksum=model_artifact_checksum,
         input_artifact_checksums=input_artifact_checksums,
         output_artifact_checksums=output_artifact_checksums,
+        scientific_inputs=resolved_inputs,
         extra=extra,
     )
     payload["provenance"] = provenance
@@ -480,6 +546,8 @@ def attach_provenance(
         payload["corpus_checksum"] = provenance["corpus_checksum"]
     if provenance.get("pipeline_checksum"):
         payload["pipeline_checksum"] = provenance["pipeline_checksum"]
+    if provenance.get("scientific_inputs"):
+        payload["scientific_inputs"] = provenance["scientific_inputs"]
     if provenance.get("analysis_specification"):
         payload["analysis_specification"] = provenance["analysis_specification"]
     return payload
@@ -606,5 +674,6 @@ def extract_reproduce_request(
         "git_commit": provenance.get("git_commit"),
         "application_version": provenance.get("application_version"),
         "package_lock_checksum": provenance.get("package_lock_checksum"),
+        "r_package_lock_checksum": provenance.get("r_package_lock_checksum"),
         "rerun_path": f"/api/v1/research/runs/{run_id}/rerun",
     }

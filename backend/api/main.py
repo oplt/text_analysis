@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from backend.core.cache import redis_client
+from backend.core.cache import close_current_async_redis_client, get_async_redis_client
 from backend.core.config import settings
 from backend.core.error_handler import register_exception_handlers
 from backend.core.log_redaction import redact_url
@@ -46,7 +46,7 @@ async def lifespan(app: FastAPI):
     validate_memory_config()
     await object_storage.ensure_bucket()
     try:
-        await redis_client.ping()
+        await get_async_redis_client().ping()
         logger.info("Redis connection established url=%s", redact_url(settings.REDIS_URL))
     except Exception:
         logger.warning("Redis ping failed during startup", exc_info=True)
@@ -59,7 +59,7 @@ async def lifespan(app: FastAPI):
     logger.info("Application shutdown started")
     await close_ai_provider_http_clients()
     await close_observability_http_client()
-    await redis_client.aclose()
+    await close_current_async_redis_client()
     await engine.dispose()
     logger.info("Application shutdown complete")
 

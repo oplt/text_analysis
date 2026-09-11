@@ -172,21 +172,117 @@ export async function waitForRun(
     api: ApiContext,
     runId: string,
     timeoutMs = 60_000
-): Promise<{ id: string; status: string; metrics?: Record<string, unknown> }> {
+): Promise<{
+    id: string;
+    status: string;
+    metrics?: Record<string, unknown>;
+    results?: Record<string, unknown>;
+    parameters?: Record<string, unknown>;
+    error_message?: string | null;
+    progress_stage?: string | null;
+}> {
     const deadline = Date.now() + timeoutMs;
+    let last: Record<string, unknown> | undefined;
     while (Date.now() < deadline) {
         const response = await api.request.get(`${researchBase}/runs/${runId}`, {
             headers: headers(api.csrfToken),
         });
         await expectOk(response, `poll run ${runId}`);
         const run = await response.json();
-        if (run.status === "completed" || run.status === "failed") {
-            expect(run.status).toBe("completed");
+        last = run;
+        if (run.status === "failed" || run.status === "cancelled") {
+            throw new Error(
+                [
+                    `Research run ${runId} ended with status=${run.status}`,
+                    `progress_stage=${run.progress_stage ?? "unknown"}`,
+                    `error_message=${run.error_message ?? "(none)"}`,
+                ].join(" | ")
+            );
+        }
+        if (run.status === "completed") {
             return run;
         }
         await new Promise((resolve) => setTimeout(resolve, 500));
     }
-    throw new Error(`Run ${runId} did not complete within ${timeoutMs}ms`);
+    throw new Error(
+        [
+            `Run ${runId} did not complete within ${timeoutMs}ms`,
+            `last_status=${last?.status ?? "unknown"}`,
+            `progress_stage=${last?.progress_stage ?? "unknown"}`,
+            `error_message=${last?.error_message ?? "(none)"}`,
+        ].join(" | ")
+    );
+}
+
+export async function listAnalysisEngines(
+    api: ApiContext
+): Promise<{
+    engines: Array<{
+        name: string;
+        implementation: string;
+        implementation_version?: string;
+        available: boolean;
+        ready: boolean;
+        analyses: string[];
+    }>;
+}> {
+    const response = await api.request.get(`${researchBase}/analysis-engines`, {
+        headers: headers(api.csrfToken),
+    });
+    await expectOk(response, "list analysis engines");
+    return response.json();
+}
+
+export async function runFrequencies(
+    api: ApiContext,
+    corpusId: string,
+    payload: {
+        unit_type?: "paragraph" | "document" | "sentence";
+        top_n?: number;
+        engine?: { runtime: "python" | "r"; preprocessing_mode?: "standardized" };
+        run_async?: boolean;
+    } = {}
+): Promise<{
+    id: string;
+    status: string;
+    results?: Record<string, unknown>;
+    parameters?: Record<string, unknown>;
+    error_message?: string | null;
+    progress_stage?: string | null;
+}> {
+    const response = await api.request.post(`${researchBase}/corpora/${corpusId}/analysis/frequencies`, {
+        headers: headers(api.csrfToken),
+        data: {
+            unit_type: payload.unit_type ?? "paragraph",
+            top_n: payload.top_n ?? 20,
+            run_async: payload.run_async ?? true,
+            ...(payload.engine ? { engine: payload.engine } : {}),
+        },
+    });
+    await expectOk(response, "run frequencies");
+    const run = await response.json();
+    if (run.status === "completed") {
+        return run;
+    }
+    return waitForRun(api, run.id);
+}
+
+export async function getRun(
+    api: ApiContext,
+    runId: string
+): Promise<{
+    id: string;
+    status: string;
+    results?: Record<string, unknown>;
+    parameters?: Record<string, unknown>;
+    error_message?: string | null;
+    progress_stage?: string | null;
+}> {
+    const response = await api.request.get(`${researchBase}/runs/${runId}`, {
+        headers: headers(api.csrfToken),
+    });
+    await expectOk(response, `get run ${runId}`);
+    return response.json();
 }
 
 export async function listTextUnitIdsFromExport(

@@ -69,6 +69,7 @@ class ProvenanceBuilderTests(unittest.TestCase):
         self.assertIn("python_version", runtime)
         self.assertRegex(runtime["python_version"], r"^\d+\.\d+\.\d+")
         self.assertIn("package_lock_checksum", runtime)
+        self.assertIn("r_package_lock_checksum", runtime)
         self.assertIn("docker_image_digest", runtime)
         self.assertIn("library_versions", runtime)
 
@@ -84,6 +85,27 @@ class ProvenanceBuilderTests(unittest.TestCase):
                 result["sha256"],
                 __import__("hashlib").sha256(b"version = 1\n").hexdigest(),
             )
+
+    def test_r_package_lock_checksum_hashes_renv_lock(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            lock = root / "renv.lock"
+            lock.write_text('{"R":{"Version":"4.4.0"}}\n', encoding="utf-8")
+            result = provenance.r_package_lock_checksum(search_roots=[root])
+            assert result is not None
+            self.assertEqual(result["path"], "renv.lock")
+            self.assertEqual(
+                result["sha256"],
+                __import__("hashlib").sha256(b'{"R":{"Version":"4.4.0"}}\n').hexdigest(),
+            )
+
+    def test_r_package_lock_checksum_discovers_committed_lock(self) -> None:
+        result = provenance.r_package_lock_checksum()
+        self.assertIsNotNone(result)
+        assert result is not None
+        self.assertEqual(result["path"], "r_engine/renv.lock")
+        self.assertEqual(len(result["sha256"]), 64)
+        self.assertGreater(result["bytes"], 10_000)
 
     def test_package_lock_checksum_discovers_committed_backend_lock(self) -> None:
         result = provenance.package_lock_checksum()

@@ -156,7 +156,6 @@ from backend.modules.text_research.application.statistical_modeling_service impo
     StatisticalModelingService,
 )
 from backend.modules.text_research.application.topic_model_service import TopicModelService
-from backend.modules.text_research.domain.analysis_specification import ANALYSIS_TYPES
 from backend.modules.text_research.domain.models import (
     AnalysisRun,
     AnnotationLabel,
@@ -181,47 +180,55 @@ async def analysis_engines(
 ) -> dict[str, list[dict[str, Any]]]:
     """Advertise runtime capabilities without requiring local Rscript on the API."""
     del current_user
-    from backend.modules.text_research.infrastructure.engines.python_engine import (
-        PythonAnalysisEngine,
+    from backend.modules.text_research.infrastructure.plugin_registry import (
+        list_execution_engines,
     )
-    from backend.modules.text_research.infrastructure.engines.r_engine import RAnalysisEngine
     from backend.modules.text_research.infrastructure.r_runtime.capabilities import (
-        get_r_worker_capabilities,
+        get_live_r_worker_capabilities,
         r_feature_enabled,
     )
 
-    python = PythonAnalysisEngine()
-    r_engine = RAnalysisEngine()
     r_enabled = r_feature_enabled()
-    worker_caps = get_r_worker_capabilities() if r_enabled else None
-    r_ready = bool(worker_caps and worker_caps.get("ready"))
-    # Feature availability is config-driven; worker readiness is Redis heartbeat.
-    r_available = r_enabled
-    r_analyses = (
-        sorted(r_engine.supported_analyses)
-        if r_enabled
-        else []
-    )
-    return {
-        "engines": [
+    worker_caps = await get_live_r_worker_capabilities() if r_enabled else []
+    r_ready = bool(worker_caps)
+    engines: list[dict[str, Any]] = []
+    for descriptor in list_execution_engines():
+        if descriptor.runtime == "python":
+            engines.append(
+                {
+                    "name": descriptor.runtime,
+                    "implementation": descriptor.implementation,
+                    "implementation_version": descriptor.implementation_version,
+                    "available": True,
+                    "ready": True,
+                    "analyses": sorted(descriptor.supported_analyses),
+                }
+            )
+            continue
+        if descriptor.runtime == "r":
+            engines.append(
+                {
+                    "name": descriptor.runtime,
+                    "implementation": descriptor.implementation,
+                    "implementation_version": descriptor.implementation_version,
+                    "available": r_enabled,
+                    "ready": r_ready if r_enabled else False,
+                    "analyses": sorted(descriptor.supported_analyses) if r_enabled else [],
+                }
+            )
+            continue
+        # Future runtimes: advertise registry metadata; availability left unset.
+        engines.append(
             {
-                "name": python.name,
-                "implementation": "python",
-                "implementation_version": python.implementation_version,
-                "available": True,
-                "ready": True,
-                "analyses": sorted(name for name in ANALYSIS_TYPES if python.supports(name)),
-            },
-            {
-                "name": r_engine.name,
-                "implementation": "quanteda",
-                "implementation_version": r_engine.implementation_version,
-                "available": r_available,
-                "ready": r_ready,
-                "analyses": r_analyses,
-            },
-        ]
-    }
+                "name": descriptor.runtime,
+                "implementation": descriptor.implementation,
+                "implementation_version": descriptor.implementation_version,
+                "available": False,
+                "ready": False,
+                "analyses": sorted(descriptor.supported_analyses),
+            }
+        )
+    return {"engines": engines}
 
 
 def _loads(value: str | None, default: Any = None) -> Any:
@@ -2908,7 +2915,7 @@ async def stream_run_events(
     Workers persist durable state in PostgreSQL and publish snapshots to Redis.
     This endpoint is the transport only — it does not poll the DB every second.
     """
-    from backend.core.cache import redis_client
+    from backend.core.cache import get_async_redis_client
     from backend.core.config import settings
     from backend.modules.text_research.infrastructure.run_events import (
         TERMINAL_RUN_STATUSES,
@@ -2951,7 +2958,7 @@ async def stream_run_events(
 
             try:
                 if use_redis:
-                    pubsub = redis_client.pubsub()
+                    pubsub = get_async_redis_client().pubsub()
                     await pubsub.subscribe(channel)
 
                 while True:

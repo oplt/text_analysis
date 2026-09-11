@@ -198,6 +198,25 @@ class ObjectStorage:
             put_kwargs["Metadata"] = metadata
         self._client.put_object(**put_kwargs)
 
+    def upload_fileobj_sync(
+        self,
+        *,
+        object_key: str,
+        fileobj: BinaryIO,
+        content_type: str = "application/octet-stream",
+    ) -> None:
+        """Stream a file object to object storage (sync worker path)."""
+        if not self.is_configured:
+            raise StorageNotConfiguredError(
+                "Object storage is not configured. Set STORAGE_BUCKET and storage credentials."
+            )
+        self._client.upload_fileobj(
+            fileobj,
+            settings.STORAGE_BUCKET,
+            object_key,
+            ExtraArgs={"ContentType": content_type},
+        )
+
     def delete_object_sync(self, object_key: str, *, bucket: str | None = None) -> None:
         if not self.is_configured and not bucket:
             return

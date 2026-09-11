@@ -11,7 +11,9 @@ from backend.modules.text_research.domain.prepared_corpus import PreparedCorpusA
 
 class AnalysisEngine(Protocol):
     name: str
+    implementation: str
     implementation_version: str
+    supported_analyses: frozenset[str]
 
     def supports(self, analysis_type: str) -> bool: ...
 
