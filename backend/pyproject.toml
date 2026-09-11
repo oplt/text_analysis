@@ -56,7 +56,7 @@ dev = [
     "honcho>=2.0.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
-    "ruff>=0.11.2",
+    "ruff==0.11.2",
 ]
 nlp = ["spacy>=3.7"]
 bertopic = ["bertopic", "umap-learn", "hdbscan"]
@@ -99,7 +99,7 @@ dev = [
     "honcho>=2.0.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
-    "ruff>=0.11.2",
+    "ruff==0.11.2",
 ]
 
 # Deterministic installs: commit uv.lock; CI uses `uv sync --frozen --extra dev`.

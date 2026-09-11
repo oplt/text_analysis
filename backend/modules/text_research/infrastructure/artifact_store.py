@@ -53,6 +53,15 @@ def _artifact_root() -> Path:
     return Path(__file__).resolve().parents[3] / "var" / "research_artifacts"
 
 
+def _storage_mode() -> str:
+    from backend.core.config import settings
+
+    mode = settings.RESEARCH_ARTIFACT_STORAGE_MODE.strip().lower()
+    if mode not in {"object", "shared_local"}:
+        raise ValueError("RESEARCH_ARTIFACT_STORAGE_MODE must be 'object' or 'shared_local'")
+    return mode
+
+
 def stream_sha256(path: Path, *, chunk_size: int = 1024 * 1024) -> tuple[str, int]:
     """Hash a file in chunks; return ``(hex_digest, byte_size)``."""
     digest = hashlib.sha256()
@@ -135,6 +144,7 @@ class ArtifactStore:
             with source_path.open("rb") as src, dest.open("wb") as out:
                 shutil.copyfileobj(src, out, length=1024 * 1024)
 
+        mode = _storage_mode()
         object_key: str | None = None
         storage_backend = "local"
         try:
@@ -151,9 +161,13 @@ class ArtifactStore:
                     )
                 storage_backend = "object"
                 object_uri = f"s3://{settings.STORAGE_BUCKET}/{object_key}"
+            elif mode == "object":
+                raise RuntimeError("Object artifact storage is required but not configured")
             else:
                 object_uri = None
         except Exception:
+            if mode == "object":
+                raise
             object_key = None
             storage_backend = "local"
             object_uri = None
@@ -268,7 +282,7 @@ class ArtifactStore:
             cache_key = record.payload_meta.get("cache_key")
             if cache_key:
                 cached = stage_cache.get_stage(str(cache_key))
-                if cached and isinstance(cached.get("payload"), (bytes, bytearray)):
+                if cached and isinstance(cached.get("payload"), bytes | bytearray):
                     return bytes(cached["payload"])
         raise FileNotFoundError(f"Artifact payload is unavailable for {artifact_id!r}")
 

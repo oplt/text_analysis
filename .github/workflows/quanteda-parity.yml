@@ -108,7 +108,7 @@ jobs:
           docker run --rm \
             -e DATABASE_URL=postgresql+asyncpg://text_analysis:text_analysis@postgres:5432/text_analysis \
             -e REDIS_URL=redis://redis:6379/0 \
-            -e JWT_SECRET=ci-only-r-worker-secret \
+            -e JWT_SECRET=ci-only-r-worker-secret-with-32-chars \
             -e JWT_ALGORITHM=HS256 \
             -e ACCESS_TOKEN_EXPIRE_MINUTES=30 \
             -e REFRESH_TOKEN_EXPIRE_DAYS=7 \
@@ -130,7 +130,7 @@ jobs:
             -e REDIS_URL=redis://127.0.0.1:6379/0 \
             -e PYTHONPATH=/app \
             -e DATABASE_URL=postgresql+asyncpg://text_analysis:text_analysis@127.0.0.1:5432/text_analysis \
-            -e JWT_SECRET=ci-only-r-worker-secret \
+            -e JWT_SECRET=ci-only-r-worker-secret-with-32-chars \
             -e JWT_ALGORITHM=HS256 \
             -e ACCESS_TOKEN_EXPIRE_MINUTES=30 \
             -e REFRESH_TOKEN_EXPIRE_DAYS=7 \
@@ -178,7 +178,7 @@ jobs:
             -e PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
             -e DATABASE_URL=postgresql+asyncpg://text_analysis:text_analysis@postgres:5432/text_analysis \
             -e REDIS_URL=redis://redis:6379/0 \
-            -e JWT_SECRET=ci-only-r-worker-secret \
+            -e JWT_SECRET=ci-only-r-worker-secret-with-32-chars \
             -e JWT_ALGORITHM=HS256 \
             -e ACCESS_TOKEN_EXPIRE_MINUTES=30 \
             -e REFRESH_TOKEN_EXPIRE_DAYS=7 \

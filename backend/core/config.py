@@ -203,6 +203,7 @@ class Settings(BaseSettings):
 
     # Text Research (text research) model/vectorizer artifact storage
     RESEARCH_ARTIFACT_DIR: str = "var/research_artifacts"
+    RESEARCH_ARTIFACT_STORAGE_MODE: str = "shared_local"
     RESEARCH_LARGE_CORPUS_DOCUMENT_THRESHOLD: int = 50
     # Workload-aware async dispatch: above any threshold → AnalysisRun + Celery.
     RESEARCH_ASYNC_UNIT_THRESHOLD: int = 5_000

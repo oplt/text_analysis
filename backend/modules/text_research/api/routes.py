@@ -7,10 +7,11 @@ import contextlib
 import csv
 import io
 import json
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import PlainTextResponse, StreamingResponse
+from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps.auth import get_current_user
@@ -2903,6 +2904,63 @@ async def get_run(
 ):
     run = await RunService(db).get_run(run_id, user_id=current_user.id)
     return _run_response(run)
+
+
+@router.get("/runs/{run_id}/artifacts")
+async def list_run_artifacts(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await RunService(db).get_run(run_id, user_id=current_user.id)
+    from backend.modules.text_research.infrastructure.repositories import ResearchRepository
+
+    rows = await ResearchRepository(db).list_run_artifacts(run_id)
+    return [
+        {
+            "artifact_id": artifact.id,
+            "role": link.role,
+            "name": link.name,
+            "kind": artifact.kind,
+            "checksum": artifact.checksum,
+            "content_type": artifact.content_type,
+            "bytes": artifact.byte_size,
+            "format": artifact.format,
+        }
+        for artifact, link in rows
+    ]
+
+
+@router.get("/runs/{run_id}/artifacts/{artifact_id}")
+async def download_run_artifact(
+    run_id: str,
+    artifact_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await RunService(db).get_run(run_id, user_id=current_user.id)
+    from backend.modules.text_research.infrastructure.repositories import ResearchRepository
+
+    artifact = await ResearchRepository(db).get_run_artifact(run_id, artifact_id)
+    if artifact is None:
+        raise HTTPException(status_code=404, detail="Artifact not found")
+    if artifact.object_key:
+        from backend.core.storage import object_storage
+        if object_storage.is_configured:
+            return {
+                "download_url": await object_storage.presigned_download_url(artifact.object_key)
+            }
+    from backend.modules.text_research.infrastructure.artifact_store import _artifact_root
+    if not artifact.storage_key:
+        raise HTTPException(status_code=404, detail="Artifact payload is unavailable")
+    path = _artifact_root() / artifact.storage_key
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Artifact payload is unavailable")
+    return FileResponse(
+        path,
+        media_type=artifact.content_type,
+        filename=Path(artifact.storage_key).name,
+    )
 
 
 @router.get("/runs/{run_id}/events")

@@ -237,7 +237,7 @@ def grouped_train_val_test_split(
                 )
         resolved_task = task_type or (
             "multilabel"
-            if any(isinstance(label, (list, tuple, set)) for label in y)
+            if any(isinstance(label, list | tuple | set) for label in y)
             else "single_label"
         )
         split_meta = {

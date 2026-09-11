@@ -15,6 +15,7 @@ from backend.modules.text_research.domain.enums import AnnotationTaskStatus
 from backend.modules.text_research.domain.models import (
     Adjudication,
     AnalysisRun,
+    AnalysisRunArtifact,
     Annotation,
     AnnotationCampaign,
     AnnotationLabel,
@@ -30,6 +31,7 @@ from backend.modules.text_research.domain.models import (
     ModelPrediction,
     PredictionSet,
     PreprocessingProfile,
+    ResearchArtifact,
     ResearchCorpus,
     TextUnit,
     TopicLabel,
@@ -1438,6 +1440,70 @@ class ResearchRepository:
 
     async def get_run(self, run_id: str) -> AnalysisRun | None:
         result = await self.db.execute(select(AnalysisRun).where(AnalysisRun.id == run_id))
+        return result.scalar_one_or_none()
+
+    async def upsert_run_artifacts(self, run_id: str, artifacts: list[dict[str, Any]]) -> None:
+        for item in artifacts:
+            artifact_id = item.get("artifact_id")
+            checksum = item.get("sha256")
+            if not isinstance(artifact_id, str) or not isinstance(checksum, str):
+                continue
+            metadata = dict(item)
+            await self.db.execute(
+                pg_insert(ResearchArtifact)
+                .values(
+                    id=artifact_id,
+                    kind=str(item.get("kind") or "r_artifact"),
+                    checksum=checksum,
+                    storage_backend=str(item.get("storage_backend") or "local"),
+                    storage_key=item.get("storage_key"), object_key=item.get("object_key"),
+                    content_type=str(item.get("content_type") or "application/octet-stream"),
+                    byte_size=int(item.get("bytes") or 0),
+                    format=item.get("format"),
+                    dimensions_json=(
+                        dumps(item.get("dimensions"))
+                        if item.get("dimensions") is not None
+                        else None
+                    ),
+                    metadata_json=dumps(metadata),
+                )
+                .on_conflict_do_nothing(index_elements=[ResearchArtifact.id])
+            )
+            await self.db.execute(
+                pg_insert(AnalysisRunArtifact)
+                .values(
+                    run_id=run_id,
+                    artifact_id=artifact_id,
+                    role=str(item.get("role") or "artifact"),
+                    name=str(item.get("name") or artifact_id),
+                )
+                .on_conflict_do_nothing(
+                    index_elements=[
+                        AnalysisRunArtifact.run_id,
+                        AnalysisRunArtifact.artifact_id,
+                        AnalysisRunArtifact.role,
+                    ]
+                )
+            )
+        await self.db.flush()
+
+    async def list_run_artifacts(
+        self, run_id: str
+    ) -> list[tuple[ResearchArtifact, AnalysisRunArtifact]]:
+        result = await self.db.execute(
+            select(ResearchArtifact, AnalysisRunArtifact)
+            .join(AnalysisRunArtifact, AnalysisRunArtifact.artifact_id == ResearchArtifact.id)
+            .where(AnalysisRunArtifact.run_id == run_id)
+            .order_by(AnalysisRunArtifact.created_at)
+        )
+        return list(result.all())
+
+    async def get_run_artifact(self, run_id: str, artifact_id: str) -> ResearchArtifact | None:
+        result = await self.db.execute(
+            select(ResearchArtifact)
+            .join(AnalysisRunArtifact, AnalysisRunArtifact.artifact_id == ResearchArtifact.id)
+            .where(AnalysisRunArtifact.run_id == run_id, ResearchArtifact.id == artifact_id)
+        )
         return result.scalar_one_or_none()
 
     async def update_run(self, run: AnalysisRun, **fields: Any) -> AnalysisRun:

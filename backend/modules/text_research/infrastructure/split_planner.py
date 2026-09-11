@@ -38,7 +38,7 @@ class SplitFeasibility:
 
 def _is_multilabel_labels(labels: list[Any]) -> bool:
     """True when any target row is a list/tuple/set (multilabel encoding)."""
-    return any(isinstance(label, (list, tuple, set)) for label in labels)
+    return any(isinstance(label, list | tuple | set) for label in labels)
 
 
 def evaluate_stratified_group_feasibility(

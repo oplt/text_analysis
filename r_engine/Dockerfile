@@ -45,7 +45,8 @@ COPY r_engine/renv/activate.R r_engine/renv/settings.json ./renv/
 COPY r_engine/R ./R
 COPY r_engine/run_analysis.R ./
 # Restore the full transitive lockfile at build time only — never at runtime.
-RUN R -q -e 'install.packages("renv", repos="https://cloud.r-project.org"); renv::restore(project = "/opt/r_engine", prompt = FALSE); pkgs <- names(renv::lockfile_read("/opt/r_engine/renv.lock")$Packages); missing <- setdiff(pkgs, rownames(installed.packages(lib.loc = .libPaths()))); if (length(missing)) stop("renv restore incomplete: ", paste(missing, collapse = ", ")); message("renv restore OK (", length(pkgs), " packages)")'
+RUN R --vanilla -q -e 'install.packages("renv", lib = "/usr/local/lib/R/site-library", repos = "https://cloud.r-project.org")'
+RUN R -q -e 'renv::restore(project = "/opt/r_engine", prompt = FALSE); pkgs <- names(renv::lockfile_read("/opt/r_engine/renv.lock")$Packages); missing <- setdiff(pkgs, rownames(installed.packages(lib.loc = .libPaths()))); if (length(missing)) stop("renv restore incomplete: ", paste(missing, collapse = ", ")); message("renv restore OK (", length(pkgs), " packages)")'
 
 WORKDIR /app
 COPY backend/pyproject.toml backend/uv.lock ./backend/

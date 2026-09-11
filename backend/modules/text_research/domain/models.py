@@ -456,6 +456,41 @@ class AnalysisRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
+class ResearchArtifact(Base):
+    __tablename__ = "research_artifacts"
+
+    id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(64), index=True)
+    checksum: Mapped[str] = mapped_column(String(128), index=True)
+    storage_backend: Mapped[str] = mapped_column(String(32))
+    storage_key: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    object_key: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    content_type: Mapped[str] = mapped_column(String(255))
+    byte_size: Mapped[int] = mapped_column(Integer)
+    format: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    dimensions_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    metadata_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("kind", "checksum", name="uq_research_artifact_kind_checksum"),
+    )
+
+
+class AnalysisRunArtifact(Base):
+    __tablename__ = "research_analysis_run_artifacts"
+
+    run_id: Mapped[str] = mapped_column(
+        ForeignKey("research_analysis_runs.id", ondelete="CASCADE"), primary_key=True
+    )
+    artifact_id: Mapped[str] = mapped_column(
+        ForeignKey("research_artifacts.id", ondelete="RESTRICT"), primary_key=True
+    )
+    role: Mapped[str] = mapped_column(String(128), primary_key=True)
+    name: Mapped[str] = mapped_column(String(512))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
 class TrainedModel(Base):
     __tablename__ = "research_trained_models"
 

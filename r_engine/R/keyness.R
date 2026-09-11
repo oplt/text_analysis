@@ -2,7 +2,8 @@
 
 keyness_method <- function(value) {
   aliases <- c(g2 = "log_likelihood", ll = "log_likelihood", chi2 = "chi_square", fisher_exact = "fisher")
-  method <- aliases[[tolower(value %||% "log_likelihood")]] %||% tolower(value %||% "log_likelihood")
+  candidate <- tolower(value %||% "log_likelihood")
+  method <- if (candidate %in% names(aliases)) aliases[[candidate]] else candidate
   if (!method %in% c("log_likelihood", "chi_square", "fisher")) stop("Unsupported keyness method")
   method
 }
@@ -40,7 +41,8 @@ run_keyness <- function(manifest, inputs) {
   min_frequency <- as.integer(params$min_frequency %||% 1L); top_n <- as.integer(params$top_n %||% 50L)
   tokens_a <- as.character(inputs$tokens$token); tokens_b <- as.character(inputs$tokens_b$token)
   counts_a <- table(tokens_a); counts_b <- table(tokens_b); terms <- sort(union(names(counts_a), names(counts_b)))
-  rows <- lapply(terms, function(term) keyness_row(term, as.integer(counts_a[[term]] %||% 0L), as.integer(counts_b[[term]] %||% 0L), length(tokens_a), length(tokens_b), method))
+  frequency <- function(counts, term) if (term %in% names(counts)) as.integer(counts[[term]]) else 0L
+  rows <- lapply(terms, function(term) keyness_row(term, frequency(counts_a, term), frequency(counts_b, term), length(tokens_a), length(tokens_b), method))
   rows <- Filter(function(row) row$freq_a + row$freq_b >= min_frequency, rows)
   p_values <- vapply(rows, function(row) row$p_value, numeric(1))
   adjusted <- if (correction == "none") p_values else stats::p.adjust(p_values, method = "BH")

@@ -189,18 +189,29 @@ test.describe("Text Research workflow", () => {
             await expect(page.getByText("Documents").first()).toBeVisible();
             await expect(page.getByText("4").first()).toBeVisible();
 
-            await page.getByRole("tab", { name: "Corpus" }).click();
+            const workflow = page.getByRole("navigation", { name: "Research workflow" });
+
+            const corpusStage = workflow.getByRole("button", { name: /^Corpus\b/ });
+            await expect(corpusStage).toBeVisible({ timeout: 15_000 });
+            await corpusStage.click();
+            await expect(page).toHaveURL(new RegExp(`/research/${project.id}/corpus`));
             await expect(page.getByText(/Showing 4 of 4 documents/i)).toBeVisible({
                 timeout: 15_000,
             });
 
-            await page.getByRole("tab", { name: "Classify" }).click();
+            const classifyStage = workflow.getByRole("button", { name: /^Classify\b/ });
+            await expect(classifyStage).toBeVisible({ timeout: 15_000 });
+            await classifyStage.click();
+            await expect(page).toHaveURL(new RegExp(`/research/${project.id}/classification`));
             await expect(page.getByText(/Trained models/i)).toBeVisible();
             await expect(page.getByText(models[0].name ?? "E2E Classifier")).toBeVisible({
                 timeout: 15_000,
             });
 
-            await page.getByRole("tab", { name: "Export" }).click();
+            const exportStage = workflow.getByRole("button", { name: /^Export\b/ });
+            await expect(exportStage).toBeVisible({ timeout: 15_000 });
+            await exportStage.click();
+            await expect(page).toHaveURL(new RegExp(`/research/${project.id}/exports`));
             await expect(page.getByText(/export/i).first()).toBeVisible();
 
             await context.close();

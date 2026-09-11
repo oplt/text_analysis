@@ -319,6 +319,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 completed_at=_utcnow(),
                 error_message=None,
             )
+            await self.repo.upsert_run_artifacts(updated.id, list(results.get("artifacts") or []))
             await self.db.commit()
             if comparison_parent_id:
                 self._schedule_comparison_finalize(
@@ -340,6 +341,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 completed_at=_utcnow(),
             )
         )
+        await self.repo.upsert_run_artifacts(run.id, list(results.get("artifacts") or []))
         await self.db.commit()
         return run
 

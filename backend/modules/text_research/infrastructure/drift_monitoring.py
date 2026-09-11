@@ -241,9 +241,9 @@ def compute_warning_level(sections: dict[str, Any]) -> str:
     if isinstance(pred, dict):
         tvd = pred.get("total_variation_distance")
         psi = pred.get("psi_like")
-        if isinstance(tvd, (int, float)):
+        if isinstance(tvd, int | float):
             escalate(_band_higher_is_worse(float(tvd), _ADVISORY["tvd"]))
-        if isinstance(psi, (int, float)):
+        if isinstance(psi, int | float):
             escalate(_band_higher_is_worse(float(psi), _ADVISORY["psi"]))
 
     for key in ("score_distribution", "uncertainty_distribution"):
@@ -251,21 +251,21 @@ def compute_warning_level(sections: dict[str, Any]) -> str:
         if not isinstance(scores, dict):
             continue
         ks = scores.get("statistic")
-        if isinstance(ks, (int, float)):
+        if isinstance(ks, int | float):
             escalate(_band_higher_is_worse(float(ks), _ADVISORY["ks"]))
-        elif isinstance(scores.get("mean_shift"), (int, float)):
+        elif isinstance(scores.get("mean_shift"), int | float):
             escalate("watch" if abs(float(scores["mean_shift"])) >= 0.1 else "ok")
 
     features = sections.get("feature_presence")
     if isinstance(features, dict):
         jaccard = features.get("jaccard_similarity")
-        if isinstance(jaccard, (int, float)):
+        if isinstance(jaccard, int | float):
             escalate(_band_lower_is_worse(float(jaccard), _ADVISORY["jaccard"]))
 
     performance = sections.get("performance")
     if isinstance(performance, dict):
         drop = performance.get("difference")
-        if isinstance(drop, (int, float)):
+        if isinstance(drop, int | float):
             # Absolute accuracy drop; higher magnitude is worse when current is lower.
             escalate(_band_higher_is_worse(abs(float(drop)), {"watch": 0.03, "investigate": 0.08}))
 

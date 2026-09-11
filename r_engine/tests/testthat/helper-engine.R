@@ -6,7 +6,7 @@ test_manifest <- function(type = "frequencies", parameters = list()) list(
   schema_version = "1.0", analysis = list(type = type, parameters = parameters),
   identity = list(spec_hash = "spec", corpus_checksum = "corpus", pipeline_checksum = "pipeline", engine_name = "r", engine_version = "r-quanteda-2"),
   inputs = list(units = "units.parquet", tokens = "tokens.parquet", metadata = "metadata.parquet"),
-  output = list(result = "result.json")
+  output = list(result = file.path(tempdir(), "result.json"))
 )
 
 test_inputs <- function() list(

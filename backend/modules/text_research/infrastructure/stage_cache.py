@@ -675,7 +675,7 @@ def _serialize_payload(payload: Any, payload_format: str) -> bytes:
             np.savez_compressed(buf, data=payload)
         return buf.getvalue()
     if payload_format == "bytes":
-        if isinstance(payload, (bytes, bytearray, memoryview)):
+        if isinstance(payload, bytes | bytearray | memoryview):
             return bytes(payload)
         raise TypeError("bytes payload_format requires a bytes-like payload")
     raise ValueError(f"Unsupported payload_format {payload_format!r}")
