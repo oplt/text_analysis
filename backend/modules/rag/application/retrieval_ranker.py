@@ -1,14 +1,20 @@
 from __future__ import annotations
 
-import re
+"""Backward-compatible alias; prefer ``reranker_port.build_reranker``."""
 
+from backend.modules.rag.application.reranker_port import (
+    NoOpReranker,
+    UnicodeHeuristicReranker,
+    build_reranker,
+)
 from backend.modules.rag.domain.models import RetrievedChunk
-
-_TOKEN_PATTERN = re.compile(r"[a-z0-9]{2,}")
 
 
 class HybridRetrievalRanker:
-    """Dependency-free lexical/vector fusion over a bounded vector candidate set."""
+    """Legacy name kept for eval baselines; Unicode-aware, no RRF score mixing."""
+
+    def __init__(self) -> None:
+        self._impl = UnicodeHeuristicReranker()
 
     def rerank(
         self,
@@ -17,13 +23,12 @@ class HybridRetrievalRanker:
         *,
         limit: int,
     ) -> list[RetrievedChunk]:
-        terms = set(_TOKEN_PATTERN.findall(query.lower()))
-        if not terms or len(chunks) < 2:
-            return chunks[:limit]
+        return self._impl.rerank(query, chunks, limit=limit)
 
-        def score(chunk: RetrievedChunk) -> tuple[float, float]:
-            content_terms = set(_TOKEN_PATTERN.findall(chunk.content.lower()))
-            lexical = len(terms & content_terms) / len(terms)
-            return (chunk.score * 0.8) + (lexical * 0.2), chunk.score
 
-        return sorted(chunks, key=score, reverse=True)[:limit]
+__all__ = [
+    "HybridRetrievalRanker",
+    "NoOpReranker",
+    "UnicodeHeuristicReranker",
+    "build_reranker",
+]

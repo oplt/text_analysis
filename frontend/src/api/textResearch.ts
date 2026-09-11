@@ -1858,6 +1858,10 @@ export type AssistantCitation = {
     citation_number: number | null;
     used_in_answer: boolean;
     section_heading: string | null;
+    corpus_document_id?: string | null;
+    char_start?: number | null;
+    char_end?: number | null;
+    source_span_ids?: string[] | null;
 };
 
 export type AssistantClaim = {
@@ -1879,6 +1883,8 @@ export type AssistantMessageResult = {
     message_id: string;
     retrieval_trace_id: string | null;
     query: string;
+    original_query?: string | null;
+    resolved_retrieval_query?: string | null;
     answer: string;
     citations: AssistantCitation[];
     claims: AssistantClaim[];
@@ -1889,10 +1895,39 @@ export type AssistantMessageResult = {
     retrieval_degraded: boolean;
     degradation_reason: string | null;
     citation_validation_failed: boolean;
+    citation_validation_status?: string;
     injection_chunks_filtered: number;
     scope: AssistantScope;
     coverage: AssistantCoverage;
+    context_message_ids?: string[];
+    ai_run_id?: string | null;
+    fusion_method?: string | null;
 };
+
+export type AssistantSynthesizeResult =
+    | {
+          mode: "sync";
+          answer: string;
+          citations?: AssistantCitation[];
+          claims?: AssistantClaim[];
+          scope: AssistantScope;
+          document_findings?: unknown[];
+          retrieval_trace_ids?: string[];
+          documents_total?: number;
+          documents_considered?: number;
+          documents_with_evidence?: number;
+          truncated?: boolean;
+          coverage: AssistantCoverage;
+          retrieval_trace_id?: string | null;
+          citation_validation_status?: string;
+      }
+    | {
+          mode: "async";
+          run_id: string;
+          status: string;
+          scope: AssistantScope;
+          message?: string;
+      };
 
 export type AssistantThread = {
     id: string;
@@ -1940,6 +1975,20 @@ export async function postAssistantMessage(
     }
 ): Promise<AssistantMessageResult> {
     return apiFetch(`${BASE}/corpora/${corpusId}/assistant/messages`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function postAssistantSynthesize(
+    corpusId: string,
+    payload: {
+        query: string;
+        document_ids?: string[] | null;
+        async_mode?: boolean | null;
+    }
+): Promise<AssistantSynthesizeResult> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/assistant/synthesize`, {
         method: "POST",
         body: JSON.stringify(payload),
     });

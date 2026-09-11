@@ -5,10 +5,13 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
+from typing import Literal
 
 from backend.modules.rag.domain.models import ClaimCitation, Citation, RetrievedChunk
 
 _JSON_FENCE = re.compile(r"```(?:json)?\s*([\s\S]*?)```", re.IGNORECASE)
+
+CitationValidationStatus = Literal["valid", "partial", "unstructured", "invalid"]
 
 
 @dataclass(slots=True)
@@ -17,6 +20,7 @@ class ValidatedAnswer:
     claims: list[ClaimCitation]
     citations: list[Citation]
     citation_validation_failed: bool = False
+    citation_validation_status: CitationValidationStatus = "valid"
 
 
 def _parse_structured_payload(raw: str) -> dict | None:
@@ -33,6 +37,26 @@ def _parse_structured_payload(raw: str) -> dict | None:
     return payload if isinstance(payload, dict) else None
 
 
+def _unused_citations(retrieved_chunks: list[RetrievedChunk]) -> list[Citation]:
+    return [
+        Citation(
+            document_id=c.document_id,
+            chunk_id=c.chunk_id,
+            filename=c.filename,
+            score=c.score,
+            snippet=c.content[:400],
+            page_number=c.page_number,
+            chunk_index=c.chunk_index,
+            section_heading=(c.metadata or {}).get("section_heading"),
+            used_in_answer=False,
+            char_start=(c.metadata or {}).get("char_start"),
+            char_end=(c.metadata or {}).get("char_end"),
+            source_span_ids=(c.metadata or {}).get("source_span_ids"),
+        )
+        for c in retrieved_chunks
+    ]
+
+
 class CitationValidationService:
     def validate(
         self,
@@ -46,26 +70,13 @@ class CitationValidationService:
 
         payload = _parse_structured_payload(raw_output)
         if payload is None:
-            # Fallback: treat entire output as answer; cite nothing as "used"
-            citations = [
-                Citation(
-                    document_id=c.document_id,
-                    chunk_id=c.chunk_id,
-                    filename=c.filename,
-                    score=c.score,
-                    snippet=c.content[:400],
-                    page_number=c.page_number,
-                    chunk_index=c.chunk_index,
-                    section_heading=(c.metadata or {}).get("section_heading"),
-                    used_in_answer=False,
-                )
-                for c in retrieved_chunks
-            ]
+            # Unstructured fallback must NOT be reported as citation-validated success.
             return ValidatedAnswer(
                 answer=raw_output,
                 claims=[],
-                citations=citations,
-                citation_validation_failed=False,
+                citations=_unused_citations(retrieved_chunks),
+                citation_validation_failed=True,
+                citation_validation_status="unstructured",
             )
 
         answer = str(payload.get("answer") or "").strip()
@@ -75,32 +86,36 @@ class CitationValidationService:
 
         used_chunk_ids: list[str] = []
         claims: list[ClaimCitation] = []
-        validation_failed = False
+        rejected_any = False
+        accepted_any = False
 
         for item in raw_claims:
             if not isinstance(item, dict):
-                validation_failed = True
+                rejected_any = True
                 continue
             claim_text = str(item.get("text") or "").strip()
             chunk_ids = item.get("chunk_ids") or []
             if not isinstance(chunk_ids, list):
-                validation_failed = True
+                rejected_any = True
                 continue
             valid_ids: list[str] = []
             for chunk_id in chunk_ids:
                 cid = str(chunk_id)
                 chunk = by_id.get(cid)
                 if chunk is None:
-                    validation_failed = True
+                    rejected_any = True
                     continue
                 if allowed_docs is not None and chunk.document_id not in allowed_docs:
-                    validation_failed = True
+                    rejected_any = True
                     continue
                 valid_ids.append(cid)
+                accepted_any = True
                 if cid not in used_chunk_ids:
                     used_chunk_ids.append(cid)
             if claim_text and valid_ids:
                 claims.append(ClaimCitation(text=claim_text, chunk_ids=valid_ids))
+            elif claim_text and not valid_ids and chunk_ids:
+                rejected_any = True
 
         number_by_chunk: dict[str, int] = {}
         citations: list[Citation] = []
@@ -119,13 +134,15 @@ class CitationValidationService:
                     citation_number=index,
                     section_heading=(chunk.metadata or {}).get("section_heading"),
                     used_in_answer=True,
+                    char_start=(chunk.metadata or {}).get("char_start"),
+                    char_end=(chunk.metadata or {}).get("char_end"),
+                    source_span_ids=(chunk.metadata or {}).get("source_span_ids"),
                 )
             )
 
         for claim in claims:
             claim.citation_numbers = [number_by_chunk[cid] for cid in claim.chunk_ids]
 
-        # Unused retrieved evidence (for Evidence tab)
         used_set = set(used_chunk_ids)
         for chunk in retrieved_chunks:
             if chunk.chunk_id in used_set:
@@ -142,12 +159,23 @@ class CitationValidationService:
                     citation_number=None,
                     section_heading=(chunk.metadata or {}).get("section_heading"),
                     used_in_answer=False,
+                    char_start=(chunk.metadata or {}).get("char_start"),
+                    char_end=(chunk.metadata or {}).get("char_end"),
+                    source_span_ids=(chunk.metadata or {}).get("source_span_ids"),
                 )
             )
+
+        if rejected_any and not accepted_any and raw_claims:
+            status: CitationValidationStatus = "invalid"
+        elif rejected_any:
+            status = "partial"
+        else:
+            status = "valid"
 
         return ValidatedAnswer(
             answer=answer or raw_output,
             claims=claims,
             citations=citations,
-            citation_validation_failed=validation_failed,
+            citation_validation_failed=status in {"invalid", "unstructured", "partial"},
+            citation_validation_status=status,
         )

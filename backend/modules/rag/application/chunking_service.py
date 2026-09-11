@@ -117,6 +117,12 @@ class ChunkingService:
                         "page_number": meta.get("page_number"),
                         "section_heading": meta.get("section_heading"),
                         "paragraph_index": meta.get("paragraph_index"),
+                        "source_paragraph_indexes": meta.get("source_paragraph_indexes"),
+                        "pack_index": meta.get("pack_index"),
+                        "char_start": meta.get("char_start"),
+                        "char_end": meta.get("char_end"),
+                        "source_span_ids": meta.get("source_span_ids"),
+                        "block_ids": meta.get("block_ids"),
                         "content_hash": content_hash,
                         "parser_version": self.config.parser_version,
                         "chunker_version": self.config.chunker_version,
@@ -124,7 +130,21 @@ class ChunkingService:
                         "embedding_model": self.config.embedding_model,
                         "embedding_dimensions": self.config.embedding_dimensions,
                         "source_type": "upload",
-                        **{k: v for k, v in meta.items() if k not in {"content_hash"}},
+                        **{
+                            k: v
+                            for k, v in meta.items()
+                            if k
+                            not in {
+                                "content_hash",
+                                "paragraph_index",
+                                "source_paragraph_indexes",
+                                "pack_index",
+                                "char_start",
+                                "char_end",
+                                "source_span_ids",
+                                "block_ids",
+                            }
+                        },
                     },
                 )
             )

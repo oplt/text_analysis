@@ -4,6 +4,7 @@
       "id": "activation-framing",
       "question": "individual responsibility activation",
       "k": 3,
+      "scoped_document_ids": ["d1", "d2", "d3", "d4"],
       "relevant_chunk_ids": ["c-rel-1", "c-rel-2"],
       "dense": [
         {"chunk_id": "c-rel-1", "document_id": "d1", "score": 0.91, "content": "personal accountability and employability"},
@@ -15,7 +16,8 @@
         {"chunk_id": "c-rel-2", "document_id": "d2", "score": 0.70, "content": "self-reliance in labour market policy"},
         {"chunk_id": "c-rel-1", "document_id": "d1", "score": 0.55, "content": "personal accountability and employability"},
         {"chunk_id": "c-lex-only", "document_id": "d4", "score": 0.40, "content": "responsibility of the individual"}
-      ]
+      ],
+      "citation_raw": "{\"answer\":\"Activation emphasized individual responsibility.\",\"claims\":[{\"text\":\"Activation emphasized individual responsibility.\",\"chunk_ids\":[\"c-rel-1\"]}]}"
     }
   ]
 }

@@ -170,6 +170,10 @@ class RagMessage(Base):
     citations_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     claims_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    citation_validation_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    resolved_retrieval_query: Mapped[str | None] = mapped_column(Text, nullable=True)
+    context_message_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ai_run_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )

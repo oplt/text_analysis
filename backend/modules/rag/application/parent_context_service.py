@@ -13,9 +13,10 @@ async def expand_parent_chunks(
     repo: RagRepository,
     document_ids: list[str] | None,
 ) -> list[RetrievedChunk]:
-    """Replace child passage text with parent chunk text when parent is in allow-list.
+    """Expand child hits with parent text; dedupe when several children share a parent.
 
-    Parents outside ``document_ids`` are ignored (I5). Empty allow-list yields no expansion.
+    Citations keep the child chunk_id that caused retrieval. Parents outside
+    ``document_ids`` are ignored (I5).
     """
     if not chunks:
         return chunks
@@ -30,7 +31,6 @@ async def expand_parent_chunks(
     parents = await repo.get_chunks_by_ids(list({pid for pid in parent_ids if pid}))
     parent_by_id = {row.id: row for row in parents}
 
-    # Build temporary RetrievedChunks for allow-list filtering
     parent_as_retrieved = [
         RetrievedChunk(
             chunk_id=row.id,
@@ -55,18 +55,43 @@ async def expand_parent_chunks(
         return chunks
 
     expanded: list[RetrievedChunk] = []
+    seen_parents: set[str] = set()
     for chunk in chunks:
         parent_id = child_to_parent.get(chunk.chunk_id)
         if not parent_id:
             expanded.append(chunk)
             continue
+        if parent_id in seen_parents:
+            # Keep child citation provenance without duplicating parent context.
+            meta = dict(chunk.metadata)
+            meta["parent_chunk_id"] = parent_id
+            meta["parent_expanded"] = True
+            meta["parent_deduped"] = True
+            expanded.append(
+                RetrievedChunk(
+                    chunk_id=chunk.chunk_id,
+                    document_id=chunk.document_id,
+                    content=chunk.content,
+                    score=chunk.score,
+                    filename=chunk.filename,
+                    chunk_index=chunk.chunk_index,
+                    page_number=chunk.page_number,
+                    metadata=meta,
+                    rank=chunk.rank,
+                    used_in_answer=chunk.used_in_answer,
+                    retrieval_sources=chunk.retrieval_sources,
+                )
+            )
+            continue
         parent = parent_by_id.get(parent_id)
         if parent is None:
             expanded.append(chunk)
             continue
+        seen_parents.add(parent_id)
         meta = dict(chunk.metadata)
         meta["parent_chunk_id"] = parent_id
         meta["parent_expanded"] = True
+        meta["retrieved_child_chunk_id"] = chunk.chunk_id
         expanded.append(
             RetrievedChunk(
                 chunk_id=chunk.chunk_id,

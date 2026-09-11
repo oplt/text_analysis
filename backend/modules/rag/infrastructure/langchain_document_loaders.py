@@ -47,16 +47,46 @@ def _parse_markdown(content: bytes) -> list[ParsedDocument]:
 
 
 def _parse_csv(content: bytes) -> list[ParsedDocument]:
+    """Row/record-aware CSV parsing — never flatten the entire file into one blob."""
     import csv
     import io
 
     text = content.decode("utf-8", errors="replace")
     reader = csv.reader(io.StringIO(text))
-    rows = [" | ".join(cell.strip() for cell in row if cell.strip()) for row in reader]
-    joined = "\n".join(row for row in rows if row)
-    if not joined:
+    rows = list(reader)
+    if not rows:
         return []
-    return [ParsedDocument(content=joined, metadata={"format": "csv"})]
+
+    headers = [cell.strip() for cell in rows[0]]
+    has_header = any(headers)
+    data_rows = rows[1:] if has_header else rows
+    docs: list[ParsedDocument] = []
+    for row_number, row in enumerate(data_rows, start=1 if has_header else 0):
+        cells = [cell.strip() for cell in row]
+        if not any(cells):
+            continue
+        if has_header:
+            pairs = [
+                f"{headers[i] if i < len(headers) else f'col_{i}'}: {cells[i]}"
+                for i in range(len(cells))
+                if cells[i]
+            ]
+            content_text = " | ".join(pairs)
+        else:
+            content_text = " | ".join(c for c in cells if c)
+        docs.append(
+            ParsedDocument(
+                content=content_text,
+                metadata={
+                    "format": "csv",
+                    "row_number": row_number,
+                    "headers": headers if has_header else None,
+                    "column_count": len(cells),
+                    "parser": "csv-row-v1",
+                },
+            )
+        )
+    return docs
 
 
 def _parse_pdf(content: bytes) -> list[ParsedDocument]:

@@ -132,6 +132,8 @@ async def post_assistant_message(
         message_id=result["message_id"],
         retrieval_trace_id=result["retrieval_trace_id"],
         query=result["query"],
+        original_query=result.get("original_query"),
+        resolved_retrieval_query=result.get("resolved_retrieval_query"),
         answer=result["answer"],
         citations=result["citations"],
         claims=result["claims"],
@@ -142,9 +144,13 @@ async def post_assistant_message(
         retrieval_degraded=result["retrieval_degraded"],
         degradation_reason=result["degradation_reason"],
         citation_validation_failed=result["citation_validation_failed"],
+        citation_validation_status=result.get("citation_validation_status", "valid"),
         injection_chunks_filtered=result["injection_chunks_filtered"],
         scope=AssistantScopeResponse(**result["scope"]),
         coverage=result["coverage"],
+        context_message_ids=result.get("context_message_ids") or [],
+        ai_run_id=result.get("ai_run_id"),
+        fusion_method=result.get("fusion_method"),
     )
 
 

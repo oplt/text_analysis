@@ -72,6 +72,7 @@ function ResearchLayoutInner() {
     const [workflowOpen, setWorkflowOpen] = useState(false);
     const [citationDoc, setCitationDoc] = useState<CorpusDocument | null>(null);
     const [citationSnippet, setCitationSnippet] = useState<string | null>(null);
+    const [citationPage, setCitationPage] = useState<number | null>(null);
 
     useEffect(() => {
         if (ctx.askPanelOpenNonce > 0) {
@@ -81,10 +82,26 @@ function ResearchLayoutInner() {
 
     const docsQuery = useQuery({
         queryKey: queryKeys.textResearch.documents(ctx.selectedCorpus?.id ?? "", {
-            limit: 500,
+            limit: "all",
             offset: 0,
         }),
-        queryFn: () => listDocuments(ctx.selectedCorpus!.id, { limit: 500, offset: 0 }),
+        queryFn: async () => {
+            const pageSize = 200; // must stay ≤ backend MAX_PAGE_LIMIT
+            const corpusId = ctx.selectedCorpus!.id;
+            const first = await listDocuments(corpusId, { limit: pageSize, offset: 0 });
+            if (first.items.length >= first.total) {
+                return first;
+            }
+            const items = [...first.items];
+            let offset = first.items.length;
+            while (offset < first.total) {
+                const page = await listDocuments(corpusId, { limit: pageSize, offset });
+                items.push(...page.items);
+                if (!page.items.length) break;
+                offset += page.items.length;
+            }
+            return { ...first, items, limit: items.length };
+        },
         enabled: Boolean(ctx.selectedCorpus?.id),
     });
 
@@ -104,10 +121,15 @@ function ResearchLayoutInner() {
 
     function handleOpenCitation(citation: AssistantCitation) {
         const docs = docsQuery.data?.items ?? [];
-        const match = docs.find((d) => d.rag_document_id === citation.document_id);
+        const match =
+            (citation.corpus_document_id
+                ? docs.find((d) => d.id === citation.corpus_document_id)
+                : undefined) ??
+            docs.find((d) => d.rag_document_id === citation.document_id);
         if (match) {
             setCitationDoc(match);
             setCitationSnippet(citation.snippet);
+            setCitationPage(citation.page_number ?? null);
         }
     }
 
@@ -195,7 +217,7 @@ function ResearchLayoutInner() {
                     display: "grid",
                     gridTemplateColumns: {
                         xs: "minmax(0, 1fr)",
-                        xl: "minmax(0, 1fr) minmax(240px, 280px)",
+                        xl: "minmax(0, 1fr) minmax(380px, 440px)",
                     },
                     gap: { xs: 1.5, lg: 2 },
                     alignItems: "start",
@@ -298,9 +320,11 @@ function ResearchLayoutInner() {
                 document={citationDoc}
                 corpusId={ctx.selectedCorpus?.id ?? ""}
                 highlightSnippet={citationSnippet}
+                pageHint={citationPage}
                 onClose={() => {
                     setCitationDoc(null);
                     setCitationSnippet(null);
+                    setCitationPage(null);
                 }}
             />
 

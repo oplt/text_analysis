@@ -90,6 +90,10 @@ class Citation:
     citation_number: int | None = None
     section_heading: str | None = None
     used_in_answer: bool = False
+    char_start: int | None = None
+    char_end: int | None = None
+    source_span_ids: list[str] | None = None
+    corpus_document_id: str | None = None
 
 
 @dataclass(slots=True)
@@ -110,6 +114,11 @@ class RagAnswer:
     retrieval_trace_id: str | None = None
     coverage: RetrievalCoverage | None = None
     citation_validation_failed: bool = False
+    citation_validation_status: str = "valid"
+    prompt_template_id: str | None = None
+    prompt_version_id: str | None = None
+    resolved_retrieval_query: str | None = None
+    context_message_ids: list[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)

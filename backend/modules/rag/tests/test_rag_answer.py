@@ -40,7 +40,10 @@ class RagAnswerTest(unittest.IsolatedAsyncioTestCase):
         service.generation.run_rag_answer = AsyncMock(
             return_value=SimpleNamespace(
                 id="run-1",
-                output_text="The project uses PostgreSQL.",
+                output_text=(
+                    '{"answer":"The project uses PostgreSQL.",'
+                    '"claims":[{"text":"The project uses PostgreSQL.","chunk_ids":["c1"]}]}'
+                ),
                 model_name="local-heuristic",
             )
         )
@@ -53,10 +56,11 @@ class RagAnswerTest(unittest.IsolatedAsyncioTestCase):
             user=self._user(),
             project_id=None,
         )
-        self.assertEqual(len(result.citations), 1)
+        self.assertEqual(len([c for c in result.citations if c.used_in_answer]), 1)
         self.assertEqual(result.citations[0].chunk_id, "c1")
         self.assertFalse(result.no_context_found)
         self.assertEqual(result.ai_run_id, "run-1")
+        self.assertEqual(result.citation_validation_status, "valid")
         service.generation.run_rag_answer.assert_awaited_once()
 
     async def test_answer_retrieves_once_then_generates(self):
@@ -77,7 +81,10 @@ class RagAnswerTest(unittest.IsolatedAsyncioTestCase):
         service.generation.run_rag_answer = AsyncMock(
             return_value=SimpleNamespace(
                 id="run-1",
-                output_text="The project uses PostgreSQL.",
+                output_text=(
+                    '{"answer":"The project uses PostgreSQL.",'
+                    '"claims":[{"text":"The project uses PostgreSQL.","chunk_ids":["c1"]}]}'
+                ),
                 model_name="local-heuristic",
             )
         )
@@ -95,6 +102,7 @@ class RagAnswerTest(unittest.IsolatedAsyncioTestCase):
         service.memory.recall_for_prompt.assert_awaited_once()
         service.generation.run_rag_answer.assert_awaited_once()
         self.assertEqual(result.retrieval_trace_id, "trace-1")
+        self.assertEqual(result.citation_validation_status, "valid")
 
     async def test_no_chunks_no_invented_citations(self):
         db = AsyncMock()

@@ -13,11 +13,15 @@ from backend.modules.rag.domain.enums import MessageRole, RetrievalIntent
 from backend.modules.rag.infrastructure.rag_config import RagConfig
 from backend.modules.rag.infrastructure.repositories import RagRepository
 from backend.modules.text_research.application.access import ResearchAccessMixin
+from backend.modules.text_research.application.conversation_context_service import (
+    ConversationContextService,
+)
 from backend.modules.text_research.application.corpus_scope_service import (
     CorpusScopeService,
     CorpusScopeSnapshot,
 )
 from backend.modules.text_research.domain.models import (
+    CorpusDocument,
     ResearchAssistantScopeSnapshot,
     ResearchAssistantThread,
 )
@@ -34,6 +38,9 @@ class CorpusAssistantService(ResearchAccessMixin):
         self.rag_config = RagConfig.from_settings()
         self.retrieval = RetrievalService(db, self.rag_config)
         self.answers = RagAnswerService(db, self.rag_config)
+        self.conversation_context = ConversationContextService(
+            max_context_tokens=min(1500, self.rag_config.max_context_tokens),
+        )
 
     async def create_thread(
         self,
@@ -102,7 +109,6 @@ class CorpusAssistantService(ResearchAccessMixin):
             user_id=user.id,
             document_subset=document_subset,
         )
-        # I1: always pass concrete list (possibly empty). I2: owner_scoped=False.
         outcome = await self.retrieval.retrieve(
             query,
             user_id=user.id,
@@ -117,6 +123,45 @@ class CorpusAssistantService(ResearchAccessMixin):
             persist_trace=True,
         )
         return scope, outcome
+
+    async def _rag_to_corpus_document_map(self, corpus_id: str) -> dict[str, str]:
+        result = await self.db.execute(
+            select(CorpusDocument).where(CorpusDocument.corpus_id == corpus_id)
+        )
+        docs = list(result.scalars().all())
+        return {
+            d.rag_document_id: d.id
+            for d in docs
+            if d.rag_document_id
+        }
+
+    def _enrich_citations(
+        self,
+        citations: list,
+        *,
+        rag_to_corpus: dict[str, str],
+    ) -> list[dict]:
+        enriched: list[dict] = []
+        for c in citations:
+            enriched.append(
+                {
+                    "document_id": c.document_id,
+                    "corpus_document_id": rag_to_corpus.get(c.document_id),
+                    "chunk_id": c.chunk_id,
+                    "filename": c.filename,
+                    "score": c.score,
+                    "snippet": c.snippet,
+                    "page_number": c.page_number,
+                    "chunk_index": c.chunk_index,
+                    "citation_number": c.citation_number,
+                    "used_in_answer": c.used_in_answer,
+                    "section_heading": c.section_heading,
+                    "char_start": getattr(c, "char_start", None),
+                    "char_end": getattr(c, "char_end", None),
+                    "source_span_ids": getattr(c, "source_span_ids", None),
+                }
+            )
+        return enriched
 
     async def ask(
         self,
@@ -150,15 +195,27 @@ class CorpusAssistantService(ResearchAccessMixin):
 
         conversation_id = thread.rag_conversation_id
 
+        # Load prior turns BEFORE writing the new user message (no cross-thread leakage).
+        prior_messages, _ = await self.rag_repo.list_messages(conversation_id, limit=100)
+        ctx = self.conversation_context.build(
+            original_query=query,
+            prior_messages=prior_messages,
+        )
+
         await self.rag_repo.create_message(
             conversation_id=conversation_id,
             role=MessageRole.USER.value,
             content=query,
+            metadata={
+                "original_query": ctx.original_query,
+                "resolved_retrieval_query": ctx.resolved_retrieval_query,
+                "context_message_ids": ctx.prior_message_ids,
+            },
         )
 
-        # I4: exactly one retrieve, then answer_from_retrieval
+        # I4: exactly one retrieve (resolved query), then answer_from_retrieval
         outcome = await self.retrieval.retrieve(
-            query,
+            ctx.resolved_retrieval_query,
             user_id=user.id,
             project_id=scope.project_id,
             filters={
@@ -176,30 +233,24 @@ class CorpusAssistantService(ResearchAccessMixin):
             user=user,
             project_id=scope.project_id,
             document_ids=list(scope.rag_document_ids),
-            include_memory=False,  # reproducibility: no mutable memory for research answers
+            include_memory=False,
+            conversation_context=self.conversation_context.format_for_generation(ctx),
+            resolved_retrieval_query=ctx.resolved_retrieval_query,
+            context_message_ids=ctx.prior_message_ids,
         )
+
+        rag_to_corpus = await self._rag_to_corpus_document_map(corpus_id)
+        citation_payload = self._enrich_citations(answer.citations, rag_to_corpus=rag_to_corpus)
 
         assistant_message = await self.rag_repo.create_message(
             conversation_id=conversation_id,
             role=MessageRole.ASSISTANT.value,
             content=answer.answer,
             model_name=answer.model_name,
+            prompt_template_id=answer.prompt_template_id,
+            prompt_version_id=answer.prompt_version_id,
             retrieval_trace_id=answer.retrieval_trace_id,
-            citations=[
-                {
-                    "document_id": c.document_id,
-                    "chunk_id": c.chunk_id,
-                    "filename": c.filename,
-                    "score": c.score,
-                    "snippet": c.snippet,
-                    "page_number": c.page_number,
-                    "chunk_index": c.chunk_index,
-                    "citation_number": c.citation_number,
-                    "used_in_answer": c.used_in_answer,
-                    "section_heading": c.section_heading,
-                }
-                for c in answer.citations
-            ],
+            citations=citation_payload,
             claims=[
                 {
                     "text": claim.text,
@@ -224,9 +275,18 @@ class CorpusAssistantService(ResearchAccessMixin):
                     "coverage_ratio": answer.coverage.coverage_ratio if answer.coverage else 0.0,
                 },
                 "citation_validation_failed": answer.citation_validation_failed,
+                "citation_validation_status": answer.citation_validation_status,
                 "no_context_found": answer.no_context_found,
                 "retrieval_degraded": answer.retrieval_degraded,
                 "degradation_reason": answer.degradation_reason,
+                "ai_run_id": answer.ai_run_id,
+                "original_query": ctx.original_query,
+                "resolved_retrieval_query": ctx.resolved_retrieval_query,
+                "context_message_ids": ctx.prior_message_ids,
+                "scope_hash": scope.scope_hash,
+                "retrieval_algorithm_version": scope.retrieval_version,
+                "index_version": scope.index_version,
+                "fusion_method": outcome.fusion_method,
             },
         )
 
@@ -260,22 +320,10 @@ class CorpusAssistantService(ResearchAccessMixin):
             "message_id": assistant_message.id,
             "retrieval_trace_id": answer.retrieval_trace_id,
             "query": query,
+            "original_query": ctx.original_query,
+            "resolved_retrieval_query": ctx.resolved_retrieval_query,
             "answer": answer.answer,
-            "citations": [
-                {
-                    "document_id": c.document_id,
-                    "chunk_id": c.chunk_id,
-                    "filename": c.filename,
-                    "score": c.score,
-                    "snippet": c.snippet,
-                    "page_number": c.page_number,
-                    "chunk_index": c.chunk_index,
-                    "citation_number": c.citation_number,
-                    "used_in_answer": c.used_in_answer,
-                    "section_heading": c.section_heading,
-                }
-                for c in answer.citations
-            ],
+            "citations": citation_payload,
             "claims": [
                 {
                     "text": claim.text,
@@ -291,6 +339,7 @@ class CorpusAssistantService(ResearchAccessMixin):
             "retrieval_degraded": answer.retrieval_degraded,
             "degradation_reason": answer.degradation_reason,
             "citation_validation_failed": answer.citation_validation_failed,
+            "citation_validation_status": answer.citation_validation_status,
             "injection_chunks_filtered": answer.injection_chunks_filtered,
             "scope": scope.to_dict(),
             "coverage": {
@@ -303,6 +352,9 @@ class CorpusAssistantService(ResearchAccessMixin):
                 ),
                 "coverage_ratio": answer.coverage.coverage_ratio if answer.coverage else 0.0,
             },
+            "context_message_ids": ctx.prior_message_ids,
+            "ai_run_id": answer.ai_run_id,
+            "fusion_method": outcome.fusion_method,
         }
 
     async def _get_thread_or_404(
@@ -316,6 +368,5 @@ class CorpusAssistantService(ResearchAccessMixin):
             raise HTTPException(status_code=404, detail="Assistant conversation not found")
         await self.ensure_project_access(user_id=user_id, project_id=thread.project_id)
         if thread.user_id != user_id:
-            # Collaborators may view project corpora but threads are per-user for now
             raise HTTPException(status_code=404, detail="Assistant conversation not found")
         return thread

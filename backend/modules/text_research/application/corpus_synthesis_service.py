@@ -8,6 +8,7 @@ from backend.modules.identity_access.models import User
 from backend.modules.rag.application.rag_answer_service import RagAnswerService
 from backend.modules.rag.application.retrieval_service import RetrievalService
 from backend.modules.rag.domain.enums import RetrievalIntent
+from backend.modules.rag.domain.models import RetrievalOutcome, RetrievedChunk
 from backend.modules.rag.infrastructure.rag_config import RagConfig
 from backend.modules.text_research.application.access import ResearchAccessMixin
 from backend.modules.text_research.application.corpus_scope_service import CorpusScopeService
@@ -21,7 +22,7 @@ _ASYNC_DOC_THRESHOLD = 8
 
 
 class CorpusSynthesisService(ResearchAccessMixin):
-    """Document-aware synthesis under the same I1–I5 invariants as Ask Corpus."""
+    """Document-aware map/reduce synthesis under I1–I5 invariants."""
 
     def __init__(self, db: AsyncSession):
         super().__init__(db)
@@ -48,7 +49,6 @@ class CorpusSynthesisService(ResearchAccessMixin):
             document_subset=document_subset,
         )
         allow_list = list(scope.rag_document_ids)
-        # I1: never None; empty short-circuits before fan-out / Celery
         if not allow_list:
             return {
                 "mode": "sync",
@@ -56,6 +56,10 @@ class CorpusSynthesisService(ResearchAccessMixin):
                 "scope": scope.to_dict(),
                 "document_findings": [],
                 "retrieval_trace_ids": [],
+                "documents_total": 0,
+                "documents_considered": 0,
+                "documents_with_evidence": 0,
+                "truncated": False,
                 "coverage": {
                     "documents_in_scope": 0,
                     "documents_with_retrieved_evidence": 0,
@@ -202,11 +206,16 @@ class CorpusSynthesisService(ResearchAccessMixin):
         allow_list: list[str],
     ) -> dict:
         max_docs = min(len(allow_list), self.rag_config.synthesis_max_documents)
+        considered_ids = allow_list[:max_docs]
+        truncated = len(allow_list) > max_docs
         per_doc = self.rag_config.synthesis_passages_per_document
         findings: list[dict] = []
         trace_ids: list[str] = []
+        map_chunks: list[RetrievedChunk] = []
+        seen_chunk_ids: set[str] = set()
 
-        for rag_document_id in allow_list[:max_docs]:
+        # Map phase: per-document findings with raw chunk provenance.
+        for rag_document_id in considered_ids:
             outcome = await self.retrieval.retrieve(
                 query,
                 user_id=user.id,
@@ -222,11 +231,40 @@ class CorpusSynthesisService(ResearchAccessMixin):
             if outcome.retrieval_trace_id:
                 trace_ids.append(outcome.retrieval_trace_id)
             if not outcome.chunks:
+                findings.append(
+                    {
+                        "rag_document_id": rag_document_id,
+                        "filename": None,
+                        "finding": "No relevant passages retrieved for this document.",
+                        "agreements": [],
+                        "disagreements": [],
+                        "exceptions": [],
+                        "missing_evidence": True,
+                        "passages": [],
+                        "retrieval_trace_id": outcome.retrieval_trace_id,
+                    }
+                )
                 continue
+
+            for chunk in outcome.chunks:
+                if chunk.chunk_id not in seen_chunk_ids:
+                    seen_chunk_ids.add(chunk.chunk_id)
+                    map_chunks.append(chunk)
+
+            passage_blob = "\n".join(
+                f"- [{c.chunk_id}] {c.content[:350]}" for c in outcome.chunks
+            )
             findings.append(
                 {
                     "rag_document_id": rag_document_id,
                     "filename": outcome.chunks[0].filename,
+                    "finding": (
+                        f"Document evidence for synthesis query.\n{passage_blob}"
+                    ),
+                    "agreements": [],
+                    "disagreements": [],
+                    "exceptions": [],
+                    "missing_evidence": False,
                     "passages": [
                         {
                             "chunk_id": c.chunk_id,
@@ -236,36 +274,54 @@ class CorpusSynthesisService(ResearchAccessMixin):
                         }
                         for c in outcome.chunks
                     ],
+                    "chunk_ids": [c.chunk_id for c in outcome.chunks],
                     "retrieval_trace_id": outcome.retrieval_trace_id,
                 }
             )
 
-        union_outcome = await self.retrieval.retrieve(
-            query,
-            user_id=user.id,
-            project_id=scope.project_id,
-            filters={
-                "document_ids": allow_list,
-                "owner_scoped": False,
-            },
+        # Reduce phase: synthesize ONLY from map findings / mapped chunks (no union retrieve).
+        findings_with_evidence = [f for f in findings if not f.get("missing_evidence")]
+        reduce_prompt_parts = [
+            f"Research question: {query}",
+            (
+                f"You are reducing {len(findings_with_evidence)} document-level findings "
+                f"from {len(considered_ids)} considered documents "
+                f"({len(allow_list)} indexed in scope"
+                f"{'; truncated' if truncated else ''})."
+            ),
+            "Explicitly identify agreements, disagreements, exceptions, missing evidence, "
+            "and coverage limits. Cite only the provided chunk_ids.",
+            "Document findings:",
+        ]
+        for finding in findings_with_evidence:
+            reduce_prompt_parts.append(
+                f"\n### {finding.get('filename') or finding['rag_document_id']}\n"
+                f"{finding['finding']}"
+            )
+        reduce_query = "\n".join(reduce_prompt_parts)
+
+        # Build a synthetic outcome from map chunks — never a second corpus-wide retrieve.
+        map_outcome = RetrievalOutcome(
+            chunks=map_chunks,
             intent=RetrievalIntent.SYNTHESIS,
-            persist_trace=True,
+            fusion_method="hierarchical_map_reduce",
+            coverage=None,
+            retrieval_trace_id=trace_ids[-1] if trace_ids else None,
+            scope_hash=scope.scope_hash,
         )
-        if union_outcome.retrieval_trace_id:
-            trace_ids.append(union_outcome.retrieval_trace_id)
 
         answer = await self.answers.answer_from_retrieval(
-            (
-                f"{query}\n\nSynthesize across the corpus. Mention variation and disagreement. "
-                f"Evidence was retrieved from {len(findings)} of {scope.indexed_count} indexed documents."
-            ),
-            outcome=union_outcome,
+            reduce_query,
+            outcome=map_outcome,
             user=user,
             project_id=scope.project_id,
             document_ids=allow_list,
             include_memory=False,
         )
+        if answer.retrieval_trace_id:
+            trace_ids.append(answer.retrieval_trace_id)
 
+        docs_with_evidence = len(findings_with_evidence)
         return {
             "mode": "sync",
             "answer": answer.answer,
@@ -277,19 +333,37 @@ class CorpusSynthesisService(ResearchAccessMixin):
                     "snippet": c.snippet,
                     "citation_number": c.citation_number,
                     "used_in_answer": c.used_in_answer,
+                    "page_number": c.page_number,
+                    "section_heading": c.section_heading,
                 }
                 for c in answer.citations
+            ],
+            "claims": [
+                {
+                    "text": claim.text,
+                    "chunk_ids": claim.chunk_ids,
+                    "citation_numbers": claim.citation_numbers,
+                }
+                for claim in answer.claims
             ],
             "scope": scope.to_dict(),
             "document_findings": findings,
             "retrieval_trace_ids": trace_ids,
+            "documents_total": len(allow_list),
+            "documents_considered": len(considered_ids),
+            "documents_with_evidence": docs_with_evidence,
+            "truncated": truncated,
             "coverage": {
-                "documents_in_scope": scope.indexed_count,
-                "documents_with_retrieved_evidence": len(findings),
-                "retrieved_passage_count": sum(len(f["passages"]) for f in findings),
+                "documents_in_scope": len(allow_list),
+                "documents_with_retrieved_evidence": docs_with_evidence,
+                "retrieved_passage_count": sum(len(f.get("passages") or []) for f in findings),
                 "coverage_ratio": (
-                    len(findings) / scope.indexed_count if scope.indexed_count else 0.0
+                    docs_with_evidence / len(allow_list) if allow_list else 0.0
                 ),
+                "documents_total": len(allow_list),
+                "documents_considered": len(considered_ids),
+                "truncated": truncated,
             },
             "retrieval_trace_id": answer.retrieval_trace_id,
+            "citation_validation_status": answer.citation_validation_status,
         }

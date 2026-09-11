@@ -13,7 +13,7 @@ from backend.modules.rag.application.prompt_context_service import PromptContext
 from backend.modules.rag.application.rag_context_builder import RagContextBuilder
 from backend.modules.rag.application.retrieval_service import RetrievalService
 from backend.modules.rag.domain.enums import RetrievalIntent
-from backend.modules.rag.domain.models import RagAnswer, RetrievalOutcome, RetrievedChunk
+from backend.modules.rag.domain.models import RagAnswer, RetrievalOutcome
 from backend.modules.rag.infrastructure import metrics
 from backend.modules.rag.infrastructure.rag_config import RagConfig
 from backend.modules.rag.infrastructure.repositories import RagRepository
@@ -30,6 +30,12 @@ STRUCTURED_CLAIM_INSTRUCTION = (
     "Every claim must cite chunk_ids from the provided sources. "
     "Do not invent chunk IDs. If evidence is insufficient, say so in answer "
     "and use an empty claims array."
+)
+
+STRUCTURED_REPAIR_INSTRUCTION = (
+    "Your previous reply was not valid JSON with claim citations. "
+    "Reply again with ONLY the JSON object "
+    '{"answer":"...","claims":[{"text":"...","chunk_ids":["chunk-id"]}]}.'
 )
 
 
@@ -111,6 +117,9 @@ class RagAnswerService:
         document_ids: list[str] | None = None,
         organization_id: str | None = None,
         include_memory: bool = True,
+        conversation_context: str | None = None,
+        resolved_retrieval_query: str | None = None,
+        context_message_ids: list[str] | None = None,
     ) -> RagAnswer:
         """Generate from an existing retrieval outcome — never re-retrieves (I4)."""
         if not self.config.enabled:
@@ -151,6 +160,9 @@ class RagAnswerService:
                 injection_chunks_filtered=outcome.injection_chunks_filtered,
                 retrieval_trace_id=outcome.retrieval_trace_id,
                 coverage=outcome.coverage,
+                citation_validation_status="valid",
+                resolved_retrieval_query=resolved_retrieval_query or query,
+                context_message_ids=list(context_message_ids or []),
             )
 
         document_context = self.context_builder.build_document_context_block(bounded_chunks)
@@ -176,6 +188,10 @@ class RagAnswerService:
             memory_context=memory_context or None,
             document_context=document_context or None,
         )
+        if conversation_context:
+            system_context = (
+                f"{system_context or ''}\n\n{conversation_context}".strip()
+            )
         combined = f"{system_context or ''}\n\n{STRUCTURED_CLAIM_INSTRUCTION}".strip()
         chunk_ids = [c.chunk_id for c in bounded_chunks]
 
@@ -196,6 +212,28 @@ class RagAnswerService:
             allowed_document_ids=document_ids,
         )
 
+        # At most one bounded repair/retry for unstructured output.
+        if validated.citation_validation_status == "unstructured":
+            repair_context = (
+                f"{combined}\n\n{STRUCTURED_REPAIR_INSTRUCTION}\n\n"
+                f"Previous invalid output:\n{(ai_run.output_text or '')[:2000]}"
+            )
+            ai_run = await self.generation.run_rag_answer(
+                user,
+                query=query,
+                combined_context=repair_context,
+                retrieved_chunk_ids=chunk_ids,
+                retrieval_degraded=outcome.degraded,
+                memory_degraded=memory_degraded,
+                degradation_reason=outcome.degradation_reason,
+                injection_chunks_filtered=outcome.injection_chunks_filtered,
+            )
+            validated = self.citation_validator.validate(
+                raw_output=ai_run.output_text or "",
+                retrieved_chunks=bounded_chunks,
+                allowed_document_ids=document_ids,
+            )
+
         latency_ms = int((perf_counter() - started) * 1000)
         metrics.rag_answer_latency_ms.observe(latency_ms)
 
@@ -209,6 +247,9 @@ class RagAnswerService:
             model_name=ai_run.model_name,
             latency_ms=latency_ms,
         )
+
+        prompt_template_id = getattr(ai_run, "prompt_template_id", None)
+        prompt_version_id = getattr(ai_run, "prompt_version_id", None)
 
         return RagAnswer(
             query=query,
@@ -227,6 +268,11 @@ class RagAnswerService:
             retrieval_trace_id=outcome.retrieval_trace_id,
             coverage=outcome.coverage,
             citation_validation_failed=validated.citation_validation_failed,
+            citation_validation_status=validated.citation_validation_status,
+            prompt_template_id=prompt_template_id,
+            prompt_version_id=prompt_version_id,
+            resolved_retrieval_query=resolved_retrieval_query or query,
+            context_message_ids=list(context_message_ids or []),
         )
 
     async def _log_query(

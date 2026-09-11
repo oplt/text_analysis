@@ -138,3 +138,20 @@ class ResearchArtifactKind(StrEnum):
     """Discriminator for persisted research artifacts that wrap model outputs."""
 
     PREDICTION_SET = "prediction_set"
+
+
+class ResearchMemoSourceType(StrEnum):
+    """Origin of a research memo. Extensible without model redesign.
+
+    Reserved for later (do not require schema change to add):
+    ``topic_interpretation``, ``annotation_review``, ``classification_error_analysis``.
+    """
+
+    MANUAL = "manual"
+    ASSISTANT_ANSWER = "assistant_answer"
+    ANALYSIS_RESULT = "analysis_result"
+
+
+class ResearchMemoStatus(StrEnum):
+    ACTIVE = "active"
+    ARCHIVED = "archived"

@@ -219,6 +219,7 @@ class RagRepository:
         await self.db.execute(delete(RagChunk).where(RagChunk.document_id == document.id))
         rows: list[RagChunk] = []
         for item in chunks:
+            meta = item.get("metadata") or {}
             row = RagChunk(
                 document_id=document.id,
                 user_id=document.user_id,
@@ -227,11 +228,15 @@ class RagRepository:
                 chunk_index=item["chunk_index"],
                 content=item["content"],
                 token_count=item["token_count"],
-                metadata_json=json.dumps(item.get("metadata", {}), ensure_ascii=True),
+                metadata_json=json.dumps(meta, ensure_ascii=True),
                 embedding_json=json.dumps(item.get("embedding", []), ensure_ascii=True),
                 vector_external_id=item.get("vector_external_id"),
                 content_hash=item.get("content_hash"),
                 parent_chunk_id=item.get("parent_chunk_id"),
+                parser_version=item.get("parser_version")
+                or (meta.get("parser_version") if isinstance(meta, dict) else None),
+                chunker_version=item.get("chunker_version")
+                or (meta.get("chunker_version") if isinstance(meta, dict) else None),
             )
             if item.get("id"):
                 row.id = item["id"]
@@ -287,6 +292,7 @@ class RagRepository:
         document_ids: list[str] | None,
         owner_scoped: bool,
         params: dict,
+        exclude_parents: bool = False,
     ) -> list[str] | None:
         """Build shared WHERE clauses. Returns None when empty allow-list (I1)."""
         from backend.modules.rag.application.document_scope import (
@@ -310,6 +316,13 @@ class RagRepository:
         if should_apply_document_id_filter(document_ids):
             filters.append("c.document_id = ANY(:document_ids)")
             params["document_ids"] = list(document_ids or [])
+        if exclude_parents:
+            # Parents use negative chunk_index and/or chunk_role=parent metadata.
+            filters.append("c.chunk_index >= 0")
+            filters.append(
+                "(c.metadata_json IS NULL OR "
+                "COALESCE(c.metadata_json::json->>'chunk_role', 'child') <> 'parent')"
+            )
         return filters
 
     async def similarity_search_indexed(
@@ -322,6 +335,7 @@ class RagRepository:
         top_k: int,
         score_threshold: float,
         owner_scoped: bool = True,
+        exclude_parents: bool = False,
     ) -> list[RetrievedChunk] | None:
         if not await check_pgvector_is_available(self.db):
             return None
@@ -339,6 +353,7 @@ class RagRepository:
             document_ids=document_ids,
             owner_scoped=owner_scoped,
             params=params,
+            exclude_parents=exclude_parents,
         )
         if filters is None:
             return []
@@ -398,6 +413,7 @@ class RagRepository:
         top_k: int,
         score_threshold: float,
         owner_scoped: bool = True,
+        exclude_parents: bool = False,
     ) -> list[RetrievedChunk]:
         params: dict = {
             "max_candidates": json_fallback_max_candidates(top_k),
@@ -408,6 +424,7 @@ class RagRepository:
             document_ids=document_ids,
             owner_scoped=owner_scoped,
             params=params,
+            exclude_parents=exclude_parents,
         )
         if filters is None:
             return []
@@ -480,6 +497,7 @@ class RagRepository:
         query: str,
         top_k: int,
         owner_scoped: bool = True,
+        exclude_parents: bool = False,
     ) -> list[RetrievedChunk]:
         """Independent PostgreSQL full-text lexical ranking path."""
         params: dict = {
@@ -492,6 +510,7 @@ class RagRepository:
             document_ids=document_ids,
             owner_scoped=owner_scoped,
             params=params,
+            exclude_parents=exclude_parents,
         )
         if filters is None:
             return []
@@ -525,8 +544,8 @@ class RagRepository:
         try:
             result = await self.db.execute(text(sql), params)
         except Exception:
-            logger.exception("Lexical full-text search failed; returning empty")
-            return []
+            logger.exception("Lexical full-text search failed")
+            raise
 
         retrieved: list[RetrievedChunk] = []
         for rank, row in enumerate(result.mappings().all(), start=1):
@@ -740,7 +759,12 @@ class RagRepository:
         citations: list[dict] | None = None,
         claims: list[dict] | None = None,
         metadata: dict | None = None,
+        citation_validation_status: str | None = None,
+        resolved_retrieval_query: str | None = None,
+        context_message_ids: list[str] | None = None,
+        ai_run_id: str | None = None,
     ) -> RagMessage:
+        meta = metadata or {}
         row = RagMessage(
             conversation_id=conversation_id,
             role=role,
@@ -751,7 +775,19 @@ class RagRepository:
             retrieval_trace_id=retrieval_trace_id,
             citations_json=json.dumps(citations or [], ensure_ascii=True),
             claims_json=json.dumps(claims or [], ensure_ascii=True),
-            metadata_json=json.dumps(metadata or {}, ensure_ascii=True),
+            metadata_json=json.dumps(meta, ensure_ascii=True),
+            citation_validation_status=citation_validation_status
+            or meta.get("citation_validation_status"),
+            resolved_retrieval_query=resolved_retrieval_query
+            or meta.get("resolved_retrieval_query"),
+            context_message_ids_json=json.dumps(
+                context_message_ids
+                if context_message_ids is not None
+                else meta.get("context_message_ids")
+                or [],
+                ensure_ascii=True,
+            ),
+            ai_run_id=ai_run_id or meta.get("ai_run_id"),
         )
         self.db.add(row)
         await self.db.flush()

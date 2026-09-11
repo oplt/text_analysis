@@ -108,12 +108,14 @@ class CorpusAssistantSingleRetrieveTests(unittest.IsolatedAsyncioTestCase):
             project_id="proj-1",
         )
         service.create_thread = AsyncMock(return_value=(thread, scope))
+        service.rag_repo.list_messages = AsyncMock(return_value=([], 0))
         service.rag_repo.create_message = AsyncMock(
             side_effect=[
                 MagicMock(id="m-user"),
                 MagicMock(id="m-asst"),
             ]
         )
+        service._rag_to_corpus_document_map = AsyncMock(return_value={"rag-1": "cd1"})
         outcome = RetrievalOutcome(chunks=[], no_matches=True, retrieval_trace_id="trace-1")
         service.retrieval.retrieve = AsyncMock(return_value=outcome)
         answer = MagicMock(
@@ -128,8 +130,12 @@ class CorpusAssistantSingleRetrieveTests(unittest.IsolatedAsyncioTestCase):
             retrieval_degraded=False,
             degradation_reason=None,
             citation_validation_failed=False,
+            citation_validation_status="valid",
             injection_chunks_filtered=0,
             coverage=None,
+            prompt_template_id=None,
+            prompt_version_id=None,
+            ai_run_id=None,
         )
         service.answers.answer_from_retrieval = AsyncMock(return_value=answer)
         service.answers.answer = AsyncMock()

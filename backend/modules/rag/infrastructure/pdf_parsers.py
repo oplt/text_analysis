@@ -1,9 +1,10 @@
-"""PDF parsing adapters: basic pypdf + optional enhanced layout-aware parser."""
+"""PDF parsing adapters: pypdf baseline + PyMuPDF block/reading-order extraction."""
 
 from __future__ import annotations
 
 import logging
 from typing import Protocol
+from uuid import uuid4
 
 from backend.modules.rag.domain.models import ParsedDocument
 
@@ -41,6 +42,7 @@ class BasicPypdfParser:
                             "format": "pdf",
                             "page_number": index,
                             "parser": self.name,
+                            "parser_quality": "basic",
                         },
                         page_number=index,
                     )
@@ -49,13 +51,9 @@ class BasicPypdfParser:
 
 
 class EnhancedPdfParser:
-    """Optional layout-aware parser.
+    """Layout-aware parser with block/bbox reading-order metadata when pymupdf is available."""
 
-    Attempts ``pymupdf`` (fitz) when installed; callers must fall back to basic
-    parser when this raises or returns empty.
-    """
-
-    name = "pymupdf-v1"
+    name = "pymupdf-blocks-v1"
 
     def parse(self, content: bytes) -> list[ParsedDocument]:
         try:
@@ -66,9 +64,39 @@ class EnhancedPdfParser:
         docs: list[ParsedDocument] = []
         with fitz.open(stream=content, filetype="pdf") as document:
             for index, page in enumerate(document, start=1):
-                text = (page.get_text("text") or "").strip()
-                # Soft-dehyphenate line-break hyphens common in academic PDFs
-                text = text.replace("-\n", "")
+                blocks = page.get_text("dict").get("blocks") or []
+                text_blocks: list[dict] = []
+                lines_out: list[str] = []
+                for block in blocks:
+                    if block.get("type") != 0:
+                        continue
+                    block_id = str(uuid4())
+                    bbox = block.get("bbox")
+                    parts: list[str] = []
+                    for line in block.get("lines") or []:
+                        span_text = "".join(
+                            span.get("text") or "" for span in (line.get("spans") or [])
+                        ).strip()
+                        if span_text:
+                            parts.append(span_text)
+                    block_text = "\n".join(parts).strip()
+                    if not block_text:
+                        continue
+                    # Soft-dehyphenate line-break hyphens common in academic PDFs
+                    block_text = block_text.replace("-\n", "")
+                    text_blocks.append(
+                        {
+                            "block_id": block_id,
+                            "bbox": list(bbox) if bbox else None,
+                            "text": block_text,
+                        }
+                    )
+                    lines_out.append(block_text)
+
+                text = "\n\n".join(lines_out).strip()
+                if not text:
+                    # Fall back to plain text extraction for the page.
+                    text = (page.get_text("text") or "").strip().replace("-\n", "")
                 if text:
                     docs.append(
                         ParsedDocument(
@@ -77,6 +105,11 @@ class EnhancedPdfParser:
                                 "format": "pdf",
                                 "page_number": index,
                                 "parser": self.name,
+                                "parser_quality": "blocks",
+                                "reading_order": "pymupdf_blocks",
+                                "blocks": text_blocks,
+                                "has_tables": False,
+                                "ocr_used": False,
                             },
                             page_number=index,
                         )

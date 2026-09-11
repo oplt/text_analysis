@@ -15,7 +15,10 @@ from backend.db.session import SessionLocal, engine
 from backend.modules.ai.providers import close_ai_provider_http_clients
 from backend.modules.memory.infrastructure.memory_config import validate_memory_config
 from backend.modules.platform.service import PlatformService
-from backend.modules.rag.infrastructure.rag_config import validate_rag_config
+from backend.modules.rag.infrastructure.rag_config import (
+    validate_rag_config,
+    validate_rag_index_health,
+)
 from backend.observability import setup_observability
 from backend.observability.service import close_observability_http_client
 from backend.workers.async_dispatch import log_eager_mode_startup_warning
@@ -54,6 +57,12 @@ async def lifespan(app: FastAPI):
         platform_service = PlatformService(db)
         await platform_service.ensure_defaults()
         logger.info("Platform defaults ensured")
+        try:
+            await validate_rag_index_health(db)
+        except Exception:
+            logger.exception("RAG index/schema health check failed")
+            if settings.APP_ENV == "production" or settings.RAG_REQUIRE_ANN_INDEX:
+                raise
     logger.info("Application startup complete")
     yield
     logger.info("Application shutdown started")

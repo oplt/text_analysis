@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+    Alert,
     Box,
     Button,
     Divider,
@@ -54,6 +55,8 @@ type CorpusDocumentDrawerProps = {
     corpusId: string;
     onClose: () => void;
     highlightSnippet?: string | null;
+    /** Optional page number hint from a citation (display only; snippet highlight remains primary). */
+    pageHint?: number | null;
 };
 
 export function CorpusDocumentDrawer({
@@ -69,6 +72,7 @@ function CorpusDocumentDrawerContent({
     corpusId,
     onClose,
     highlightSnippet,
+    pageHint,
 }: CorpusDocumentDrawerProps) {
     const client = useQueryClient();
     const { showToast } = useSnackbar();
@@ -175,21 +179,43 @@ function CorpusDocumentDrawerContent({
                             {field("research_notes", "Research notes", true)}
                             <Typography variant="caption" color="text.secondary">
                                 RAG document: {document.rag_document_id}
+                                {pageHint != null ? ` · Cited page ~${pageHint}` : ""}
                             </Typography>
                             <Divider />
                             <Typography variant="subtitle2">Source text</Typography>
-                            <QueryBoundary
-                                isLoading={sourceQuery.isLoading}
-                                isError={sourceQuery.isError}
-                                error={sourceQuery.error}
-                                onRetry={() => void sourceQuery.refetch()}
-                                variant="inline"
-                            >
-                                <HighlightedSourceText
-                                    text={sourceQuery.data?.text || "No source text available yet."}
-                                    snippet={highlightSnippet}
-                                />
-                            </QueryBoundary>
+                            {sourceQuery.isError && highlightSnippet ? (
+                                <Stack spacing={1}>
+                                    <Alert severity="warning">
+                                        Full source text unavailable (
+                                        {getQueryErrorMessage(
+                                            sourceQuery.error,
+                                            "canonical source missing"
+                                        )}
+                                        ). Showing citation snippet instead.
+                                    </Alert>
+                                    <HighlightedSourceText
+                                        text={highlightSnippet}
+                                        snippet={highlightSnippet}
+                                    />
+                                </Stack>
+                            ) : (
+                                <QueryBoundary
+                                    isLoading={sourceQuery.isLoading}
+                                    isError={sourceQuery.isError}
+                                    error={sourceQuery.error}
+                                    onRetry={() => void sourceQuery.refetch()}
+                                    variant="inline"
+                                >
+                                    <HighlightedSourceText
+                                        text={
+                                            sourceQuery.data?.text ||
+                                            highlightSnippet ||
+                                            "No source text available yet."
+                                        }
+                                        snippet={highlightSnippet}
+                                    />
+                                </QueryBoundary>
+                            )}
                         </Stack>
                         <Stack direction="row" spacing={1}>
                             <Button

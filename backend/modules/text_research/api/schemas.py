@@ -1300,6 +1300,10 @@ class AssistantCitationResponse(BaseModel):
     citation_number: int | None = None
     used_in_answer: bool = False
     section_heading: str | None = None
+    corpus_document_id: str | None = None
+    char_start: int | None = None
+    char_end: int | None = None
+    source_span_ids: list[str] | None = None
 
 
 class AssistantClaimResponse(BaseModel):
@@ -1313,6 +1317,9 @@ class AssistantCoverageResponse(BaseModel):
     documents_with_retrieved_evidence: int
     retrieved_passage_count: int
     coverage_ratio: float
+    documents_total: int | None = None
+    documents_considered: int | None = None
+    truncated: bool | None = None
 
 
 class AssistantMessageResponse(BaseModel):
@@ -1321,6 +1328,8 @@ class AssistantMessageResponse(BaseModel):
     message_id: str
     retrieval_trace_id: str | None
     query: str
+    original_query: str | None = None
+    resolved_retrieval_query: str | None = None
     answer: str
     citations: list[AssistantCitationResponse]
     claims: list[AssistantClaimResponse] = Field(default_factory=list)
@@ -1331,9 +1340,13 @@ class AssistantMessageResponse(BaseModel):
     retrieval_degraded: bool = False
     degradation_reason: str | None = None
     citation_validation_failed: bool = False
+    citation_validation_status: str = "valid"
     injection_chunks_filtered: int = 0
     scope: AssistantScopeResponse
     coverage: AssistantCoverageResponse
+    context_message_ids: list[str] = Field(default_factory=list)
+    ai_run_id: str | None = None
+    fusion_method: str | None = None
 
 
 class AssistantThreadResponse(BaseModel):

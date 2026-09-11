@@ -191,7 +191,10 @@ class Settings(BaseSettings):
     RAG_TOP_K: int = 5
     RAG_SCORE_THRESHOLD: float = 0.3
     RAG_RERANK_ENABLED: bool = False
+    RAG_RERANK_HEURISTIC_ENABLED: bool = False
     RAG_RERANK_CANDIDATE_MULTIPLIER: int = 3
+    RAG_EXPECTED_VECTOR_DIMENSIONS: int = 1536
+    RAG_REQUIRE_ANN_INDEX: bool = False
     RAG_MAX_CONTEXT_TOKENS: int = 6000
     RAG_ALLOWED_FILE_TYPES: str = "pdf,txt,md,docx,csv"
     RAG_MAX_FILE_BYTES: int = 10 * 1024 * 1024

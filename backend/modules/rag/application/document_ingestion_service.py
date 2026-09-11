@@ -340,7 +340,14 @@ class DocumentIngestionService:
             texts = [chunk.content for chunk in chunks]
             vectors = await self.embeddings.embed_texts(texts)
             for chunk, vector in zip(chunks, vectors, strict=True):
-                chunk.embedding = vector
+                # Parents are expansion context only — do not index as retrieval candidates.
+                if (
+                    chunk.chunk_index < 0
+                    or (chunk.metadata or {}).get("chunk_role") == "parent"
+                ):
+                    chunk.embedding = []
+                else:
+                    chunk.embedding = vector
 
             chunk_rows = await self.repo.replace_chunks(
                 document,
@@ -355,6 +362,8 @@ class DocumentIngestionService:
                         "vector_external_id": c.id,
                         "content_hash": c.content_hash,
                         "parent_chunk_id": c.parent_chunk_id,
+                        "parser_version": (c.metadata or {}).get("parser_version"),
+                        "chunker_version": (c.metadata or {}).get("chunker_version"),
                     }
                     for c in chunks
                 ],
