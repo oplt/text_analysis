@@ -22,3 +22,19 @@ class SourceType(StrEnum):
     UPLOAD = "upload"
     API = "api"
     MANUAL = "manual"
+
+
+class RetrievalIntent(StrEnum):
+    FACT = "fact"
+    DEFINITION = "definition"
+    EVIDENCE = "evidence"
+    COMPARISON = "comparison"
+    SYNTHESIS = "synthesis"
+    CONTRADICTION = "contradiction"
+    SEMANTIC_SEARCH = "semantic_search"
+
+
+class MessageRole(StrEnum):
+    USER = "user"
+    ASSISTANT = "assistant"
+    SYSTEM = "system"

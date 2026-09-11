@@ -1,6 +1,14 @@
 import { createContext, useContext } from "react";
 import type { AnnotationLabel, Codebook, ResearchCorpus, UnitType } from "../types";
 
+export type AskAboutPayload = {
+    question: string;
+    intent?: string;
+    autoSubmit?: boolean;
+};
+
+export type PendingAsk = AskAboutPayload & { nonce: number };
+
 export type ResearchContextValue = {
     projectId: string;
     corpora: ResearchCorpus[];
@@ -20,6 +28,11 @@ export type ResearchContextValue = {
     setUnitType: (unitType: UnitType) => void;
     refetchCorpora: () => void;
     refetchCodebooks: () => void;
+    /** Open Ask Corpus panel and optionally prefill/auto-submit a question. */
+    askAbout: (payload: AskAboutPayload) => void;
+    pendingAsk: PendingAsk | null;
+    clearPendingAsk: () => void;
+    askPanelOpenNonce: number;
 };
 
 export const ResearchContext = createContext<ResearchContextValue | null>(null);

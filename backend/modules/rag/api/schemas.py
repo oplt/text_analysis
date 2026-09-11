@@ -56,8 +56,10 @@ class RagIngestionJobResponse(BaseModel):
 class RagRetrieveRequest(RequestModel):
     query: str = Field(min_length=1, max_length=4000)
     project_id: str | None = None
-    document_ids: list[str] = Field(default_factory=list)
+    # None = unscoped (generic /rag); [] = empty allow-list (I1); [...] = filter
+    document_ids: list[str] | None = None
     top_k: int | None = Field(default=None, ge=1, le=20)
+    intent: str | None = None
 
 
 class RagRetrievedChunkResponse(BaseModel):
@@ -68,6 +70,15 @@ class RagRetrievedChunkResponse(BaseModel):
     filename: str
     chunk_index: int
     page_number: int | None = None
+    rank: int | None = None
+    used_in_answer: bool = False
+
+
+class RagCoverageResponse(BaseModel):
+    documents_in_scope: int = 0
+    documents_with_retrieved_evidence: int = 0
+    retrieved_passage_count: int = 0
+    coverage_ratio: float = 0.0
 
 
 class RagRetrieveResponse(BaseModel):
@@ -76,6 +87,10 @@ class RagRetrieveResponse(BaseModel):
     degradation_reason: str | None = None
     no_matches: bool = False
     injection_chunks_filtered: int = 0
+    intent: str | None = None
+    fusion_method: str | None = None
+    coverage: RagCoverageResponse | None = None
+    retrieval_trace_id: str | None = None
 
 
 class RagAskRequest(RequestModel):
@@ -83,7 +98,8 @@ class RagAskRequest(RequestModel):
     project_id: str | None = None
     run_id: str | None = None
     agent_id: str | None = None
-    document_ids: list[str] = Field(default_factory=list)
+    document_ids: list[str] | None = None
+    intent: str | None = None
 
 
 class RagCitationResponse(BaseModel):
@@ -94,6 +110,9 @@ class RagCitationResponse(BaseModel):
     snippet: str
     page_number: int | None = None
     chunk_index: int | None = None
+    citation_number: int | None = None
+    used_in_answer: bool = False
+    section_heading: str | None = None
 
 
 class RagAskResponse(BaseModel):
@@ -109,6 +128,9 @@ class RagAskResponse(BaseModel):
     memory_degraded: bool = False
     degradation_reason: str | None = None
     injection_chunks_filtered: int = 0
+    retrieval_trace_id: str | None = None
+    citation_validation_failed: bool = False
+    coverage: RagCoverageResponse | None = None
 
 
 class RagQueryResponse(BaseModel):

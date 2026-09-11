@@ -1232,3 +1232,121 @@ class ContextualLinkRequest(BaseModel):
     join_on_year: bool = True
     provenance_mode: str = "human_only"
     model_id: str | None = None
+
+
+# --- Ask Corpus / Research Assistant ---
+
+
+class AssistantMessageRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=4000)
+    thread_id: str | None = None
+    intent: str | None = None
+    document_ids: list[str] | None = Field(
+        default=None,
+        description="Optional corpus-document ID subset (research document ids, not RAG ids)",
+    )
+
+
+class AssistantRetrieveRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=4000)
+    intent: str | None = "semantic_search"
+    document_ids: list[str] | None = None
+    top_k: int | None = Field(default=None, ge=1, le=50)
+    retrieval_mode: str | None = Field(
+        default="hybrid",
+        description="dense|semantic|lexical|hybrid — controls dense vs FTS candidate generation",
+    )
+
+
+class AssistantSynthesizeRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=4000)
+    document_ids: list[str] | None = None
+    async_mode: bool | None = Field(
+        default=None,
+        description="Force async Celery run; default auto when corpus is large",
+    )
+
+
+class AssistantThreadCreateRequest(BaseModel):
+    title: str | None = None
+    document_ids: list[str] | None = None
+
+
+class AssistantScopeResponse(BaseModel):
+    corpus_id: str
+    project_id: str
+    corpus_name: str
+    rag_document_ids: list[str]
+    corpus_document_ids: list[str]
+    indexed_rag_document_ids: list[str]
+    unavailable_rag_document_ids: list[str]
+    scope_hash: str
+    index_version: str | None = None
+    retrieval_version: str | None = None
+    total_documents: int
+    indexed_count: int
+    unavailable_count: int
+    warnings: list[str] = Field(default_factory=list)
+
+
+class AssistantCitationResponse(BaseModel):
+    document_id: str
+    chunk_id: str
+    filename: str
+    score: float
+    snippet: str
+    page_number: int | None = None
+    chunk_index: int | None = None
+    citation_number: int | None = None
+    used_in_answer: bool = False
+    section_heading: str | None = None
+
+
+class AssistantClaimResponse(BaseModel):
+    text: str
+    chunk_ids: list[str]
+    citation_numbers: list[int] = Field(default_factory=list)
+
+
+class AssistantCoverageResponse(BaseModel):
+    documents_in_scope: int
+    documents_with_retrieved_evidence: int
+    retrieved_passage_count: int
+    coverage_ratio: float
+
+
+class AssistantMessageResponse(BaseModel):
+    thread_id: str
+    conversation_id: str
+    message_id: str
+    retrieval_trace_id: str | None
+    query: str
+    answer: str
+    citations: list[AssistantCitationResponse]
+    claims: list[AssistantClaimResponse] = Field(default_factory=list)
+    retrieved_chunk_ids: list[str]
+    model_name: str
+    latency_ms: int
+    no_context_found: bool
+    retrieval_degraded: bool = False
+    degradation_reason: str | None = None
+    citation_validation_failed: bool = False
+    injection_chunks_filtered: int = 0
+    scope: AssistantScopeResponse
+    coverage: AssistantCoverageResponse
+
+
+class AssistantThreadResponse(BaseModel):
+    id: str
+    corpus_id: str
+    project_id: str
+    rag_conversation_id: str
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class AssistantConversationDetailResponse(BaseModel):
+    thread: AssistantThreadResponse
+    messages: list[dict[str, Any]]
+    scope: AssistantScopeResponse | None = None

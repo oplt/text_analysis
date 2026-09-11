@@ -346,12 +346,15 @@ class DocumentIngestionService:
                 document,
                 [
                     {
+                        "id": c.id,
                         "chunk_index": c.chunk_index,
                         "content": c.content,
                         "token_count": c.token_count,
                         "metadata": c.metadata,
                         "embedding": c.embedding or [],
                         "vector_external_id": c.id,
+                        "content_hash": c.content_hash,
+                        "parent_chunk_id": c.parent_chunk_id,
                     }
                     for c in chunks
                 ],

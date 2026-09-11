@@ -379,3 +379,56 @@ export async function getDashboard(
     await expectOk(response, "get dashboard");
     return response.json();
 }
+
+export async function getAssistantScope(api: ApiContext, corpusId: string) {
+    const response = await api.request.get(
+        `${researchBase}/corpora/${corpusId}/assistant/scope`,
+        { headers: headers(api.csrfToken) }
+    );
+    await expectOk(response, "assistant scope");
+    return response.json() as {
+        corpus_id: string;
+        corpus_name: string;
+        total_documents: number;
+        indexed_count: number;
+        unavailable_count: number;
+        rag_document_ids: string[];
+        warnings: string[];
+    };
+}
+
+export async function postAssistantMessage(
+    api: ApiContext,
+    corpusId: string,
+    payload: { query: string; intent?: string; thread_id?: string }
+) {
+    const response = await api.request.post(
+        `${researchBase}/corpora/${corpusId}/assistant/messages`,
+        {
+            headers: headers(api.csrfToken),
+            data: payload,
+        }
+    );
+    const body = await response.json().catch(async () => ({ detail: await response.text() }));
+    return { ok: response.ok(), status: response.status(), body };
+}
+
+export async function postAssistantRetrieve(
+    api: ApiContext,
+    corpusId: string,
+    payload: { query: string; intent?: string }
+) {
+    const response = await api.request.post(
+        `${researchBase}/corpora/${corpusId}/assistant/retrieve`,
+        {
+            headers: headers(api.csrfToken),
+            data: payload,
+        }
+    );
+    await expectOk(response, "assistant retrieve");
+    return response.json() as {
+        retrieval_trace_id?: string;
+        chunks?: Array<{ chunk_id: string; document_id: string; content?: string }>;
+        coverage?: Record<string, unknown>;
+    };
+}

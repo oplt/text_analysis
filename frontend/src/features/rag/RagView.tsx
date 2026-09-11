@@ -213,6 +213,13 @@ export default function RagView() {
 
     return (
         <PageShell maxWidth="xl">
+            <Typography variant="h5" gutterBottom>
+                Retrieval diagnostics
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Admin tools for document indexing, chunk inspection, and retrieve/ask debugging.
+                Researchers should use Ask Corpus inside Text Research.
+            </Typography>
             <SettingsTabs />
 
             <Stack spacing={2}>

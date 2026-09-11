@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Box,
     Button,
@@ -53,6 +53,7 @@ type CorpusDocumentDrawerProps = {
     document: CorpusDocument | null;
     corpusId: string;
     onClose: () => void;
+    highlightSnippet?: string | null;
 };
 
 export function CorpusDocumentDrawer({
@@ -67,6 +68,7 @@ function CorpusDocumentDrawerContent({
     document,
     corpusId,
     onClose,
+    highlightSnippet,
 }: CorpusDocumentDrawerProps) {
     const client = useQueryClient();
     const { showToast } = useSnackbar();
@@ -183,21 +185,10 @@ function CorpusDocumentDrawerContent({
                                 onRetry={() => void sourceQuery.refetch()}
                                 variant="inline"
                             >
-                                <Box
-                                    component="pre"
-                                    sx={{
-                                        m: 0,
-                                        p: 1.5,
-                                        borderRadius: 1,
-                                        bgcolor: "action.hover",
-                                        fontSize: 12,
-                                        whiteSpace: "pre-wrap",
-                                        maxHeight: 240,
-                                        overflow: "auto",
-                                    }}
-                                >
-                                    {sourceQuery.data?.text || "No source text available yet."}
-                                </Box>
+                                <HighlightedSourceText
+                                    text={sourceQuery.data?.text || "No source text available yet."}
+                                    snippet={highlightSnippet}
+                                />
                             </QueryBoundary>
                         </Stack>
                         <Stack direction="row" spacing={1}>
@@ -221,5 +212,78 @@ function CorpusDocumentDrawerContent({
                 )}
             </Box>
         </Drawer>
+    );
+}
+
+function HighlightedSourceText({
+    text,
+    snippet,
+}: {
+    text: string;
+    snippet?: string | null;
+}) {
+    const markRef = useRef<HTMLElement | null>(null);
+    const needle = (snippet ?? "").trim();
+    const lowerText = text.toLowerCase();
+    const lowerNeedle = needle.toLowerCase();
+    const index = needle ? lowerText.indexOf(lowerNeedle) : -1;
+
+    useEffect(() => {
+        markRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, [text, snippet]);
+
+    if (index < 0) {
+        return (
+            <Box
+                component="pre"
+                sx={{
+                    m: 0,
+                    p: 1.5,
+                    borderRadius: 1,
+                    bgcolor: "action.hover",
+                    fontSize: 12,
+                    whiteSpace: "pre-wrap",
+                    maxHeight: 240,
+                    overflow: "auto",
+                }}
+            >
+                {text}
+            </Box>
+        );
+    }
+
+    const before = text.slice(0, index);
+    const match = text.slice(index, index + needle.length);
+    const after = text.slice(index + needle.length);
+
+    return (
+        <Box
+            component="pre"
+            sx={{
+                m: 0,
+                p: 1.5,
+                borderRadius: 1,
+                bgcolor: "action.hover",
+                fontSize: 12,
+                whiteSpace: "pre-wrap",
+                maxHeight: 240,
+                overflow: "auto",
+            }}
+        >
+            {before}
+            <Box
+                component="mark"
+                ref={markRef}
+                sx={{
+                    bgcolor: "warning.light",
+                    color: "warning.contrastText",
+                    px: 0.25,
+                    borderRadius: 0.5,
+                }}
+            >
+                {match}
+            </Box>
+            {after}
+        </Box>
     );
 }

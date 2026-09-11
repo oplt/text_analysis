@@ -19,6 +19,7 @@ ResearchOperation = Literal[
     "robustness",
     "prediction",
     "quantitative",
+    "corpus_synthesis",
 ]
 
 

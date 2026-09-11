@@ -18,6 +18,7 @@ from backend.modules.rag.api.schemas import (
     RagAskResponse,
     RagChunkResponse,
     RagCitationResponse,
+    RagCoverageResponse,
     RagDocumentResponse,
     RagDocumentUploadResponse,
     RagIngestionJobResponse,
@@ -217,14 +218,26 @@ async def retrieve_chunks(
 ):
     _require_rag_enabled()
     service = RetrievalService(db)
-    filters = {"document_ids": payload.document_ids} if payload.document_ids else None
+    filters: dict | None = {"owner_scoped": True}
+    if payload.document_ids is not None:
+        filters["document_ids"] = payload.document_ids
     outcome = await service.retrieve(
         payload.query,
         user_id=current_user.id,
         project_id=payload.project_id,
         top_k=payload.top_k,
         filters=filters,
+        intent=payload.intent,
+        persist_trace=False,
     )
+    coverage = None
+    if outcome.coverage is not None:
+        coverage = RagCoverageResponse(
+            documents_in_scope=outcome.coverage.documents_in_scope,
+            documents_with_retrieved_evidence=outcome.coverage.documents_with_retrieved_evidence,
+            retrieved_passage_count=outcome.coverage.retrieved_passage_count,
+            coverage_ratio=outcome.coverage.coverage_ratio,
+        )
     return RagRetrieveResponse(
         chunks=[
             RagRetrievedChunkResponse(
@@ -235,6 +248,8 @@ async def retrieve_chunks(
                 filename=chunk.filename,
                 chunk_index=chunk.chunk_index,
                 page_number=chunk.page_number,
+                rank=chunk.rank,
+                used_in_answer=chunk.used_in_answer,
             )
             for chunk in outcome.chunks
         ],
@@ -242,6 +257,10 @@ async def retrieve_chunks(
         degradation_reason=outcome.degradation_reason,
         no_matches=outcome.no_matches,
         injection_chunks_filtered=outcome.injection_chunks_filtered,
+        intent=outcome.intent.value if outcome.intent else None,
+        fusion_method=outcome.fusion_method,
+        coverage=coverage,
+        retrieval_trace_id=outcome.retrieval_trace_id,
     )
 
 
@@ -262,12 +281,21 @@ async def ask_rag(
                 project_id=payload.project_id,
                 run_id=payload.run_id,
                 agent_id=payload.agent_id,
-                document_ids=payload.document_ids or None,
+                document_ids=payload.document_ids,
+                intent=payload.intent,
             ),
             timeout=settings.RAG_ASK_TIMEOUT_SECONDS,
         )
     except TimeoutError as exc:
         raise HTTPException(status_code=504, detail="RAG answer timed out") from exc
+    coverage = None
+    if result.coverage is not None:
+        coverage = RagCoverageResponse(
+            documents_in_scope=result.coverage.documents_in_scope,
+            documents_with_retrieved_evidence=result.coverage.documents_with_retrieved_evidence,
+            retrieved_passage_count=result.coverage.retrieved_passage_count,
+            coverage_ratio=result.coverage.coverage_ratio,
+        )
     return RagAskResponse(
         query=result.query,
         answer=result.answer,
@@ -280,6 +308,9 @@ async def ask_rag(
                 snippet=c.snippet,
                 page_number=c.page_number,
                 chunk_index=c.chunk_index,
+                citation_number=c.citation_number,
+                used_in_answer=c.used_in_answer,
+                section_heading=c.section_heading,
             )
             for c in result.citations
         ],
@@ -292,6 +323,9 @@ async def ask_rag(
         memory_degraded=result.memory_degraded,
         degradation_reason=result.degradation_reason,
         injection_chunks_filtered=result.injection_chunks_filtered,
+        retrieval_trace_id=result.retrieval_trace_id,
+        citation_validation_failed=result.citation_validation_failed,
+        coverage=coverage,
     )
 
 

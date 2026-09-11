@@ -38,6 +38,7 @@ import {
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { AskAboutThisButton } from "../components/assistant/AskAboutThisButton";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { useResearchContext } from "../hooks/useResearchContext";
@@ -305,15 +306,23 @@ export default function DictionaryManagerView() {
                     title={selected.name}
                     description={`Version ${selected.version}${selected.language ? ` · ${selected.language}` : ""}`}
                     action={
-                        <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<VersionIcon />}
-                            disabled={versionMutation.isPending}
-                            onClick={() => versionMutation.mutate()}
-                        >
-                            New version
-                        </Button>
+                        <Stack direction="row" spacing={1}>
+                            <AskAboutThisButton
+                                label="Suggest corpus-derived terms"
+                                intent="semantic_search"
+                                question={`Suggest corpus-derived candidate terms/expressions related to dictionary "${selected.name}" (existing terms: ${selected.terms.slice(0, 30).join(", ")}). Provide candidates for researcher review only; do not add them automatically.`}
+                                onAsk={ctx.askAbout}
+                            />
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                startIcon={<VersionIcon />}
+                                disabled={versionMutation.isPending}
+                                onClick={() => versionMutation.mutate()}
+                            >
+                                New version
+                            </Button>
+                        </Stack>
                     }
                 >
                     <Stack spacing={1.5}>

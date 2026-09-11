@@ -12,13 +12,14 @@ import {
 import { useTheme } from "@mui/material/styles";
 import {
     Close as CloseIcon,
-    Tune as ContextIcon,
+    ChatBubbleOutline as AskIcon,
 } from "@mui/icons-material";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { PageShell } from "../../../components/ui/PageShell";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
-import { ResearchContextBar } from "../components/ResearchShared";
+import { CorpusAssistantPanel } from "../components/assistant/CorpusAssistantPanel";
+import { CorpusDocumentDrawer } from "../components/CorpusDocumentDrawer";
 import { ResearchWorkflowDrawer } from "../components/ResearchWorkflowDrawer";
 import { ResearchWorkflowStrip } from "../components/ResearchWorkflowStrip";
 import { ResearchProvider, useResearchContext } from "../hooks/useResearchContext";
@@ -30,6 +31,10 @@ import {
     stageIdFromPath,
     type WorkflowStageState,
 } from "../workflow";
+import { useQuery } from "@tanstack/react-query";
+import { listDocuments, type AssistantCitation } from "../../../api/textResearch";
+import type { CorpusDocument } from "../types";
+import { queryKeys } from "../../../config/queryKeys";
 
 const ANALYSIS_SUBLINKS = [
     { tab: "overview", label: "Corpus tools" },
@@ -65,6 +70,23 @@ function ResearchLayoutInner() {
     const { stages } = useResearchWorkflow(activeRoute);
     const [contextOpen, setContextOpen] = useState(false);
     const [workflowOpen, setWorkflowOpen] = useState(false);
+    const [citationDoc, setCitationDoc] = useState<CorpusDocument | null>(null);
+    const [citationSnippet, setCitationSnippet] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (ctx.askPanelOpenNonce > 0) {
+            setContextOpen(true);
+        }
+    }, [ctx.askPanelOpenNonce]);
+
+    const docsQuery = useQuery({
+        queryKey: queryKeys.textResearch.documents(ctx.selectedCorpus?.id ?? "", {
+            limit: 500,
+            offset: 0,
+        }),
+        queryFn: () => listDocuments(ctx.selectedCorpus!.id, { limit: 500, offset: 0 }),
+        enabled: Boolean(ctx.selectedCorpus?.id),
+    });
 
     useEffect(() => {
         if (projectId) {
@@ -80,19 +102,28 @@ function ResearchLayoutInner() {
         navigate(`/research/${projectId}/${stage.route}`);
     }
 
+    function handleOpenCitation(citation: AssistantCitation) {
+        const docs = docsQuery.data?.items ?? [];
+        const match = docs.find((d) => d.rag_document_id === citation.document_id);
+        if (match) {
+            setCitationDoc(match);
+            setCitationSnippet(citation.snippet);
+        }
+    }
+
     const contextDrawerOpen = contextOpen && !showInlineContext;
 
     const contextPanel = (
         <SectionCard
-            title="Workspace context"
-            description="Corpus, codebook, and unit selection remain visible while you work."
+            title="Ask Corpus"
+            description="Context, corpus questions, and retrieved evidence."
             variant="subtle"
             compact
             sx={{ mt: 0 }}
             action={
                 !showInlineContext ? (
                     <IconButton
-                        aria-label="Close context"
+                        aria-label="Close Ask Corpus panel"
                         size="small"
                         onClick={() => setContextOpen(false)}
                     >
@@ -101,7 +132,7 @@ function ResearchLayoutInner() {
                 ) : undefined
             }
         >
-            <ResearchContextBar />
+            <CorpusAssistantPanel onOpenCitation={handleOpenCitation} />
         </SectionCard>
     );
 
@@ -112,10 +143,10 @@ function ResearchLayoutInner() {
                     <Button
                         variant="outlined"
                         size="small"
-                        startIcon={<ContextIcon />}
+                        startIcon={<AskIcon />}
                         onClick={() => setContextOpen(true)}
                     >
-                        Context
+                        Ask Corpus
                     </Button>
                 </Stack>
             ) : null}
@@ -239,8 +270,14 @@ function ResearchLayoutInner() {
                 {showInlineContext ? (
                     <Box
                         component="aside"
-                        aria-label="Research context"
-                        sx={{ position: "sticky", top: 16 }}
+                        aria-label="Ask Corpus"
+                        sx={{
+                            position: "sticky",
+                            top: 16,
+                            width: { xl: 400 },
+                            maxWidth: 440,
+                            minWidth: 360,
+                        }}
                     >
                         {contextPanel}
                     </Box>
@@ -251,10 +288,21 @@ function ResearchLayoutInner() {
                 anchor="right"
                 open={contextDrawerOpen}
                 onClose={() => setContextOpen(false)}
-                PaperProps={{ sx: { width: { xs: "100%", sm: 360 }, p: 2 } }}
+                PaperProps={{ sx: { width: { xs: "100%", sm: 400 }, p: 2 } }}
             >
                 {contextPanel}
             </Drawer>
+
+            <CorpusDocumentDrawer
+                open={Boolean(citationDoc)}
+                document={citationDoc}
+                corpusId={ctx.selectedCorpus?.id ?? ""}
+                highlightSnippet={citationSnippet}
+                onClose={() => {
+                    setCitationDoc(null);
+                    setCitationSnippet(null);
+                }}
+            />
 
             <ResearchWorkflowDrawer
                 open={workflowOpen}
@@ -276,6 +324,7 @@ function ResearchLayoutInner() {
                     Corpus: {ctx.selectedCorpus?.name ?? "not selected"} · Unit: {ctx.unitType} ·
                     Codebook: {ctx.selectedCodebook?.name ?? "not selected"} · Research state is
                     persisted in analysis runs.
+                    {citationSnippet ? ` · Opened evidence: ${citationSnippet.slice(0, 80)}…` : ""}
                 </Typography>
             </Box>
         </PageShell>

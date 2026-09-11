@@ -58,3 +58,22 @@ rag_rerank_latency_ms = Histogram(
     "Hybrid retrieval reranking latency in milliseconds",
     buckets=(0.1, 0.5, 1, 2, 5, 10, 25, 50),
 )
+rag_citation_validation_failures_total = Counter(
+    "rag_citation_validation_failures_total",
+    "Answers with citation validation failures",
+)
+rag_lexical_candidate_count = Histogram(
+    "rag_lexical_candidate_count",
+    "Lexical candidates per retrieval",
+    buckets=(0, 1, 2, 5, 10, 20, 40, 80),
+)
+rag_dense_candidate_count = Histogram(
+    "rag_dense_candidate_count",
+    "Dense candidates per retrieval",
+    buckets=(0, 1, 2, 5, 10, 20, 40, 80),
+)
+rag_source_coverage_ratio = Histogram(
+    "rag_source_coverage_ratio",
+    "Fraction of in-scope documents with retrieved evidence",
+    buckets=(0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0),
+)

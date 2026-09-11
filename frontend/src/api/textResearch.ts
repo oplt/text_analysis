@@ -1827,3 +1827,156 @@ export async function linkContextualDiscourse(
         body: JSON.stringify(payload),
     });
 }
+
+/* --- Ask Corpus / Research Assistant --- */
+
+export type AssistantScope = {
+    corpus_id: string;
+    project_id: string;
+    corpus_name: string;
+    rag_document_ids: string[];
+    corpus_document_ids: string[];
+    indexed_rag_document_ids: string[];
+    unavailable_rag_document_ids: string[];
+    scope_hash: string;
+    index_version: string | null;
+    retrieval_version: string | null;
+    total_documents: number;
+    indexed_count: number;
+    unavailable_count: number;
+    warnings: string[];
+};
+
+export type AssistantCitation = {
+    document_id: string;
+    chunk_id: string;
+    filename: string;
+    score: number;
+    snippet: string;
+    page_number: number | null;
+    chunk_index: number | null;
+    citation_number: number | null;
+    used_in_answer: boolean;
+    section_heading: string | null;
+};
+
+export type AssistantClaim = {
+    text: string;
+    chunk_ids: string[];
+    citation_numbers: number[];
+};
+
+export type AssistantCoverage = {
+    documents_in_scope: number;
+    documents_with_retrieved_evidence: number;
+    retrieved_passage_count: number;
+    coverage_ratio: number;
+};
+
+export type AssistantMessageResult = {
+    thread_id: string;
+    conversation_id: string;
+    message_id: string;
+    retrieval_trace_id: string | null;
+    query: string;
+    answer: string;
+    citations: AssistantCitation[];
+    claims: AssistantClaim[];
+    retrieved_chunk_ids: string[];
+    model_name: string;
+    latency_ms: number;
+    no_context_found: boolean;
+    retrieval_degraded: boolean;
+    degradation_reason: string | null;
+    citation_validation_failed: boolean;
+    injection_chunks_filtered: number;
+    scope: AssistantScope;
+    coverage: AssistantCoverage;
+};
+
+export type AssistantThread = {
+    id: string;
+    corpus_id: string;
+    project_id: string;
+    rag_conversation_id: string;
+    title: string;
+    created_at: string;
+    updated_at: string;
+};
+
+export async function getAssistantScope(corpusId: string): Promise<AssistantScope> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/assistant/scope`);
+}
+
+export async function listAssistantThreads(corpusId: string): Promise<AssistantThread[]> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/assistant/conversations`);
+}
+
+export async function createAssistantThread(
+    corpusId: string,
+    payload?: { title?: string; document_ids?: string[] }
+): Promise<AssistantThread> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/assistant/conversations`, {
+        method: "POST",
+        body: JSON.stringify(payload ?? {}),
+    });
+}
+
+export async function getAssistantConversation(threadId: string): Promise<{
+    thread: AssistantThread;
+    messages: Array<Record<string, unknown>>;
+    scope: AssistantScope | null;
+}> {
+    return apiFetch(`${BASE}/assistant/conversations/${threadId}`);
+}
+
+export async function postAssistantMessage(
+    corpusId: string,
+    payload: {
+        query: string;
+        thread_id?: string | null;
+        intent?: string | null;
+        document_ids?: string[] | null;
+    }
+): Promise<AssistantMessageResult> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/assistant/messages`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function assistantRetrieve(
+    corpusId: string,
+    payload: {
+        query: string;
+        intent?: string | null;
+        document_ids?: string[] | null;
+        top_k?: number | null;
+        retrieval_mode?: "dense" | "semantic" | "lexical" | "hybrid" | null;
+    }
+): Promise<{
+    scope: AssistantScope;
+    retrieval_trace_id: string | null;
+    chunks: Array<{
+        chunk_id: string;
+        document_id: string;
+        content: string;
+        score: number;
+        filename: string;
+        chunk_index: number;
+        page_number: number | null;
+        rank: number | null;
+        retrieval_sources: string[];
+    }>;
+    degraded: boolean;
+    degradation_reason: string | null;
+    no_matches: boolean;
+    coverage: AssistantCoverage;
+    intent: string | null;
+    fusion_method: string | null;
+}> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/assistant/retrieve`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}

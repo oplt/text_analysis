@@ -60,26 +60,9 @@ def _parse_csv(content: bytes) -> list[ParsedDocument]:
 
 
 def _parse_pdf(content: bytes) -> list[ParsedDocument]:
-    try:
-        from pypdf import PdfReader
-    except ImportError as exc:
-        raise RuntimeError("pypdf is required for PDF parsing. Install with: uv add pypdf") from exc
+    from backend.modules.rag.infrastructure.pdf_parsers import parse_pdf_with_fallback
 
-    import io
-
-    reader = PdfReader(io.BytesIO(content))
-    docs: list[ParsedDocument] = []
-    for index, page in enumerate(reader.pages, start=1):
-        text = (page.extract_text() or "").strip()
-        if text:
-            docs.append(
-                ParsedDocument(
-                    content=text,
-                    metadata={"format": "pdf", "page_number": index},
-                    page_number=index,
-                )
-            )
-    return docs
+    return parse_pdf_with_fallback(content)
 
 
 def _parse_docx(content: bytes) -> list[ParsedDocument]:

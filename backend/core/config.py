@@ -200,6 +200,20 @@ class Settings(BaseSettings):
     RAG_EMBEDDING_BATCH_CONCURRENCY: int = 2
     RAG_ASK_PROMPT_TEMPLATE_KEY: str = "rag-answer"
     RAG_ASK_TIMEOUT_SECONDS: float = 45.0
+    # Hybrid retrieval / research assistant
+    RAG_DENSE_CANDIDATES: int = 40
+    RAG_LEXICAL_CANDIDATES: int = 40
+    RAG_FUSION_METHOD: str = "rrf"
+    RAG_RRF_K: int = 60
+    RAG_SOURCE_MAX_CHUNKS_PER_DOCUMENT: int = 3
+    RAG_EVIDENCE_TOP_K: int = 12
+    RAG_SYNTHESIS_MAX_DOCUMENTS: int = 25
+    RAG_SYNTHESIS_PASSAGES_PER_DOCUMENT: int = 3
+    RAG_PARENT_CONTEXT_ENABLED: bool = False
+    RAG_RETRIEVAL_ALGORITHM_VERSION: str = "hybrid-rrf-v1"
+    RAG_CHUNKER_VERSION: str = "structure-v1"
+    RAG_PARSER_VERSION: str = "pypdf-v1"
+    RAG_INDEX_VERSION: str = "pgvector-fts-v1"
 
     # Text Research (text research) model/vectorizer artifact storage
     RESEARCH_ARTIFACT_DIR: str = "var/research_artifacts"

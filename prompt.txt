@@ -1,0 +1,1673 @@
+You are a senior RAG engineer, computational text-analysis engineer, FastAPI/PostgreSQL architect, React/TypeScript engineer, and research-software UX designer.
+
+Repository:
+https://github.com/oplt/text_analysis
+
+Your task is to perform a thorough, production-quality upgrade of the existing RAG system so that it becomes an integrated **research evidence and corpus interrogation layer** for the Text Research application.
+
+Do NOT implement this as a generic chatbot bolted onto the app.
+
+The product goal is:
+
+> Combine deterministic computational text analysis with evidence-grounded qualitative corpus exploration, while preserving scientific reproducibility, provenance, corpus scope, and the architectural separation between RAG retrieval chunks and canonical research text units.
+
+Implement the work comprehensively across backend, frontend, database models/migrations, retrieval, citations, UX, tests, documentation, and observability.
+
+Do not leave TODO placeholders or partially connected components.
+
+---
+
+# 0. FIRST: AUDIT THE CURRENT IMPLEMENTATION
+
+Before modifying anything, inspect the latest repository state and understand all relevant files, especially:
+
+Backend:
+
+* `backend/modules/rag/`
+* `backend/modules/rag/application/retrieval_service.py`
+* `backend/modules/rag/application/retrieval_ranker.py`
+* `backend/modules/rag/application/rag_answer_service.py`
+* `backend/modules/rag/application/rag_context_builder.py`
+* `backend/modules/rag/application/citation_service.py`
+* `backend/modules/rag/application/prompt_context_service.py`
+* `backend/modules/rag/infrastructure/`
+* `backend/modules/rag/infrastructure/pgvector_adapter.py`
+* `backend/modules/rag/infrastructure/repositories.py`
+* `backend/modules/rag/infrastructure/langchain_text_splitters.py`
+* `backend/modules/rag/infrastructure/langchain_document_loaders.py`
+* `backend/modules/rag/api/`
+* `backend/modules/ai/application/rag_answer_prompt.py`
+* `backend/modules/text_research/`
+* `backend/modules/text_research/application/corpus_service.py`
+* `backend/modules/text_research/domain/models.py`
+* `backend/modules/text_research/api/`
+
+Frontend:
+
+* `frontend/src/api/rag.ts`
+* `frontend/src/api/textResearch.ts`
+* `frontend/src/features/rag/RagView.tsx`
+* `frontend/src/features/text-research/`
+* `frontend/src/features/text-research/views/ResearchLayout.tsx`
+* `frontend/src/features/text-research/components/CorpusDocumentDrawer.tsx`
+* research context/provider/hooks
+* analysis, topics, dictionary, classification, KWIC, comparative-analysis components
+
+Also inspect:
+
+* existing migrations
+* query keys
+* SSE infrastructure
+* AI run/prompt infrastructure
+* project access control
+* logging/metrics
+* existing RAG and text-research tests
+* Playwright research E2E tests
+
+Do not assume the files are identical to an older version. Adapt this specification intelligently to the latest code.
+
+Preserve existing functionality unless explicitly replaced below.
+
+Do not reset, revert, overwrite, or discard unrelated user changes.
+
+---
+
+# 1. NON-NEGOTIABLE ARCHITECTURAL RULE
+
+Preserve this distinction:
+
+```text
+RAG chunks != research TextUnits
+```
+
+RAG chunks exist for retrieval.
+
+Research `TextUnit`s and canonical research sources exist for:
+
+* reproducible frequency analysis
+* KWIC
+* DFM
+* keyness
+* dictionary analysis
+* statistical analysis
+* annotation
+* reliability
+* classifiers
+* topic models
+* other deterministic research calculations
+
+Never reconstruct research-analysis text by joining overlapping RAG chunks.
+
+Never replace deterministic research calculations with LLM answers.
+
+The desired dependency direction is:
+
+```text
+text_research
+    |
+    +----> rag
+```
+
+Do NOT make the generic RAG bounded context depend directly on `text_research`.
+
+Corpus-aware assistant endpoints/services should live in or be orchestrated from `text_research`, delegating generic retrieval/generation to the RAG module.
+
+---
+
+# 2. PRODUCT CONCEPT
+
+The researcher-facing feature should be called:
+
+```text
+Ask Corpus
+```
+
+or internally:
+
+```text
+Research Assistant
+```
+
+Do not expose the term "RAG" as the primary researcher-facing concept.
+
+RAG becomes the evidence/provenance layer for questions such as:
+
+* What do these documents say about X?
+* Which documents support this interpretation?
+* Find counter-evidence for this claim.
+* Compare how groups/documents discuss X.
+* Find passages conceptually related to X even without exact terminology.
+* Explain this topic-model result using representative passages.
+* Find passages that help interpret a keyness result.
+* Find semantically related dictionary candidates from the corpus.
+* Compare positions across source documents.
+* Produce corpus-grounded research memos.
+* Perform broader corpus synthesis with explicit source coverage.
+
+The system must never imply that generated interpretation is equivalent to deterministic statistical evidence.
+
+---
+
+# 3. CORPUS-SCOPED RESEARCH ASSISTANT
+
+The research assistant MUST operate against the currently selected research corpus.
+
+Use the existing relationship:
+
+```text
+CorpusDocument
+    -> rag_document_id
+```
+
+Resolve the selected corpus's RAG document IDs server-side.
+
+Do not make the frontend responsible for determining authorization-safe document scope.
+
+Implement a corpus-facing endpoint similar to:
+
+```text
+POST /api/v1/research/corpora/{corpus_id}/assistant/messages
+```
+
+and, where useful:
+
+```text
+POST /api/v1/research/corpora/{corpus_id}/assistant/retrieve
+GET  /api/v1/research/corpora/{corpus_id}/assistant/conversations
+GET  /api/v1/research/assistant/conversations/{conversation_id}
+```
+
+Exact route structure may be adapted to current conventions.
+
+Requirements:
+
+* authenticate user
+* verify project/corpus access
+* resolve corpus membership server-side
+* resolve only associated `rag_document_id`s
+* exclude deleted/unindexed documents
+* return meaningful indexing/scope status
+* never silently query all documents belonging to the user
+* never cross corpus/project boundaries
+* optionally support explicitly selected document subsets inside the corpus
+
+If no corpus is selected, the research assistant should not silently fall back to the user's global RAG collection.
+
+---
+
+# 4. RESEARCH ASSISTANT UI IN `ResearchLayout`
+
+Integrate the researcher-facing assistant into:
+
+```text
+frontend/src/features/text-research/views/ResearchLayout.tsx
+```
+
+The assistant should be accessible throughout the Text Research workflow.
+
+Desktop design:
+
+```text
+main research workspace | right research side panel
+```
+
+The side panel should expose three modes:
+
+```text
+Context | Ask | Evidence
+```
+
+Recommended width:
+
+* approximately 380–440 px when sufficiently wide
+* responsive rather than hardcoded where appropriate
+
+For smaller screens:
+
+* use a right-side Drawer or full-screen mobile panel
+* maintain keyboard accessibility
+* maintain focus management
+* preserve selected corpus/context
+
+Do not create competing floating controls that obscure the existing "Stages" workflow control.
+
+Refactor the layout cleanly if necessary.
+
+Create reusable components, e.g.:
+
+```text
+CorpusAssistantPanel.tsx
+CorpusAssistantChat.tsx
+CorpusEvidencePanel.tsx
+CorpusAssistantScope.tsx
+AssistantCitation.tsx
+```
+
+Names can vary according to the current architecture.
+
+---
+
+# 5. "ASK" UX
+
+The Ask tab should show the active scope clearly:
+
+```text
+Ask Corpus
+
+Corpus:
+European Policy Documents
+
+37 documents
+35 indexed
+2 unavailable
+
+Question:
+[................................]
+
+[Ask]
+```
+
+Offer research-oriented suggestions such as:
+
+```text
+Compare documents
+Find supporting evidence
+Find counter-evidence
+Summarize positions
+Find representative passages
+```
+
+Do not present low-level RAG terminology.
+
+Conversation replies must visually distinguish:
+
+* AI synthesis
+* citations/evidence
+* warnings
+* no-context result
+* partial corpus coverage
+* degraded retrieval
+
+Hide developer details such as:
+
+* raw vector scores
+* latency
+* embedding dimensions
+* model implementation details
+
+from the default researcher view.
+
+Place those under something like:
+
+```text
+Advanced
+Retrieval diagnostics
+```
+
+A vector similarity score must never be presented as a "confidence score."
+
+---
+
+# 6. REAL CONVERSATION MODEL
+
+Upgrade the current one-question/one-answer interaction into proper conversations.
+
+Implement persistent entities equivalent to:
+
+```text
+RagConversation
+---------------
+id
+user_id
+project_id
+corpus_id or generic scope identifier where architecturally appropriate
+title
+created_at
+updated_at
+scope_snapshot
+corpus_revision / scope_revision if available
+
+RagMessage
+----------
+id
+conversation_id
+role
+content
+created_at
+model_name
+prompt_template_id/version if available
+retrieval_trace_id
+metadata
+```
+
+If the generic RAG layer should remain unaware of research corpus IDs, store generic scope metadata in RAG and keep the corpus relationship in a `text_research` adapter/entity.
+
+Choose the cleanest bounded-context implementation.
+
+Support:
+
+* follow-up questions
+* thread history
+* creating new thread
+* renaming/deleting/archive if consistent with current product patterns
+* project/corpus authorization
+* conversation restoration after refresh
+
+Do not let generic mutable memory silently alter reproducible research answers.
+
+Conversation history may inform follow-ups, but corpus evidence and retrieval trace must remain explicit.
+
+---
+
+# 7. REPRODUCIBILITY / SCOPE SNAPSHOT
+
+Every research answer should be reproducible enough to determine:
+
+* question
+* conversation
+* project
+* corpus
+* document IDs in scope
+* document/corpus revision if available
+* retrieval mode
+* retrieval configuration
+* retrieved chunk IDs
+* retrieved document IDs
+* prompt template/version
+* model/provider
+* generation parameters where relevant
+* answer timestamp
+* citations actually used
+
+Store a retrieval trace or equivalent persisted record.
+
+If the corpus changes later, historical assistant results must still reveal the original scope.
+
+Do not rely solely on mutable project/user memory.
+
+---
+
+# 8. CLAIM-LEVEL CITATIONS
+
+The current approach where every retrieved chunk becomes a citation is insufficient for research software.
+
+Upgrade generation to use structured citation output.
+
+The LLM should return structured data conceptually similar to:
+
+```json
+{
+  "answer": "Synthesized answer text...",
+  "claims": [
+    {
+      "text": "Policy increasingly emphasized activation.",
+      "chunk_ids": ["chunk-id-1", "chunk-id-9"]
+    },
+    {
+      "text": "Collective provision remained important in several documents.",
+      "chunk_ids": ["chunk-id-15"]
+    }
+  ]
+}
+```
+
+Use the project's existing structured-output mechanisms if available.
+
+Server-side validation MUST ensure:
+
+* every cited chunk exists
+* every cited chunk was actually retrieved for this answer
+* every cited chunk belongs to an allowed document
+* every allowed document belongs to the resolved corpus/scope
+* malformed citations are discarded or treated as generation validation failure
+* the frontend never trusts arbitrary model-generated document IDs
+
+Generate a stable citation presentation such as:
+
+```text
+[1]
+[2]
+[3]
+```
+
+Map these identifiers to validated source objects.
+
+An answer should cite only evidence actually used to support claims.
+
+Do not automatically present every retrieved chunk as "cited."
+
+---
+
+# 9. CITATION UX / SOURCE PROVENANCE
+
+Each citation should expose:
+
+* filename/title
+* page number where available
+* section heading where available
+* snippet
+* chunk ID internally
+* document ID internally
+
+Clicking a citation must open the relevant document in the research UI.
+
+Extend/reuse:
+
+```text
+CorpusDocumentDrawer.tsx
+```
+
+instead of creating an unrelated duplicate source viewer.
+
+Where technically possible:
+
+* scroll to the relevant page/text region
+* visually highlight the cited text/passage
+* support next/previous evidence navigation
+
+If exact character highlighting cannot be guaranteed for all formats, implement the best reliable fallback and clearly preserve page/section/snippet provenance.
+
+---
+
+# 10. EVIDENCE TAB
+
+Add an `Evidence` tab beside `Context` and `Ask`.
+
+For the currently selected assistant response show:
+
+```text
+Retrieved evidence
+
+12 passages
+8 documents
+Coverage: 8 / 37 documents
+
+[All]
+[Used in answer]
+[Unused retrieved]
+```
+
+Each evidence item should show:
+
+* document
+* page/section
+* snippet
+* whether it was used by the generated answer
+* retrieval rank
+* diagnostic score only in advanced mode
+
+This enables researchers to distinguish:
+
+```text
+what retrieval found
+```
+
+from:
+
+```text
+what the LLM actually used
+```
+
+That distinction is important.
+
+---
+
+# 11. RETRIEVAL MODES / QUERY INTENT
+
+Do not use the same `top_k=5` strategy for every research question.
+
+Implement a retrieval planner or explicit retrieval intent abstraction.
+
+Support at least these intents:
+
+```text
+fact
+definition
+evidence
+comparison
+synthesis
+contradiction
+semantic_search
+```
+
+Reasonable defaults:
+
+```text
+fact / definition:
+small high-precision retrieval
+
+evidence:
+higher recall
+
+comparison:
+source-balanced retrieval
+
+contradiction:
+multi-query retrieval / counter-position retrieval
+
+synthesis:
+broad document-aware retrieval
+
+semantic_search:
+passage-oriented results
+```
+
+Do not hardcode behavior in React.
+
+Implement this in backend application services/configuration.
+
+Expose only researcher-friendly mode names where useful.
+
+---
+
+# 12. REAL HYBRID RETRIEVAL
+
+The existing implementation performs vector retrieval first and only then lexical/vector reranking.
+
+Upgrade this to true independent hybrid retrieval.
+
+Desired architecture:
+
+```text
+                        query
+                          |
+             +------------+------------+
+             |                         |
+             v                         v
+       dense retrieval           lexical retrieval
+         pgvector            PostgreSQL FTS/BM25-like
+             |                         |
+             +------------+------------+
+                          |
+                          v
+                     rank fusion
+                          |
+                          v
+                  optional reranker
+                          |
+                          v
+                 source diversification
+                          |
+                          v
+                       top K
+```
+
+Implement an independent lexical retrieval path.
+
+Prefer PostgreSQL-native full-text search unless the current stack provides a better clean abstraction.
+
+Use a robust fusion strategy such as:
+
+* Reciprocal Rank Fusion (preferred baseline), or
+* another properly justified rank fusion algorithm
+
+Do not merely combine raw scores from incomparable scales without normalization.
+
+Refactor responsibilities cleanly, potentially with interfaces such as:
+
+```text
+DenseRetriever
+LexicalRetriever
+HybridRetriever
+RetrievalFusion
+Reranker
+```
+
+Keep the system testable.
+
+---
+
+# 13. SOURCE-BALANCED RETRIEVAL
+
+Research synthesis should not accidentally retrieve ten passages from one document and claim to represent an entire corpus.
+
+Implement configurable source diversification.
+
+For comparison/synthesis/evidence modes:
+
+* track candidate counts per document
+* avoid a small number of documents monopolizing context
+* support per-document caps
+* use diversification / MMR-style logic where appropriate
+* retain relevance while improving source coverage
+
+Return retrieval coverage metadata such as:
+
+```text
+documents_in_scope
+documents_with_retrieved_evidence
+retrieved_passage_count
+coverage_ratio
+```
+
+Do not pretend that retrieved coverage equals complete corpus coverage.
+
+Use wording like:
+
+```text
+Evidence retrieved from 21 of 37 documents
+```
+
+rather than:
+
+```text
+The 37-document corpus proves...
+```
+
+when only a subset was examined.
+
+---
+
+# 14. CORPUS SYNTHESIS MODE
+
+Implement a dedicated broader mode rather than pretending standard top-K RAG can answer corpus-wide questions.
+
+Researcher-facing modes should conceptually support:
+
+```text
+Quick answer
+Evidence search
+Corpus synthesis
+```
+
+`Quick answer`
+
+* high precision
+* small context
+
+`Evidence search`
+
+* high recall
+* return many passages for inspection
+
+`Corpus synthesis`
+
+* document-aware
+* source-balanced
+* capable of handling larger corpora
+
+For corpus synthesis, implement a bounded hierarchical strategy such as:
+
+```text
+question
+  ->
+retrieve/select relevant evidence per document
+  ->
+document-level evidence summaries/findings
+  ->
+cross-document synthesis
+  ->
+citation validation
+  ->
+coverage report
+```
+
+Avoid sending the entire corpus to the LLM.
+
+Persist enough intermediate provenance for reproducibility.
+
+For large synthesis operations, use the repository's existing background-job infrastructure if necessary.
+
+---
+
+# 15. CONTRADICTION / COUNTER-EVIDENCE MODE
+
+Provide explicit research functionality:
+
+```text
+Claim:
+"Social policy increasingly emphasizes individual responsibility."
+
+[Find supporting evidence]
+[Find counter-evidence]
+[Find ambiguous cases]
+```
+
+Support separate retrieval strategies/prompts for:
+
+* support
+* challenge/contradiction
+* ambiguity/mixed framing
+
+Do not label model results as definitive truth.
+
+Present them as retrieved supporting/contrasting evidence for researcher review.
+
+---
+
+# 16. SEMANTIC SEARCH AS A FIRST-CLASS RESEARCH TOOL
+
+Integrate semantic retrieval with lexical corpus search.
+
+Where the research analysis UI currently exposes KWIC/search, support something conceptually like:
+
+```text
+Search mode:
+
+Lexical / KWIC
+Semantic
+Hybrid
+```
+
+Lexical search:
+
+* deterministic exact/near-exact text search
+
+Semantic:
+
+* vector retrieval
+
+Hybrid:
+
+* true dense + lexical fusion
+
+Examples:
+A semantic query for:
+
+```text
+individual responsibility
+```
+
+should be capable of finding passages about:
+
+* self-reliance
+* personal accountability
+* employability responsibility
+* individual agency
+
+without requiring the exact phrase.
+
+Semantic search results must always expose the source text and provenance.
+
+---
+
+# 17. "ASK ABOUT THIS" CONTEXTUAL ACTIONS
+
+Do not force researchers to start all interactions from a blank chat box.
+
+Add reusable contextual actions throughout research workflows.
+
+Where appropriate, add:
+
+```text
+Ask about this
+Find evidence
+Find similar passages
+Explain with source evidence
+```
+
+Integrate initially with the highest-value areas:
+
+A. KWIC / search results
+
+* Ask about this passage
+* Find similar passages
+
+B. Topic modeling
+
+* Representative passages
+* Ask about this topic
+* Interpret topic using source evidence
+
+C. Keyness / comparative analysis
+
+* Find evidence for this difference
+* Ask about this result
+
+D. Classification evaluation
+
+* inspect false positives / false negatives
+* find similar examples
+* ask for evidence-grounded error-pattern interpretation
+
+E. Dictionaries
+
+* suggest corpus-derived candidate terms
+* view KWIC/frequency before adding
+
+Use existing selected research context.
+
+Do not auto-modify scientific results or codebooks without user action.
+
+---
+
+# 18. DICTIONARY EXPANSION
+
+Add an AI/RAG-assisted dictionary workflow.
+
+Given an existing user-defined dictionary, provide:
+
+```text
+Suggest corpus-derived terms
+```
+
+Generate candidate expressions based on:
+
+* semantic similarity
+* corpus evidence
+* optionally lexical/co-occurrence evidence
+
+Each candidate should provide:
+
+* candidate term/expression
+* occurrence/passages where possible
+* example context
+* actions:
+
+  * View KWIC
+  * View evidence
+  * Add to dictionary
+  * Reject
+
+Do not directly populate dictionaries from LLM output.
+
+Researchers must explicitly approve terms.
+
+---
+
+# 19. TOPIC INTERPRETATION
+
+For LDA/NMF topics, add:
+
+```text
+Representative passages
+Ask about this topic
+```
+
+The deterministic topic model remains the source of:
+
+* topic terms
+* topic distributions
+* model diagnostics
+
+RAG should retrieve representative source passages associated with topic terms/documents and produce optional evidence-grounded interpretation.
+
+Clearly label this as:
+
+```text
+AI-assisted interpretation
+```
+
+not model output.
+
+---
+
+# 20. ANALYSIS RESULT INTERPRETATION
+
+For statistical/deterministic results, make the visual distinction explicit.
+
+Example:
+
+```text
+COMPUTED RESULT
+Keyness = ...
+p-value = ...
+
+AI-ASSISTED INTERPRETATION
+Retrieved passages suggest...
+[1][2][3]
+```
+
+Never let the generated response overwrite or masquerade as computed statistics.
+
+Where structured analysis results are passed to an LLM, send only the required result/context and explicitly instruct the model to interpret the result using retrieved source evidence rather than recomputing statistics.
+
+---
+
+# 21. CHUNKING / PROVENANCE UPGRADE
+
+Current recursive token-based chunking is a reasonable baseline but should become more structure-aware.
+
+Preserve existing page/heading metadata and extend chunk metadata where possible with:
+
+```text
+document_id
+page_number
+section_heading
+subsection_heading
+paragraph_index
+char_start
+char_end
+chunk_index
+content_hash
+parser_version
+chunker_version
+embedding_provider
+embedding_model
+embedding_dimensions/version
+```
+
+Do not invent offsets that cannot be reliably determined.
+
+Prefer structural splitting:
+
+```text
+document
+ -> page/section
+ -> paragraph boundaries
+ -> token-size constraints
+```
+
+Where useful, support parent-child retrieval:
+
+```text
+smaller child chunk
+ -> retrieval precision
+
+larger parent section
+ -> generation context
+```
+
+Implement this only if it can be done cleanly without corrupting existing indexes.
+
+Version the chunking/indexing configuration so stale indexes can be identified and re-indexed.
+
+---
+
+# 22. ACADEMIC PDF PARSING
+
+Do not remove the current `pypdf` baseline.
+
+Refactor parsing so richer PDF parsers can be introduced behind an adapter.
+
+Design for:
+
+* two-column academic PDFs
+* headers/footers
+* hyphenation
+* tables
+* footnotes
+* scanned PDFs
+* section structure
+* references
+
+A reasonable implementation is:
+
+```text
+basic parser
+ -> pypdf
+
+enhanced parser
+ -> optional layout-aware adapter
+```
+
+Do not introduce a very heavy dependency without graceful fallback.
+
+The app must continue to function when the optional enhanced parser is unavailable.
+
+Do not confuse retrieval parsing with canonical scientific-text reconstruction.
+
+---
+
+# 23. RAG ADMIN / DIAGNOSTICS SCREEN
+
+Refactor:
+
+```text
+frontend/src/features/rag/RagView.tsx
+```
+
+away from being the primary researcher chat interface.
+
+Keep it as an advanced/admin/developer screen for:
+
+* document/index status
+* re-indexing
+* chunk inspection
+* retrieval explorer
+* diagnostics
+* configuration visibility where appropriate
+* degraded state debugging
+
+The Text Research workspace becomes the normal researcher-facing entry point.
+
+Clearly distinguish:
+
+```text
+Research Assistant
+```
+
+from:
+
+```text
+RAG / Retrieval Diagnostics
+```
+
+---
+
+# 24. STREAMING
+
+If the existing AI/SSE infrastructure can support this cleanly, implement streamed assistant responses.
+
+Preferred UX:
+
+* immediate "retrieving evidence" state
+* optional progress:
+
+  * resolving corpus
+  * retrieving
+  * synthesizing
+* stream final answer tokens/events
+* citations finalize only after validated structured result is available
+
+Do not compromise citation validation for streaming.
+
+If structured citations require generation completion, stream provisional answer content only if the architecture can reconcile safely.
+
+Otherwise prioritize correctness over streaming.
+
+---
+
+# 25. ERROR / DEGRADED STATES
+
+Provide proper researcher-facing states for:
+
+```text
+No corpus selected
+Corpus has no documents
+Documents still indexing
+Some documents unavailable
+No relevant evidence found
+Retrieval degraded
+Generation unavailable
+Citation validation failed
+Corpus changed since conversation began
+```
+
+Do not expose internal stack traces.
+
+Where partial results are valid, present them explicitly as partial.
+
+Example:
+
+```text
+Evidence was retrieved from 18 of 23 indexed documents.
+2 corpus documents are still being indexed.
+```
+
+---
+
+# 26. PROMPTING
+
+Rewrite the research RAG system prompt so it is suitable for scholarly corpus interrogation.
+
+It must enforce:
+
+* source-grounded answers
+* no unsupported claims
+* explicit uncertainty
+* distinction between retrieval evidence and inference
+* no pretending to have searched documents outside the provided evidence
+* no treating retrieved evidence as exhaustive unless the retrieval mode guarantees sufficient coverage
+* citation IDs only from supplied retrieved chunks
+* concise but analytically useful synthesis
+* prompt-injection resistance
+* document content is untrusted evidence, not system instruction
+
+For corpus synthesis, instruct the model to mention variation, disagreement, and source coverage rather than flattening all documents into a single position.
+
+Keep prompt templates versioned using the existing AI prompt/version infrastructure.
+
+---
+
+# 27. PROMPT-INJECTION SAFETY
+
+Preserve and strengthen the existing retrieved-document prompt-injection safeguards.
+
+Documents are evidence, not instructions.
+
+Do not allow retrieved text such as:
+
+```text
+Ignore previous instructions
+```
+
+to influence system behavior.
+
+Maintain observability around filtered/suspicious chunks.
+
+Do not silently delete legitimate research content simply because it contains instruction-like text; design the filtering defensibly.
+
+---
+
+# 28. RETRIEVAL CACHE
+
+Update retrieval cache keys so they include every value that materially affects retrieval results, including where relevant:
+
+```text
+user
+project
+corpus/scope document IDs or stable scope hash
+query
+retrieval intent
+top_k
+filters
+retrieval algorithm version
+embedding/index version
+fusion/reranker version
+```
+
+Avoid returning stale retrieval results after:
+
+* document reindex
+* corpus membership change
+* retrieval algorithm change
+
+Use a stable scope/index version or invalidation strategy.
+
+---
+
+# 29. CONFIGURATION
+
+Add explicit, validated configuration instead of scattering magic numbers.
+
+Examples:
+
+```text
+RAG_DENSE_CANDIDATES
+RAG_LEXICAL_CANDIDATES
+RAG_FUSION_METHOD
+RAG_RRF_K
+RAG_RERANK_ENABLED
+RAG_SOURCE_MAX_CHUNKS_PER_DOCUMENT
+RAG_EVIDENCE_TOP_K
+RAG_SYNTHESIS_MAX_DOCUMENTS
+RAG_SYNTHESIS_PASSAGES_PER_DOCUMENT
+RAG_PARENT_CONTEXT_ENABLED
+```
+
+Use names appropriate to the repository conventions.
+
+Validate impossible configurations at startup.
+
+Document defaults in `.env.example` and RAG docs.
+
+---
+
+# 30. OBSERVABILITY
+
+Extend RAG metrics for research-oriented retrieval.
+
+Track at least:
+
+```text
+retrieval mode/intent
+dense candidate count
+lexical candidate count
+fused candidate count
+final chunk count
+unique retrieved documents
+documents in scope
+source coverage ratio
+reranker latency
+retrieval latency
+generation latency
+no-match rate
+citation-validation failures
+uncited generated claims where detectable
+synthesis job duration
+```
+
+Avoid labels with unbounded cardinality such as raw user IDs, corpus IDs, queries or document IDs in Prometheus metric labels.
+
+Use structured logs for detailed IDs.
+
+---
+
+# 31. RAG QUALITY EVALUATION
+
+Add a reproducible evaluation framework for retrieval and citation quality.
+
+Create test/evaluation fixtures containing:
+
+```text
+question
+relevant document IDs
+relevant chunk/passages
+expected facts where practical
+```
+
+Support metrics such as:
+
+Retrieval:
+
+```text
+Recall@K
+Precision@K where meaningful
+MRR
+nDCG
+document coverage
+```
+
+Generation/citations:
+
+```text
+citation precision
+citation recall
+citation validity
+citation/source correctness
+unsupported-claim rate where feasible
+answer completeness where feasible
+```
+
+At minimum, build deterministic unit/integration tests for retrieval and citation validation.
+
+Provide a small script/test harness that allows comparing:
+
+```text
+dense only
+current/legacy strategy
+dense + lexical fusion
+dense + lexical + reranker
+```
+
+Do not require paid external API calls for normal CI.
+
+Use deterministic/local/mock generation where appropriate.
+
+---
+
+# 32. DATABASE MIGRATIONS
+
+Create proper Alembic migrations for all schema changes.
+
+Do not edit historical migration files unless the repository explicitly follows that convention.
+
+Indexes should be added for conversation/message/retrieval-trace access patterns.
+
+Ensure migrations:
+
+* upgrade successfully from current HEAD
+* have correct foreign keys
+* use appropriate cascade/soft-delete behavior
+* preserve tenant/user/project security
+
+Run migration tests.
+
+---
+
+# 33. BACKEND TESTS
+
+Add comprehensive tests covering at minimum:
+
+* corpus -> RAG document scope resolution
+* project/corpus access control
+* cross-user isolation
+* cross-project isolation
+* selected-document subset validation
+* dense retrieval
+* lexical retrieval
+* fusion
+* source diversification
+* retrieval intents
+* no-context
+* degraded retrieval
+* citation validation
+* model attempting to cite unretrieved chunk
+* model attempting to cite another user's chunk
+* conversation persistence
+* historical scope snapshot
+* indexing/reindex cache invalidation
+* corpus synthesis coverage calculation
+* prompt injection behavior
+* optional enhanced PDF parser fallback
+* old RAG API compatibility where intentionally retained
+
+Do not depend on live OpenAI calls.
+
+---
+
+# 34. FRONTEND TESTS
+
+Add unit/component tests for:
+
+* opening Ask Corpus panel
+* scope display
+* missing corpus state
+* Ask submission
+* follow-up question
+* citations
+* citation source opening
+* Evidence tab
+* used vs unused evidence
+* no-context result
+* indexing warning
+* degraded state
+* responsive drawer
+* contextual "Ask about this" action
+* topic evidence integration
+* dictionary suggestion review where implemented
+
+Maintain strict TypeScript.
+
+---
+
+# 35. PLAYWRIGHT / E2E
+
+Extend the existing research-flow Playwright coverage.
+
+At minimum test:
+
+```text
+create/use project
+ -> create/select corpus
+ -> ingest/index document(s)
+ -> open Text Research
+ -> open Ask Corpus
+ -> ask corpus question
+ -> receive grounded answer
+ -> citation visible
+ -> click citation
+ -> source document drawer opens
+```
+
+Also test that changing the selected corpus changes the assistant scope.
+
+Use mocked/local AI provider if required to keep CI deterministic.
+
+---
+
+# 36. ACCESSIBILITY / UX
+
+Ensure:
+
+* keyboard navigation
+* correct ARIA labels
+* sensible tab order
+* accessible drawers/dialogs
+* focus returns correctly when closing source/evidence views
+* loading states are not conveyed only through color
+* citation links/buttons have descriptive names
+* mobile layout works
+* long source snippets wrap correctly
+* chat panel doesn't destroy the usable width of the analysis page
+
+Use existing MUI/design conventions.
+
+Do not introduce a second unrelated visual design system.
+
+---
+
+# 37. RESEARCHER-FACING TERMINOLOGY
+
+Prefer:
+
+```text
+Ask Corpus
+Evidence
+Sources
+Representative passages
+Semantic search
+Corpus synthesis
+Supporting evidence
+Counter-evidence
+AI-assisted interpretation
+Retrieval diagnostics
+```
+
+Avoid default researcher-facing jargon such as:
+
+```text
+RAG
+HNSW
+embedding dimensions
+top-k
+cosine score
+vector candidate
+```
+
+Those belong in advanced diagnostics.
+
+---
+
+# 38. IMPORTANT SCIENTIFIC UX RULE
+
+Always distinguish:
+
+```text
+COMPUTED RESULT
+```
+
+from:
+
+```text
+AI-ASSISTED INTERPRETATION
+```
+
+For example:
+
+```text
+Computed result
+Keyness = 18.42
+p < .001
+
+AI-assisted interpretation
+Retrieved passages suggest stronger activation framing...
+[1][2][3]
+```
+
+Do this anywhere RAG/LLM interpretation is attached to deterministic analysis output.
+
+---
+
+# 39. IMPLEMENTATION PRIORITY
+
+Implement in this order unless the latest architecture requires small adjustments:
+
+P0 — core correctness:
+
+* corpus-scoped assistant service
+* ResearchLayout assistant panel
+* conversations
+* retrieval traces/scope snapshots
+* claim-level citation validation
+* clickable citation/source provenance
+* access control
+* tests
+
+P1 — retrieval quality:
+
+* independent lexical retrieval
+* dense + lexical fusion
+* retrieval intents
+* source balancing/diversification
+* semantic/hybrid search
+* evidence panel
+* corpus synthesis
+* counter-evidence
+
+P2 — workflow integrations:
+
+* KWIC "Ask about this"
+* topic interpretation
+* keyness/comparative evidence
+* classifier error analysis
+* dictionary expansion
+* admin/diagnostic RagView cleanup
+* richer parsing
+* quality evaluation UI/tooling if appropriate
+
+Do not stop after P0 unless implementation constraints make the remaining work genuinely unsafe. Complete as much of the specification as possible.
+
+---
+
+# 40. BACKWARD COMPATIBILITY
+
+Existing integrations may use:
+
+```text
+/rag/ask
+/rag/retrieve
+/rag/documents
+```
+
+Do not break them unnecessarily.
+
+Keep generic RAG endpoints where useful.
+
+The new research-corpus assistant should be an additional research-specific orchestration layer.
+
+If an old route is truly redundant, deprecate it rather than silently breaking clients.
+
+---
+
+# 41. PERFORMANCE
+
+Do not create N+1 database behavior when resolving corpus documents or citations.
+
+Use batched queries.
+
+Do not load full document contents merely to render source lists.
+
+For corpus synthesis:
+
+* bound concurrency
+* bound context
+* use background workers for expensive operations
+* avoid nested process/thread oversubscription
+* respect the repository's existing Celery/sklearn/BLAS policy
+
+Pagination must remain bounded.
+
+---
+
+# 42. DOCUMENTATION
+
+Update at least:
+
+```text
+backend/modules/rag/README.md
+docs/text-research.md
+.env.example
+```
+
+and any appropriate architecture/runbook docs.
+
+Document:
+
+```text
+Research Assistant architecture
+corpus scoping
+RAG chunks vs TextUnits
+retrieval modes
+hybrid retrieval
+citation validation
+conversation/scope reproducibility
+corpus synthesis
+configuration
+diagnostics
+limitations
+testing
+```
+
+Add an architecture diagram.
+
+Explicitly document that generated interpretation is not a substitute for deterministic quantitative analysis.
+
+---
+
+# 43. CODE QUALITY
+
+Follow existing architecture and naming conventions.
+
+Prefer:
+
+* small services
+* dependency inversion where useful
+* typed dataclasses/Pydantic models
+* explicit interfaces
+* testable pure ranking/fusion functions
+* bounded database queries
+* strict TypeScript
+* reusable React components
+
+Avoid:
+
+* giant service classes
+* giant React components
+* duplicated document viewers
+* frontend-only authorization assumptions
+* magical implicit scope
+* unvalidated LLM IDs
+* arbitrary JSON blobs when strongly typed models make more sense
+* hardcoded model names
+* silent fallbacks that alter scientific behavior
+
+---
+
+# 44. RUN ALL VALIDATION
+
+After implementation run the relevant repository checks, including the equivalent of:
+
+```bash
+make check
+make test-backend
+make test-frontend
+```
+
+Run the research/RAG-focused tests explicitly.
+
+Run frontend build/type-check.
+
+Run Alembic upgrade from current schema.
+
+Run Playwright research/RAG tests when the environment supports them.
+
+Fix failures caused by this implementation.
+
+Do not simply report failing tests without attempting to resolve them.
+
+---
+
+# 45. FINAL SELF-REVIEW
+
+Before finishing, inspect the resulting implementation as a senior research-software reviewer.
+
+Specifically check for:
+
+* corpus scope leakage
+* cross-user leakage
+* hallucinated citation IDs
+* citations that are retrieved but not actually used
+* vector score presented as confidence
+* generic memory contaminating reproducibility
+* source domination in synthesis
+* missing corpus coverage metadata
+* stale retrieval cache
+* N+1 queries
+* giant prompts
+* unbounded context
+* UI duplicated from RagView
+* incorrect RAG chunk/TextUnit coupling
+* AI interpretation presented as computed result
+* responsive-layout conflicts
+* accessibility regressions
+* missing migration/indexes
+* lack of deterministic tests
+
+Fix all issues you identify.
+
+---
+
+# 46. FINAL REPORT
+
+When implementation is complete, give me a concise but technically precise report containing:
+
+```text
+1. Architecture implemented
+2. Backend files added/changed
+3. Frontend files added/changed
+4. Database migrations
+5. Retrieval improvements
+6. Citation/provenance improvements
+7. Research UX integrations
+8. Tests added
+9. Commands/tests executed and results
+10. Remaining limitations or intentionally deferred items
+```
+
+For every intentionally deferred item, explain why it should not safely be implemented now.
+
+Do not merely describe what should be done.
+
+Make the actual code changes throughout the repository.

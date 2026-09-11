@@ -14,6 +14,8 @@ import {
 } from "@mui/material";
 import { MetricCards, ScientificLineChart } from "./ResearchCharts";
 import { ResearchResultsTable } from "./ResearchResults";
+import { AskAboutThisButton } from "./assistant/AskAboutThisButton";
+import { useResearchContext } from "../hooks/useResearchContext";
 import type { TrainedModel } from "../types";
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -191,6 +193,7 @@ export function ClassificationErrorBrowser({
 }: {
     results: Record<string, unknown> | null;
 }) {
+    const { askAbout } = useResearchContext();
     const errorAnalysis = asRecord(results?.error_analysis);
     const [sliceField, setSliceField] = useState("");
     const uncertain = Array.isArray(errorAnalysis?.most_uncertain_cases)
@@ -232,6 +235,12 @@ export function ClassificationErrorBrowser({
                     { label: "Uncertain cases", value: uncertain.length },
                     { label: "High-confidence errors", value: highConfErrors.length },
                 ]}
+            />
+            <AskAboutThisButton
+                label="Interpret error patterns"
+                intent="evidence"
+                question={`Help interpret classifier error patterns with corpus evidence. False positives: ${falsePositives.length}; false negatives: ${falseNegatives.length}; high-confidence errors: ${highConfErrors.length}. Do not change labels or retrain; suggest evidence-grounded hypotheses only. Label as AI-assisted interpretation.`}
+                onAsk={askAbout}
             />
             {sliceFields.length ? (
                 <Stack spacing={1}>

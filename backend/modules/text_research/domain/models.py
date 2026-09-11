@@ -622,3 +622,57 @@ class ContextualObservation(Base):
     year: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     values_json: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class ResearchAssistantThread(Base):
+    """Research-owned binding of a corpus to a generic RAG conversation (I3)."""
+
+    __tablename__ = "research_assistant_threads"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    corpus_id: Mapped[str] = mapped_column(
+        ForeignKey("research_corpora.id", ondelete="CASCADE"), index=True
+    )
+    project_id: Mapped[str] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    rag_conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("rag_conversations.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    title: Mapped[str] = mapped_column(String(512), default="Ask Corpus")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+
+class ResearchAssistantScopeSnapshot(Base):
+    """Immutable corpus evidence scope for an assistant request (invariant I3)."""
+
+    __tablename__ = "research_assistant_scope_snapshots"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    thread_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_assistant_threads.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    rag_message_id: Mapped[str | None] = mapped_column(
+        ForeignKey("rag_messages.id", ondelete="SET NULL"), nullable=True
+    )
+    retrieval_trace_id: Mapped[str | None] = mapped_column(
+        ForeignKey("rag_retrieval_traces.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    corpus_id: Mapped[str] = mapped_column(String, nullable=False)
+    project_id: Mapped[str] = mapped_column(String, nullable=False)
+    scope_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    rag_document_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
+    corpus_document_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
+    indexed_rag_document_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
+    unavailable_rag_document_ids_json: Mapped[str] = mapped_column(Text, nullable=False)
+    index_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    retrieval_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)

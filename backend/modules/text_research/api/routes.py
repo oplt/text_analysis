@@ -24,6 +24,7 @@ from backend.core.pagination import (
 from backend.db.session import SessionLocal
 from backend.modules.identity_access.models import User
 from backend.modules.text_research.api.corpora import router as corpora_router
+from backend.modules.text_research.api.assistant_routes import router as assistant_router
 from backend.modules.text_research.api.schemas import (
     ActiveLearningAssignRequest,
     AdjudicationSaveRequest,
@@ -171,6 +172,7 @@ from backend.modules.text_research.domain.models import (
 
 router = APIRouter()
 router.include_router(corpora_router)
+router.include_router(assistant_router)
 
 
 def _loads(value: str | None, default: Any = None) -> Any:

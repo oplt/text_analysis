@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from backend.modules.rag.domain.enums import DocumentStatus, IngestionJobStatus, SourceType
+from backend.modules.rag.domain.enums import DocumentStatus, IngestionJobStatus, RetrievalIntent, SourceType
 
 
 @dataclass(slots=True)
@@ -27,6 +27,8 @@ class DocumentChunk:
     embedding: list[float] | None = None
     id: str | None = None
     vector_external_id: str | None = None
+    parent_chunk_id: str | None = None
+    content_hash: str | None = None
 
 
 @dataclass(slots=True)
@@ -39,6 +41,17 @@ class RetrievedChunk:
     chunk_index: int
     page_number: int | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    rank: int | None = None
+    used_in_answer: bool = False
+    retrieval_sources: tuple[str, ...] = ()
+
+
+@dataclass(slots=True)
+class RetrievalCoverage:
+    documents_in_scope: int = 0
+    documents_with_retrieved_evidence: int = 0
+    retrieved_passage_count: int = 0
+    coverage_ratio: float = 0.0
 
 
 @dataclass(slots=True)
@@ -48,6 +61,21 @@ class RetrievalOutcome:
     degradation_reason: str | None = None
     no_matches: bool = False
     injection_chunks_filtered: int = 0
+    intent: RetrievalIntent | None = None
+    fusion_method: str | None = None
+    coverage: RetrievalCoverage | None = None
+    dense_candidate_count: int = 0
+    lexical_candidate_count: int = 0
+    fused_candidate_count: int = 0
+    retrieval_trace_id: str | None = None
+    scope_hash: str | None = None
+
+
+@dataclass(slots=True)
+class ClaimCitation:
+    text: str
+    chunk_ids: list[str]
+    citation_numbers: list[int] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -59,6 +87,9 @@ class Citation:
     snippet: str
     page_number: int | None = None
     chunk_index: int | None = None
+    citation_number: int | None = None
+    section_heading: str | None = None
+    used_in_answer: bool = False
 
 
 @dataclass(slots=True)
@@ -75,6 +106,10 @@ class RagAnswer:
     memory_degraded: bool = False
     degradation_reason: str | None = None
     injection_chunks_filtered: int = 0
+    claims: list[ClaimCitation] = field(default_factory=list)
+    retrieval_trace_id: str | None = None
+    coverage: RetrievalCoverage | None = None
+    citation_validation_failed: bool = False
 
 
 @dataclass(slots=True)

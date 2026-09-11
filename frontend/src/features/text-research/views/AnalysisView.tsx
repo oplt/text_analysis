@@ -14,6 +14,8 @@ import {
     TablePagination,
     TableRow,
     TextField,
+    ToggleButton,
+    ToggleButtonGroup,
     Typography,
 } from "@mui/material";
 import { BarChart as AnalysisIcon, PlayArrow as RunIcon } from "@mui/icons-material";
@@ -21,6 +23,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../../app/snackbarContext";
 import {
+    assistantRetrieve,
     getCorpusMetadataFacets,
     getRun,
     listDictionaries,
@@ -38,6 +41,8 @@ import {
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { AskAboutThisButton } from "../components/assistant/AskAboutThisButton";
+import { useResearchContext } from "../hooks/useResearchContext";
 import { PageTabs } from "../../../components/ui/PageTabs";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
@@ -58,7 +63,6 @@ import { AdvancedDfmPanel } from "../components/AdvancedDfmPanel";
 import { DEFAULT_DFM_CONFIG, type AdvancedDfmConfig } from "../components/advancedDfmConfig";
 import { ScientificWarnings } from "../components/ScientificWarnings";
 import { collectScientificWarnings } from "../components/scientificWarnings";
-import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { filterKwicRows, kwicRowsToCsv, toKwicSearchRows } from "../kwicTableModel";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
@@ -298,6 +302,7 @@ function runPayload(run: AnalysisRun | undefined): unknown {
 const KWIC_PAGE_SIZE = 50;
 
 function KwicTable({ matches, runId }: { matches: unknown[]; runId?: string | null }) {
+    const { askAbout } = useResearchContext();
     const [filter, setFilter] = useState("");
     const [page, setPage] = useState(0);
     const debouncedFilter = useDebounce(filter, 200);
@@ -372,6 +377,7 @@ function KwicTable({ matches, runId }: { matches: unknown[]; runId?: string | nu
                         <TableCell>Right</TableCell>
                         <TableCell>Document</TableCell>
                         <TableCell>Organization</TableCell>
+                        <TableCell>Ask</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -386,6 +392,14 @@ function KwicTable({ matches, runId }: { matches: unknown[]; runId?: string | nu
                             <TableCell sx={{ maxWidth: 280 }}>{row.right}</TableCell>
                             <TableCell>{row.document || "—"}</TableCell>
                             <TableCell>{row.organization || "—"}</TableCell>
+                            <TableCell>
+                                <AskAboutThisButton
+                                    label="Ask about this"
+                                    intent="semantic_search"
+                                    question={`Find similar passages and interpret this concordance: “…${row.left} ${row.keyword} ${row.right}…”. Document: ${row.document || "unknown"}.`}
+                                    onAsk={askAbout}
+                                />
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -442,6 +456,133 @@ function DfmPreviewTable({ preview }: { preview: Record<string, unknown> }) {
                 })}
             </TableBody>
         </Table>
+    );
+}
+
+function KeynessResultsPanel({
+    items,
+    metrics,
+    results,
+    payload,
+}: {
+    items: Array<{ label: string; value?: number | null }>;
+    metrics: Record<string, unknown> | null;
+    results: Record<string, unknown> | null;
+    payload: unknown;
+}) {
+    const { askAbout } = useResearchContext();
+    const topLabels = items
+        .slice(0, 8)
+        .map((item) => item.label)
+        .filter(Boolean)
+        .join(", ");
+    return (
+        <Stack spacing={2}>
+            <Alert severity="info">
+                Computed keyness statistics below are deterministic. Use Ask Corpus only for
+                AI-assisted interpretation with retrieved passages.
+            </Alert>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <AskAboutThisButton
+                    label="Ask about this result"
+                    intent="comparison"
+                    question={`Find corpus evidence for this keyness difference. Top features: ${topLabels}. Do not recompute keyness; interpret with retrieved passages. Label as AI-assisted interpretation.`}
+                    onAsk={askAbout}
+                />
+                <AskAboutThisButton
+                    label="Find evidence for this difference"
+                    intent="contradiction"
+                    question={`Find supporting and counter-evidence for the keyness contrast between the compared groups. Top features: ${topLabels}.`}
+                    onAsk={askAbout}
+                />
+            </Stack>
+            <MetricCards
+                items={[
+                    {
+                        label: "Group A units",
+                        value: formatMetric(metricNumber([metrics, results], ["unit_count_a"])),
+                    },
+                    {
+                        label: "Group B units",
+                        value: formatMetric(metricNumber([metrics, results], ["unit_count_b"])),
+                    },
+                    {
+                        label: "Features",
+                        value: formatMetric(
+                            metricNumber([metrics, results], ["features_returned"]) ?? items.length
+                        ),
+                    },
+                ]}
+            />
+            <DivergingBarChart
+                items={asArray(results?.keyness ?? payload).map((entry) => {
+                    const row = asRecord(entry) ?? {};
+                    const score = pickNumber(row, ["keyness_statistic", "keyness", "g2"]) ?? 0;
+                    return {
+                        label: pickString(row, ["feature", "term"]) ?? "",
+                        value:
+                            pickString(row, ["effect_direction", "direction"]) === "a"
+                                ? -score
+                                : score,
+                    };
+                })}
+            />
+            <ResearchResultsTable
+                rows={asArray(results?.keyness ?? payload).map((entry, index) => ({
+                    ...(asRecord(entry) ?? {}),
+                    id: index,
+                }))}
+                columns={[
+                    {
+                        id: "feature",
+                        label: "Feature",
+                        value: (row) => pickString(row, ["feature", "term"]),
+                    },
+                    {
+                        id: "a",
+                        label: "Group A",
+                        value: (row) => pickNumber(row, ["freq_a", "count_a"]),
+                        align: "right",
+                    },
+                    {
+                        id: "b",
+                        label: "Group B",
+                        value: (row) => pickNumber(row, ["freq_b", "count_b"]),
+                        align: "right",
+                    },
+                    {
+                        id: "keyness",
+                        label: "Keyness",
+                        value: (row) => pickNumber(row, ["keyness_statistic", "keyness", "g2"]),
+                        align: "right",
+                    },
+                    {
+                        id: "p",
+                        label: "p",
+                        value: (row) => pickNumber(row, ["p_value", "p"]),
+                        align: "right",
+                    },
+                    {
+                        id: "padj",
+                        label: "p (BH)",
+                        value: (row) => pickNumber(row, ["p_adjusted"]),
+                        align: "right",
+                    },
+                    {
+                        id: "log_ratio",
+                        label: "Log ratio",
+                        value: (row) => pickNumber(row, ["log_ratio", "effect_size"]),
+                        align: "right",
+                    },
+                    {
+                        id: "direction",
+                        label: "Direction",
+                        value: (row) => pickString(row, ["effect_direction", "direction"]),
+                    },
+                ]}
+            />
+            <ResultsInspector data={payload} />
+        </Stack>
     );
 }
 
@@ -665,50 +806,7 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
             "count",
         ]);
         return (
-            <Stack spacing={2}>
-                <MetricCards
-                    items={[
-                        {
-                            label: "Group A units",
-                            value: formatMetric(metricNumber([metrics, results], ["unit_count_a"])),
-                        },
-                        {
-                            label: "Group B units",
-                            value: formatMetric(metricNumber([metrics, results], ["unit_count_b"])),
-                        },
-                        {
-                            label: "Features",
-                            value: formatMetric(
-                                metricNumber([metrics, results], ["features_returned"]) ?? items.length
-                            ),
-                        },
-                    ]}
-                />
-                <DivergingBarChart
-                    items={asArray(results?.keyness ?? payload).map((entry) => {
-                        const row = asRecord(entry) ?? {};
-                        const score = pickNumber(row, ["keyness_statistic", "keyness", "g2"]) ?? 0;
-                        return {
-                            label: pickString(row, ["feature", "term"]) ?? "",
-                            value: pickString(row, ["effect_direction", "direction"]) === "a" ? -score : score,
-                        };
-                    })}
-                />
-                <ResearchResultsTable
-                    rows={asArray(results?.keyness ?? payload).map((entry, index) => ({ ...(asRecord(entry) ?? {}), id: index }))}
-                    columns={[
-                        { id: "feature", label: "Feature", value: (row) => pickString(row, ["feature", "term"]) },
-                        { id: "a", label: "Group A", value: (row) => pickNumber(row, ["freq_a", "count_a"]), align: "right" },
-                        { id: "b", label: "Group B", value: (row) => pickNumber(row, ["freq_b", "count_b"]), align: "right" },
-                        { id: "keyness", label: "Keyness", value: (row) => pickNumber(row, ["keyness_statistic", "keyness", "g2"]), align: "right" },
-                        { id: "p", label: "p", value: (row) => pickNumber(row, ["p_value", "p"]), align: "right" },
-                        { id: "padj", label: "p (BH)", value: (row) => pickNumber(row, ["p_adjusted"]), align: "right" },
-                        { id: "log_ratio", label: "Log ratio", value: (row) => pickNumber(row, ["log_ratio", "effect_size"]), align: "right" },
-                        { id: "direction", label: "Direction", value: (row) => pickString(row, ["effect_direction", "direction"]) },
-                    ]}
-                />
-                <ResultsInspector data={payload} />
-            </Stack>
+            <KeynessResultsPanel items={items} metrics={metrics} results={results} payload={payload} />
         );
     }
 
@@ -865,6 +963,22 @@ export default function AnalysisView() {
     const [kwicWindow, setKwicWindow] = useState(5);
     const [kwicCaseSensitive, setKwicCaseSensitive] = useState(false);
     const [kwicQueryMode, setKwicQueryMode] = useState("auto");
+    const [kwicSearchMode, setKwicSearchMode] = useState<"lexical" | "semantic" | "hybrid">(
+        "lexical"
+    );
+    const [semanticHits, setSemanticHits] = useState<
+        Array<{
+            chunk_id: string;
+            document_id: string;
+            content: string;
+            score: number;
+            filename: string;
+            page_number: number | null;
+            rank: number | null;
+            retrieval_sources: string[];
+        }>
+    >([]);
+    const [semanticTraceId, setSemanticTraceId] = useState<string | null>(null);
     const [dfmConfig, setDfmConfig] = useState<AdvancedDfmConfig>(DEFAULT_DFM_CONFIG);
     const [keynessField, setKeynessField] = useState("organization");
     const [keynessA, setKeynessA] = useState("");
@@ -965,6 +1079,29 @@ export default function AnalysisView() {
         onError: (error) => onRunError(error, "Failed to run KWIC."),
     });
 
+    const semanticKwicMutation = useMutation({
+        mutationFn: () =>
+            assistantRetrieve(ctx.selectedCorpusId, {
+                query: kwicKeyword.trim(),
+                intent: "semantic_search",
+                retrieval_mode: kwicSearchMode === "semantic" ? "dense" : "hybrid",
+                top_k: 20,
+            }),
+        onSuccess: (result) => {
+            setSemanticHits(result.chunks ?? []);
+            setSemanticTraceId(result.retrieval_trace_id);
+            setRunId(null);
+            showToast({
+                message: result.no_matches
+                    ? "No corpus passages matched (scoped retrieve)."
+                    : `Retrieved ${result.chunks.length} corpus passages.`,
+                severity: result.no_matches ? "info" : "success",
+            });
+        },
+        onError: (error) =>
+            onRunError(error, "Failed to run corpus-scoped semantic/hybrid search."),
+    });
+
     const dfmMutation = useMutation({
         mutationFn: () =>
             runDfm(ctx.selectedCorpusId, {
@@ -1032,7 +1169,7 @@ export default function AnalysisView() {
         overview: overviewMutation,
         frequencies: frequenciesMutation,
         ngrams: ngramsMutation,
-        kwic: kwicMutation,
+        kwic: kwicSearchMode === "lexical" ? kwicMutation : semanticKwicMutation,
         dfm: dfmMutation,
         keyness: keynessMutation,
         dictionaries: dictionaryMutation,
@@ -1181,50 +1318,80 @@ export default function AnalysisView() {
                     ) : null}
 
                     {tab === "kwic" ? (
-                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
-                            <TextField
+                        <Stack spacing={2}>
+                            <ToggleButtonGroup
+                                exclusive
                                 size="small"
-                                label="Query"
-                                value={kwicKeyword}
-                                onChange={(event) => setKwicKeyword(event.target.value)}
-                                sx={{ minWidth: 220 }}
-                            />
-                            <TextField
-                                select
-                                size="small"
-                                label="Query mode"
-                                value={kwicQueryMode}
-                                onChange={(event) => setKwicQueryMode(event.target.value)}
-                                sx={{ width: 160 }}
+                                value={kwicSearchMode}
+                                onChange={(_, value) => {
+                                    if (value) {
+                                        setKwicSearchMode(value);
+                                        setSemanticHits([]);
+                                        setSemanticTraceId(null);
+                                    }
+                                }}
+                                aria-label="KWIC search mode"
                             >
-                                <MenuItem value="auto">Auto</MenuItem>
-                                <MenuItem value="word">Word</MenuItem>
-                                <MenuItem value="phrase">Phrase</MenuItem>
-                                <MenuItem value="exact_phrase">Exact phrase</MenuItem>
-                                <MenuItem value="regex">Regex</MenuItem>
-                                <MenuItem value="wildcard">Wildcard</MenuItem>
-                                <MenuItem value="lemma">Lemma</MenuItem>
-                            </TextField>
-                            <TextField
-                                size="small"
-                                type="number"
-                                label="Window size"
-                                value={kwicWindow}
-                                onChange={(event) =>
-                                    setKwicWindow(Math.max(0, Number(event.target.value) || 0))
-                                }
-                                inputProps={{ min: 0, max: 50 }}
-                                sx={{ width: 140 }}
-                            />
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={kwicCaseSensitive}
-                                        onChange={(event) => setKwicCaseSensitive(event.target.checked)}
-                                    />
-                                }
-                                label="Case sensitive"
-                            />
+                                <ToggleButton value="lexical">Lexical</ToggleButton>
+                                <ToggleButton value="semantic">Semantic</ToggleButton>
+                                <ToggleButton value="hybrid">Hybrid</ToggleButton>
+                            </ToggleButtonGroup>
+                            <Alert severity="info">
+                                {kwicSearchMode === "lexical"
+                                    ? "Lexical KWIC is deterministic concordance over TextUnits (not RAG chunks)."
+                                    : "Semantic/Hybrid search uses the corpus-scoped Ask Corpus retrieve API (never project-wide)."}
+                            </Alert>
+                            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
+                                <TextField
+                                    size="small"
+                                    label="Query"
+                                    value={kwicKeyword}
+                                    onChange={(event) => setKwicKeyword(event.target.value)}
+                                    sx={{ minWidth: 220 }}
+                                />
+                                {kwicSearchMode === "lexical" ? (
+                                    <>
+                                        <TextField
+                                            select
+                                            size="small"
+                                            label="Query mode"
+                                            value={kwicQueryMode}
+                                            onChange={(event) => setKwicQueryMode(event.target.value)}
+                                            sx={{ width: 160 }}
+                                        >
+                                            <MenuItem value="auto">Auto</MenuItem>
+                                            <MenuItem value="word">Word</MenuItem>
+                                            <MenuItem value="phrase">Phrase</MenuItem>
+                                            <MenuItem value="exact_phrase">Exact phrase</MenuItem>
+                                            <MenuItem value="regex">Regex</MenuItem>
+                                            <MenuItem value="wildcard">Wildcard</MenuItem>
+                                            <MenuItem value="lemma">Lemma</MenuItem>
+                                        </TextField>
+                                        <TextField
+                                            size="small"
+                                            type="number"
+                                            label="Window size"
+                                            value={kwicWindow}
+                                            onChange={(event) =>
+                                                setKwicWindow(Math.max(0, Number(event.target.value) || 0))
+                                            }
+                                            inputProps={{ min: 0, max: 50 }}
+                                            sx={{ width: 140 }}
+                                        />
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={kwicCaseSensitive}
+                                                    onChange={(event) =>
+                                                        setKwicCaseSensitive(event.target.checked)
+                                                    }
+                                                />
+                                            }
+                                            label="Case sensitive"
+                                        />
+                                    </>
+                                ) : null}
+                            </Stack>
                         </Stack>
                     ) : null}
 
@@ -1439,6 +1606,57 @@ export default function AnalysisView() {
                     </Button>
                 </Stack>
             </SectionCard>
+
+            {tab === "kwic" && kwicSearchMode !== "lexical" && semanticHits.length > 0 ? (
+                <SectionCard
+                    title="Corpus-scoped passages"
+                    description={
+                        semanticTraceId
+                            ? `Retrieval trace ${semanticTraceId} · ${kwicSearchMode} mode`
+                            : `${kwicSearchMode} mode`
+                    }
+                >
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Rank</TableCell>
+                                <TableCell>Document</TableCell>
+                                <TableCell>Score</TableCell>
+                                <TableCell>Passage</TableCell>
+                                <TableCell>Sources</TableCell>
+                                <TableCell>Ask</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {semanticHits.map((hit) => (
+                                <TableRow key={hit.chunk_id}>
+                                    <TableCell>{hit.rank ?? "—"}</TableCell>
+                                    <TableCell>
+                                        {hit.filename}
+                                        {hit.page_number != null ? ` · p.${hit.page_number}` : ""}
+                                    </TableCell>
+                                    <TableCell>{hit.score.toFixed(3)}</TableCell>
+                                    <TableCell sx={{ maxWidth: 420 }}>
+                                        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                                            {hit.content.slice(0, 320)}
+                                            {hit.content.length > 320 ? "…" : ""}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>{hit.retrieval_sources?.join(", ") || "—"}</TableCell>
+                                    <TableCell>
+                                        <AskAboutThisButton
+                                            label="Ask"
+                                            question={`Interpret this passage in context: ${hit.content.slice(0, 240)}`}
+                                            intent="evidence"
+                                            onAsk={ctx.askAbout}
+                                        />
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </SectionCard>
+            ) : null}
 
             {runId ? (
                 <SectionCard title="Analysis output">

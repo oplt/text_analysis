@@ -46,6 +46,8 @@ class RetrievalOutcomeTest(unittest.IsolatedAsyncioTestCase):
         service.embeddings.embed_texts = AsyncMock(return_value=[[1.0, 0.0]])
         service.vector_store = MagicMock()
         service.vector_store.similarity_search = AsyncMock(side_effect=RuntimeError("boom"))
+        service.repo = MagicMock()
+        service.repo.lexical_search = AsyncMock(return_value=[])
 
         with patch(
             "backend.modules.rag.application.retrieval_service.get_cached_retrieval",
@@ -65,6 +67,8 @@ class RetrievalOutcomeTest(unittest.IsolatedAsyncioTestCase):
         service.embeddings.embed_texts = AsyncMock(return_value=[[1.0, 0.0]])
         service.vector_store = MagicMock()
         service.vector_store.similarity_search = AsyncMock(return_value=[])
+        service.repo = MagicMock()
+        service.repo.lexical_search = AsyncMock(return_value=[])
 
         with (
             patch(

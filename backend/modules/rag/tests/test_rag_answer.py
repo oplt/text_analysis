@@ -1,7 +1,6 @@
-import asyncio
 import unittest
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 from backend.modules.identity_access.models import User
 from backend.modules.rag.application.citation_service import CitationService
@@ -60,17 +59,16 @@ class RagAnswerTest(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.ai_run_id, "run-1")
         service.generation.run_rag_answer.assert_awaited_once()
 
-    @patch(
-        "backend.modules.rag.application.prompt_context_service.asyncio.gather",
-        wraps=asyncio.gather,
-    )
-    async def test_answer_loads_retrieval_and_memory_in_parallel(self, gather_fn):
+    async def test_answer_retrieves_once_then_generates(self):
         db = AsyncMock()
         service = RagAnswerService(db)
         service.config = SimpleNamespace(enabled=True, max_context_tokens=6000)
         service.retrieval = MagicMock()
         service.retrieval.retrieve = AsyncMock(
-            return_value=RetrievalOutcome(chunks=[self._chunk("c1", "PostgreSQL DB")])
+            return_value=RetrievalOutcome(
+                chunks=[self._chunk("c1", "PostgreSQL DB")],
+                retrieval_trace_id="trace-1",
+            )
         )
         service.memory = MagicMock()
         service.memory.recall_for_prompt = AsyncMock(return_value=("memory block", [], False))
@@ -87,16 +85,16 @@ class RagAnswerTest(unittest.IsolatedAsyncioTestCase):
         service.repo.create_query_record = AsyncMock()
         db.commit = AsyncMock()
 
-        await service.answer(
+        result = await service.answer(
             "What database?",
             user=self._user(),
             project_id=None,
         )
 
-        gather_fn.assert_called()
         service.retrieval.retrieve.assert_awaited_once()
         service.memory.recall_for_prompt.assert_awaited_once()
         service.generation.run_rag_answer.assert_awaited_once()
+        self.assertEqual(result.retrieval_trace_id, "trace-1")
 
     async def test_no_chunks_no_invented_citations(self):
         db = AsyncMock()

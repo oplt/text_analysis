@@ -30,7 +30,9 @@ async def rag_search_tool(
         return [], ""
 
     retrieval = RetrievalService(db, config)
-    filters = {"document_ids": document_ids} if document_ids else None
+    filters: dict | None = None
+    if document_ids is not None:
+        filters = {"document_ids": document_ids, "owner_scoped": True}
     try:
         outcome = await retrieval.retrieve(
             query,

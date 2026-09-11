@@ -18,7 +18,7 @@ const SETTINGS_TAB_DEFINITIONS: SettingsTabDefinition[] = [
     { label: "Profile", path: "/profile" },
     { label: "Platform", path: "/platform", requiresPlatformModule: true },
     { label: "AI Studio", path: "/ai", requiresAiModule: true },
-    { label: "RAG", path: "/rag", requiresAiModule: true },
+    { label: "Retrieval diagnostics", path: "/rag", requiresAiModule: true },
     { label: "Memory", path: "/memory", requiresAiModule: true },
     { label: "Agent", path: "/agent", requiresAiModule: true },
     { label: "Observability", path: "/observability" },

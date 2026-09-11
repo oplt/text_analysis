@@ -26,6 +26,8 @@ import {
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { AskAboutThisButton } from "../components/assistant/AskAboutThisButton";
+import { useResearchContext } from "../hooks/useResearchContext";
 import { PageTabs } from "../../../components/ui/PageTabs";
 import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { queryKeys } from "../../../config/queryKeys";
@@ -50,7 +52,6 @@ import {
     DEFAULT_TOPIC_FILTERS,
     type SharedTopicFilters,
 } from "../components/topicFilters";
-import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 
@@ -746,7 +747,7 @@ export default function TopicsView() {
 
                                         {tab === "topics" ? (
                                             <Stack spacing={2}>
-                                                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                                                <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
                                                     <TextField
                                                         select
                                                         size="small"
@@ -764,7 +765,24 @@ export default function TopicsView() {
                                                             </MenuItem>
                                                         ))}
                                                     </TextField>
+                                                    <AskAboutThisButton
+                                                        label="Ask about this topic"
+                                                        intent="evidence"
+                                                        question={`AI-assisted interpretation (not model output): interpret topic "${topicDisplayName(selectedTopic?.topic_id)}" using source evidence. Top terms: ${termItems.map((t) => t.label).join(", ")}.`}
+                                                        onAsk={ctx.askAbout}
+                                                    />
+                                                    <AskAboutThisButton
+                                                        label="Representative passages"
+                                                        intent="evidence"
+                                                        question={`Find representative passages for topic terms: ${termItems.map((t) => t.label).join(", ")}.`}
+                                                        onAsk={ctx.askAbout}
+                                                    />
                                                 </Stack>
+
+                                                <Alert severity="info">
+                                                    Topic terms and distributions are computed by the topic
+                                                    model. Ask Corpus provides AI-assisted interpretation only.
+                                                </Alert>
 
                                                 <Typography variant="subtitle2">
                                                     Top terms — {topicDisplayName(selectedTopic?.topic_id)}

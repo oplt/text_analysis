@@ -6,7 +6,12 @@ import { queryKeys } from "../../../config/queryKeys";
 import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
 import type { UnitType } from "../types";
 import { resolveResearchSelectionId } from "./researchSelection";
-import { ResearchContext, type ResearchContextValue } from "./researchContextState";
+import {
+    ResearchContext,
+    type AskAboutPayload,
+    type PendingAsk,
+    type ResearchContextValue,
+} from "./researchContextState";
 
 const corpusStorageKey = (projectId: string) => `text-research:corpus:${projectId}`;
 const codebookStorageKey = (projectId: string) => `text-research:codebook:${projectId}`;
@@ -16,6 +21,20 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
     const [corpusSelection, setCorpusSelection] = useState("");
     const [codebookSelection, setCodebookSelection] = useState("");
     const [unitType, setUnitType] = useState<UnitType>("paragraph");
+    const [pendingAsk, setPendingAsk] = useState<PendingAsk | null>(null);
+    const [askPanelOpenNonce, setAskPanelOpenNonce] = useState(0);
+
+    const askAbout = useCallback((payload: AskAboutPayload) => {
+        setPendingAsk({
+            question: payload.question,
+            intent: payload.intent,
+            autoSubmit: payload.autoSubmit ?? true,
+            nonce: Date.now(),
+        });
+        setAskPanelOpenNonce((n) => n + 1);
+    }, []);
+
+    const clearPendingAsk = useCallback(() => setPendingAsk(null), []);
 
     const corporaQuery = useQuery({
         queryKey: queryKeys.textResearch.corpora(projectId),
@@ -123,6 +142,10 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
             setUnitType,
             refetchCorpora: () => void corporaQuery.refetch(),
             refetchCodebooks: () => void codebooksQuery.refetch(),
+            askAbout,
+            pendingAsk,
+            clearPendingAsk,
+            askPanelOpenNonce,
         }),
         [
             projectId,
@@ -137,6 +160,10 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
             labelsQuery.data,
             labelsQuery.isLoading,
             unitType,
+            askAbout,
+            pendingAsk,
+            clearPendingAsk,
+            askPanelOpenNonce,
         ]
     );
 

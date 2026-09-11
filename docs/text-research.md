@@ -37,6 +37,13 @@ The module is a **bounded context**. It does not duplicate RAG ingestion.
 **RAG chunks ≠ research text units.** Segmentation builds `document` / `paragraph` /
 `sentence` units with stable positions and `text_hash` for reproducibility.
 
+### Ask Corpus
+
+Corpus-scoped assistant endpoints under `/api/v1/research/corpora/{id}/assistant/*`.
+UI: Text Research side panel (**Context | Ask | Evidence**). Generated text is
+AI-assisted interpretation, never a substitute for deterministic statistics.
+Empty/unindexed corpora return no evidence (never project-wide retrieval).
+
 Research analysis starts from an immutable **canonical research source**
 (`research_canonical_sources`), built by re-parsing the original file or from
 an explicit full-text extract. Overlapping retrieval chunks are never joined

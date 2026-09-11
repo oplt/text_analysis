@@ -124,7 +124,9 @@ class PromptContextService:
     ) -> RetrievalOutcome:
         if not self.rag_config.enabled or not query:
             return RetrievalOutcome(chunks=[])
-        filters = {"document_ids": document_ids} if document_ids else None
+        filters: dict | None = None
+        if document_ids is not None:
+            filters = {"document_ids": document_ids, "owner_scoped": True}
         return await self.retrieval.retrieve(
             query,
             user_id=user_id,

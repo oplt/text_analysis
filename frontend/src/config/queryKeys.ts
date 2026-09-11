@@ -146,6 +146,12 @@ export const queryKeys = {
             ["text-research", "model", modelId, "lifecycle-events"] as const,
         annotationCampaigns: (projectId: string, corpusId?: string) =>
             ["text-research", projectId, "annotation-campaigns", corpusId ?? "all"] as const,
+        assistantScope: (corpusId: string) =>
+            ["text-research", "assistant", "scope", corpusId] as const,
+        assistantThreads: (corpusId: string) =>
+            ["text-research", "assistant", "threads", corpusId] as const,
+        assistantConversation: (threadId: string) =>
+            ["text-research", "assistant", "conversation", threadId] as const,
     },
     rag: {
         all: ["rag"] as const,

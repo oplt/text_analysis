@@ -60,6 +60,7 @@ class AnalysisRunType(StrEnum):
     EXPORT = "export"
     CORPUS_STATS = "corpus_stats"
     SEGMENTATION = "segmentation"
+    CORPUS_SYNTHESIS = "corpus_synthesis"
     INGESTION_QA = "ingestion_qa"
     DOCUMENT_CLEANING = "document_cleaning"
     SIMILARITY = "similarity"

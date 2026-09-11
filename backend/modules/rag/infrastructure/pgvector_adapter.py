@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 
+from backend.modules.rag.application.document_scope import document_ids_is_empty_allow_list
 from backend.modules.rag.domain.models import RetrievedChunk
 from backend.modules.rag.infrastructure.rag_config import RagConfig
 from backend.modules.rag.infrastructure.repositories import RagRepository
@@ -23,6 +24,24 @@ class VectorStoreAdapter:
     ) -> list[RetrievedChunk]: ...
 
     async def delete_document(self, document_id: str, user_id: str) -> None: ...
+
+
+def _parse_scope(filters: dict | None) -> tuple[list[str] | None, bool]:
+    """Return (document_ids, owner_scoped) from filters dict.
+
+    Missing document_ids key → None (unscoped generic RAG).
+    Present empty list → [] (I1 empty allow-list).
+    owner_scoped defaults True; research allow-list mode sets False (I2).
+    """
+    if filters is None:
+        return None, True
+    owner_scoped = bool(filters.get("owner_scoped", True))
+    if "document_ids" not in filters:
+        return None, owner_scoped
+    raw = filters.get("document_ids")
+    if raw is None:
+        return None, owner_scoped
+    return list(raw), owner_scoped
 
 
 class PgVectorAdapter:
@@ -52,7 +71,10 @@ class PgVectorAdapter:
         if query_embedding is None:
             return []
 
-        document_ids = (filters or {}).get("document_ids")
+        document_ids, owner_scoped = _parse_scope(filters)
+        if document_ids_is_empty_allow_list(document_ids):
+            return []
+
         indexed = await self.repo.similarity_search_indexed(
             user_id=user_id,
             project_id=project_id,
@@ -60,6 +82,7 @@ class PgVectorAdapter:
             query_embedding=query_embedding,
             top_k=top_k,
             score_threshold=self.config.score_threshold,
+            owner_scoped=owner_scoped,
         )
         if indexed is None:
             from backend.modules.rag.infrastructure import metrics
@@ -76,6 +99,7 @@ class PgVectorAdapter:
                 query_embedding=query_embedding,
                 top_k=top_k,
                 score_threshold=self.config.score_threshold,
+                owner_scoped=owner_scoped,
             )
 
         if indexed:
@@ -90,6 +114,7 @@ class PgVectorAdapter:
                 query_embedding=query_embedding,
                 top_k=top_k,
                 score_threshold=relaxed_threshold,
+                owner_scoped=owner_scoped,
             )
             if relaxed:
                 logger.debug(
@@ -110,6 +135,7 @@ class PgVectorAdapter:
             query_embedding=query_embedding,
             top_k=top_k,
             score_threshold=self.config.score_threshold,
+            owner_scoped=owner_scoped,
         )
 
     async def delete_document(self, document_id: str, user_id: str) -> None:

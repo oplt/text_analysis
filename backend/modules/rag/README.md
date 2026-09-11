@@ -4,6 +4,35 @@
 
 Document upload, parsing, chunking, embedding, retrieval, and cited answers — integrated with the existing AI agent and memory layers.
 
+## Research Assistant (Ask Corpus)
+
+Corpus-scoped interrogation lives in `text_research` and **delegates** to this module:
+
+```text
+text_research.CorpusAssistantService
+  → CorpusScopeService (always concrete document_ids list; never None)
+  → RetrievalService.retrieve once (owner_scoped=False, allow-list)
+  → RagAnswerService.answer_from_retrieval (no second retrieve)
+```
+
+**Invariants**
+
+1. `document_ids=None` = unscoped generic `/rag/*`; `document_ids=[]` = empty evidence (never widen).
+2. Research façade uses project membership for authz; allow-list mode does not require uploader `user_id`.
+3. Scope snapshots persist corpus/project/sorted rag IDs/coverage/versions per answer.
+4. One retrieval trace ID per assistant question shared by generation, citations, and Evidence UI.
+5. Evidence boundary = selected corpus (not all project documents).
+
+Hybrid retrieval: independent dense (pgvector) + PostgreSQL full-text lexical ranking + RRF + optional diversify.
+
+Offline ranking comparison (no paid APIs):
+
+```bash
+backend/.venv/bin/python -m backend.modules.rag.eval.retrieval_eval
+```
+
+Chunking is structure-aware (`structure-v1`); PDFs use enhanced parser with pypdf fallback.
+
 ## Architecture
 
 ```text
@@ -45,6 +74,12 @@ RAG_SCORE_THRESHOLD=0.3
 RAG_MAX_CONTEXT_TOKENS=6000
 RAG_RERANK_ENABLED=false
 RAG_RERANK_CANDIDATE_MULTIPLIER=3
+RAG_DENSE_CANDIDATES=40
+RAG_LEXICAL_CANDIDATES=40
+RAG_FUSION_METHOD=rrf
+RAG_RRF_K=60
+RAG_SOURCE_MAX_CHUNKS_PER_DOCUMENT=3
+RAG_EVIDENCE_TOP_K=12
 RAG_ALLOWED_FILE_TYPES=pdf,txt,md,docx,csv
 RAG_MAX_FILE_BYTES=10485760
 ```

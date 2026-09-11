@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from backend.db.base import Base
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 
@@ -47,6 +47,10 @@ class RagChunk(Base):
     metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     embedding_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     vector_external_id: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    parent_chunk_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    chunker_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    parser_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
@@ -98,4 +102,74 @@ class RagIngestionJob(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+
+class RagConversation(Base):
+    __tablename__ = "rag_conversations"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    project_id: Mapped[str | None] = mapped_column(String(128), nullable=True, index=True)
+    organization_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    title: Mapped[str] = mapped_column(String(512), default="Untitled")
+    scope_snapshot_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        index=True,
+    )
+
+
+class RagRetrievalTrace(Base):
+    __tablename__ = "rag_retrieval_traces"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    project_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    conversation_id: Mapped[str | None] = mapped_column(
+        ForeignKey("rag_conversations.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    query: Mapped[str] = mapped_column(Text)
+    intent: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    scope_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    document_ids_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    retrieved_chunks_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    coverage_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    config_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    degraded: Mapped[bool] = mapped_column(Boolean, default=False)
+    degradation_reason: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    no_matches: Mapped[bool] = mapped_column(Boolean, default=False)
+    injection_chunks_filtered: Mapped[int] = mapped_column(Integer, default=0)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
+    )
+
+
+class RagMessage(Base):
+    __tablename__ = "rag_messages"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("rag_conversations.id", ondelete="CASCADE"), index=True
+    )
+    role: Mapped[str] = mapped_column(String(32))
+    content: Mapped[str] = mapped_column(Text)
+    model_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    prompt_template_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    prompt_version_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    retrieval_trace_id: Mapped[str | None] = mapped_column(
+        ForeignKey("rag_retrieval_traces.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    citations_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    claims_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )
