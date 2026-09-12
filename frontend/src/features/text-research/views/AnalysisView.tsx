@@ -597,9 +597,9 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
 
     if (isActiveRunStatus(run.status) && !results && !metrics) {
         return (
-            <Typography color="text.secondary">
-                Run in progress…
-            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                <Typography color="text.secondary">Run in progress…</Typography>
+            </Stack>
         );
     }
 
@@ -963,6 +963,7 @@ export default function AnalysisView() {
     const [kwicWindow, setKwicWindow] = useState(5);
     const [kwicCaseSensitive, setKwicCaseSensitive] = useState(false);
     const [kwicQueryMode, setKwicQueryMode] = useState("auto");
+    const [kwicQueryLanguage, setKwicQueryLanguage] = useState("en");
     const [kwicSearchMode, setKwicSearchMode] = useState<"lexical" | "semantic" | "hybrid">(
         "lexical"
     );
@@ -997,28 +998,28 @@ export default function AnalysisView() {
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
-        queryFn: () => listPreprocessingProfiles(ctx.projectId),
+        queryFn: ({ signal }) => listPreprocessingProfiles(ctx.projectId, signal),
         enabled: Boolean(ctx.projectId),
         staleTime: QUERY_STALE_TIMES.researchReference,
     });
 
     const dictionariesQuery = useQuery({
         queryKey: queryKeys.textResearch.dictionaries(ctx.projectId),
-        queryFn: () => listDictionaries(ctx.projectId),
+        queryFn: ({ signal }) => listDictionaries(ctx.projectId, signal),
         enabled: Boolean(ctx.projectId),
         staleTime: QUERY_STALE_TIMES.researchReference,
     });
 
     const facetsQuery = useQuery({
         queryKey: queryKeys.textResearch.metadataFacets(ctx.selectedCorpusId),
-        queryFn: () => getCorpusMetadataFacets(ctx.selectedCorpusId),
+        queryFn: ({ signal }) => getCorpusMetadataFacets(ctx.selectedCorpusId, signal),
         enabled: Boolean(ctx.selectedCorpusId),
         staleTime: QUERY_STALE_TIMES.researchMetadataFacets,
     });
 
     const runQuery = useQuery({
         queryKey: queryKeys.textResearch.run(runId ?? ""),
-        queryFn: () => getRun(runId!),
+        queryFn: ({ signal }) => getRun(runId!, signal),
         enabled: Boolean(runId),
         staleTime: (query) => researchRunStaleTime(query.state.data?.status),
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
@@ -1074,6 +1075,9 @@ export default function AnalysisView() {
                 window_size: kwicWindow,
                 case_sensitive: kwicCaseSensitive,
                 query_mode: kwicQueryMode,
+                ...(kwicQueryMode === "lemma"
+                    ? { query_language: kwicQueryLanguage.trim() || undefined }
+                    : {}),
             }),
         onSuccess: (run) => onRunSuccess(run, "KWIC search started."),
         onError: (error) => onRunError(error, "Failed to run KWIC."),
@@ -1165,6 +1169,8 @@ export default function AnalysisView() {
         onError: (error) => onRunError(error, "Failed to run co-occurrence."),
     });
 
+    // Generic Run button tabs only. Advanced panels (similarity/duplicates/…)
+    // and statistical/measurement views own their mutations in child components.
     const mutationByTab = {
         overview: overviewMutation,
         frequencies: frequenciesMutation,
@@ -1174,14 +1180,8 @@ export default function AnalysisView() {
         keyness: keynessMutation,
         dictionaries: dictionaryMutation,
         cooccurrence: cooccurrenceMutation,
-        similarity: overviewMutation,
-        duplicates: overviewMutation,
-        clustering: overviewMutation,
-        dimensionality: overviewMutation,
-        readability: overviewMutation,
     } as const;
 
-    // statistical / measurement tabs own their mutations in child views.
     const activeMutation =
         tab in mutationByTab
             ? mutationByTab[tab as keyof typeof mutationByTab]
@@ -1193,7 +1193,13 @@ export default function AnalysisView() {
 
     const canRun = (() => {
         if (!ctx.selectedCorpusId || !activeMutation || activeMutation.isPending) return false;
-        if (tab === "kwic") return Boolean(kwicKeyword.trim());
+        if (tab === "kwic") {
+            if (!kwicKeyword.trim()) return false;
+            if (kwicSearchMode === "lexical" && kwicQueryMode === "lemma") {
+                return Boolean(kwicQueryLanguage.trim());
+            }
+            return true;
+        }
         if (tab === "keyness") return Boolean(keynessA.trim() && keynessB.trim());
         if (tab === "dictionaries") return hasDictionaryInput;
         return true;
@@ -1367,6 +1373,18 @@ export default function AnalysisView() {
                                             <MenuItem value="wildcard">Wildcard</MenuItem>
                                             <MenuItem value="lemma">Lemma</MenuItem>
                                         </TextField>
+                                        {kwicQueryMode === "lemma" ? (
+                                            <TextField
+                                                size="small"
+                                                label="Query language"
+                                                helperText="Lemma language (separate from corpus language filter)"
+                                                value={kwicQueryLanguage}
+                                                onChange={(event) =>
+                                                    setKwicQueryLanguage(event.target.value)
+                                                }
+                                                sx={{ width: 160 }}
+                                            />
+                                        ) : null}
                                         <TextField
                                             size="small"
                                             type="number"
@@ -1667,7 +1685,12 @@ export default function AnalysisView() {
                         onRetry={() => void runQuery.refetch()}
                     >
                         {runQuery.data ? (
-                            <ResearchResultPanel run={runQuery.data} title={runLabel}>
+                            <ResearchResultPanel
+                                run={runQuery.data}
+                                title={runLabel}
+                                projectId={ctx.projectId}
+                                corpusId={ctx.selectedCorpusId}
+                            >
                                 <AnalysisResults tab={tab} run={runQuery.data} />
                             </ResearchResultPanel>
                         ) : null}

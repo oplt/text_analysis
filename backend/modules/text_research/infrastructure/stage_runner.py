@@ -180,7 +180,9 @@ def _stage_prepare_corpus(context: dict[str, Any], plan: ExecutionPlan) -> None:
 
 
 def _run_frequencies(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.infrastructure import quantitative
+    from backend.modules.text_research.application.analysis_operators import (
+        run_frequencies_operator,
+    )
 
     prepared: PreparedCorpusArtifact = context["prepared"]
     spec: AnalysisSpecification = context["spec"]
@@ -190,81 +192,67 @@ def _run_frequencies(context: dict[str, Any], _plan: ExecutionPlan) -> None:
         group_by=params.get("group_by"),
         documents_by_id=context.get("documents_by_id"),
     )
-    report = quantitative.term_frequency_report(
-        _tokenized(prepared),
+    context["results"] = run_frequencies_operator(
+        prepared,
         top_n=int(params.get("top_n", 50)),
-        rate_per=params.get("rate_per", 1000),
-        unit_ids=list(prepared.unit_ids),
-        document_ids=list(prepared.document_ids) if prepared.document_ids else None,
+        rate_per=float(params.get("rate_per", 1000)),
         group_keys=group_keys,
     )
-    context["results"] = report
 
 
 def _run_ngrams(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.infrastructure import quantitative
+    from backend.modules.text_research.application.analysis_operators import (
+        run_ngrams_operator,
+    )
 
     prepared: PreparedCorpusArtifact = context["prepared"]
     params = context["spec"].analysis.parameters
-    report = quantitative.ngram_frequency_report(
-        _tokenized(prepared),
+    context["results"] = run_ngrams_operator(
+        prepared,
         n=int(params.get("n", 2)),
         top_n=int(params.get("top_n", 50)),
-        rate_per=params.get("rate_per", 1000),
+        rate_per=float(params.get("rate_per", 1000)),
         skip=int(params.get("skip", 0)),
-        unit_ids=list(prepared.unit_ids),
-        document_ids=list(prepared.document_ids) if prepared.document_ids else None,
     )
-    context["results"] = report
 
 
 def _run_dfm(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.infrastructure import quantitative
+    from backend.modules.text_research.application.analysis_operators import (
+        run_dfm_operator,
+    )
 
     prepared: PreparedCorpusArtifact = context["prepared"]
     spec: AnalysisSpecification = context["spec"]
     params = spec.analysis.parameters
     fe = spec.feature_extraction
-    build_kwargs: dict[str, Any] = {
-        "weighting": params.get("weighting") or fe.type,
-        "unit_ids": list(prepared.unit_ids),
-        "preprocessing_config": prepared.preprocessing_profile,
-    }
+    build_kwargs: dict[str, Any] = {}
     for key in ("k1", "b", "smooth_idf", "force_sparse_only", "trim"):
         if key in params and params[key] is not None:
             build_kwargs[key] = params[key]
-    result = quantitative.build_dfm(_tokenized(prepared), **build_kwargs)
-    context["results"] = {
-        "dfm": result,
-        "summary": quantitative.dfm_summary(result),
-    }
+    context["results"] = run_dfm_operator(
+        prepared,
+        weighting=str(params.get("weighting") or fe.type or "count"),
+        **build_kwargs,
+    )
 
 
 def _run_kwic(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.infrastructure import quantitative
+    from backend.modules.text_research.application.analysis_operators import (
+        run_kwic_operator,
+    )
 
     prepared: PreparedCorpusArtifact = context["prepared"]
     params = context["spec"].analysis.parameters
-    payload = []
-    for index, unit_id in enumerate(prepared.unit_ids):
-        payload.append(
-            {
-                "text": prepared.original_units[index],
-                "text_unit_id": unit_id,
-                "id": unit_id,
-            }
-        )
-    matches = quantitative.kwic_search(
-        payload,
-        str(params.get("keyword", "")),
+    context["results"] = run_kwic_operator(
+        prepared,
+        keyword=str(params.get("keyword", "")),
         window_size=int(params.get("window_size", 5)),
         case_sensitive=bool(params.get("case_sensitive", False)),
-        query_mode=params.get("query_mode", "auto"),
-        language=params.get("language"),
+        query_mode=str(params.get("query_mode", "auto")),
+        language=params.get("query_language") or params.get("language"),
         token_attribute=params.get("token_attribute"),
         max_matches=params.get("max_matches"),
     )
-    context["results"] = {"matches": matches, "match_count": len(matches)}
 
 
 def _run_dictionary(context: dict[str, Any], _plan: ExecutionPlan) -> None:
@@ -455,13 +443,12 @@ def _run_clustering(context: dict[str, Any], _plan: ExecutionPlan) -> None:
 
 
 def _run_readability(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.infrastructure.readability import readability_for_units
+    from backend.modules.text_research.application.analysis_operators import (
+        run_readability_operator,
+    )
 
     prepared: PreparedCorpusArtifact = context["prepared"]
-    context["results"] = readability_for_units(
-        list(prepared.original_units),
-        list(prepared.unit_ids),
-    )
+    context["results"] = run_readability_operator(prepared)
 
 
 def _run_statistical_model(context: dict[str, Any], _plan: ExecutionPlan) -> None:
@@ -561,6 +548,7 @@ def _stage_build_manifest(context: dict[str, Any], plan: ExecutionPlan) -> None:
 
 ANALYSIS_HANDLERS: dict[str, StageHandler] = {
     "frequencies": _run_frequencies,
+    "ngrams": _run_ngrams,
     "dfm": _run_dfm,
     "kwic": _run_kwic,
     "dictionary": _run_dictionary,
@@ -597,7 +585,13 @@ class StageRunner:
             self.context["delegate_callback"] = delegate_callback
 
     def run(self) -> dict[str, Any]:
+        from backend.modules.text_research.application.research_observability import (
+            observe_stage_duration,
+        )
+
         timings: dict[str, float] = {}
+        analysis_type = getattr(getattr(self.context.get("spec"), "analysis", None), "type", None)
+        run_id = self.context.get("run_id")
         for stage in self.plan.stages:
             started = time.perf_counter()
             if stage in BASE_STAGE_HANDLERS:
@@ -608,6 +602,13 @@ class StageRunner:
                 ANALYSIS_HANDLERS[stage](self.context, self.plan)
             else:
                 raise ValueError(f"Unknown pipeline stage {stage!r}")
-            timings[stage] = time.perf_counter() - started
+            elapsed = time.perf_counter() - started
+            timings[stage] = elapsed
+            observe_stage_duration(
+                stage=stage,
+                analysis_type=str(analysis_type or "unknown"),
+                seconds=elapsed,
+                run_id=str(run_id) if run_id else None,
+            )
         self.context["stage_timings"] = timings
         return self.context

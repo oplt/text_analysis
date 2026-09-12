@@ -98,10 +98,9 @@ export default function DriftMonitoringView() {
 
     const modelsQuery = useQuery({
         queryKey: queryKeys.textResearch.models(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () =>
-            listModels(ctx.projectId, {
+        queryFn: ({ signal }) => listModels(ctx.projectId, {
                 corpusId: ctx.selectedCorpusId || undefined,
-            }),
+            }, signal),
         enabled: Boolean(ctx.projectId),
     });
 
@@ -114,19 +113,18 @@ export default function DriftMonitoringView() {
             ctx.selectedCorpusId,
             "drift_monitoring"
         ),
-        queryFn: () =>
-            listRuns(ctx.projectId, {
+        queryFn: ({ signal }) => listRuns(ctx.projectId, {
                 corpus_id: ctx.selectedCorpusId || undefined,
                 run_type: "drift_monitoring",
                 limit: 30,
-            }),
+            }, signal),
         enabled: Boolean(ctx.projectId),
     });
 
     const sseConnected = useRunEvents(selectedRunId, ctx.projectId);
     const runQuery = useQuery({
         queryKey: queryKeys.textResearch.run(selectedRunId ?? ""),
-        queryFn: () => getRun(selectedRunId!),
+        queryFn: ({ signal }) => getRun(selectedRunId!, signal),
         enabled: Boolean(selectedRunId),
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });

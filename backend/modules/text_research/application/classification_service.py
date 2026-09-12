@@ -237,10 +237,18 @@ class ClassificationService(ResearchAccessMixin):
         return refreshed
 
     async def execute_training(self, run_id: str) -> AnalysisRun:
+        from backend.modules.text_research.application.run_lifecycle import (
+            RunCancelledError,
+            TERMINAL_RUN_STATUSES,
+            complete_if_active,
+            ensure_not_cancelled,
+            fail_if_active,
+        )
+
         run = await self.repo.get_run(run_id)
         if run is None:
             raise ValueError(f"AnalysisRun {run_id} not found")
-        if run.status in {AnalysisRunStatus.COMPLETED.value, AnalysisRunStatus.CANCELLED.value}:
+        if run.status in TERMINAL_RUN_STATUSES:
             return run
         params = loads(run.parameters_json, {})
 
@@ -253,11 +261,6 @@ class ClassificationService(ResearchAccessMixin):
         await self.db.commit()
 
         try:
-            from backend.modules.text_research.application.run_lifecycle import (
-                RunCancelledError,
-                ensure_not_cancelled,
-            )
-
             run = await ensure_not_cancelled(self.repo, run)
             snapshot = await self.repo.get_snapshot(params["snapshot_id"])
             if snapshot is None:
@@ -429,6 +432,7 @@ class ClassificationService(ResearchAccessMixin):
 
             await self.repo.update_run(run, progress_stage="training")
             await self.db.commit()
+            run = await ensure_not_cancelled(self.repo, run)
             fit_kwargs = {
                 "task_type": task_type,
                 "label_names": label_names if task_type == "multilabel" else None,
@@ -510,6 +514,7 @@ class ClassificationService(ResearchAccessMixin):
 
             await self.repo.update_run(run, progress_stage="saving")
             await self.db.commit()
+            run = await ensure_not_cancelled(self.repo, run)
             model_artifact_path, model_artifact_metadata = (
                 model_storage.save_artifact_with_metadata(
                     fit_result["model"], category="research_classifiers"
@@ -563,9 +568,9 @@ class ClassificationService(ResearchAccessMixin):
                 )
             )
 
-            await self.repo.update_run(
+            await complete_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 completed_at=_utcnow(),
                 metrics_json=dumps(fit_result["metrics"]),
@@ -650,18 +655,11 @@ class ClassificationService(ResearchAccessMixin):
             )
             await self.db.commit()
         except RunCancelledError:
-            await self.repo.update_run(
-                run,
-                status=AnalysisRunStatus.CANCELLED.value,
-                progress_stage="cancelled",
-                completed_at=_utcnow(),
-                error_message="Cancelled by user",
-            )
             await self.db.commit()
         except Exception as exc:  # noqa: BLE001
-            await self.repo.update_run(
+            await fail_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.FAILED.value,
                 completed_at=_utcnow(),
                 error_message=str(exc),
             )

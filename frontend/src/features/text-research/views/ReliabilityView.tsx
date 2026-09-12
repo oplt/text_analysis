@@ -615,7 +615,7 @@ export default function ReliabilityView() {
 
     const runQuery = useQuery({
         queryKey: queryKeys.textResearch.run(runId ?? ""),
-        queryFn: () => getRun(runId!),
+        queryFn: ({ signal }) => getRun(runId!, signal),
         enabled: Boolean(runId),
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });

@@ -10,6 +10,10 @@ from typing import Protocol
 
 from backend.core.config import settings
 from backend.modules.rag.domain.models import ParsedDocument
+from backend.modules.rag.infrastructure.pdf_quality import (
+    decide_ocr,
+    suppress_repeated_headers_footers,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +180,7 @@ class EnhancedPdfParser:
             raise RuntimeError("enhanced PDF parser unavailable") from exc
 
         docs: list[ParsedDocument] = []
+        page_payloads: list[dict] = []
         with fitz.open(stream=content, filetype="pdf") as document:
             for index, page in enumerate(document, start=1):
                 blocks = page.get_text("dict").get("blocks") or []
@@ -215,71 +220,117 @@ class EnhancedPdfParser:
                 if not text:
                     # Fall back to plain text extraction for the page.
                     text = (page.get_text("text") or "").strip().replace("-\n", "")
-                text_poor = len(text) < max(1, settings.RAG_PDF_OCR_MIN_TEXT_CHARS)
+                ocr_decision = decide_ocr(
+                    text,
+                    ocr_enabled=settings.RAG_PDF_OCR_ENABLED,
+                    quality_threshold=settings.RAG_PDF_TEXT_QUALITY_THRESHOLD,
+                    min_text_chars=settings.RAG_PDF_OCR_MIN_TEXT_CHARS,
+                )
+                quality = ocr_decision.quality
                 ocr_text, ocr_metadata = (
                     _extract_ocr_text(page, fitz)
-                    if text_poor
-                    else ("", {"ocr_enabled": False, "ocr_ran": False})
+                    if ocr_decision.should_ocr
+                    else ("", {"ocr_enabled": settings.RAG_PDF_OCR_ENABLED, "ocr_ran": False})
                 )
                 if ocr_text:
                     text = ocr_text
                 tables = _extract_tables(page, page_number=index)
-                if text:
-                    docs.append(
-                        ParsedDocument(
-                            content=text,
-                            metadata={
-                                "format": "pdf",
-                                "page_number": index,
-                                "source_span_ids": [
-                                    f"pdf-page-{index}",
-                                    *(block["block_id"] for block in text_blocks),
-                                ],
-                                "parser": self.name,
-                                "parser_quality": (
-                                    "enhanced_layout" if text_blocks else "enhanced_text"
-                                ),
-                                "configured_parser": configured_parser,
-                                "fallback_used": fallback_reason is not None,
-                                "fallback_reason": fallback_reason,
-                                "layout_extraction_available": True,
-                                "layout_extraction_ran": True,
-                                "table_extraction_available": hasattr(page, "find_tables"),
-                                "table_extraction_ran": bool(tables),
-                                "table_blocks": tables,
-                                "text_poor": text_poor,
-                                **ocr_metadata,
-                                "reading_order": "pymupdf_blocks",
-                                "blocks": text_blocks,
-                            },
-                            page_number=index,
-                        )
-                    )
-                for table in tables:
-                    docs.append(
-                        ParsedDocument(
-                            content=json.dumps(
-                                {
-                                    "kind": "pdf_table",
-                                    "table_index": table["table_index"],
-                                    "rows": table["rows"],
-                                },
-                                ensure_ascii=False,
+                page_payloads.append(
+                    {
+                        "index": index,
+                        "text": text,
+                        "text_blocks": text_blocks,
+                        "tables": tables,
+                        "table_extraction_available": hasattr(page, "find_tables"),
+                        "quality": quality,
+                        "ocr_decision": ocr_decision,
+                        "ocr_metadata": ocr_metadata,
+                    }
+                )
+
+        page_texts = [payload["text"] for payload in page_payloads]
+        if getattr(settings, "RAG_PDF_HEADER_FOOTER_SUPPRESSION", True):
+            cleaned_texts = suppress_repeated_headers_footers(page_texts)
+        else:
+            cleaned_texts = page_texts
+
+        for payload, cleaned in zip(page_payloads, cleaned_texts, strict=True):
+            index = payload["index"]
+            text = cleaned
+            text_blocks = payload["text_blocks"]
+            tables = payload["tables"]
+            quality = payload["quality"]
+            ocr_decision = payload["ocr_decision"]
+            ocr_metadata = {
+                **payload["ocr_metadata"],
+                "ocr_decision_reason": ocr_decision.reason,
+                "header_footer_suppression": bool(
+                    getattr(settings, "RAG_PDF_HEADER_FOOTER_SUPPRESSION", True)
+                ),
+            }
+            if text:
+                docs.append(
+                    ParsedDocument(
+                        content=text,
+                        metadata={
+                            "format": "pdf",
+                            "page_number": index,
+                            "source_span_ids": [
+                                f"pdf-page-{index}",
+                                *(block["block_id"] for block in text_blocks),
+                            ],
+                            "parser": self.name,
+                            "parser_quality": (
+                                "enhanced_layout" if text_blocks else "enhanced_text"
                             ),
-                            metadata={
-                                "format": "pdf",
-                                "parsed_block_type": "table",
-                                "page_number": index,
-                                "source_span_ids": [table["block_id"]],
-                                "parser": self.name,
-                                "table_extraction_available": True,
-                                "table_extraction_ran": True,
-                                "table": table,
-                                "ocr_ran": False,
+                            "configured_parser": configured_parser,
+                            "fallback_used": fallback_reason is not None,
+                            "fallback_reason": fallback_reason,
+                            "layout_extraction_available": True,
+                            "layout_extraction_ran": True,
+                            "table_extraction_available": payload["table_extraction_available"],
+                            "table_extraction_ran": bool(tables),
+                            "table_blocks": tables,
+                            "text_poor": ocr_decision.should_ocr,
+                            "text_quality": {
+                                "score": quality.score,
+                                "printable_ratio": quality.printable_ratio,
+                                "replacement_ratio": quality.replacement_ratio,
+                                "character_count": quality.character_count,
+                                "is_low_quality": quality.is_low_quality,
                             },
-                            page_number=index,
-                        )
+                            **ocr_metadata,
+                            "reading_order": "pymupdf_blocks",
+                            "blocks": text_blocks,
+                        },
+                        page_number=index,
                     )
+                )
+            for table in tables:
+                docs.append(
+                    ParsedDocument(
+                        content=json.dumps(
+                            {
+                                "kind": "pdf_table",
+                                "table_index": table["table_index"],
+                                "rows": table["rows"],
+                            },
+                            ensure_ascii=False,
+                        ),
+                        metadata={
+                            "format": "pdf",
+                            "parsed_block_type": "table",
+                            "page_number": index,
+                            "source_span_ids": [table["block_id"]],
+                            "parser": self.name,
+                            "table_extraction_available": True,
+                            "table_extraction_ran": True,
+                            "table": table,
+                            "ocr_ran": False,
+                        },
+                        page_number=index,
+                    )
+                )
         if not docs:
             raise RuntimeError("enhanced PDF parser returned no text")
         return docs

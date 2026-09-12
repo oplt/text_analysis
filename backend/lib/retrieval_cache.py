@@ -15,6 +15,7 @@ class CachedRetrieval:
 
     chunks: list[RetrievedChunk]
     provenance: dict
+    artifact_version: str = "v2"
 
 
 def _scope_token(value: str | None) -> str:
@@ -41,12 +42,16 @@ def retrieval_cache_key(
     top_k: int,
     filters: dict | None,
     variant: str = "vector-v1",
+    identity: dict | None = None,
 ) -> str:
+    canonical_identity = json.dumps(
+        identity or {"variant": variant}, sort_keys=True, separators=(",", ":"), default=str
+    )
     return cache_key(
         "retrieval",
         user_id,
         _scope_token(project_id),
-        _stable_digest(query, str(top_k), variant),
+        _stable_digest(query, str(top_k), canonical_identity),
         _filters_digest(filters),
     )
 
@@ -99,6 +104,8 @@ async def get_cached_retrieval(
     top_k: int,
     filters: dict | None,
     variant: str = "vector-v1",
+    identity: dict | None = None,
+    expected_revision_ids: list[str] | None = None,
 ) -> CachedRetrieval | None:
     payload = await cache_get_json(
         retrieval_cache_key(
@@ -108,6 +115,7 @@ async def get_cached_retrieval(
             top_k=top_k,
             filters=filters,
             variant=variant,
+            identity=identity,
         )
     )
     # Entries created before provenance was persisted are deliberately cache
@@ -116,9 +124,19 @@ async def get_cached_retrieval(
         return None
     chunks = deserialize_retrieved_chunks(payload.get("chunks"))
     provenance = payload.get("provenance")
-    if chunks is None or not isinstance(provenance, dict):
+    artifact_version = payload.get("artifact_version")
+    if chunks is None or not isinstance(provenance, dict) or not isinstance(artifact_version, str):
         return None
-    return CachedRetrieval(chunks=chunks, provenance=provenance)
+    if expected_revision_ids is not None:
+        expected = set(expected_revision_ids)
+        cached_revisions = set(provenance.get("index_revision_ids") or ())
+        if cached_revisions != expected or any(
+            chunk.index_revision_id not in expected for chunk in chunks
+        ):
+            return None
+    return CachedRetrieval(
+        chunks=chunks, provenance=provenance, artifact_version=artifact_version
+    )
 
 
 async def set_cached_retrieval(
@@ -131,6 +149,8 @@ async def set_cached_retrieval(
     chunks: list[RetrievedChunk],
     provenance: dict,
     variant: str = "vector-v1",
+    identity: dict | None = None,
+    artifact_version: str = "v2",
 ) -> None:
     await cache_set_json(
         retrieval_cache_key(
@@ -140,8 +160,13 @@ async def set_cached_retrieval(
             top_k=top_k,
             filters=filters,
             variant=variant,
+            identity=identity,
         ),
-        {"chunks": serialize_retrieved_chunks(chunks), "provenance": provenance},
+        {
+            "artifact_version": artifact_version,
+            "chunks": serialize_retrieved_chunks(chunks),
+            "provenance": provenance,
+        },
         ttl_seconds=settings.CACHE_RETRIEVAL_TTL_SECONDS,
     )
 

@@ -144,13 +144,14 @@ class EmbeddingCacheTest(unittest.IsolatedAsyncioTestCase):
 
         service = EmbeddingService()
         service._adapter = AsyncMock()
-        service._adapter.embed_texts = AsyncMock(return_value=[[0.1, 0.2]])
+        vector = [0.1] * service.config.embedding_dimensions
+        service._adapter.embed_texts = AsyncMock(return_value=[vector])
 
         with (
             patch("backend.lib.embedding_cache.settings") as mock_settings,
             patch(
                 "backend.lib.embedding_cache.cache_mget_json",
-                AsyncMock(side_effect=[[None], [[0.1, 0.2]]]),
+                AsyncMock(side_effect=[[None], [vector]]),
             ) as cache_mget,
             patch(
                 "backend.lib.embedding_cache.cache_mset_json",
@@ -167,8 +168,8 @@ class EmbeddingCacheTest(unittest.IsolatedAsyncioTestCase):
             first = await service.embed_texts(["hello"])
             second = await service.embed_texts(["hello"])
 
-        self.assertEqual(first, [[0.1, 0.2]])
-        self.assertEqual(second, [[0.1, 0.2]])
+        self.assertEqual(first, [vector])
+        self.assertEqual(second, [vector])
         service._adapter.embed_texts.assert_awaited_once_with(["hello"])
         cache_mset.assert_awaited_once()
         self.assertEqual(cache_mget.await_count, 2)

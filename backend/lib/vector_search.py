@@ -12,6 +12,10 @@ from backend.lib.vectors import can_index_embedding, cosine_similarity, vector_l
 logger = logging.getLogger(__name__)
 
 
+class DenseFallbackScopeTooLarge(RuntimeError):
+    """JSON vectors cannot provide exact retrieval for this eligible scope."""
+
+
 def json_fallback_max_candidates(top_k: int) -> int:
     return min(5000, max(250, top_k * 50))
 

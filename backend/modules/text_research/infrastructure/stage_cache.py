@@ -65,6 +65,11 @@ def _record_cache_hit(*, stage: str = "stage") -> None:
         research_stage_cache_hits_total.labels(stage=label).inc()
         if label == "prepared_corpus":
             research_prepared_corpus_cache_hits_total.inc()
+        from backend.modules.text_research.application.research_observability import (
+            log_cache_outcome,
+        )
+
+        log_cache_outcome(cache=label, hit=True, tier="stage")
     except Exception:
         pass
 
@@ -84,6 +89,11 @@ def _record_cache_miss(*, stage: str = "stage") -> None:
         research_stage_cache_misses_total.labels(stage=label).inc()
         if label == "prepared_corpus":
             research_prepared_corpus_cache_misses_total.inc()
+        from backend.modules.text_research.application.research_observability import (
+            log_cache_outcome,
+        )
+
+        log_cache_outcome(cache=label, hit=False, tier="stage")
     except Exception:
         pass
 

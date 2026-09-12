@@ -18,6 +18,7 @@ import {
 import { Download as DownloadIcon, InfoOutlined as InfoIcon } from "@mui/icons-material";
 import { researchExportUrl } from "../../../api/textResearch";
 import type { AnalysisRun } from "../types";
+import { ActiveRunActions } from "./ActiveRunActions";
 import { JsonBlock, RunStatusChip } from "./ResearchShared";
 import { MetricCards, ResultsInspector } from "./ResearchCharts";
 
@@ -171,11 +172,15 @@ export function ResearchResultPanel({
     title,
     metricItems,
     children,
+    projectId,
+    corpusId,
 }: {
     run: AnalysisRun;
     title: string;
     metricItems?: Array<{ label: string; value: string | number | null | undefined }>;
     children: ReactNode;
+    projectId?: string | null;
+    corpusId?: string | null;
 }) {
     return (
         <Stack spacing={2}>
@@ -184,8 +189,9 @@ export function ResearchResultPanel({
                     <Typography variant="h6">{title}</Typography>
                     <Typography variant="caption" color="text.secondary">Run {run.id} · {new Date(run.created_at).toLocaleString()}</Typography>
                 </Box>
-                <Stack direction="row" spacing={0.5} alignItems="center">
+                <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
                     <RunStatusChip status={run.status} />
+                    <ActiveRunActions run={run} projectId={projectId} corpusId={corpusId} />
                     <MethodsAndProvenanceDrawer run={run} />
                     <ResearchExportActions runId={run.id} />
                 </Stack>

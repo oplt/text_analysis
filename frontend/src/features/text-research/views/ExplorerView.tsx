@@ -137,13 +137,13 @@ export default function ExplorerView() {
 
     const classifiersQuery = useQuery({
         queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () => listClassifiers(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: ({ signal }) => listClassifiers(ctx.projectId, ctx.selectedCorpusId, undefined, signal),
         enabled: Boolean(ctx.projectId && provenanceMode !== "human_only"),
     });
 
     const runQuery = useQuery({
         queryKey: queryKeys.textResearch.run(runId ?? ""),
-        queryFn: () => getRun(runId!),
+        queryFn: ({ signal }) => getRun(runId!, signal),
         enabled: Boolean(runId),
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });

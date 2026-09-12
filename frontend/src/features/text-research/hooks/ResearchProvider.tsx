@@ -38,14 +38,14 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
 
     const corporaQuery = useQuery({
         queryKey: queryKeys.textResearch.corpora(projectId),
-        queryFn: () => listCorpora(projectId),
+        queryFn: ({ signal }) => listCorpora(projectId, signal),
         enabled: Boolean(projectId),
         staleTime: QUERY_STALE_TIMES.projects,
     });
 
     const codebooksQuery = useQuery({
         queryKey: queryKeys.textResearch.codebooks(projectId),
-        queryFn: () => listCodebooks(projectId),
+        queryFn: ({ signal }) => listCodebooks(projectId, signal),
         enabled: Boolean(projectId),
         staleTime: QUERY_STALE_TIMES.researchCodebook,
     });

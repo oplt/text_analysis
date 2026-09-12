@@ -6,6 +6,7 @@ import hashlib
 import json
 import logging
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import Any
 
 from backend.modules.text_research.domain.prepared_corpus import (
@@ -21,7 +22,100 @@ from backend.modules.text_research.infrastructure.preprocessing import (
 
 logger = logging.getLogger(__name__)
 
-PREPARED_CORPUS_ENGINE_VERSION = "prepared-corpus-v1"
+PREPARED_CORPUS_ENGINE_VERSION = "prepared-corpus-v2"
+
+
+def _stable_fingerprint(value: Any) -> str | None:
+    """Deterministic sha256 over JSON-serializable structures (large maps hashed)."""
+    if value is None:
+        return None
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, default=str, ensure_ascii=True).encode("utf-8")
+    ).hexdigest()
+
+
+@dataclass(frozen=True)
+class PreparationIdentity:
+    """Every output-affecting input to :func:`prepare_texts` that belongs in a cache key.
+
+    Analysis-only knobs (``top_n``, model hyperparameters, etc.) must stay outside.
+    ``force_in_memory`` is intentionally omitted — it selects an execution path, not
+    scientific output identity.
+    """
+
+    corpus_id: str
+    unit_type: str
+    filters: dict[str, Any] = field(default_factory=dict)
+    cleaning_profile_hash: str | None = None
+    preprocessing_config: dict[str, Any] = field(default_factory=dict)
+    operation_config: dict[str, Any] = field(default_factory=dict)
+    document_ids_fingerprint: str | None = None
+    language_mode: str = "manual"
+    language_override: str | None = None
+    per_unit_language: bool = False
+    language_overrides_by_unit_fingerprint: str | None = None
+    metadata_by_unit_fingerprint: str | None = None
+    cleaned_texts_fingerprint: str | None = None
+    provenance_fingerprint: str | None = None
+    implementation_version: str = PREPARED_CORPUS_ENGINE_VERSION
+
+    @classmethod
+    def from_prepare_inputs(
+        cls,
+        *,
+        corpus_id: str,
+        unit_type: str,
+        config: dict[str, Any],
+        filters: dict[str, Any] | None = None,
+        cleaning_profile_hash: str | None = None,
+        operation_config: dict[str, Any] | None = None,
+        document_ids: list[str | None] | None = None,
+        language_mode: str = "manual",
+        language_override: str | None = None,
+        per_unit_language: bool = False,
+        language_overrides_by_unit: dict[str, str] | None = None,
+        metadata_by_unit: dict[str, dict[str, Any]] | None = None,
+        cleaned_texts: list[str] | None = None,
+        provenance: dict[str, Any] | None = None,
+    ) -> PreparationIdentity:
+        return cls(
+            corpus_id=corpus_id,
+            unit_type=unit_type,
+            filters=dict(filters or {}),
+            cleaning_profile_hash=cleaning_profile_hash,
+            preprocessing_config=dict(config),
+            operation_config=dict(operation_config or {}),
+            document_ids_fingerprint=_stable_fingerprint(document_ids)
+            if document_ids is not None
+            else None,
+            language_mode=language_mode,
+            language_override=language_override,
+            per_unit_language=bool(per_unit_language),
+            language_overrides_by_unit_fingerprint=_stable_fingerprint(language_overrides_by_unit),
+            metadata_by_unit_fingerprint=_stable_fingerprint(metadata_by_unit),
+            cleaned_texts_fingerprint=_stable_fingerprint(cleaned_texts),
+            provenance_fingerprint=_stable_fingerprint(provenance),
+        )
+
+    def to_cache_spec(self) -> dict[str, Any]:
+        return {
+            "corpus_id": self.corpus_id,
+            "unit_type": self.unit_type,
+            "filters": self.filters,
+            "cleaning_profile_hash": self.cleaning_profile_hash,
+            "preprocessing_config": self.preprocessing_config,
+            "language": self.preprocessing_config.get("language"),
+            "language_mode": self.language_mode,
+            "language_override": self.language_override,
+            "per_unit_language": self.per_unit_language,
+            "language_overrides_by_unit_fingerprint": self.language_overrides_by_unit_fingerprint,
+            "metadata_by_unit_fingerprint": self.metadata_by_unit_fingerprint,
+            "cleaned_texts_fingerprint": self.cleaned_texts_fingerprint,
+            "provenance_fingerprint": self.provenance_fingerprint,
+            "operation_config": self.operation_config,
+            "implementation_version": self.implementation_version,
+            "document_ids_fingerprint": self.document_ids_fingerprint,
+        }
 
 
 def _tokenize_with_per_unit_language(
@@ -335,23 +429,24 @@ def _prepared_corpus_cache_parts(
     resolved_config = config.to_dict() if isinstance(config, PreprocessingConfig) else dict(config)
     input_checksum = compute_corpus_checksum(unit_ids, texts)
     # Scientific identity only — never fitted IDF / classifiers / selectors.
-    cache_spec = {
-        "corpus_id": corpus_id,
-        "unit_type": unit_type,
-        "filters": filters or {},
-        "cleaning_profile_hash": cleaning_profile_hash,
-        "preprocessing_config": resolved_config,
-        "language": resolved_config.get("language"),
-        "language_mode": resolved_config.get("language_mode")
-        or resolved_config.get("auto_detect_language"),
-        "operation_config": operation_config or {},
-        "implementation_version": PREPARED_CORPUS_ENGINE_VERSION,
-        "document_ids_fingerprint": hashlib.sha256(
-            json.dumps(document_ids or [], sort_keys=True, default=str).encode("utf-8")
-        ).hexdigest()
-        if document_ids is not None
-        else None,
-    }
+    # Include ALL prepare_texts() kwargs that affect token/output identity.
+    identity = PreparationIdentity.from_prepare_inputs(
+        corpus_id=corpus_id,
+        unit_type=unit_type,
+        config=resolved_config,
+        filters=filters,
+        cleaning_profile_hash=cleaning_profile_hash,
+        operation_config=operation_config,
+        document_ids=document_ids,
+        language_mode=str(kwargs.get("language_mode", "manual")),
+        language_override=kwargs.get("language_override"),
+        per_unit_language=bool(kwargs.get("per_unit_language", False)),
+        language_overrides_by_unit=kwargs.get("language_overrides_by_unit"),
+        metadata_by_unit=kwargs.get("metadata_by_unit"),
+        cleaned_texts=kwargs.get("cleaned_texts"),
+        provenance=kwargs.get("provenance"),
+    )
+    cache_spec = identity.to_cache_spec()
     cache_key = stage_cache.stage_cache_key(
         engine_version=PREPARED_CORPUS_ENGINE_VERSION,
         stage_name="prepared_corpus",

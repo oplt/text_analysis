@@ -91,6 +91,10 @@ class PromptContextService:
         bounded_chunks = self.context_builder.trim_chunks_to_token_budget(
             retrieval.chunks,
             max_tokens=self.rag_config.max_context_tokens,
+            overlap_dedupe_threshold=getattr(
+                self.rag_config, "context_overlap_dedupe_threshold", 0.8
+            ),
+            ordering_policy=getattr(self.rag_config, "context_ordering_policy", "relevance"),
         )
         document_context = self.context_builder.build_document_context_block(bounded_chunks)
         system_context = self.context_builder.assemble_agent_system_context(

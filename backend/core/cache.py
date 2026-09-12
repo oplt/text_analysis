@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import unicodedata
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from time import monotonic
@@ -124,12 +125,17 @@ def embedding_cache_key(
     text: str,
     *,
     dimensions: int | None = None,
+    model_version: str | None = None,
+    preprocessing_version: str | None = None,
 ) -> str:
     resolved_dimensions = (
         dimensions if dimensions is not None else settings.RAG_EMBEDDING_DIMENSIONS
     )
     digest = hashlib.sha256(
-        f"{provider}\0{model}\0{resolved_dimensions}\0{text}".encode()
+        (
+            f"{provider}\0{model}\0{model_version or ''}\0{resolved_dimensions}\0"
+            f"{preprocessing_version or ''}\0{unicodedata.normalize('NFC', text)}"
+        ).encode()
     ).hexdigest()
     return cache_key("embed", digest)
 

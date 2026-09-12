@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import unicodedata
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable
 from time import perf_counter
@@ -95,6 +96,8 @@ async def _embed_batches(
     if not texts:
         return []
 
+    texts = [unicodedata.normalize("NFC", text) for text in texts]
+
     size = _batch_size()
     batches = [texts[index : index + size] for index in range(0, len(texts), size)]
     if len(batches) == 1:
@@ -130,6 +133,8 @@ async def embed_texts_with_cache(
     texts: list[str],
     embed_fn: Callable[[list[str]], Awaitable[list[list[float]]]],
     dimensions: int | None = None,
+    model_version: str | None = None,
+    preprocessing_version: str | None = None,
     ttl_seconds: int | None = None,
 ) -> list[list[float]]:
     """Embed texts with batched Redis cache lookup/write and bounded provider calls.
@@ -157,6 +162,8 @@ async def embed_texts_with_cache(
             model,
             text,
             dimensions=dimensions,
+            model_version=model_version,
+            preprocessing_version=preprocessing_version,
         )
         cacheable.append((index, text, cache_key))
 

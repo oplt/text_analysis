@@ -4,6 +4,9 @@
 service that originally produced the run, so results are always freshly
 computed from current data rather than copied — this matters because
 annotations, documents, or models may have changed since the original run.
+
+Exact reproduction is gated by the versioned adapter registry in
+``run_adapters``: unsupported or incomplete runs raise with an explicit reason.
 """
 
 from __future__ import annotations
@@ -13,7 +16,10 @@ from typing import Any
 from fastapi import HTTPException
 
 from backend.modules.text_research.application.access import ResearchAccessMixin
-from backend.modules.text_research.domain.enums import AnalysisRunType
+from backend.modules.text_research.application.run_adapters import (
+    capability_for_run,
+    execute_rerun,
+)
 from backend.modules.text_research.domain.models import AnalysisRun, loads
 
 
@@ -44,6 +50,7 @@ class RunService(ResearchAccessMixin):
         run = await self.get_run_or_404(run_id, user_id=user_id)
         parameters = loads(run.parameters_json, {})
         reproduce = extract_reproduce_request(parameters, run_type=run.run_type, run_id=run.id)
+        capability = capability_for_run(run, parameters)
         return {
             "run_type": run.run_type,
             "corpus_id": run.corpus_id,
@@ -51,6 +58,8 @@ class RunService(ResearchAccessMixin):
             "reproduce": reproduce,
             "analysis_specification": reproduce.get("analysis_specification"),
             "analysis_spec_hash": reproduce.get("analysis_spec_hash"),
+            "rerunnable": capability.rerunnable,
+            "rerun_block_reason": capability.block_reason,
         }
 
     async def get_provenance(self, run_id: str, *, user_id: str) -> dict[str, Any]:
@@ -68,6 +77,7 @@ class RunService(ResearchAccessMixin):
             parameters=parameters,
             results=results if isinstance(results, dict) else {},
         )
+        capability = capability_for_run(run, parameters)
         return {
             "run_id": run.id,
             "run_type": run.run_type,
@@ -84,360 +94,75 @@ class RunService(ResearchAccessMixin):
                 parameters, run_type=run.run_type, run_id=run.id
             ),
             "runtime_now": runtime_environment(),
+            "rerunnable": capability.rerunnable,
+            "rerun_block_reason": capability.block_reason,
         }
 
     async def rerun(self, run_id: str, *, user_id: str, run_async: bool = False) -> AnalysisRun:
         """One-click reproducible re-execution using the original run parameters."""
         run = await self.get_run_or_404(run_id, user_id=user_id)
-        params = loads(run.parameters_json, {})
-        inner_filters = dict(params.get("filters") or {})
-
-        if run.run_type == AnalysisRunType.SEGMENTATION.value:
-            from backend.modules.text_research.application.segmentation_service import (
-                SegmentationService,
-            )
-
-            return await SegmentationService(self.db).start_segmentation(
-                run.corpus_id, user_id=user_id, unit_type=params["unit_type"]
-            )
-
-        if run.run_type == AnalysisRunType.RELIABILITY.value:
-            from backend.modules.text_research.application.reliability_service import (
-                ReliabilityService,
-            )
-
-            return await ReliabilityService(self.db).compute_reliability(
-                run.corpus_id,
-                user_id=user_id,
-                codebook_id=params["codebook_id"],
-                label_ids=params.get("label_ids"),
-                campaign_id=params.get("campaign_id"),
-                unit_type=params.get("unit_type"),
-                annotator_ids=params.get("annotator_ids"),
-                bootstrap_samples=int(params.get("bootstrap_samples") or 2000),
-                confidence_level=float(params.get("confidence_level") or 0.95),
-                random_seed=params.get("random_seed"),
-            )
-
-        if run.run_type == AnalysisRunType.CORPUS_STATS.value:
-            from backend.modules.text_research.application.quantitative_analysis_service import (
-                QuantitativeAnalysisService,
-            )
-
-            return await QuantitativeAnalysisService(self.db).corpus_stats(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                preprocessing_profile_id=params.get("preprocessing_profile_id"),
-                **inner_filters,
-            )
-
-        if run.run_type == AnalysisRunType.FREQUENCY_ANALYSIS.value:
-            from backend.modules.text_research.application.quantitative_analysis_service import (
-                QuantitativeAnalysisService,
-            )
-
-            return await QuantitativeAnalysisService(self.db).frequencies(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                preprocessing_profile_id=params.get("preprocessing_profile_id"),
-                top_n=params.get("top_n", 50),
-                rate_per=params.get("rate_per", 1000),
-                group_by=params.get("group_by"),
-                **inner_filters,
-            )
-
-        if run.run_type == AnalysisRunType.NGRAM_ANALYSIS.value:
-            from backend.modules.text_research.application.quantitative_analysis_service import (
-                QuantitativeAnalysisService,
-            )
-
-            return await QuantitativeAnalysisService(self.db).ngrams(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                n=params.get("n", 2),
-                preprocessing_profile_id=params.get("preprocessing_profile_id"),
-                top_n=params.get("top_n", 50),
-                rate_per=params.get("rate_per", 1000),
-                skip=params.get("skip", 0),
-                **inner_filters,
-            )
-
-        if run.run_type == AnalysisRunType.DFM.value:
-            from backend.modules.text_research.application.quantitative_analysis_service import (
-                QuantitativeAnalysisService,
-            )
-
-            return await QuantitativeAnalysisService(self.db).dfm(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                weighting=params.get("weighting", "count"),
-                k1=params.get("k1"),
-                b=params.get("b"),
-                smooth_idf=params.get("smooth_idf"),
-                preprocessing_profile_id=params.get("preprocessing_profile_id"),
-                force_sparse_only=params.get("force_sparse_only", False),
-                trim=params.get("trim"),
-                **inner_filters,
-            )
-
-        if run.run_type == AnalysisRunType.KWIC.value:
-            from backend.modules.text_research.application.quantitative_analysis_service import (
-                QuantitativeAnalysisService,
-            )
-
-            return await QuantitativeAnalysisService(self.db).kwic(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                keyword=params["keyword"],
-                window_size=params.get("window_size", 5),
-                case_sensitive=params.get("case_sensitive", False),
-                query_mode=params.get("query_mode", "auto"),
-                language=params.get("language"),
-                token_attribute=params.get("token_attribute"),
-                max_matches=params.get("max_matches"),
-                **inner_filters,
-            )
-
-        if run.run_type == AnalysisRunType.DICTIONARY_ANALYSIS.value:
-            from backend.modules.text_research.application.quantitative_analysis_service import (
-                QuantitativeAnalysisService,
-            )
-
-            return await QuantitativeAnalysisService(self.db).dictionary(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                dictionary_terms=params.get("dictionary_terms"),
-                dictionary_id=params.get("dictionary_id"),
-                hierarchy=params.get("hierarchy"),
-                exclusions=params.get("exclusions"),
-                dictionary_language=params.get("dictionary_language"),
-                case_sensitive=params.get("case_sensitive", False),
-                rate_per=params.get("rate_per", 1000.0),
-                group_by=params.get("group_by"),
-                preprocessing_profile_id=params.get("preprocessing_profile_id"),
-                **inner_filters,
-            )
-
-        if run.run_type == AnalysisRunType.KEYNESS.value:
-            from backend.modules.text_research.application.quantitative_analysis_service import (
-                QuantitativeAnalysisService,
-            )
-
-            return await QuantitativeAnalysisService(self.db).keyness(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                filters_a=params["filters_a"],
-                filters_b=params["filters_b"],
-                group_field=params.get("group_field"),
-                method=params.get("method", "log_likelihood"),
-                correction=params.get("correction", "bh"),
-                min_frequency=params.get("min_frequency", 1),
-                preprocessing_profile_id=params.get("preprocessing_profile_id"),
-                top_n=params.get("top_n", 50),
-            )
-
-        if run.run_type == AnalysisRunType.COOCCURRENCE.value:
-            from backend.modules.text_research.application.quantitative_analysis_service import (
-                QuantitativeAnalysisService,
-            )
-
-            return await QuantitativeAnalysisService(self.db).cooccurrence(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                window_size=params.get("window_size", 5),
-                top_n=params.get("top_n", 50),
-                association_method=params.get("association_method", "pmi"),
-                directional=params.get("directional", False),
-                min_frequency=params.get("min_frequency", 1),
-                min_count=params.get("min_count", 1),
-                include_network=params.get("include_network", True),
-                preprocessing_profile_id=params.get("preprocessing_profile_id"),
-                **inner_filters,
-            )
-
-        if run.run_type == AnalysisRunType.SIMILARITY.value:
-            from backend.modules.text_research.application.quantitative_analysis_service import (
-                QuantitativeAnalysisService,
-            )
-
-            return await QuantitativeAnalysisService(self.db).similarity(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                method=params.get("method", "tfidf_cosine"),
-                mode=params.get("mode", "pairwise"),
-                top_k=params.get("top_k", 20),
-                min_score=params.get("min_score"),
-                group_by=params.get("group_by"),
-                centroid_target=params.get("centroid_target", "between_groups"),
-                query_text=params.get("query_text"),
-                query_unit_id=params.get("query_unit_id"),
-                preprocessing_profile_id=params.get("preprocessing_profile_id"),
-                **inner_filters,
-            )
-
-        if run.run_type == AnalysisRunType.DUPLICATE_DETECTION.value:
-            from backend.modules.text_research.application.quantitative_analysis_service import (
-                QuantitativeAnalysisService,
-            )
-
-            return await QuantitativeAnalysisService(self.db).duplicate_detection(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                methods=params.get("methods"),
-                lexical_threshold=params.get("lexical_threshold", 0.85),
-                char_ngram_size=params.get("char_ngram_size", 5),
-                use_minhash=params.get("use_minhash", False),
-                minhash_num_perm=params.get("minhash_num_perm", 64),
-                minhash_shingle_size=params.get("minhash_shingle_size", 3),
-                minhash_threshold=params.get("minhash_threshold", 0.8),
-                max_pairs=params.get("max_pairs", 1000),
-                **inner_filters,
-            )
-
-        if run.run_type == AnalysisRunType.TOPIC_MODEL.value:
-            from backend.modules.text_research.application.topic_model_service import (
-                TopicModelService,
-            )
-
-            return await TopicModelService(self.db).train(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                algorithm=params.get("algorithm", "lda"),
-                n_topics=params.get("n_topics", 5),
-                preprocessing_profile_id=params.get("preprocessing_profile_id"),
-                max_iterations=params.get("max_iterations", 25),
-                random_seed=params.get("random_seed", 42),
-                group_by=params.get("group_by"),
-                run_async=run_async,
-                **inner_filters,
-            )
-
-        if run.run_type == AnalysisRunType.CLASSIFIER_TRAINING.value:
-            from backend.modules.text_research.application.classification_service import (
-                ClassificationService,
-            )
-
-            return await ClassificationService(self.db).train(
-                user_id=user_id,
-                snapshot_id=params["snapshot_id"],
-                algorithm=params.get("algorithm", "logistic_regression"),
-                task_type=params.get("task_type"),
-                preprocessing_profile_id=params.get("preprocessing_profile_id"),
-                vectorizer=params.get("vectorizer", "tfidf"),
-                use_word_ngrams=params.get("use_word_ngrams", True),
-                ngram_min=params.get("ngram_min", 1),
-                ngram_max=params.get("ngram_max", 1),
-                use_char_ngrams=params.get("use_char_ngrams", False),
-                char_ngram_min=params.get("char_ngram_min", 3),
-                char_ngram_max=params.get("char_ngram_max", 5),
-                min_df=params.get("min_df", 1),
-                max_df=params.get("max_df", 1.0),
-                max_features=params.get("max_features"),
-                class_weight=params.get("class_weight"),
-                regularization_c=params.get("regularization_c", 1.0),
-                sgd_loss=params.get("sgd_loss", "log_loss"),
-                test_size=params.get("test_size", 0.2),
-                val_size=params.get("val_size", 0.2),
-                random_seed=params.get("random_seed", 42),
-                name=params.get("name"),
-                run_async=run_async,
-            )
-
-        if run.run_type == AnalysisRunType.CLASSIFIER_PREDICTION.value:
-            from backend.modules.text_research.application.prediction_service import (
-                PredictionService,
-            )
-
-            return await PredictionService(self.db).predict(
-                params["model_id"],
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                only_unannotated=params.get("only_unannotated", False),
-                filters=params.get("filters"),
-            )
-
-        if run.run_type == AnalysisRunType.COMPARATIVE_ANALYSIS.value:
-            from backend.modules.text_research.application.comparative_analysis_service import (
-                ComparativeAnalysisService,
-            )
-
-            return await ComparativeAnalysisService(self.db).prevalence_by_metadata(
-                run.corpus_id,
-                user_id=user_id,
-                unit_type=params["unit_type"],
-                codebook_id=params["codebook_id"],
-                label_ids=params["label_ids"],
-                group_by=params["group_by"],
-                provenance_mode=params.get("provenance_mode", "human_only"),
-                model_id=params.get("model_id"),
-                **inner_filters,
-            )
-
-        if run.run_type == AnalysisRunType.ROBUSTNESS.value:
-            from backend.modules.text_research.application.robustness_service import (
-                RobustnessService,
-            )
-
-            return await RobustnessService(self.db).run_sweep(
-                params["snapshot_id"],
-                user_id=user_id,
-                algorithm=params.get("algorithm", "logistic_regression"),
-                seeds=params.get("seeds"),
-                cv_folds=params.get("cv_folds", 5),
-                class_weights=params.get("class_weights"),
-                test_size=params.get("test_size", 0.25),
-                run_async=run_async,
-            )
-
-        raise HTTPException(
-            status_code=400,
-            detail=f"Rerun is not supported for run_type '{run.run_type}'",
-        )
+        return await execute_rerun(self.db, run, user_id=user_id, run_async=run_async)
 
     async def cancel_run(self, run_id: str, *, user_id: str) -> AnalysisRun:
+        import logging
         from datetime import UTC, datetime
 
+        from backend.modules.text_research.application.run_lifecycle import (
+            ACTIVE_RUN_STATUSES,
+            cancel_if_active,
+        )
         from backend.modules.text_research.domain.enums import AnalysisRunStatus
 
+        logger = logging.getLogger(__name__)
+
         run = await self.get_run_or_404(run_id, user_id=user_id)
-        if run.status not in {
-            AnalysisRunStatus.QUEUED.value,
-            AnalysisRunStatus.RUNNING.value,
-            "pending",
-        }:
+        if run.status not in ACTIVE_RUN_STATUSES:
             raise HTTPException(
                 status_code=409,
                 detail=f"Cannot cancel run in status '{run.status}'",
             )
-        await self.repo.update_run(
+
+        # Soft-revoke only not-started / queued Celery tasks; never hard-kill
+        # an already-running worker (terminate=False).
+        if run.status == AnalysisRunStatus.QUEUED.value and getattr(run, "celery_task_id", None):
+            try:
+                from backend.workers.celery_app import celery_app
+
+                celery_app.control.revoke(run.celery_task_id, terminate=False)
+            except Exception:  # noqa: BLE001
+                logger.warning(
+                    "Failed to revoke Celery task %s for run %s",
+                    run.celery_task_id,
+                    run.id,
+                    exc_info=True,
+                )
+
+        cancelled = await cancel_if_active(
+            self.repo,
             run,
-            status=AnalysisRunStatus.CANCELLED.value,
             cancellation_requested=True,
             progress_stage="cancelled",
             completed_at=datetime.now(UTC),
             error_message="Cancelled by user",
         )
-        if run.artifact_namespace:
+        if cancelled is None:
+            refreshed = await self.repo.get_run(run.id)
+            status = refreshed.status if refreshed is not None else run.status
+            raise HTTPException(
+                status_code=409,
+                detail=f"Cannot cancel run in status '{status}'",
+            )
+
+        if cancelled.artifact_namespace:
             from backend.modules.text_research.infrastructure.model_storage import ARTIFACT_ROOT
 
-            namespace = ARTIFACT_ROOT / run.artifact_namespace
+            namespace = ARTIFACT_ROOT / cancelled.artifact_namespace
             if namespace.is_dir():
                 import shutil
 
                 shutil.rmtree(namespace)
         await self.db.commit()
-        refreshed = await self.repo.get_run(run.id)
+        refreshed = await self.repo.get_run(cancelled.id)
         assert refreshed is not None
         return refreshed
 

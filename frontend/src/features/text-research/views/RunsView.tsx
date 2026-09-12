@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Button,
@@ -8,20 +8,20 @@ import {
     TableBody,
     TableCell,
     TableHead,
+    TablePagination,
     TableRow,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import {
     ContentCopy as CloneIcon,
     Download as DownloadIcon,
     PlayArrow as RerunIcon,
-    Stop as CancelIcon,
     Visibility as InspectIcon,
 } from "@mui/icons-material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSnackbar } from "../../../app/snackbarContext";
 import {
-    cancelRun,
     cloneRunParameters,
     compareRuns,
     getRun,
@@ -35,11 +35,16 @@ import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
+import { ActiveRunActions } from "../components/ActiveRunActions";
 import { ResultsInspector } from "../components/ResearchCharts";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
+import { reproduceActionState } from "../reproduceAction";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
+import type { AnalysisRun } from "../types";
+
+const RUNS_PAGE_SIZE_OPTIONS = [25, 50, 100];
 
 function formatValue(value: unknown): string {
     if (value == null) return "—";
@@ -52,6 +57,38 @@ function formatValue(value: unknown): string {
     }
 }
 
+function ReproduceButton({
+    run,
+    pending,
+    onReproduce,
+}: {
+    run: Pick<AnalysisRun, "id" | "rerunnable" | "rerun_block_reason">;
+    pending: boolean;
+    onReproduce: (runId: string) => void;
+}) {
+    const action = reproduceActionState(run);
+    const button = (
+        <span>
+            <Button
+                size="small"
+                startIcon={<RerunIcon />}
+                disabled={!action.enabled || pending}
+                onClick={() => onReproduce(run.id)}
+            >
+                Reproduce
+            </Button>
+        </span>
+    );
+    if (!action.enabled && action.reason) {
+        return (
+            <Tooltip title={action.reason}>
+                {button}
+            </Tooltip>
+        );
+    }
+    return button;
+}
+
 export default function RunsView() {
     const ctx = useResearchContext();
     const { showToast } = useSnackbar();
@@ -60,28 +97,43 @@ export default function RunsView() {
     const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
     const [compareIds, setCompareIds] = useState<string[]>([]);
     const [clonedParams, setClonedParams] = useState<ClonedRunParameters | null>(null);
+    const [page, setPage] = useState(0);
+    const [pageSize, setPageSize] = useState(50);
     const sseConnected = useRunEvents(selectedRunId, ctx.projectId);
+    const pageOffset = page * pageSize;
+
+    useEffect(() => {
+        setPage(0);
+    }, [ctx.selectedCorpusId]);
 
     const runsQuery = useQuery({
-        queryKey: queryKeys.textResearch.runs(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () =>
-            listRuns(ctx.projectId, {
-                corpus_id: ctx.selectedCorpusId || undefined,
-                limit: 100,
-            }),
+        queryKey: queryKeys.textResearch.runs(ctx.projectId, ctx.selectedCorpusId, undefined, {
+            limit: pageSize,
+            offset: pageOffset,
+        }),
+        queryFn: ({ signal }) =>
+            listRuns(
+                ctx.projectId,
+                {
+                    corpus_id: ctx.selectedCorpusId || undefined,
+                    limit: pageSize,
+                    offset: pageOffset,
+                },
+                signal
+            ),
         enabled: Boolean(ctx.projectId),
     });
 
     const runQuery = useQuery({
         queryKey: queryKeys.textResearch.run(selectedRunId ?? ""),
-        queryFn: () => getRun(selectedRunId!),
+        queryFn: ({ signal }) => getRun(selectedRunId!, signal),
         enabled: Boolean(selectedRunId),
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });
 
     const provenanceQuery = useQuery({
         queryKey: queryKeys.textResearch.runProvenance(selectedRunId ?? ""),
-        queryFn: () => getRunProvenance(selectedRunId!),
+        queryFn: ({ signal }) => getRunProvenance(selectedRunId!, signal),
         enabled: Boolean(selectedRunId),
     });
 
@@ -94,7 +146,7 @@ export default function RunsView() {
 
     const invalidateRuns = async () => {
         await queryClient.invalidateQueries({
-            queryKey: queryKeys.textResearch.runs(ctx.projectId, ctx.selectedCorpusId),
+            queryKey: ["text-research", ctx.projectId, "runs"],
         });
     };
 
@@ -108,23 +160,6 @@ export default function RunsView() {
         onError: (error) =>
             showToast({
                 message: getQueryErrorMessage(error, "Reproduce failed."),
-                severity: "error",
-            }),
-    });
-
-    const cancelMutation = useMutation({
-        mutationFn: (runId: string) => cancelRun(runId),
-        onSuccess: async (run) => {
-            setSelectedRunId(run.id);
-            await invalidateRuns();
-            await queryClient.invalidateQueries({
-                queryKey: queryKeys.textResearch.run(run.id),
-            });
-            showToast({ message: "Run cancelled.", severity: "success" });
-        },
-        onError: (error) =>
-            showToast({
-                message: getQueryErrorMessage(error, "Cancel failed."),
                 severity: "error",
             }),
     });
@@ -143,6 +178,7 @@ export default function RunsView() {
     });
 
     const runs = runsQuery.data?.items ?? [];
+    const runsTotal = runsQuery.data?.total ?? 0;
     const selectedRun = runQuery.data;
 
     const toggleCompare = (runId: string) => {
@@ -179,6 +215,7 @@ export default function RunsView() {
                     onRetry={() => void runsQuery.refetch()}
                 >
                     {runs.length ? (
+                        <>
                         <Table size="small">
                             <TableHead>
                                 <TableRow>
@@ -239,16 +276,13 @@ export default function RunsView() {
                                                     >
                                                         Inspect
                                                     </Button>
-                                                    <Button
-                                                        size="small"
-                                                        startIcon={<RerunIcon />}
-                                                        disabled={rerunMutation.isPending}
-                                                        onClick={() =>
-                                                            rerunMutation.mutate(run.id)
+                                                    <ReproduceButton
+                                                        run={run}
+                                                        pending={rerunMutation.isPending}
+                                                        onReproduce={(runId) =>
+                                                            rerunMutation.mutate(runId)
                                                         }
-                                                    >
-                                                        Reproduce
-                                                    </Button>
+                                                    />
                                                     <Button
                                                         size="small"
                                                         startIcon={<CloneIcon />}
@@ -260,17 +294,11 @@ export default function RunsView() {
                                                         Clone
                                                     </Button>
                                                     {active ? (
-                                                        <Button
-                                                            size="small"
-                                                            color="warning"
-                                                            startIcon={<CancelIcon />}
-                                                            disabled={cancelMutation.isPending}
-                                                            onClick={() =>
-                                                                cancelMutation.mutate(run.id)
-                                                            }
-                                                        >
-                                                            Cancel
-                                                        </Button>
+                                                        <ActiveRunActions
+                                                            run={run}
+                                                            projectId={ctx.projectId}
+                                                            corpusId={ctx.selectedCorpusId}
+                                                        />
                                                     ) : null}
                                                 </Stack>
                                             </TableCell>
@@ -279,6 +307,19 @@ export default function RunsView() {
                                 })}
                             </TableBody>
                         </Table>
+                            <TablePagination
+                                component="div"
+                                count={runsTotal}
+                                page={page}
+                                onPageChange={(_, next) => setPage(next)}
+                                rowsPerPage={pageSize}
+                                onRowsPerPageChange={(event) => {
+                                    setPageSize(Number(event.target.value));
+                                    setPage(0);
+                                }}
+                                rowsPerPageOptions={RUNS_PAGE_SIZE_OPTIONS}
+                            />
+                        </>
                     ) : (
                         <Typography color="text.secondary">
                             No persisted runs for this corpus yet.
@@ -326,28 +367,19 @@ export default function RunsView() {
                                                 Export JSON
                                             </Button>
                                         ) : null}
-                                        <Button
-                                            size="small"
-                                            startIcon={<RerunIcon />}
-                                            disabled={rerunMutation.isPending}
-                                            onClick={() =>
-                                                rerunMutation.mutate(selectedRun.id)
+                                        <ReproduceButton
+                                            run={selectedRun}
+                                            pending={rerunMutation.isPending}
+                                            onReproduce={(runId) =>
+                                                rerunMutation.mutate(runId)
                                             }
-                                        >
-                                            Reproduce
-                                        </Button>
+                                        />
                                         {isActiveRunStatus(selectedRun.status) ? (
-                                            <Button
-                                                size="small"
-                                                color="warning"
-                                                startIcon={<CancelIcon />}
-                                                disabled={cancelMutation.isPending}
-                                                onClick={() =>
-                                                    cancelMutation.mutate(selectedRun.id)
-                                                }
-                                            >
-                                                Cancel
-                                            </Button>
+                                            <ActiveRunActions
+                                                run={selectedRun}
+                                                projectId={ctx.projectId}
+                                                corpusId={ctx.selectedCorpusId}
+                                            />
                                         ) : null}
                                     </Stack>
                                 </Stack>
@@ -368,10 +400,20 @@ export default function RunsView() {
                                     <Alert severity="error">{selectedRun.error_message}</Alert>
                                 ) : null}
 
-                                <Alert severity="info">
-                                    Use <strong>Reproduce</strong> for one-click re-execution with the
-                                    original parameters, seeds, and analysis specification.
-                                </Alert>
+                                {selectedRun.rerunnable === false ? (
+                                    <Alert severity="warning">
+                                        Reproduce is unavailable
+                                        {selectedRun.rerun_block_reason
+                                            ? `: ${selectedRun.rerun_block_reason}`
+                                            : " for this run type."}
+                                    </Alert>
+                                ) : (
+                                    <Alert severity="info">
+                                        Use Reproduce for one-click re-execution with the
+                                        original parameters, seeds, and analysis specification
+                                        when the run is marked rerunnable.
+                                    </Alert>
+                                )}
 
                                 {provenanceQuery.data ? (
                                     <ResultsInspector

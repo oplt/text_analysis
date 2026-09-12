@@ -109,11 +109,10 @@ export default function ModelRegistryView() {
             ctx.selectedCorpusId,
             lifecycleFilter || undefined
         ),
-        queryFn: () =>
-            listModels(ctx.projectId, {
+        queryFn: ({ signal }) => listModels(ctx.projectId, {
                 corpusId: ctx.selectedCorpusId || undefined,
                 lifecycleStatus: lifecycleFilter || undefined,
-            }),
+            }, signal),
         enabled: Boolean(ctx.projectId),
         staleTime: QUERY_STALE_TIMES.researchModelLifecycle,
     });
@@ -142,7 +141,7 @@ export default function ModelRegistryView() {
 
     const provenanceQuery = useQuery({
         queryKey: queryKeys.textResearch.runProvenance(selectedModel?.analysis_run_id ?? ""),
-        queryFn: () => getRunProvenance(selectedModel!.analysis_run_id),
+        queryFn: ({ signal }) => getRunProvenance(selectedModel!.analysis_run_id, signal),
         enabled: Boolean(selectedModel?.analysis_run_id),
         staleTime: QUERY_STALE_TIMES.researchProvenance,
     });

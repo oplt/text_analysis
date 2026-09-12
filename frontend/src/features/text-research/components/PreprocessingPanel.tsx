@@ -478,7 +478,7 @@ export function PreprocessingPanel() {
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
-        queryFn: () => listPreprocessingProfiles(ctx.projectId),
+        queryFn: ({ signal }) => listPreprocessingProfiles(ctx.projectId, signal),
         enabled: Boolean(ctx.projectId),
     });
 

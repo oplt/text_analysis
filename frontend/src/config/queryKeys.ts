@@ -77,8 +77,21 @@ export const queryKeys = {
             ["text-research", "annotation-queue", status ?? "all", offset] as const,
         annotationProgress: (corpusId: string) =>
             ["text-research", "corpus", corpusId, "annotation-progress"] as const,
-        runs: (projectId: string, corpusId?: string, runType?: string) =>
-            ["text-research", projectId, "runs", corpusId ?? "all", runType ?? "all"] as const,
+        runs: (
+            projectId: string,
+            corpusId?: string,
+            runType?: string,
+            page?: { limit?: number; offset?: number }
+        ) =>
+            [
+                "text-research",
+                projectId,
+                "runs",
+                corpusId ?? "all",
+                runType ?? "all",
+                page?.limit ?? "default",
+                page?.offset ?? 0,
+            ] as const,
         run: (runId: string) => ["text-research", "run", runId] as const,
         runProvenance: (runId: string) => ["text-research", "run", runId, "provenance"] as const,
         /** Prefix for all classifier lists under a project. */

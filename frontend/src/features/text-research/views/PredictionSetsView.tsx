@@ -69,8 +69,7 @@ export default function PredictionSetsView() {
 
     const modelsQuery = useQuery({
         queryKey: queryKeys.textResearch.models(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () =>
-            listModels(ctx.projectId, { corpusId: ctx.selectedCorpusId || undefined }),
+        queryFn: ({ signal }) => listModels(ctx.projectId, { corpusId: ctx.selectedCorpusId || undefined }, signal),
         enabled: Boolean(ctx.projectId),
         staleTime: QUERY_STALE_TIMES.researchModelLifecycle,
     });

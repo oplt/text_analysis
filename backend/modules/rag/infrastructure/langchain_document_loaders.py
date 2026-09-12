@@ -3,22 +3,47 @@ from __future__ import annotations
 import asyncio
 import logging
 import tempfile
+import unicodedata
 from pathlib import Path
 
+from backend.core.config import settings
 from backend.modules.rag.domain.models import ParsedDocument
 
 logger = logging.getLogger(__name__)
 
 
+def _decode_text(content: bytes) -> tuple[str, dict[str, int | str]]:
+    """Decode and normalize text while surfacing lossy input deterministically."""
+    try:
+        decoded = content.decode("utf-8-sig")
+        replacement_count = 0
+    except UnicodeDecodeError:
+        decoded = content.decode("utf-8", errors="replace")
+        replacement_count = decoded.count("\ufffd")
+    if (
+        decoded
+        and replacement_count / len(decoded) > settings.RAG_TEXT_DECODE_MAX_REPLACEMENT_RATIO
+    ):
+        raise ValueError("Text decoding corruption exceeds the supported replacement threshold")
+    return unicodedata.normalize("NFC", decoded), {
+        "text_encoding": "utf-8",
+        "unicode_normalization": "NFC",
+        "normalization_version": "unicode-nfc-v1",
+        "decode_replacement_count": replacement_count,
+    }
+
+
 def _parse_text(content: bytes) -> list[ParsedDocument]:
-    text = content.decode("utf-8", errors="replace").strip()
+    text, metadata = _decode_text(content)
+    text = text.strip()
     if not text:
         return []
-    return [ParsedDocument(content=text, metadata={"format": "text"})]
+    return [ParsedDocument(content=text, metadata={"format": "text", **metadata})]
 
 
 def _parse_markdown(content: bytes) -> list[ParsedDocument]:
-    text = content.decode("utf-8", errors="replace").strip()
+    text, decode_metadata = _decode_text(content)
+    text = text.strip()
     if not text:
         return []
     sections: list[ParsedDocument] = []
@@ -31,7 +56,11 @@ def _parse_markdown(content: bytes) -> list[ParsedDocument]:
             sections.append(
                 ParsedDocument(
                     content=section,
-                    metadata={"format": "markdown", "section_heading": heading},
+                    metadata={
+                        "format": "markdown",
+                        "section_heading": heading,
+                        **decode_metadata,
+                    },
                 )
             )
 
@@ -46,19 +75,37 @@ def _parse_markdown(content: bytes) -> list[ParsedDocument]:
     return sections
 
 
+def _looks_numeric(value: str) -> bool:
+    candidate = value.strip().replace(",", "")
+    if not candidate:
+        return False
+    try:
+        float(candidate)
+        return True
+    except ValueError:
+        return False
+
+
 def _parse_csv(content: bytes) -> list[ParsedDocument]:
     """Row/record-aware CSV parsing — never flatten the entire file into one blob."""
     import csv
     import io
 
-    text = content.decode("utf-8", errors="replace")
+    text, decode_metadata = _decode_text(content)
     reader = csv.reader(io.StringIO(text))
     rows = list(reader)
     if not rows:
         return []
 
     headers = [cell.strip() for cell in rows[0]]
-    has_header = any(headers)
+    try:
+        has_header = csv.Sniffer().has_header(text)
+    except csv.Error:
+        has_header = False
+    # Prefer headerless when the first row is entirely numeric-like; Sniffer
+    # otherwise invents headers for short synthetic fixtures.
+    if has_header and headers and all(_looks_numeric(cell) for cell in headers):
+        has_header = False
     data_rows = rows[1:] if has_header else rows
     docs: list[ParsedDocument] = []
     for row_number, row in enumerate(data_rows, start=1 if has_header else 0):
@@ -83,6 +130,8 @@ def _parse_csv(content: bytes) -> list[ParsedDocument]:
                     "headers": headers if has_header else None,
                     "column_count": len(cells),
                     "parser": "csv-row-v1",
+                    "header_detected": has_header,
+                    **decode_metadata,
                 },
             )
         )
@@ -116,7 +165,13 @@ def _parse_docx(content: bytes) -> list[ParsedDocument]:
             sections.append(
                 ParsedDocument(
                     content=text,
-                    metadata={"format": "docx", "section_heading": heading},
+                    metadata={
+                        "format": "docx",
+                        "section_heading": heading,
+                        "unicode_normalization": "NFC",
+                        "normalization_version": "unicode-nfc-v1",
+                        "parser": "docx-section-v1",
+                    },
                 )
             )
 
@@ -132,6 +187,26 @@ def _parse_docx(content: bytes) -> list[ParsedDocument]:
         else:
             paragraphs.append(text)
     flush()
+    for table_index, table in enumerate(document.tables):
+        rows = [
+            [unicodedata.normalize("NFC", cell.text).strip() for cell in row.cells]
+            for row in table.rows
+        ]
+        if any(any(cell for cell in row) for row in rows):
+            sections.append(
+                ParsedDocument(
+                    content="\n".join(" | ".join(row) for row in rows),
+                    metadata={
+                        "format": "docx",
+                        "parsed_block_type": "table",
+                        "table_index": table_index,
+                        "section_heading": heading,
+                        "unicode_normalization": "NFC",
+                        "normalization_version": "unicode-nfc-v1",
+                        "parser": "docx-table-v1",
+                    },
+                )
+            )
     return sections
 
 

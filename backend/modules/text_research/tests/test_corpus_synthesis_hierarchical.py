@@ -22,9 +22,30 @@ from backend.modules.text_research.application.corpus_scope_service import (
 from backend.modules.text_research.application.corpus_synthesis_service import (
     CorpusSynthesisService,
 )
+from backend.modules.text_research.application.hierarchical_reduce import (
+    filter_claims_to_supporting_chunks,
+    pack_reduction_nodes,
+    write_reduce_checkpoint,
+)
 
 
 class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
+    def test_reduction_nodes_are_token_bounded_without_reordering(self):
+        nodes = [
+            {"rag_document_id": "one", "finding": "alpha " * 20},
+            {"rag_document_id": "two", "finding": "beta " * 20},
+        ]
+        batches = pack_reduction_nodes(nodes, max_tokens=300, max_items=10)
+        self.assertEqual(batches, [[nodes[0]], [nodes[1]]])
+
+    def test_oversized_reduction_node_fails_before_prompt_construction(self):
+        with self.assertRaisesRegex(ValueError, "exceeds the configured token budget"):
+            pack_reduction_nodes(
+                [{"rag_document_id": "one", "finding": "alpha " * 500}],
+                max_tokens=300,
+                max_items=10,
+            )
+
     def test_async_synthesis_freezes_and_reconstructs_scope(self):
         service = CorpusSynthesisService(AsyncMock())
         service.rag_config = SimpleNamespace(synthesis_passages_per_document=2)
@@ -249,6 +270,28 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
             project_id="p1",
             indexed_count=3,
             scope_hash="abc",
+            rag_document_ids=["d1", "d2", "d3"],
+            mapping_status="ok",
+            document_bindings=[
+                SimpleNamespace(
+                    rag_document_id="d1",
+                    corpus_document_id="cd1",
+                    availability="indexed",
+                    index_revision_id="rev-1",
+                ),
+                SimpleNamespace(
+                    rag_document_id="d2",
+                    corpus_document_id="cd2",
+                    availability="indexed",
+                    index_revision_id="rev-2",
+                ),
+                SimpleNamespace(
+                    rag_document_id="d3",
+                    corpus_document_id="cd3",
+                    availability="indexed",
+                    index_revision_id="rev-3",
+                ),
+            ],
             to_dict=lambda: {"corpus_id": "c1", "indexed_count": 3},
         )
         result = await service._synthesize_sync(
@@ -284,4 +327,141 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             result["synthesis_provenance"]["map_stage"]["operation"],
             "deterministic_evidence_collection",
+        )
+        self.assertTrue(result["reduction_checkpoints"])
+        self.assertIn("reduction_checkpoints", result["synthesis_provenance"])
+
+    async def test_claim_escape_is_rejected_and_checkpoints_recorded(self):
+        service = CorpusSynthesisService(AsyncMock())
+        service.rag_config = SimpleNamespace(
+            synthesis_max_documents=8,
+            synthesis_batch_size=8,
+            synthesis_passages_per_document=1,
+        )
+        chunk = RetrievedChunk(
+            chunk_id="allowed",
+            document_id="d1",
+            content="Evidence",
+            score=0.9,
+            filename="a.pdf",
+            chunk_index=0,
+        )
+
+        async def fake_retrieve(query, **kwargs):
+            return RetrievalOutcome(
+                chunks=[chunk],
+                intent=RetrievalIntent.SYNTHESIS,
+                retrieval_trace_id="t1",
+            )
+
+        async def fake_answer(query, *, outcome, **kwargs):
+            return RagAnswer(
+                query=query,
+                answer="bad",
+                citations=[],
+                claims=[
+                    ClaimCitation(
+                        text="escaped",
+                        chunk_ids=["allowed", "not-in-map"],
+                        citation_numbers=[1],
+                    ),
+                    ClaimCitation(
+                        text="fully escaped",
+                        chunk_ids=["ghost"],
+                        citation_numbers=[2],
+                    ),
+                ],
+                retrieved_chunk_ids=["allowed"],
+                model_name="test",
+                latency_ms=1,
+            )
+
+        service.retrieval = SimpleNamespace(retrieve=fake_retrieve)
+        service.answers = SimpleNamespace(answer_from_retrieval=fake_answer)
+        scope = SimpleNamespace(
+            corpus_id="c1",
+            project_id="p1",
+            scope_hash="scope",
+            evidence_revision_hash=None,
+            rag_document_ids=["d1"],
+            mapping_status="ok",
+            document_bindings=[
+                SimpleNamespace(
+                    rag_document_id="d1",
+                    corpus_document_id="cd1",
+                    availability="indexed",
+                    index_revision_id="rev-1",
+                )
+            ],
+            to_dict=lambda: {},
+        )
+        result = await service._synthesize_sync(
+            user=SimpleNamespace(id="u1"), query="q", scope=scope, allow_list=["d1"]
+        )
+        self.assertEqual(result["claims"], [{"text": "escaped", "chunk_ids": ["allowed"], "citation_numbers": [1]}])
+        self.assertEqual(
+            result["synthesis_provenance"]["rejected_claim_escapes"][0]["escaped_chunk_ids"],
+            ["not-in-map"],
+        )
+        self.assertTrue(result["reduction_checkpoints"])
+        kept, rejected = filter_claims_to_supporting_chunks(
+            [{"text": "x", "chunk_ids": ["ghost"]}], {"allowed"}
+        )
+        self.assertEqual(kept, [])
+        self.assertEqual(len(rejected), 1)
+        store = write_reduce_checkpoint({}, level=1, batch=0, payload={"ok": True})
+        self.assertIn("level-1/batch-0", store)
+
+    async def test_failed_document_map_is_recorded_as_omitted_evidence(self):
+        service = CorpusSynthesisService(AsyncMock())
+        service.rag_config = SimpleNamespace(
+            synthesis_max_documents=2,
+            synthesis_batch_size=2,
+            synthesis_passages_per_document=1,
+        )
+
+        async def failed_retrieve(query, **kwargs):
+            raise RuntimeError("database unavailable")
+
+        service.retrieval = SimpleNamespace(retrieve=failed_retrieve)
+        service.answers = SimpleNamespace(
+            answer_from_retrieval=AsyncMock(
+                return_value=RagAnswer(
+                    query="q",
+                    answer="none",
+                    citations=[],
+                    retrieved_chunk_ids=[],
+                    model_name="test",
+                    latency_ms=1,
+                    no_context_found=True,
+                )
+            )
+        )
+        scope = SimpleNamespace(
+            corpus_id="c1",
+            project_id="p1",
+            scope_hash="scope",
+            evidence_revision_hash=None,
+            rag_document_ids=["d1"],
+            mapping_status="ok",
+            document_bindings=[
+                SimpleNamespace(
+                    rag_document_id="d1",
+                    corpus_document_id="cd1",
+                    availability="indexed",
+                    index_revision_id="rev-1",
+                )
+            ],
+            to_dict=lambda: {},
+        )
+        result = await service._synthesize_sync(
+            user=SimpleNamespace(id="u1"), query="q", scope=scope, allow_list=["d1"]
+        )
+        finding = result["document_findings"][0]
+        self.assertTrue(finding["map_failure"])
+        self.assertEqual(finding["missing_evidence_reason"], "map_retrieval_failed:RuntimeError")
+        self.assertEqual(result["omitted_document_ids"], ["d1"])
+        self.assertEqual(
+            result["synthesis_provenance"]["documents_omitted"],
+            [{"rag_document_id": "d1", "reason": "map_retrieval_failed:RuntimeError"}],
         )

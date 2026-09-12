@@ -115,7 +115,7 @@ export default function AnnotationView() {
     const queueStatus = queueFilter === "all" ? undefined : queueFilter;
     const queueQuery = useQuery({
         queryKey: queryKeys.textResearch.annotationQueue(queueStatus ?? "all", queuePage * queuePageSize),
-        queryFn: () => listAnnotationQueue(queueStatus, { limit: queuePageSize, offset: queuePage * queuePageSize }),
+        queryFn: ({ signal }) => listAnnotationQueue(queueStatus, { limit: queuePageSize, offset: queuePage * queuePageSize }, signal),
         staleTime: QUERY_STALE_TIMES.researchAnnotationQueue,
     });
 
@@ -164,7 +164,7 @@ export default function AnnotationView() {
 
     const classifiersQuery = useQuery({
         queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () => listClassifiers(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: ({ signal }) => listClassifiers(ctx.projectId, ctx.selectedCorpusId, undefined, signal),
         enabled: Boolean(ctx.projectId && ctx.selectedCorpusId),
     });
     const selectedModelId = classifiersQuery.data?.[0]?.id ?? null;

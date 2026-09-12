@@ -24,6 +24,28 @@ class WorkloadEstimatorTests(unittest.TestCase):
         self.assertEqual(estimate_token_count(["abcd", "efgh"]), 2)  # 8 chars / 4
         self.assertEqual(estimate_pair_count(5), 10)
         self.assertEqual(estimate_pair_count(1), 0)
+        # Bounded top-K pairwise after TASK-007.
+        self.assertEqual(estimate_pair_count(100, mode="pairwise", top_k=20), min(4950, 100 * 20))
+        self.assertEqual(estimate_pair_count(50, mode="query"), 50)
+        self.assertEqual(estimate_pair_count(100, mode="group_centroid", n_groups=4), 6)
+        self.assertEqual(estimate_pair_count(100, mode="cooccurrence", window_size=5), 500)
+        self.assertEqual(estimate_pair_count(1000, mode="sweep", n_models=3), 3000)
+
+    def test_similarity_topk_workload_uses_bounded_pairs(self) -> None:
+        estimate = estimate_workload(
+            analysis_type="similarity",
+            n_units=1_000,
+            pair_mode="pairwise",
+            requested_top_k=50,
+        )
+        self.assertEqual(estimate.estimated_pairs, 1_000 * 50)
+        query = estimate_workload(
+            analysis_type="similarity",
+            n_units=1_000,
+            pair_mode="query",
+            requested_top_k=50,
+        )
+        self.assertEqual(query.estimated_pairs, 1_000)
 
     def test_thresholds_from_settings(self) -> None:
         with patch.dict(
@@ -83,6 +105,101 @@ class LargeJobEnqueueTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, "queued")
         enqueue.assert_awaited_once()
         inline.assert_not_awaited()
+
+    async def test_run_async_true_forces_queue_on_small_request(self) -> None:
+        from backend.modules.text_research.application.quantitative_analysis_service import (
+            QuantitativeAnalysisService,
+        )
+
+        service = QuantitativeAnalysisService(db=MagicMock())
+        corpus = SimpleNamespace(id="c1", project_id="p1")
+        units = [SimpleNamespace(id="u1", text="hi", corpus_document_id="d1")]
+        documents = [SimpleNamespace(id="d1")]
+        queued_run = SimpleNamespace(
+            id="run-forced",
+            status=AnalysisRunStatus.QUEUED.value,
+            corpus_id="c1",
+        )
+        service._select = AsyncMock(return_value=(corpus, units, documents))
+        service._enqueue_quantitative = AsyncMock(return_value=queued_run)
+
+        result = await service.frequencies(
+            "c1",
+            user_id="user-1",
+            unit_type="paragraph",
+            run_async=True,
+        )
+
+        self.assertEqual(result.status, AnalysisRunStatus.QUEUED.value)
+        service._enqueue_quantitative.assert_awaited_once()
+
+    async def test_worker_reentry_never_requeues(self) -> None:
+        from backend.modules.text_research.application.quantitative_analysis_service import (
+            QuantitativeAnalysisService,
+        )
+
+        service = QuantitativeAnalysisService(db=MagicMock())
+        corpus = SimpleNamespace(id="c1", project_id="p1")
+        units = [SimpleNamespace(id="u1", text="hi", corpus_document_id="d1")]
+        documents = [SimpleNamespace(id="d1")]
+        completed = SimpleNamespace(
+            id="run-inline",
+            status=AnalysisRunStatus.COMPLETED.value,
+            corpus_id="c1",
+        )
+        service._select = AsyncMock(return_value=(corpus, units, documents))
+        service._enqueue_quantitative = AsyncMock()
+        service._resolve_existing_run = AsyncMock(return_value=completed)
+        service._resolve_config = AsyncMock(return_value=({}, {}))
+        service._persist_run = AsyncMock(return_value=completed)
+
+        with (
+            patch(
+                "backend.modules.text_research.application.quantitative_analysis_service._prepare_with_identity",
+                new=AsyncMock(
+                    return_value=(
+                        SimpleNamespace(
+                            corpus_checksum="c",
+                            pipeline_checksum="p",
+                            token_sequences=[["hi"]],
+                            texts_joined=["hi"],
+                            preprocessing_profile={},
+                        ),
+                        {},
+                    )
+                ),
+            ),
+            patch(
+                "backend.modules.text_research.application.quantitative_analysis_service.run_cpu_bound",
+                new=AsyncMock(
+                    return_value={
+                        "frequencies": [],
+                        "metadata": {
+                            "unit_count": 1,
+                            "token_count": 1,
+                            "vocabulary_size": 1,
+                            "terms_returned": 0,
+                            "rate_per": 1000,
+                        },
+                    }
+                ),
+            ),
+            patch(
+                "backend.modules.text_research.application.quantitative_analysis_service._tokenized_from_prepared",
+                return_value=[["hi"]],
+            ),
+        ):
+            result = await service.frequencies(
+                "c1",
+                user_id="user-1",
+                unit_type="paragraph",
+                run_async=True,
+                force_inline=True,
+                existing_run_id="run-inline",
+            )
+
+        self.assertEqual(result.status, AnalysisRunStatus.COMPLETED.value)
+        service._enqueue_quantitative.assert_not_awaited()
 
     async def test_frequencies_large_job_enqueues_not_blocks(self) -> None:
         from backend.modules.text_research.application.quantitative_analysis_service import (

@@ -92,6 +92,10 @@ export type AnalysisRun = {
     completed_at: string | null;
     error_message: string | null;
     created_at: string;
+    /** Whether one-click Reproduce can exactly re-execute this run. */
+    rerunnable?: boolean;
+    /** Human-readable reason when ``rerunnable`` is false. */
+    rerun_block_reason?: string | null;
 };
 
 export type TrainedModel = {

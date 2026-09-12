@@ -93,6 +93,7 @@ def test_get_and_set_cached_retrieval() -> None:
             cache_set.assert_awaited_once()
 
             cache_get.return_value = {
+                "artifact_version": "v2",
                 "chunks": serialize_retrieved_chunks([chunk]),
                 "provenance": {"fusion_method": "rrf", "result_chunk_ids": ["chunk-1"]},
             }
@@ -109,6 +110,57 @@ def test_get_and_set_cached_retrieval() -> None:
         assert cached.provenance["fusion_method"] == "rrf"
 
     asyncio.run(_run())
+
+
+def test_legacy_payload_and_wrong_revision_are_safe_cache_misses() -> None:
+    chunk = _sample_chunk()
+
+    async def _run() -> None:
+        with patch(
+            "backend.lib.retrieval_cache.cache_get_json",
+            AsyncMock(
+                return_value={
+                    "chunks": serialize_retrieved_chunks([chunk]),
+                    "provenance": {"index_revision_ids": ["old"]},
+                }
+            ),
+        ):
+            assert await get_cached_retrieval(
+                user_id="user-1", project_id=None, query="q", top_k=5, filters=None
+            ) is None
+
+        with patch(
+            "backend.lib.retrieval_cache.cache_get_json",
+            AsyncMock(
+                return_value={
+                    "artifact_version": "v2",
+                    "chunks": serialize_retrieved_chunks([chunk]),
+                    "provenance": {"index_revision_ids": ["old"]},
+                }
+            ),
+        ):
+            assert await get_cached_retrieval(
+                user_id="user-1",
+                project_id=None,
+                query="q",
+                top_k=5,
+                filters=None,
+                expected_revision_ids=["new"],
+            ) is None
+
+    asyncio.run(_run())
+
+
+def test_cache_identity_changes_for_plan_and_evidence_revision() -> None:
+    base = retrieval_cache_key(
+        user_id="user-1", project_id=None, query="q", top_k=5, filters=None,
+        identity={"planner": {"dense_candidates": 40}, "evidence_revision_hash": "one"},
+    )
+    changed = retrieval_cache_key(
+        user_id="user-1", project_id=None, query="q", top_k=5, filters=None,
+        identity={"planner": {"dense_candidates": 20}, "evidence_revision_hash": "two"},
+    )
+    assert base != changed
 
 
 def test_invalidate_retrieval_cache_deletes_scope_pattern() -> None:

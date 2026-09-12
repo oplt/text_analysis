@@ -77,10 +77,18 @@ class SegmentationService(ResearchAccessMixin):
 
         Called by the background worker using its own DB session.
         """
+        from backend.modules.text_research.application.run_lifecycle import (
+            RunCancelledError,
+            TERMINAL_RUN_STATUSES,
+            complete_if_active,
+            ensure_not_cancelled,
+            fail_if_active,
+        )
+
         run = await self.repo.get_run(run_id)
         if run is None:
             raise ValueError(f"AnalysisRun {run_id} not found")
-        if run.status in {AnalysisRunStatus.COMPLETED.value, AnalysisRunStatus.CANCELLED.value}:
+        if run.status in TERMINAL_RUN_STATUSES:
             return run
 
         params = loads(run.parameters_json, {})
@@ -107,9 +115,11 @@ class SegmentationService(ResearchAccessMixin):
 
         corpus_service = CorpusService(self.db)
         try:
+            run = await ensure_not_cancelled(self.repo, run)
             total_units = 0
             per_document: list[dict] = []
             for index, document in enumerate(documents, start=1):
+                run = await ensure_not_cancelled(self.repo, run)
                 if index == 1:
                     await self.repo.update_run(
                         run,
@@ -183,9 +193,10 @@ class SegmentationService(ResearchAccessMixin):
                 )
                 await self.db.commit()
 
-            await self.repo.update_run(
+            run = await ensure_not_cancelled(self.repo, run)
+            await complete_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 completed_at=_utcnow(),
                 metrics_json=dumps(
@@ -199,10 +210,12 @@ class SegmentationService(ResearchAccessMixin):
                 results_json=dumps({"per_document": per_document}),
             )
             await self.db.commit()
+        except RunCancelledError:
+            await self.db.commit()
         except Exception as exc:  # noqa: BLE001
-            await self.repo.update_run(
+            await fail_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.FAILED.value,
                 progress_stage="failed",
                 completed_at=_utcnow(),
                 error_message=str(exc),

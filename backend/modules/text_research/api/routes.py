@@ -146,9 +146,6 @@ from backend.modules.text_research.application.prediction_set_service import Pre
 from backend.modules.text_research.application.preprocessing_service import (
     PreprocessingProfileService,
 )
-from backend.modules.text_research.application.quantitative_analysis_service import (
-    QuantitativeAnalysisService,
-)
 from backend.modules.text_research.application.reliability_service import ReliabilityService
 from backend.modules.text_research.application.robustness_service import RobustnessService
 from backend.modules.text_research.application.run_service import RunService
@@ -209,6 +206,12 @@ def _document_response(document: CorpusDocument) -> CorpusDocumentResponse:
 
 
 def _run_response(run: AnalysisRun) -> AnalysisRunResponse:
+    from backend.modules.text_research.application.run_adapters import capability_for_run
+
+    parameters = _loads(run.parameters_json)
+    capability = capability_for_run(
+        run, parameters if isinstance(parameters, dict) else {}
+    )
     return AnalysisRunResponse(
         id=run.id,
         project_id=run.project_id,
@@ -218,7 +221,7 @@ def _run_response(run: AnalysisRun) -> AnalysisRunResponse:
         run_version=int(getattr(run, "run_version", 1) or 1),
         evidence_revision_hash=getattr(run, "evidence_revision_hash", None),
         progress_stage=run.progress_stage,
-        parameters=_loads(run.parameters_json),
+        parameters=parameters,
         metrics=_loads(run.metrics_json),
         results=_loads(run.results_json),
         artifact_path=run.artifact_path,
@@ -228,7 +231,18 @@ def _run_response(run: AnalysisRun) -> AnalysisRunResponse:
         completed_at=run.completed_at,
         error_message=run.error_message,
         created_at=run.created_at,
+        rerunnable=capability.rerunnable,
+        rerun_block_reason=capability.block_reason,
     )
+
+
+# TASK-022: quantitative analysis endpoints live on quantitative_router.
+from backend.modules.text_research.api import quantitative_routes as _quantitative_routes
+
+_quantitative_routes.bind_run_response(_run_response)
+router.include_router(_quantitative_routes.router)
+# Compatibility re-export for tests and callers that still import from routes.
+_analysis_filters = _quantitative_routes._analysis_filters
 
 
 _TERMINAL_RUN_STATUSES = {"completed", "failed", "cancelled"}
@@ -1421,359 +1435,6 @@ async def list_campaign_adjudications(
 # Quantitative analysis
 # ------------------------------------------------------------------
 
-
-def _analysis_filters(body: AnalysisRequest) -> dict[str, Any]:
-    excluded = {
-        "unit_type",
-        "preprocessing_profile_id",
-        "top_n",
-        "n",
-        "weighting",
-        "k1",
-        "b",
-        "smooth_idf",
-        "rate_per",
-        "skip",
-        "group_by",
-        "force_sparse_only",
-        "trim",
-        "run_async",
-        "keyword",
-        "window_size",
-        "case_sensitive",
-        "query_mode",
-        "language",
-        "token_attribute",
-        "max_matches",
-        "dictionary_id",
-        "dictionary_terms",
-        "hierarchy",
-        "exclusions",
-        "dictionary_language",
-        "association_method",
-        "directional",
-        "min_frequency",
-        "min_count",
-        "include_network",
-        "method",
-        "mode",
-        "top_k",
-        "min_score",
-        "centroid_target",
-        "query_text",
-        "query_unit_id",
-        "embeddings",
-        "query_embedding",
-        "methods",
-        "lexical_threshold",
-        "char_ngram_size",
-        "use_minhash",
-        "minhash_num_perm",
-        "minhash_shingle_size",
-        "minhash_threshold",
-        "max_pairs",
-    }
-    return {k: v for k, v in body.model_dump().items() if k not in excluded and v is not None}
-
-
-@router.post("/corpora/{corpus_id}/analysis/corpus-stats", response_model=AnalysisRunResponse)
-async def corpus_stats(
-    corpus_id: str,
-    body: AnalysisRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await QuantitativeAnalysisService(db).corpus_stats(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        preprocessing_profile_id=body.preprocessing_profile_id,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
-
-
-@router.post("/corpora/{corpus_id}/analysis/frequencies", response_model=AnalysisRunResponse)
-async def frequencies(
-    corpus_id: str,
-    body: FrequencyRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await QuantitativeAnalysisService(db).frequencies(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        preprocessing_profile_id=body.preprocessing_profile_id,
-        top_n=body.top_n,
-        rate_per=body.rate_per,
-        group_by=body.group_by,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
-
-
-@router.post("/corpora/{corpus_id}/analysis/ngrams", response_model=AnalysisRunResponse)
-async def ngrams(
-    corpus_id: str,
-    body: NgramRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await QuantitativeAnalysisService(db).ngrams(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        n=body.n,
-        preprocessing_profile_id=body.preprocessing_profile_id,
-        top_n=body.top_n,
-        rate_per=body.rate_per,
-        skip=body.skip,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
-
-
-@router.post("/corpora/{corpus_id}/analysis/dfm", response_model=AnalysisRunResponse)
-async def dfm(
-    corpus_id: str,
-    body: DfmRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await QuantitativeAnalysisService(db).dfm(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        weighting=body.weighting,
-        k1=body.k1,
-        b=body.b,
-        smooth_idf=body.smooth_idf,
-        preprocessing_profile_id=body.preprocessing_profile_id,
-        force_sparse_only=body.force_sparse_only,
-        trim=body.trim.model_dump(exclude_none=True) if body.trim else None,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
-
-
-@router.post("/corpora/{corpus_id}/analysis/kwic", response_model=AnalysisRunResponse)
-async def kwic(
-    corpus_id: str,
-    body: KwicRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await QuantitativeAnalysisService(db).kwic(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        keyword=body.keyword,
-        window_size=body.window_size,
-        case_sensitive=body.case_sensitive,
-        query_mode=body.query_mode,
-        language=body.language,
-        token_attribute=body.token_attribute,
-        max_matches=body.max_matches,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
-
-
-@router.post("/corpora/{corpus_id}/analysis/dictionary", response_model=AnalysisRunResponse)
-async def dictionary_analysis(
-    corpus_id: str,
-    body: DictionaryAnalysisRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    if not body.dictionary_id and not body.dictionary_terms and not body.hierarchy:
-        raise HTTPException(
-            status_code=400,
-            detail="dictionary_id, dictionary_terms, or hierarchy required (user-defined only)",
-        )
-    run = await QuantitativeAnalysisService(db).dictionary(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        dictionary_terms=body.dictionary_terms or [],
-        dictionary_id=body.dictionary_id,
-        hierarchy=body.hierarchy,
-        exclusions=body.exclusions,
-        dictionary_language=body.dictionary_language,
-        case_sensitive=body.case_sensitive,
-        rate_per=body.rate_per,
-        group_by=body.group_by,
-        preprocessing_profile_id=body.preprocessing_profile_id,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
-
-
-@router.post("/corpora/{corpus_id}/analysis/keyness", response_model=AnalysisRunResponse)
-async def keyness(
-    corpus_id: str,
-    body: KeynessRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await QuantitativeAnalysisService(db).keyness(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        filters_a=body.filters_a,
-        filters_b=body.filters_b,
-        group_field=body.group_field,
-        method=body.method,
-        correction=body.correction,
-        min_frequency=body.min_frequency,
-        preprocessing_profile_id=body.preprocessing_profile_id,
-        top_n=body.top_n,
-    )
-    return _run_response(run)
-
-
-@router.post("/corpora/{corpus_id}/analysis/cooccurrence", response_model=AnalysisRunResponse)
-async def cooccurrence(
-    corpus_id: str,
-    body: CooccurrenceRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await QuantitativeAnalysisService(db).cooccurrence(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        window_size=body.window_size,
-        top_n=body.top_n,
-        association_method=body.association_method,
-        directional=body.directional,
-        min_frequency=body.min_frequency,
-        min_count=body.min_count,
-        include_network=body.include_network,
-        preprocessing_profile_id=body.preprocessing_profile_id,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
-
-
-@router.post("/corpora/{corpus_id}/analysis/similarity", response_model=AnalysisRunResponse)
-async def similarity(
-    corpus_id: str,
-    body: SimilarityRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Document-to-document / unit-to-unit / query-to-document / group-centroid
-    similarity (cosine-on-TFIDF, Jaccard, or caller-supplied embeddings)."""
-    run = await QuantitativeAnalysisService(db).similarity(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        method=body.method,
-        mode=body.mode,
-        top_k=body.top_k,
-        min_score=body.min_score,
-        group_by=body.group_by,
-        centroid_target=body.centroid_target,
-        query_text=body.query_text,
-        query_unit_id=body.query_unit_id,
-        embeddings=body.embeddings,
-        query_embedding=body.query_embedding,
-        preprocessing_profile_id=body.preprocessing_profile_id,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
-
-
-@router.post(
-    "/corpora/{corpus_id}/analysis/duplicate-detection", response_model=AnalysisRunResponse
-)
-async def duplicate_detection(
-    corpus_id: str,
-    body: DuplicateDetectionRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Exact / normalized checksum, lexical near-dup, and optional MinHash
-    duplicate detection — the same engine ingestion QA uses, run explicitly."""
-    run = await QuantitativeAnalysisService(db).duplicate_detection(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        methods=body.methods,
-        lexical_threshold=body.lexical_threshold,
-        char_ngram_size=body.char_ngram_size,
-        use_minhash=body.use_minhash,
-        minhash_num_perm=body.minhash_num_perm,
-        minhash_shingle_size=body.minhash_shingle_size,
-        minhash_threshold=body.minhash_threshold,
-        max_pairs=body.max_pairs,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
-
-
-@router.post("/corpora/{corpus_id}/analysis/clustering", response_model=AnalysisRunResponse)
-async def clustering(
-    corpus_id: str,
-    body: ClusteringRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await QuantitativeAnalysisService(db).clustering(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        n_clusters=body.n_clusters,
-        algorithm=body.algorithm,
-        use_svd=body.use_svd,
-        n_svd_components=body.n_svd_components,
-        top_terms=body.top_terms,
-        random_seed=body.random_seed,
-        preprocessing_profile_id=body.preprocessing_profile_id,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
-
-
-@router.post(
-    "/corpora/{corpus_id}/analysis/dimensionality-reduction",
-    response_model=AnalysisRunResponse,
-)
-async def dimensionality_reduction(
-    corpus_id: str,
-    body: DimensionalityReductionRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await QuantitativeAnalysisService(db).dimensionality_reduction(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        method=body.method,
-        n_components=body.n_components,
-        random_seed=body.random_seed,
-        preprocessing_profile_id=body.preprocessing_profile_id,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
-
-
-@router.post("/corpora/{corpus_id}/analysis/readability", response_model=AnalysisRunResponse)
-async def readability(
-    corpus_id: str,
-    body: ReadabilityRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await QuantitativeAnalysisService(db).readability(
-        corpus_id,
-        user_id=current_user.id,
-        unit_type=body.unit_type,
-        **_analysis_filters(body),
-    )
-    return _run_response(run)
 
 
 # ------------------------------------------------------------------

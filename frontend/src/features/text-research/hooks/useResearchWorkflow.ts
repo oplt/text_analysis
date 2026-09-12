@@ -13,7 +13,7 @@ export function useResearchWorkflow(activeRoute: string): {
 
     const dashboardQuery = useQuery({
         queryKey: queryKeys.textResearch.dashboard(ctx.selectedCorpusId),
-        queryFn: () => getDashboardSummary(ctx.selectedCorpusId),
+        queryFn: ({ signal }) => getDashboardSummary(ctx.selectedCorpusId, signal),
         enabled: Boolean(ctx.selectedCorpusId),
     });
 

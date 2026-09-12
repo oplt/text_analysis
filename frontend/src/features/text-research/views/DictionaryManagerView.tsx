@@ -117,18 +117,17 @@ export default function DictionaryManagerView() {
 
     const dictionariesQuery = useQuery({
         queryKey: queryKeys.textResearch.dictionaries(ctx.projectId),
-        queryFn: () => listDictionaries(ctx.projectId),
+        queryFn: ({ signal }) => listDictionaries(ctx.projectId, signal),
         enabled: Boolean(ctx.projectId),
     });
 
     const usageQuery = useQuery({
         queryKey: queryKeys.textResearch.runs(ctx.projectId, ctx.selectedCorpusId, "dictionary_analysis"),
-        queryFn: () =>
-            listRuns(ctx.projectId, {
+        queryFn: ({ signal }) => listRuns(ctx.projectId, {
                 corpus_id: ctx.selectedCorpusId || undefined,
                 run_type: "dictionary_analysis",
                 limit: 20,
-            }),
+            }, signal),
         enabled: Boolean(ctx.projectId),
     });
 

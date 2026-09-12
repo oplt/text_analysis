@@ -41,20 +41,29 @@ def _utcnow() -> datetime:
 
 class ExportService(ResearchAccessMixin):
     async def iter_units_csv(self, corpus_id: str, *, user_id: str, unit_type: str, **filters: Any):
-        """Yield unit CSV rows incrementally for HTTP streaming exports."""
+        """Yield unit CSV rows incrementally for HTTP streaming exports.
+
+        Pages the repository instead of materializing the full unit list first.
+        """
         await self.get_corpus_or_404(corpus_id, user_id=user_id)
         documents = await self.repo.list_documents(corpus_id)
         filtered_docs = _apply_document_filters(documents, filters or {})
         doc_lookup = {document.id: document for document in filtered_docs}
-        units = await self.repo.list_text_units_for_corpus(
-            corpus_id, unit_type=unit_type, document_ids=list(doc_lookup) if filters else None
-        )
+        document_ids = list(doc_lookup) if filters else None
         yield _csv_line(["text_unit_id", "corpus_document_id", "document_title", "text"])
-        for unit in units:
-            document = doc_lookup.get(unit.corpus_document_id)
-            yield _csv_line(
-                [unit.id, unit.corpus_document_id, document.title if document else "", unit.text]
-            )
+        async for page in self.repo.iter_text_units_for_corpus(
+            corpus_id, unit_type=unit_type, document_ids=document_ids
+        ):
+            for unit in page:
+                document = doc_lookup.get(unit.corpus_document_id)
+                yield _csv_line(
+                    [
+                        unit.id,
+                        unit.corpus_document_id,
+                        document.title if document else "",
+                        unit.text,
+                    ]
+                )
 
     async def export_units_csv(
         self, corpus_id: str, *, user_id: str, unit_type: str, **filters: Any
@@ -64,9 +73,6 @@ class ExportService(ResearchAccessMixin):
         filtered_docs = _apply_document_filters(documents, filters or {})
         doc_ids = [d.id for d in filtered_docs]
         doc_lookup = {d.id: d for d in filtered_docs}
-        units = await self.repo.list_text_units_for_corpus(
-            corpus_id, unit_type=unit_type, document_ids=doc_ids if filters else None
-        )
 
         buffer = io.StringIO()
         writer = csv.writer(buffer)
@@ -96,34 +102,39 @@ class ExportService(ResearchAccessMixin):
                 "text",
             ]
         )
-        for unit in units:
-            doc = doc_lookup.get(unit.corpus_document_id)
-            writer.writerow(
-                [
-                    unit.id,
-                    unit.corpus_document_id,
-                    doc.title if doc else "",
-                    doc.organization if doc else "",
-                    doc.organization_type if doc else "",
-                    doc.region if doc else "",
-                    doc.cultural_sphere if doc else "",
-                    doc.country if doc else "",
-                    doc.language if doc else "",
-                    doc.publication_year if doc else "",
-                    doc.publication_type if doc else "",
-                    unit.unit_type,
-                    unit.position,
-                    unit.page_number if unit.page_number is not None else "",
-                    unit.paragraph_number if unit.paragraph_number is not None else "",
-                    unit.sentence_number if unit.sentence_number is not None else "",
-                    unit.char_start if unit.char_start is not None else "",
-                    unit.char_end if unit.char_end is not None else "",
-                    unit.section_heading or "",
-                    unit.text_hash,
-                    unit.source_text_hash or "",
-                    unit.text,
-                ]
-            )
+        async for page in self.repo.iter_text_units_for_corpus(
+            corpus_id,
+            unit_type=unit_type,
+            document_ids=doc_ids if filters else None,
+        ):
+            for unit in page:
+                doc = doc_lookup.get(unit.corpus_document_id)
+                writer.writerow(
+                    [
+                        unit.id,
+                        unit.corpus_document_id,
+                        doc.title if doc else "",
+                        doc.organization if doc else "",
+                        doc.organization_type if doc else "",
+                        doc.region if doc else "",
+                        doc.cultural_sphere if doc else "",
+                        doc.country if doc else "",
+                        doc.language if doc else "",
+                        doc.publication_year if doc else "",
+                        doc.publication_type if doc else "",
+                        unit.unit_type,
+                        unit.position,
+                        unit.page_number if unit.page_number is not None else "",
+                        unit.paragraph_number if unit.paragraph_number is not None else "",
+                        unit.sentence_number if unit.sentence_number is not None else "",
+                        unit.char_start if unit.char_start is not None else "",
+                        unit.char_end if unit.char_end is not None else "",
+                        unit.section_heading or "",
+                        unit.text_hash,
+                        unit.source_text_hash or "",
+                        unit.text,
+                    ]
+                )
         return buffer.getvalue()
 
     async def export_annotations_csv(
@@ -173,15 +184,13 @@ class ExportService(ResearchAccessMixin):
             )
         return buffer.getvalue()
 
-    async def export_predictions_csv(self, model_id: str, *, user_id: str) -> str:
-        model = await self.get_model_or_404(model_id, user_id=user_id)
-        predictions, _total = await self.repo.list_predictions_for_model(
-            model.id, limit=1_000_000, offset=0
-        )
+    PREDICTION_EXPORT_PAGE_SIZE = 5_000
+    PREDICTION_EXPORT_MAX_ROWS = 1_000_000
 
-        buffer = io.StringIO()
-        writer = csv.writer(buffer)
-        writer.writerow(
+    async def iter_predictions_csv(self, model_id: str, *, user_id: str):
+        """Yield prediction CSV rows in bounded pages (no million-row preload)."""
+        model = await self.get_model_or_404(model_id, user_id=user_id)
+        yield _csv_line(
             [
                 "text_unit_id",
                 "trained_model_id",
@@ -191,17 +200,36 @@ class ExportService(ResearchAccessMixin):
                 "created_at",
             ]
         )
-        for prediction in predictions:
-            writer.writerow(
-                [
-                    prediction.text_unit_id,
-                    prediction.trained_model_id,
-                    "|".join(loads(prediction.predicted_labels_json, [])),
-                    dumps(loads(prediction.scores_json, {})),
-                    prediction.uncertainty if prediction.uncertainty is not None else "",
-                    prediction.created_at.isoformat() if prediction.created_at else "",
-                ]
+        offset = 0
+        emitted = 0
+        page_size = self.PREDICTION_EXPORT_PAGE_SIZE
+        while emitted < self.PREDICTION_EXPORT_MAX_ROWS:
+            limit = min(page_size, self.PREDICTION_EXPORT_MAX_ROWS - emitted)
+            predictions, _total = await self.repo.list_predictions_for_model(
+                model.id, limit=limit, offset=offset
             )
+            if not predictions:
+                break
+            for prediction in predictions:
+                yield _csv_line(
+                    [
+                        prediction.text_unit_id,
+                        prediction.trained_model_id,
+                        "|".join(loads(prediction.predicted_labels_json, [])),
+                        dumps(loads(prediction.scores_json, {})),
+                        prediction.uncertainty if prediction.uncertainty is not None else "",
+                        prediction.created_at.isoformat() if prediction.created_at else "",
+                    ]
+                )
+                emitted += 1
+            offset += len(predictions)
+            if len(predictions) < limit:
+                break
+
+    async def export_predictions_csv(self, model_id: str, *, user_id: str) -> str:
+        buffer = io.StringIO()
+        async for line in self.iter_predictions_csv(model_id, user_id=user_id):
+            buffer.write(line)
         return buffer.getvalue()
 
     async def build_manifest(self, corpus_id: str, *, user_id: str) -> dict[str, Any]:

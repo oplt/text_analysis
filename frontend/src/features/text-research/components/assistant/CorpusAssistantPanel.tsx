@@ -43,6 +43,7 @@ import { useResearchContext } from "../../hooks/useResearchContext";
 import { useRunEvents } from "../../hooks/useRunEvents";
 import { activeRunRefetchInterval } from "../../runPolling";
 import { AssistantScopeControls } from "./AssistantScopeControls";
+import { EvidenceProvenance } from "./EvidenceProvenance";
 
 type PanelMode = "context" | "ask" | "evidence";
 
@@ -110,6 +111,7 @@ function emptyScope(partial?: Partial<AssistantScope> | null): AssistantScope {
         unavailable_count: 0,
         unavailable_corpus_document_ids: [],
         unavailable_reasons: {},
+        documents: [],
         document_bindings: [],
         warnings: [],
         scope_mode: "fixed",
@@ -363,7 +365,7 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
     const synthesisSseConnected = useRunEvents(synthesisRunId, projectId);
     const synthesisRunQuery = useQuery({
         queryKey: queryKeys.textResearch.run(synthesisRunId ?? ""),
-        queryFn: () => getRun(synthesisRunId!),
+        queryFn: ({ signal }) => getRun(synthesisRunId!, signal),
         enabled: Boolean(synthesisRunId),
         staleTime: (query) => researchRunStaleTime(query.state.data?.status),
         refetchInterval: (query) => activeRunRefetchInterval(query, synthesisSseConnected),
@@ -1067,6 +1069,16 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                         </Stack>
                     ) : lastResult ? (
                         <Stack spacing={1}>
+                            <EvidenceProvenance
+                                scope={answerScope ?? emptyScope()}
+                                coverage={lastResult.coverage}
+                                evidenceRevisionHash={lastResult.evidence_revision_hash}
+                                degraded={lastResult.retrieval_degraded}
+                                degradationReason={lastResult.degradation_reason}
+                                noResults={lastResult.no_context_found}
+                                citations={lastResult.citations}
+                                synthesisOmissions={lastResult.synthesis_provenance?.documents_omitted}
+                            />
                             {lastResult.no_context_found ? (
                                 <Alert severity="info">
                                     No relevant evidence found in this corpus.

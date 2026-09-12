@@ -76,7 +76,7 @@ export default function ActiveLearningView() {
 
     const modelsQuery = useQuery({
         queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () => listClassifiers(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: ({ signal }) => listClassifiers(ctx.projectId, ctx.selectedCorpusId, undefined, signal),
         enabled: Boolean(ctx.projectId),
         staleTime: QUERY_STALE_TIMES.researchModelLifecycle,
     });
@@ -122,7 +122,7 @@ export default function ActiveLearningView() {
 
     const predictRunQuery = useQuery({
         queryKey: queryKeys.textResearch.run(predictRunId ?? ""),
-        queryFn: () => getRun(predictRunId!),
+        queryFn: ({ signal }) => getRun(predictRunId!, signal),
         enabled: Boolean(predictRunId),
         staleTime: (query) => researchRunStaleTime(query.state.data?.status),
         refetchInterval: (query) => activeRunRefetchInterval(query, predictSseConnected),

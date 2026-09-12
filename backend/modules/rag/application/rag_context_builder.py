@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from backend.lib.vectors import estimate_tokens
 from backend.modules.rag.application.citation_service import CitationService
+from backend.modules.rag.application.context_selection import (
+    ContextOrderingPolicy,
+    ContextSelection,
+    select_context_chunks,
+)
 from backend.modules.rag.domain.models import RetrievedChunk
 
 RAG_UNTRUSTED_CONTEXT_RULE = (
@@ -26,27 +31,76 @@ class RagContextBuilder:
         *,
         max_tokens: int,
         reserved_tokens: int = 512,
+        overlap_dedupe_threshold: float = 0.8,
+        ordering_policy: ContextOrderingPolicy | str = ContextOrderingPolicy.RELEVANCE,
     ) -> list[RetrievedChunk]:
         """Keep highest-scoring chunks that fit within the context token budget."""
+        return RagContextBuilder.select_context_for_generation(
+            chunks,
+            max_tokens=max_tokens,
+            reserved_tokens=reserved_tokens,
+            overlap_dedupe_threshold=overlap_dedupe_threshold,
+            ordering_policy=ordering_policy,
+        ).chunks
+
+    @staticmethod
+    def select_context_for_generation(
+        chunks: list[RetrievedChunk],
+        *,
+        max_tokens: int,
+        reserved_tokens: int = 512,
+        overlap_dedupe_threshold: float = 0.8,
+        ordering_policy: ContextOrderingPolicy | str = ContextOrderingPolicy.RELEVANCE,
+    ) -> ContextSelection:
+        """Deduplicate, order, and pack chunks while recording selected/removed provenance."""
         if not chunks or max_tokens <= 0:
-            return []
+            return ContextSelection(
+                chunks=[],
+                removed_chunk_ids=[],
+                selected_chunk_ids=[],
+                ordering_policy=ContextOrderingPolicy(ordering_policy),
+                budget_removed_chunk_ids=[],
+            )
         budget = max(0, max_tokens - reserved_tokens)
         if budget <= 0:
-            return []
+            return ContextSelection(
+                chunks=[],
+                removed_chunk_ids=[],
+                selected_chunk_ids=[],
+                ordering_policy=ContextOrderingPolicy(ordering_policy),
+                budget_removed_chunk_ids=[chunk.chunk_id for chunk in chunks],
+            )
 
-        selected: list[RetrievedChunk] = []
+        selection = select_context_chunks(
+            chunks,
+            overlap_threshold=overlap_dedupe_threshold,
+            ordering_policy=ordering_policy,
+        )
+        packed: list[RetrievedChunk] = []
+        budget_removed: list[str] = []
         used = 0
-        for chunk in sorted(chunks, key=lambda item: item.score, reverse=True):
+        for chunk in selection.chunks:
             chunk_tokens = estimate_tokens(chunk.context_content or chunk.content) + 48
-            if selected and used + chunk_tokens > budget:
+            if packed and used + chunk_tokens > budget:
+                budget_removed.append(chunk.chunk_id)
                 continue
-            if not selected and chunk_tokens > budget:
-                selected.append(chunk)
+            if not packed and chunk_tokens > budget:
+                packed.append(chunk)
+                budget_removed.extend(
+                    item.chunk_id for item in selection.chunks if item.chunk_id != chunk.chunk_id
+                )
                 break
-            selected.append(chunk)
+            packed.append(chunk)
             used += chunk_tokens
-        selected.sort(key=lambda item: item.score, reverse=True)
-        return selected
+        if ContextOrderingPolicy(ordering_policy) == ContextOrderingPolicy.RELEVANCE:
+            packed = sorted(packed, key=lambda item: item.score, reverse=True)
+        return ContextSelection(
+            chunks=packed,
+            removed_chunk_ids=selection.removed_chunk_ids,
+            selected_chunk_ids=[chunk.chunk_id for chunk in packed],
+            ordering_policy=selection.ordering_policy,
+            budget_removed_chunk_ids=budget_removed,
+        )
 
     def build_document_context_block(self, chunks: list[RetrievedChunk]) -> str:
         if not chunks:

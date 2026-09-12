@@ -8,6 +8,7 @@ import re
 
 from backend.lib.vectors import estimate_tokens
 from backend.modules.rag.domain.models import ParsedDocument
+from backend.modules.rag.domain.source_coordinates import SourceCoordinate
 
 _HEADING_RE = re.compile(
     r"^(?:#{1,6}\s+\S.+|(?:.|\n){1,80}\n[=-]{3,}\s*)$",
@@ -170,7 +171,7 @@ def split_documents(
     CPU-bound: call only via ``asyncio.to_thread`` (see ``ChunkingService.chunk``).
     """
     results: list[tuple[str, dict]] = []
-    for doc in documents:
+    for document_index, doc in enumerate(documents):
         base_meta = {**doc.metadata}
         if doc.page_number is not None:
             base_meta.setdefault("page_number", doc.page_number)
@@ -194,6 +195,15 @@ def split_documents(
             or base_meta.get("document_revision")
             or base_meta.get("checksum_sha256")
             or hashlib.sha256(full_text.encode("utf-8")).hexdigest()
+        )
+        scope_type = "page" if base_meta.get("page_number") is not None else "parsed_document"
+        scope_id = str(
+            base_meta.get("offset_scope_id")
+            or (
+                f"page:{source_revision}:{base_meta['page_number']}"
+                if scope_type == "page"
+                else f"parsed-document:{source_revision}:{document_index}"
+            )
         )
         packed = _pack_units(units, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
         for pack_index, (piece, source_idxs, piece_span) in enumerate(packed):
@@ -220,6 +230,21 @@ def split_documents(
             else:
                 char_start = unit_spans[source_idxs[0]][0] if source_idxs else None
                 char_end = unit_spans[source_idxs[-1]][1] if source_idxs else None
+            source_spans = []
+            for unit_position, source_index in enumerate(source_idxs):
+                start, end = unit_spans[source_index]
+                if piece_span is not None and unit_position == 0:
+                    start, end = char_start, char_end
+                source_spans.append(
+                    SourceCoordinate(
+                        scope_type=scope_type,
+                        scope_id=scope_id,
+                        coordinate_system="unicode_code_points_zero_based_end_exclusive",
+                        start=start,
+                        end=end,
+                        source_span_id=source_unit_ids[unit_position],
+                    ).to_dict()
+                )
             # Packed chunks reference constituent source paragraphs — do not call
             # the pack counter ``paragraph_index``.
             meta = {
@@ -235,8 +260,15 @@ def split_documents(
                 "block_ids": source_unit_ids,
                 "document_revision": source_revision,
                 "offset_coordinate_system": "unicode_code_points_zero_based_end_exclusive",
-                "offset_scope": (
-                    "page" if base_meta.get("page_number") is not None else "parsed_document"
+                "offset_scope": scope_type,
+                "offset_scope_id": scope_id,
+                "source_spans": source_spans,
+                "structural_parent_id": "|".join(
+                    [
+                        scope_id,
+                        str(section or ""),
+                        str(base_meta.get("parsed_block_type") or "prose"),
+                    ]
                 ),
             }
             if section:

@@ -12,13 +12,53 @@ from backend.modules.rag.application.citation_validation_service import Citation
 from backend.modules.rag.application.prompt_context_service import PromptContextService
 from backend.modules.rag.application.rag_context_builder import RagContextBuilder
 from backend.modules.rag.application.retrieval_service import RetrievalService
+from backend.modules.rag.domain.citation_validation_context import CitationValidationContext
 from backend.modules.rag.domain.enums import RetrievalIntent
-from backend.modules.rag.domain.models import RagAnswer, RetrievalOutcome
+from backend.modules.rag.domain.models import RagAnswer, RetrievedChunk, RetrievalOutcome
 from backend.modules.rag.infrastructure import metrics
 from backend.modules.rag.infrastructure.rag_config import RagConfig
 from backend.modules.rag.infrastructure.repositories import RagRepository
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+def _revision_by_document(chunks: list[RetrievedChunk]) -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    for chunk in chunks:
+        revision = chunk.index_revision_id or (chunk.metadata or {}).get("revision_id")
+        if not isinstance(revision, str) or not revision:
+            continue
+        prior = mapping.get(chunk.document_id)
+        if prior is None:
+            mapping[chunk.document_id] = revision
+        elif prior != revision:
+            # Conflicting revisions for one document — omit so validation fails closed.
+            mapping.pop(chunk.document_id, None)
+    return mapping
+
+
+def _build_citation_validation_context(
+    *,
+    user_id: str,
+    project_id: str | None,
+    document_ids: list[str] | None,
+    outcome: RetrievalOutcome,
+    chunks: list[RetrievedChunk],
+    corpus_id: str | None = None,
+) -> CitationValidationContext | None:
+    """Bind citation checks to frozen revision identity when retrieval carried one."""
+    if not outcome.index_revision_ids and not outcome.evidence_revision_hash:
+        return None
+    return CitationValidationContext(
+        user_id=user_id,
+        project_id=project_id,
+        corpus_id=corpus_id,
+        evidence_revision_hash=outcome.evidence_revision_hash,
+        index_revision_ids=list(outcome.index_revision_ids),
+        revision_by_document=_revision_by_document(chunks),
+        allowed_document_ids=document_ids,
+        retrieval_trace_id=outcome.retrieval_trace_id,
+    )
 
 NO_CONTEXT_ANSWER = (
     "I could not find relevant document context for your question in the indexed documents."
@@ -141,6 +181,10 @@ class RagAnswerService:
         bounded_chunks = self.context_builder.trim_chunks_to_token_budget(
             outcome.chunks,
             max_tokens=self.config.max_context_tokens,
+            overlap_dedupe_threshold=getattr(
+                self.config, "context_overlap_dedupe_threshold", 0.8
+            ),
+            ordering_policy=getattr(self.config, "context_ordering_policy", "relevance"),
         )
 
         if not bounded_chunks:
@@ -220,10 +264,19 @@ class RagAnswerService:
             commit=commit,
         )
 
+        citation_context = _build_citation_validation_context(
+            user_id=user_id,
+            project_id=project_id,
+            document_ids=document_ids,
+            outcome=outcome,
+            chunks=bounded_chunks,
+        )
         validated = self.citation_validator.validate(
             raw_output=ai_run.output_text or "",
             retrieved_chunks=bounded_chunks,
             allowed_document_ids=document_ids,
+            expected_index_revision_ids=outcome.index_revision_ids or None,
+            context=citation_context,
         )
 
         # At most one bounded repair/retry for any citation-validation failure.
@@ -247,6 +300,8 @@ class RagAnswerService:
                 raw_output=ai_run.output_text or "",
                 retrieved_chunks=bounded_chunks,
                 allowed_document_ids=document_ids,
+                expected_index_revision_ids=outcome.index_revision_ids or None,
+                context=citation_context,
             )
 
         if validated.citation_validation_failed:

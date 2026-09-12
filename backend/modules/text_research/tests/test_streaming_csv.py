@@ -23,9 +23,11 @@ class StreamingCsvTests(unittest.IsolatedAsyncioTestCase):
         service.repo.list_documents = AsyncMock(
             return_value=[SimpleNamespace(id="doc-1", title="Document")]
         )
-        service.repo.list_text_units_for_corpus = AsyncMock(
-            return_value=[SimpleNamespace(id="unit-1", corpus_document_id="doc-1", text="Hello")]
-        )
+
+        async def _iter(_corpus_id, **_kwargs):
+            yield [SimpleNamespace(id="unit-1", corpus_document_id="doc-1", text="Hello")]
+
+        service.repo.iter_text_units_for_corpus = _iter
 
         rows = [
             row

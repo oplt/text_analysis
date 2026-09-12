@@ -127,13 +127,13 @@ export default function RobustnessView() {
 
     const snapshotsQuery = useQuery({
         queryKey: queryKeys.textResearch.datasetSnapshots(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () => listDatasetSnapshots(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: ({ signal }) => listDatasetSnapshots(ctx.projectId, ctx.selectedCorpusId, signal),
         enabled: Boolean(ctx.projectId && ctx.selectedCorpusId),
     });
 
     const runQuery = useQuery({
         queryKey: queryKeys.textResearch.run(runId ?? ""),
-        queryFn: () => getRun(runId!),
+        queryFn: ({ signal }) => getRun(runId!, signal),
         enabled: Boolean(runId),
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });

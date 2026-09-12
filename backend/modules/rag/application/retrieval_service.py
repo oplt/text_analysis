@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -10,13 +11,17 @@ from backend.lib.vectors import can_index_embedding
 from backend.modules.rag.application.document_scope import document_ids_is_empty_allow_list
 from backend.modules.rag.application.embedding_service import EmbeddingService
 from backend.modules.rag.application.evidence_revision import (
+    StaleEvidenceRevisionError,
+    assert_chunks_match_revision_allow_list,
     build_retrieved_evidence_revision_hash,
 )
 from backend.modules.rag.application.parent_context_service import expand_parent_chunks
+from backend.modules.rag.application.query_analysis import QueryAnalysis, analyze_query
 from backend.modules.rag.application.query_expansion_service import (
     QUERY_EXPANSION_VERSION,
     QueryExpansionService,
 )
+from backend.modules.rag.application.rerank_policy import apply_rerank_policy
 from backend.modules.rag.application.reranker_port import build_reranker
 from backend.modules.rag.application.retrieval_filters import exclude_injection_flagged_chunks
 from backend.modules.rag.application.retrieval_fusion import reciprocal_rank_fusion
@@ -25,6 +30,7 @@ from backend.modules.rag.application.source_diversifier import (
     diversify_by_document,
     filter_to_allow_list,
 )
+from backend.modules.rag.application.trace_context import RagTraceContext
 from backend.modules.rag.domain.enums import RetrievalIntent
 from backend.modules.rag.domain.models import RetrievalCoverage, RetrievalOutcome, RetrievedChunk
 from backend.modules.rag.infrastructure import metrics
@@ -37,11 +43,58 @@ from sqlalchemy.ext.asyncio import AsyncSession
 logger = logging.getLogger(__name__)
 
 
+async def _completed_branch() -> tuple[list[RetrievedChunk], bool, str | None]:
+    """Represent a deduplicated lexical branch without widening retrieval results."""
+    return [], True, None
+
+
+def _coerce_branch_result(
+    result: object,
+) -> tuple[list[RetrievedChunk], bool, str | None]:
+    """Normalize gather outcomes, including unexpected exceptions."""
+    if isinstance(result, Exception):
+        return [], False, type(result).__name__
+    if (
+        isinstance(result, tuple)
+        and len(result) == 3
+        and isinstance(result[1], bool)
+    ):
+        chunks, ok, err = result
+        return list(chunks or []), bool(ok), err
+    return [], False, "invalid_branch_result"
+
+
 def scope_hash_for_document_ids(document_ids: list[str] | None) -> str | None:
     if document_ids is None:
         return None
     payload = json.dumps(sorted(document_ids), separators=(",", ":"))
     return hashlib.sha256(payload.encode()).hexdigest()[:32]
+
+
+def _assign_evidence_revision_hash(
+    outcome: RetrievalOutcome,
+    *,
+    evidence_revision_hash: str | None,
+    index_revision_ids: list[str] | None,
+    project_id: str | None,
+    document_ids: list[str] | None,
+    config: RagConfig,
+) -> None:
+    """Bind evidence hash only after frozen revision membership is proven."""
+    assert_chunks_match_revision_allow_list(outcome.chunks, index_revision_ids)
+    if index_revision_ids is not None and evidence_revision_hash:
+        # Frozen callers already proved the full revision hash; keep it only
+        # after retrieved chunks are confirmed inside that revision allow-list.
+        outcome.evidence_revision_hash = evidence_revision_hash
+        return
+    outcome.evidence_revision_hash = evidence_revision_hash or (
+        build_retrieved_evidence_revision_hash(
+            project_id=project_id,
+            document_ids=document_ids,
+            chunks=outcome.chunks,
+            config=config,
+        )
+    )
 
 
 def _filters_for_cache(
@@ -100,10 +153,14 @@ def _retrieval_provenance(
     query_variants: list[dict],
     chunks: list[RetrievedChunk],
     index_revision_ids: list[str] | None,
+    query_analysis: QueryAnalysis,
 ) -> dict:
     """Persist the facts needed to reproduce a cached retrieval result."""
     return {
+        "cache_artifact_version": getattr(config, "retrieval_cache_artifact_version", "v2"),
         "intent": plan.intent.value,
+        "query_analysis": query_analysis.to_dict(),
+        "retrieval_profile": plan.to_dict(),
         "retrieval_algorithm_version": getattr(
             config, "retrieval_algorithm_version", "hybrid-rrf-v1"
         ),
@@ -154,13 +211,30 @@ class RetrievalService:
         persist_trace: bool = False,
         evidence_revision_hash: str | None = None,
     ) -> RetrievalOutcome:
+        trace_context = RagTraceContext()
         if not self.config.enabled:
-            return RetrievalOutcome(chunks=[], no_matches=True)
+            return RetrievalOutcome(
+                chunks=[], no_matches=True, request_id=trace_context.request_id
+            )
 
         document_ids, owner_scoped = _parse_scope(filters)
         index_revision_ids = (filters or {}).get("index_revision_ids")
         retrieval_mode = str((filters or {}).get("retrieval_mode") or "hybrid").lower()
-        plan = plan_retrieval(intent, self.config, top_k=top_k, retrieval_mode=retrieval_mode)
+        query_analysis = (
+            analyze_query(query)
+            if intent is None
+            else QueryAnalysis(
+                intent=RetrievalIntent(intent),
+                reasons=("caller_override",),
+            )
+        )
+        plan = plan_retrieval(
+            query_analysis.intent,
+            self.config,
+            top_k=top_k,
+            retrieval_mode=retrieval_mode,
+            lexical_phrase_boost=query_analysis.lexical_phrase_boost,
+        )
         exclude_parents = bool(getattr(self.config, "parent_context_enabled", False))
 
         # I1: explicit empty allow-list → zero evidence, never widen.
@@ -179,13 +253,13 @@ class RetrievalService:
                 coverage=coverage,
                 scope_hash=scope_hash_for_document_ids(document_ids),
             )
-            outcome.evidence_revision_hash = evidence_revision_hash or (
-                build_retrieved_evidence_revision_hash(
-                    project_id=project_id,
-                    document_ids=document_ids,
-                    chunks=outcome.chunks,
-                    config=self.config,
-                )
+            _assign_evidence_revision_hash(
+                outcome,
+                evidence_revision_hash=evidence_revision_hash,
+                index_revision_ids=index_revision_ids,
+                project_id=project_id,
+                document_ids=document_ids,
+                config=self.config,
             )
             if persist_trace:
                 outcome = await self._persist_trace(
@@ -206,6 +280,29 @@ class RetrievalService:
             retrieval_mode=retrieval_mode,
             index_revision_ids=index_revision_ids,
         )
+        cache_identity = {
+            "artifact_version": getattr(self.config, "retrieval_cache_artifact_version", "v2"),
+            "evidence_revision_hash": evidence_revision_hash,
+            "index_revision_ids": sorted(index_revision_ids or []),
+            "planner": plan.to_dict(),
+            "retrieval_algorithm_version": getattr(
+                self.config, "retrieval_algorithm_version", "hybrid-rrf-v1"
+            ),
+            "index_version": getattr(self.config, "index_version", "pgvector-fts-v1"),
+            "rrf_k": getattr(self.config, "rrf_k", 60),
+            "reranker": f"{self.ranker.name}:{self.ranker.version}",
+            "parent_context_enabled": exclude_parents,
+            "retrieval_fingerprint": (
+                self.config.retrieval.fingerprint()
+                if hasattr(self.config, "retrieval")
+                else None
+            ),
+            "reranking_fingerprint": (
+                self.config.reranking.fingerprint()
+                if hasattr(self.config, "reranking")
+                else None
+            ),
+        }
         cache_variant = (
             f"{getattr(self.config, 'retrieval_algorithm_version', 'hybrid-rrf-v1')}"
             f":{getattr(self.config, 'index_version', 'pgvector-fts-v1')}"
@@ -217,6 +314,7 @@ class RetrievalService:
         started = perf_counter()
         query_variants_meta: list[dict] = []
         try:
+            cache_started = trace_context.measure("cache_lookup")
             cached = await get_cached_retrieval(
                 user_id=user_id,
                 project_id=project_id,
@@ -224,6 +322,11 @@ class RetrievalService:
                 top_k=plan.top_k,
                 filters=cache_filters,
                 variant=cache_variant,
+                identity=cache_identity,
+                expected_revision_ids=index_revision_ids,
+            )
+            trace_context.complete(
+                "cache_lookup", cache_started, status="hit" if cached is not None else "miss"
             )
             if cached is not None:
                 try:
@@ -275,14 +378,23 @@ class RetrievalService:
                     scope_hash=scope_hash_for_document_ids(document_ids),
                     cache_hit=True,
                     retrieval_provenance=cached.provenance,
+                    request_id=trace_context.request_id,
                 )
-                outcome.evidence_revision_hash = evidence_revision_hash or (
-                    build_retrieved_evidence_revision_hash(
-                        project_id=project_id,
-                        document_ids=document_ids,
-                        chunks=outcome.chunks,
-                        config=self.config,
-                    )
+                outcome.retrieval_provenance = {
+                    **outcome.retrieval_provenance,
+                    "trace": {
+                        "request_id": trace_context.request_id,
+                        "stage_timings_ms": trace_context.stage_timings_ms,
+                        "branch_status": trace_context.branch_status,
+                    },
+                }
+                _assign_evidence_revision_hash(
+                    outcome,
+                    evidence_revision_hash=evidence_revision_hash,
+                    index_revision_ids=index_revision_ids,
+                    project_id=project_id,
+                    document_ids=document_ids,
+                    config=self.config,
                 )
                 if persist_trace:
                     outcome = await self._persist_trace(
@@ -306,8 +418,11 @@ class RetrievalService:
             dense_attempted = plan.dense_candidates > 0
             lexical_attempted = plan.lexical_candidates > 0
             branch_errors: list[str] = []
-            lexical_queries_seen: set[str] = set()
+            dense_started = trace_context.measure("dense_branch")
+            lexical_started = trace_context.measure("lexical_branch")
 
+            lexical_queries_seen: set[str] = set()
+            run_lexical_flags: list[bool] = []
             for variant in variants:
                 query_variants_meta.append(
                     {
@@ -318,31 +433,76 @@ class RetrievalService:
                         "language": variant.language,
                     }
                 )
-                dense, dense_ok, dense_err = await self._dense_branch(
-                    variant.dense_text or variant.text,
-                    user_id=user_id,
-                    project_id=project_id,
-                    document_ids=document_ids,
-                    index_revision_ids=index_revision_ids,
-                    owner_scoped=owner_scoped,
-                    top_k=plan.dense_candidates,
-                    exclude_parents=exclude_parents,
-                )
                 lexical_query = variant.lexical_text or variant.text
                 if lexical_query in lexical_queries_seen:
-                    lexical, lexical_ok, lexical_err = [], True, None
+                    run_lexical_flags.append(False)
                 else:
                     lexical_queries_seen.add(lexical_query)
-                    lexical, lexical_ok, lexical_err = await self._lexical_branch(
-                        lexical_query,
+                    run_lexical_flags.append(True)
+
+            variant_concurrency = max(
+                1, int(getattr(self.config, "query_variant_concurrency", 3))
+            )
+            variant_semaphore = asyncio.Semaphore(variant_concurrency)
+            embedding_tasks: dict[str, asyncio.Task] = {}
+            embedding_guard = asyncio.Lock()
+
+            async def shared_embedding_task(text: str) -> asyncio.Task:
+                async with embedding_guard:
+                    task = embedding_tasks.get(text)
+                    if task is None:
+                        task = asyncio.create_task(self.embeddings.embed_texts([text]))
+                        embedding_tasks[text] = task
+                    return task
+
+            async def run_variant(index: int):
+                variant = variants[index]
+                dense_text = variant.dense_text or variant.text
+                lexical_query = variant.lexical_text or variant.text
+                async with variant_semaphore:
+                    embedding_task = (
+                        await shared_embedding_task(dense_text)
+                        if plan.dense_candidates > 0
+                        else None
+                    )
+                    dense_task = self._dense_branch(
+                        dense_text,
                         user_id=user_id,
                         project_id=project_id,
                         document_ids=document_ids,
                         index_revision_ids=index_revision_ids,
-                        top_k=plan.lexical_candidates,
                         owner_scoped=owner_scoped,
+                        top_k=plan.dense_candidates,
                         exclude_parents=exclude_parents,
+                        embedding_task=embedding_task,
                     )
+                    if run_lexical_flags[index]:
+                        lexical_task = self._lexical_branch(
+                            lexical_query,
+                            user_id=user_id,
+                            project_id=project_id,
+                            document_ids=document_ids,
+                            index_revision_ids=index_revision_ids,
+                            top_k=plan.lexical_candidates,
+                            owner_scoped=owner_scoped,
+                            exclude_parents=exclude_parents,
+                            phrase_boost=plan.lexical_phrase_boost,
+                        )
+                    else:
+                        lexical_task = _completed_branch()
+                    dense_raw, lexical_raw = await asyncio.gather(
+                        dense_task, lexical_task, return_exceptions=True
+                    )
+                    return index, dense_raw, lexical_raw
+
+            variant_outcomes = await asyncio.gather(
+                *[run_variant(index) for index in range(len(variants))]
+            )
+            for _index, dense_raw, lexical_raw in sorted(
+                variant_outcomes, key=lambda item: item[0]
+            ):
+                dense, dense_ok, dense_err = _coerce_branch_result(dense_raw)
+                lexical, lexical_ok, lexical_err = _coerce_branch_result(lexical_raw)
                 if dense_err:
                     branch_errors.append(f"dense:{dense_err}")
                 if lexical_err:
@@ -363,6 +523,13 @@ class RetrievalService:
                 elif lexical:
                     ranked_lists.append(lexical)
 
+            trace_context.complete(
+                "dense_branch", dense_started, status="ok" if any_dense_ok else "failed"
+            )
+            trace_context.complete(
+                "lexical_branch", lexical_started, status="ok" if any_lexical_ok else "failed"
+            )
+            fusion_started = trace_context.measure("fusion")
             if len(ranked_lists) > 1:
                 fused = reciprocal_rank_fusion(
                     ranked_lists,
@@ -374,6 +541,7 @@ class RetrievalService:
             else:
                 fused = []
             fused = filter_to_allow_list(fused, document_ids)
+            trace_context.complete("fusion", fusion_started)
 
             fusion_method = _actual_fusion_method(
                 dense_ok=any_dense_ok,
@@ -421,16 +589,32 @@ class RetrievalService:
                 metrics.rag_injection_chunks_filtered_total.inc(removed)
 
             if exclude_parents and filtered:
+                parent_started = trace_context.measure("parent_expand")
                 filtered = await expand_parent_chunks(
                     filtered, repo=self.repo, document_ids=document_ids
                 )
                 filtered = filter_to_allow_list(filtered, document_ids)
+                trace_context.complete("parent_expand", parent_started)
 
-            if filtered:
+            if filtered and plan.rerank_depth:
                 rerank_started = perf_counter()
-                filtered = self.ranker.rerank(query, filtered, limit=len(filtered))
+                rerank_result = apply_rerank_policy(
+                    self.ranker,
+                    query,
+                    filtered,
+                    depth=plan.rerank_depth,
+                )
                 metrics.rag_rerank_latency_ms.observe((perf_counter() - rerank_started) * 1000)
+                trace_context.complete("rerank", rerank_started)
+                filtered = rerank_result.chunks
                 filtered = filter_to_allow_list(filtered, document_ids)
+                if rerank_result.failed:
+                    degraded = True
+                    degradation_reason = ";".join(
+                        reason
+                        for reason in (degradation_reason, "reranker_failed")
+                        if reason
+                    )
 
             if plan.diversify:
                 filtered, coverage = diversify_by_document(
@@ -467,6 +651,7 @@ class RetrievalService:
                 scope_hash=scope_hash_for_document_ids(document_ids),
                 degraded=degraded,
                 degradation_reason=degradation_reason,
+                request_id=trace_context.request_id,
             )
             outcome.retrieval_provenance = _retrieval_provenance(
                 plan=plan,
@@ -479,14 +664,20 @@ class RetrievalService:
                 query_variants=query_variants_meta,
                 chunks=filtered,
                 index_revision_ids=index_revision_ids,
+                query_analysis=query_analysis,
             )
-            outcome.evidence_revision_hash = evidence_revision_hash or (
-                build_retrieved_evidence_revision_hash(
-                    project_id=project_id,
-                    document_ids=document_ids,
-                    chunks=outcome.chunks,
-                    config=self.config,
-                )
+            outcome.retrieval_provenance["trace"] = {
+                "request_id": trace_context.request_id,
+                "stage_timings_ms": trace_context.stage_timings_ms,
+                "branch_status": trace_context.branch_status,
+            }
+            _assign_evidence_revision_hash(
+                outcome,
+                evidence_revision_hash=evidence_revision_hash,
+                index_revision_ids=index_revision_ids,
+                project_id=project_id,
+                document_ids=document_ids,
+                config=self.config,
             )
             if outcome.no_matches and fused and removed == len(fused):
                 outcome.degradation_reason = "injection_filtered_all_matches"
@@ -498,10 +689,12 @@ class RetrievalService:
                     project_id=project_id,
                     query=query,
                     top_k=plan.top_k,
-                    filters=cache_filters,
-                    chunks=filtered,
-                    provenance=outcome.retrieval_provenance,
-                    variant=cache_variant,
+                filters=cache_filters,
+                chunks=filtered,
+                provenance=outcome.retrieval_provenance,
+                variant=cache_variant,
+                identity=cache_identity,
+                artifact_version=getattr(self.config, "retrieval_cache_artifact_version", "v2"),
                 )
             metrics.rag_retrieved_chunks.observe(len(filtered))
             if outcome.no_matches:
@@ -519,6 +712,8 @@ class RetrievalService:
                     branch_errors=branch_errors,
                 )
             return outcome
+        except StaleEvidenceRevisionError:
+            raise
         except Exception:
             logger.exception("RAG retrieval failed for user=%s", user_id)
             metrics.rag_vector_unavailable_total.inc()
@@ -530,14 +725,15 @@ class RetrievalService:
                 intent=plan.intent,
                 fusion_method="none",
                 scope_hash=scope_hash_for_document_ids(document_ids),
+                request_id=trace_context.request_id,
             )
-            outcome.evidence_revision_hash = evidence_revision_hash or (
-                build_retrieved_evidence_revision_hash(
-                    project_id=project_id,
-                    document_ids=document_ids,
-                    chunks=outcome.chunks,
-                    config=self.config,
-                )
+            _assign_evidence_revision_hash(
+                outcome,
+                evidence_revision_hash=evidence_revision_hash,
+                index_revision_ids=index_revision_ids,
+                project_id=project_id,
+                document_ids=document_ids,
+                config=self.config,
             )
             if persist_trace:
                 try:
@@ -568,11 +764,17 @@ class RetrievalService:
         owner_scoped: bool,
         top_k: int,
         exclude_parents: bool,
+        query_embedding: list[float] | None = None,
+        embedding_task: asyncio.Task | None = None,
     ) -> tuple[list[RetrievedChunk], bool, str | None]:
         if top_k <= 0:
             return [], True, None
         try:
-            query_embedding = (await self.embeddings.embed_texts([query]))[0]
+            if query_embedding is None:
+                if embedding_task is not None:
+                    query_embedding = (await embedding_task)[0]
+                else:
+                    query_embedding = (await self.embeddings.embed_texts([query]))[0]
             if not can_index_embedding(
                 query_embedding,
                 expected_dimensions=self.config.embedding_dimensions,
@@ -610,6 +812,7 @@ class RetrievalService:
         owner_scoped: bool,
         top_k: int,
         exclude_parents: bool,
+        phrase_boost: bool = False,
     ) -> tuple[list[RetrievedChunk], bool, str | None]:
         if top_k <= 0:
             return [], True, None
@@ -623,6 +826,7 @@ class RetrievalService:
                 owner_scoped=owner_scoped,
                 exclude_parents=exclude_parents,
                 index_revision_ids=index_revision_ids,
+                phrase_boost=phrase_boost,
             )
             return lexical, True, None
         except Exception as exc:
@@ -654,11 +858,13 @@ class RetrievalService:
         )
         coverage = outcome.coverage
         provenance = dict(outcome.retrieval_provenance)
+        trace_diagnostics = provenance.get("trace") or {}
         trace = await self.repo.create_retrieval_trace(
             user_id=user_id,
             project_id=project_id,
             conversation_id=conversation_id,
             query=query,
+            request_id=outcome.request_id or trace_diagnostics.get("request_id"),
             intent=outcome.intent.value if outcome.intent else None,
             scope_hash=outcome.scope_hash,
             evidence_revision_hash=outcome.evidence_revision_hash,
@@ -737,6 +943,8 @@ class RetrievalService:
             no_matches=outcome.no_matches,
             injection_chunks_filtered=outcome.injection_chunks_filtered,
             latency_ms=latency_ms,
+            stage_timings=trace_diagnostics.get("stage_timings_ms"),
+            branch_status=trace_diagnostics.get("branch_status"),
         )
         outcome.retrieval_trace_id = trace.id
         return outcome

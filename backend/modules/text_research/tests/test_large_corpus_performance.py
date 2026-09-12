@@ -36,7 +36,7 @@ class LargeCorpusRepositoryContractTests(unittest.TestCase):
         source = inspect.getsource(prediction_service.PredictionService.execute_prediction)
         self.assertIn("list_annotated_text_unit_ids", source)
         self.assertNotIn("list_annotations_for_corpus", source)
-        self.assertIn("iter_item_batches", source)
+        self.assertIn("iter_text_units_for_corpus", source)
 
 
 class PredictionRowHelperTests(unittest.TestCase):

@@ -19,6 +19,11 @@ class RagDocumentRevision(Base):
     parser_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     chunker_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     index_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    embedding_provider: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    embedding_model: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    embedding_model_version: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    embedding_dimensions: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    embedding_preprocessing_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )
@@ -164,6 +169,7 @@ class RagRetrievalTrace(Base):
         ForeignKey("rag_conversations.id", ondelete="SET NULL"), nullable=True, index=True
     )
     query: Mapped[str] = mapped_column(Text)
+    request_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     intent: Mapped[str | None] = mapped_column(String(64), nullable=True)
     scope_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     evidence_revision_hash: Mapped[str | None] = mapped_column(
@@ -179,6 +185,8 @@ class RagRetrievalTrace(Base):
     no_matches: Mapped[bool] = mapped_column(Boolean, default=False)
     injection_chunks_filtered: Mapped[int] = mapped_column(Integer, default=0)
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    stage_timings_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    branch_status_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), index=True
     )

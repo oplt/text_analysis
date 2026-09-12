@@ -94,6 +94,12 @@ function ResearchLayoutInner() {
     }
 
     async function handleOpenCitation(citation: AssistantCitation) {
+        if (citation.source_status === "historical_source_unavailable") {
+            setCitationOpenError(
+                "historical_source_unavailable: the cited evidence revision is no longer resolvable."
+            );
+            return;
+        }
         if (!citation.corpus_document_id) {
             setCitationOpenError("This citation no longer has an accessible corpus document.");
             return;
@@ -108,7 +114,9 @@ function ResearchLayoutInner() {
             setCitationSourceSpanIds(citation.source_span_ids ?? null);
             setCitationOffsetScope(citation.offset_scope ?? null);
         } catch {
-            setCitationOpenError("Could not open this citation source. It may no longer be available.");
+            setCitationOpenError(
+                "historical_source_unavailable: could not open this citation source."
+            );
         }
     }
 

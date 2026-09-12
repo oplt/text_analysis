@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 
 from backend.core.pagination import DEFAULT_PAGE_LIMIT, paginate_scalars
 from backend.lib.vector_search import (
+    DenseFallbackScopeTooLarge,
     embedding_is_indexable,
-    json_fallback_max_candidates,
     parse_embedding_json,
     rank_embedding_matches,
     store_chunk_embeddings_batch,
@@ -240,6 +240,11 @@ class RagRepository:
         parser_version: str | None,
         chunker_version: str | None,
         index_version: str | None,
+        embedding_provider: str | None,
+        embedding_model: str | None,
+        embedding_model_version: str | None,
+        embedding_dimensions: int | None,
+        embedding_preprocessing_version: str | None,
     ) -> RagDocumentRevision:
         revision = RagDocumentRevision(
             document_id=document.id,
@@ -247,6 +252,11 @@ class RagRepository:
             parser_version=parser_version,
             chunker_version=chunker_version,
             index_version=index_version,
+            embedding_provider=embedding_provider,
+            embedding_model=embedding_model,
+            embedding_model_version=embedding_model_version,
+            embedding_dimensions=embedding_dimensions,
+            embedding_preprocessing_version=embedding_preprocessing_version,
         )
         self.db.add(revision)
         await self.db.flush()
@@ -271,11 +281,24 @@ class RagRepository:
         chunks: list[dict],
         *,
         revision_id: str | None = None,
+        expected_embedding_dimensions: int | None = None,
     ) -> list[RagChunk]:
         # Revisioned indexing appends immutable rows. Legacy callers without a
         # revision retain the original replace semantics.
         if revision_id is None:
             await self.db.execute(delete(RagChunk).where(RagChunk.document_id == document.id))
+        if expected_embedding_dimensions is not None:
+            invalid = [
+                item.get("id") or item.get("chunk_index")
+                for item in chunks
+                if item.get("embedding") is not None
+                and len(item["embedding"]) != expected_embedding_dimensions
+            ]
+            if invalid:
+                raise ValueError(
+                    "chunk embeddings do not match expected dimension "
+                    f"{expected_embedding_dimensions}: {invalid}"
+                )
         rows: list[RagChunk] = []
         for item in chunks:
             meta = item.get("metadata") or {}
@@ -335,21 +358,31 @@ class RagRepository:
         )
         return list(result.scalars().all())
 
-    async def list_evidence_revision_chunks(self, document_ids: list[str]) -> list[RagChunk]:
+    async def list_evidence_revision_chunks(
+        self,
+        document_ids: list[str],
+        *,
+        revision_ids: list[str] | None = None,
+    ) -> list[RagChunk]:
         """Return indexed chunk identity fields for a reproducibility hash."""
         if not document_ids:
             return []
         rows: list[RagChunk] = []
         for start in range(0, len(document_ids), _IN_CLAUSE_BATCH):
-            result = await self.db.execute(
+            statement = (
                 select(RagChunk)
                 .join(RagDocument, RagDocument.id == RagChunk.document_id)
                 .where(RagChunk.document_id.in_(document_ids[start : start + _IN_CLAUSE_BATCH]))
-                .where(
+            )
+            if revision_ids is None:
+                statement = statement.where(
                     (RagChunk.revision_id == RagDocument.current_revision_id)
                     | (RagDocument.current_revision_id.is_(None) & RagChunk.revision_id.is_(None))
                 )
-                .order_by(RagChunk.document_id, RagChunk.chunk_index, RagChunk.id)
+            else:
+                statement = statement.where(RagChunk.revision_id.in_(revision_ids))
+            result = await self.db.execute(
+                statement.order_by(RagChunk.document_id, RagChunk.chunk_index, RagChunk.id)
             )
             rows.extend(result.scalars().all())
         return rows
@@ -531,10 +564,9 @@ class RagRepository:
         owner_scoped: bool = True,
         exclude_parents: bool = False,
         index_revision_ids: list[str] | None = None,
+        exact_max_rows: int | None = None,
     ) -> list[RetrievedChunk]:
-        params: dict = {
-            "max_candidates": json_fallback_max_candidates(top_k),
-        }
+        params: dict = {}
         filters = self._retrieval_scope_filters(
             user_id=user_id,
             project_id=project_id,
@@ -549,6 +581,21 @@ class RagRepository:
 
         filters.append("c.embedding_json IS NOT NULL")
 
+        count_result = await self.db.execute(
+            text(
+                "SELECT COUNT(*) FROM rag_chunks c "
+                "INNER JOIN rag_documents d ON d.id = c.document_id "
+                f"WHERE {' AND '.join(filters)}"
+            ),
+            params,
+        )
+        eligible_count = int(count_result.scalar() or 0)
+        max_rows = exact_max_rows if exact_max_rows is not None else 5000
+        if eligible_count > max_rows:
+            raise DenseFallbackScopeTooLarge(
+                f"pgvector_required_for_scope_size:{eligible_count}>{max_rows}"
+            )
+
         sql = f"""
             SELECT
                 c.id AS chunk_id,
@@ -562,8 +609,7 @@ class RagRepository:
             FROM rag_chunks c
             INNER JOIN rag_documents d ON d.id = c.document_id
             WHERE {" AND ".join(filters)}
-            ORDER BY c.updated_at DESC
-            LIMIT :max_candidates
+            ORDER BY c.document_id, c.chunk_index, c.id
         """
         result = await self.db.execute(text(sql), params)
         rows = [
@@ -579,13 +625,6 @@ class RagRepository:
             }
             for row in result.mappings().all()
         ]
-        if len(rows) >= params["max_candidates"]:
-            logger.warning(
-                "JSON embedding fallback hit candidate cap (%s) for user=%s",
-                params["max_candidates"],
-                user_id,
-            )
-
         def build_match(row: dict, score: float) -> RetrievedChunk:
             meta = json.loads(row["metadata_json"] or "{}")
             return RetrievedChunk(
@@ -620,11 +659,13 @@ class RagRepository:
         owner_scoped: bool = True,
         exclude_parents: bool = False,
         index_revision_ids: list[str] | None = None,
+        phrase_boost: bool = False,
     ) -> list[RetrievedChunk]:
         """Independent PostgreSQL full-text lexical ranking path."""
         params: dict = {
             "query": query,
             "top_k": top_k,
+            "phrase_boost": phrase_boost,
         }
         filters = self._retrieval_scope_filters(
             user_id=user_id,
@@ -666,7 +707,11 @@ class RagRepository:
                     plainto_tsquery(language_config, :query)
                 ),
                 ts_rank_cd(simple_vector, plainto_tsquery('simple', :query))
-            ) AS score
+            ) + CASE WHEN :phrase_boost AND (
+                to_tsvector(language_config, coalesce(content, ''))
+                    @@ phraseto_tsquery(language_config, :query)
+                OR simple_vector @@ phraseto_tsquery('simple', :query)
+            ) THEN 1 ELSE 0 END AS score
             FROM scoped_chunks
             WHERE to_tsvector(language_config, coalesce(content, ''))
                 @@ plainto_tsquery(language_config, :query)
@@ -852,12 +897,16 @@ class RagRepository:
         no_matches: bool,
         injection_chunks_filtered: int,
         latency_ms: int,
+        request_id: str | None = None,
+        stage_timings: dict | None = None,
+        branch_status: dict | None = None,
     ) -> RagRetrievalTrace:
         row = RagRetrievalTrace(
             user_id=user_id,
             project_id=project_id,
             conversation_id=conversation_id,
             query=query,
+            request_id=request_id,
             intent=intent,
             scope_hash=scope_hash,
             evidence_revision_hash=evidence_revision_hash,
@@ -873,6 +922,8 @@ class RagRepository:
             no_matches=no_matches,
             injection_chunks_filtered=injection_chunks_filtered,
             latency_ms=latency_ms,
+            stage_timings_json=json.dumps(stage_timings or {}, ensure_ascii=True),
+            branch_status_json=json.dumps(branch_status or {}, ensure_ascii=True),
         )
         self.db.add(row)
         await self.db.flush()

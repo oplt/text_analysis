@@ -23,6 +23,22 @@ class EmbeddingService:
             model=self.config.embedding_model,
             texts=texts,
             embed_fn=self._adapter.embed_texts,
+            dimensions=getattr(self.config, "embedding_dimensions", None),
+            model_version=getattr(self.config, "embedding_model_version", None),
+            preprocessing_version=getattr(
+                self.config, "embedding_preprocessing_version", None
+            ),
         )
+        expected = getattr(self.config, "embedding_dimensions", None)
+        invalid = (
+            [index for index, vector in enumerate(vectors) if len(vector) != expected]
+            if isinstance(expected, int)
+            else []
+        )
+        if invalid and expected is not None:
+            raise ValueError(
+                "embedding provider returned vectors with unexpected dimension; "
+                f"expected {expected}"
+            )
         metrics.rag_embedding_latency_ms.observe((perf_counter() - started) * 1000)
         return vectors

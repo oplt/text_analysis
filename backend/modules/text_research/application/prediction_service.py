@@ -4,12 +4,15 @@ The fitted vectorizer is only ever `.transform()`-ed here — never refit —
 matching the leakage-prevention contract established during training.
 Predictions are persisted separately from human annotations.
 
-Large corpora are processed in batches (transform → upsert) so peak memory
-stays bounded; annotation filtering uses a projected unit-id query.
+Large corpora are processed via frozen selection + paged iteration so peak
+memory stays bounded; annotation membership is snapshotted at run start so
+mid-run annotation changes cannot alter the candidate set.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import UTC, datetime
 from typing import Any
 
@@ -22,7 +25,6 @@ from backend.modules.text_research.domain.models import AnalysisRun, TextUnit, d
 from backend.modules.text_research.infrastructure import model_storage
 from backend.modules.text_research.infrastructure.classifiers import predict_with_uncertainty
 from backend.modules.text_research.infrastructure.out_of_core import (
-    iter_item_batches,
     resolve_batch_size,
     should_use_out_of_core,
 )
@@ -77,6 +79,38 @@ def _prediction_row(
     }
 
 
+def freeze_prediction_selection(
+    *,
+    corpus_id: str,
+    unit_type: str,
+    only_unannotated: bool,
+    filters: dict[str, Any] | None,
+    document_ids: list[str] | None,
+    annotated_unit_ids: set[str] | None,
+) -> dict[str, Any]:
+    """Immutable selection identity for reproducible / restartable prediction."""
+    annotated_sorted = sorted(annotated_unit_ids or ())
+    annotated_hash = (
+        hashlib.sha256(",".join(annotated_sorted).encode("utf-8")).hexdigest()
+        if annotated_sorted
+        else None
+    )
+    doc_ids = sorted(document_ids or ())
+    payload = {
+        "corpus_id": corpus_id,
+        "unit_type": unit_type,
+        "only_unannotated": bool(only_unannotated),
+        "filters": filters or {},
+        "document_ids": doc_ids,
+        "annotated_unit_ids_hash": annotated_hash,
+        "annotated_unit_count": len(annotated_sorted),
+    }
+    payload["selection_hash"] = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()
+    return payload
+
+
 class PredictionService(ResearchAccessMixin):
     async def predict(
         self,
@@ -113,9 +147,19 @@ class PredictionService(ResearchAccessMixin):
         return refreshed
 
     async def execute_prediction(self, run_id: str) -> AnalysisRun:
+        from backend.modules.text_research.application.run_lifecycle import (
+            RunCancelledError,
+            TERMINAL_RUN_STATUSES,
+            complete_if_active,
+            ensure_not_cancelled,
+            fail_if_active,
+        )
+
         run = await self.repo.get_run(run_id)
         if run is None:
             raise ValueError(f"AnalysisRun {run_id} not found")
+        if run.status in TERMINAL_RUN_STATUSES:
+            return run
         params = loads(run.parameters_json, {})
 
         await self.repo.update_run(
@@ -127,21 +171,58 @@ class PredictionService(ResearchAccessMixin):
         await self.db.commit()
 
         try:
+            run = await ensure_not_cancelled(self.repo, run)
             model = await self.repo.get_model(params["model_id"])
             if model is None:
                 raise ValueError("Trained model no longer exists")
 
+            filters = params.get("filters") or {}
             documents = await self.repo.list_documents(model.corpus_id)
-            filtered_docs = _apply_document_filters(documents, params.get("filters") or {})
-            doc_ids = [d.id for d in filtered_docs] if params.get("filters") else None
-            units = await self.repo.list_text_units_for_corpus(
-                model.corpus_id, unit_type=params["unit_type"], document_ids=doc_ids
-            )
+            filtered_docs = _apply_document_filters(documents, filters)
+            doc_ids = [d.id for d in filtered_docs] if filters else None
 
+            # Freeze only-unannotated membership at run start for reproducibility.
+            annotated_unit_ids: set[str] | None = None
             if params.get("only_unannotated"):
-                annotated_unit_ids = await self.repo.list_annotated_text_unit_ids(model.corpus_id)
-                units = [unit for unit in units if unit.id not in annotated_unit_ids]
+                frozen = params.get("selection_snapshot") or {}
+                prior_hash = frozen.get("annotated_unit_ids_hash")
+                if prior_hash and frozen.get("annotated_unit_ids"):
+                    annotated_unit_ids = set(frozen["annotated_unit_ids"])
+                else:
+                    annotated_unit_ids = await self.repo.list_annotated_text_unit_ids(
+                        model.corpus_id
+                    )
 
+            selection = freeze_prediction_selection(
+                corpus_id=model.corpus_id,
+                unit_type=params["unit_type"],
+                only_unannotated=bool(params.get("only_unannotated")),
+                filters=filters,
+                document_ids=doc_ids,
+                annotated_unit_ids=annotated_unit_ids,
+            )
+            # Persist snapshot once (restart-safe); keep annotated ids only when needed.
+            if not params.get("selection_snapshot"):
+                snapshot = dict(selection)
+                if annotated_unit_ids is not None:
+                    snapshot["annotated_unit_ids"] = sorted(annotated_unit_ids)
+                params = {**params, "selection_snapshot": snapshot}
+                await self.repo.update_run(run, parameters_json=dumps(params))
+                await self.db.commit()
+
+            exclude_ids = annotated_unit_ids if params.get("only_unannotated") else None
+            unit_count = 0
+            predicted_unit_ids: list[str] = []
+            units_predicted = 0
+
+            # Bound batch size from a count without materializing all units.
+            approx_count = await self.repo.count_text_units_for_corpus(
+                model.corpus_id, unit_type=params["unit_type"]
+            )
+            batch_size = resolve_batch_size(approx_count)
+            use_batches = should_use_out_of_core(approx_count) or approx_count > batch_size
+
+            run = await ensure_not_cancelled(self.repo, run)
             vectorizer = model_storage.load_artifact(model.vectorizer_artifact_path)
             classifier = model_storage.load_artifact(model.model_artifact_path)
             label_names = loads(model.label_ids_json, [])
@@ -150,11 +231,6 @@ class PredictionService(ResearchAccessMixin):
 
             await self.repo.update_run(run, progress_stage="predicting")
             await self.db.commit()
-
-            batch_size = resolve_batch_size(len(units))
-            predicted_unit_ids: list[str] = []
-            units_predicted = 0
-            use_batches = should_use_out_of_core(len(units)) or len(units) > batch_size
 
             async def _persist_batch(
                 batch_units: list[TextUnit], batch_predictions: list[dict[str, Any]]
@@ -174,22 +250,20 @@ class PredictionService(ResearchAccessMixin):
                 predicted_unit_ids.extend(unit.id for unit in batch_units)
                 units_predicted += len(batch_units)
 
-            if units and use_batches:
-                for batch in iter_item_batches(units, batch_size):
-                    batch_list = list(batch)
-                    texts = [unit.text for unit in batch_list]
-                    batch_predictions = predict_with_uncertainty(
-                        classifier,
-                        vectorizer,
-                        texts,
-                        task_type=model.task_type,
-                        label_names=label_names,
-                        thresholds=thresholds,
-                    )
-                    await _persist_batch(batch_list, batch_predictions)
-            elif units:
-                texts = [unit.text for unit in units]
-                predictions = predict_with_uncertainty(
+            async for page in self.repo.iter_text_units_for_corpus(
+                model.corpus_id,
+                unit_type=params["unit_type"],
+                document_ids=doc_ids,
+                batch_size=batch_size,
+            ):
+                run = await ensure_not_cancelled(self.repo, run)
+                if exclude_ids is not None:
+                    page = [unit for unit in page if unit.id not in exclude_ids]
+                if not page:
+                    continue
+                unit_count += len(page)
+                texts = [unit.text for unit in page]
+                batch_predictions = predict_with_uncertainty(
                     classifier,
                     vectorizer,
                     texts,
@@ -197,9 +271,9 @@ class PredictionService(ResearchAccessMixin):
                     label_names=label_names,
                     thresholds=thresholds,
                 )
-                await self.repo.update_run(run, progress_stage="saving")
-                await _persist_batch(units, predictions)
+                await _persist_batch(list(page), batch_predictions)
 
+            run = await ensure_not_cancelled(self.repo, run)
             await self.repo.update_run(run, progress_stage="saving")
             from backend.modules.text_research.application.prediction_set_service import (
                 PredictionSetService,
@@ -208,29 +282,40 @@ class PredictionService(ResearchAccessMixin):
             prediction_set = await PredictionSetService(self.db).create_from_run(
                 run=run,
                 model=model,
-                unit_ids=predicted_unit_ids or [unit.id for unit in units],
+                unit_ids=predicted_unit_ids,
                 created_by=run.created_by,
+                extra_metadata={"selection_snapshot": params.get("selection_snapshot")},
             )
 
-            await self.repo.update_run(
+            run = await ensure_not_cancelled(self.repo, run)
+            await complete_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 completed_at=_utcnow(),
-                metrics_json=dumps({"units_predicted": units_predicted}),
+                metrics_json=dumps(
+                    {
+                        "units_predicted": units_predicted,
+                        "units_selected": unit_count,
+                        "selection_hash": selection.get("selection_hash"),
+                    }
+                ),
                 results_json=dumps(
                     {
                         "unit_count": units_predicted,
                         "prediction_set_id": prediction_set.id,
-                        "batch_size": batch_size if use_batches else len(units),
+                        "batch_size": batch_size if use_batches else max(unit_count, 1),
+                        "selection_hash": selection.get("selection_hash"),
                     }
                 ),
             )
             await self.db.commit()
+        except RunCancelledError:
+            await self.db.commit()
         except Exception as exc:  # noqa: BLE001
-            await self.repo.update_run(
+            await fail_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.FAILED.value,
                 completed_at=_utcnow(),
                 error_message=str(exc),
             )

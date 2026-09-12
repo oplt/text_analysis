@@ -4,6 +4,7 @@ import asyncio
 from uuid import uuid4
 
 from backend.lib.vectors import estimate_tokens
+from backend.modules.rag.application.chunk_policy import resolve_chunk_policy
 from backend.modules.rag.domain.models import DocumentChunk, ParsedDocument
 from backend.modules.rag.infrastructure.langchain_text_splitters import split_documents
 from backend.modules.rag.infrastructure.rag_config import RagConfig
@@ -12,19 +13,22 @@ from backend.modules.rag.infrastructure.rag_config import RagConfig
 def _split_documents_with_token_counts(
     documents: list[ParsedDocument],
     *,
-    chunk_size: int,
-    chunk_overlap: int,
+    config,
     document_revision: str | None = None,
 ) -> list[tuple[str, int, dict]]:
-    return [
-        (content, estimate_tokens(content), meta)
-        for content, meta in split_documents(
-            documents,
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap,
-            document_revision=document_revision,
+    pieces: list[tuple[str, int, dict]] = []
+    for document in documents:
+        policy = resolve_chunk_policy(document, config)
+        pieces.extend(
+            (content, estimate_tokens(content), {**meta, "chunk_policy_version": policy.version})
+            for content, meta in split_documents(
+                [document],
+                chunk_size=policy.target_tokens,
+                chunk_overlap=policy.overlap_tokens,
+                document_revision=document_revision,
+            )
         )
-    ]
+    return pieces
 
 
 def _attach_parent_windows(
@@ -38,8 +42,23 @@ def _attach_parent_windows(
 
     out: list[DocumentChunk] = []
     parents: list[DocumentChunk] = []
-    for start in range(0, len(leaves), window):
-        group = leaves[start : start + window]
+    groups: list[list[DocumentChunk]] = []
+    current: list[DocumentChunk] = []
+    current_boundary: str | None = None
+    for leaf in leaves:
+        boundary = leaf.metadata.get("structural_parent_id") or "|".join(
+            str(leaf.metadata.get(key) or "")
+            for key in ("offset_scope", "offset_scope_id")
+        )
+        if current and (boundary != current_boundary or len(current) >= window):
+            groups.append(current)
+            current = []
+        current.append(leaf)
+        current_boundary = boundary
+    if current:
+        groups.append(current)
+
+    for parent_number, group in enumerate(groups, start=1):
         parent_id = str(uuid4())
         parent_content = _merge_non_overlapping_chunks(group)
         first = group[0]
@@ -52,7 +71,7 @@ def _attach_parent_windows(
             id=parent_id,
             document_id=first.document_id,
             user_id=first.user_id,
-            chunk_index=-(start // window + 1),  # negative index marks parent rows
+            chunk_index=-parent_number,  # negative index marks parent rows
             content=parent_content,
             token_count=estimate_tokens(parent_content),
             organization_id=first.organization_id,
@@ -74,6 +93,15 @@ def _attach_parent_windows(
                 "block_ids": list(dict.fromkeys(source_span_ids)),
                 "char_start": first.metadata.get("char_start"),
                 "char_end": group[-1].metadata.get("char_end"),
+                "offset_scope": first.metadata.get("offset_scope"),
+                "offset_scope_id": first.metadata.get("offset_scope_id"),
+                "offset_coordinate_system": first.metadata.get("offset_coordinate_system"),
+                "source_spans": [
+                    span
+                    for child in group
+                    for span in child.metadata.get("source_spans") or []
+                ],
+                "structural_parent_id": first.metadata.get("structural_parent_id"),
                 "page_numbers": list(
                     dict.fromkeys(
                         child.metadata.get("page_number")
@@ -136,8 +164,7 @@ class ChunkingService:
         pieces = await asyncio.to_thread(
             _split_documents_with_token_counts,
             documents,
-            chunk_size=self.config.chunk_size,
-            chunk_overlap=self.config.chunk_overlap,
+            config=self.config,
             document_revision=document_revision,
         )
         chunks: list[DocumentChunk] = []
@@ -173,6 +200,11 @@ class ChunkingService:
                         "block_ids": meta.get("block_ids"),
                         "content_hash": content_hash,
                         "offset_coordinate_system": meta.get("offset_coordinate_system"),
+                        "offset_scope": meta.get("offset_scope"),
+                        "offset_scope_id": meta.get("offset_scope_id"),
+                        "source_spans": meta.get("source_spans"),
+                        "chunk_policy_version": meta.get("chunk_policy_version"),
+                        "structural_parent_id": meta.get("structural_parent_id"),
                         "parser_version": getattr(self.config, "parser_version", None),
                         "chunker_version": getattr(self.config, "chunker_version", None),
                         "embedding_provider": getattr(self.config, "embedding_provider", None),
@@ -194,13 +226,20 @@ class ChunkingService:
                                 "source_unit_ids",
                                 "block_ids",
                                 "offset_coordinate_system",
+                                "offset_scope",
+                                "offset_scope_id",
+                                "source_spans",
+                                "chunk_policy_version",
+                                "structural_parent_id",
                             }
                         },
                     },
                 )
             )
         if getattr(self.config, "parent_context_enabled", False):
-            chunks = _attach_parent_windows(chunks, window=3)
+            chunks = _attach_parent_windows(
+                chunks, window=getattr(self.config, "parent_window_size", 3)
+            )
             # Re-number leaf chunk_index ascending for retrieval display; keep parents negative.
             leaf_index = 0
             for chunk in chunks:

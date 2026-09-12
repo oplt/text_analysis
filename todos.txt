@@ -1,0 +1,26 @@
+RAG:
+TECHNICAL DEBT / FUTURE RESEARCH
+================================
+
+These items MUST NOT block the production-quality architecture above and should only be pursued
+against the end-to-end benchmark:
+
+1. Weighted RRF. Current pure RRF is explicit and robust. Evaluate branch weighting per query
+   profile only after qrels are large enough to avoid overfitting.
+2. Learned fusion. Do not introduce until there is sufficient labeled retrieval data and a stable
+   feature/provenance contract.
+3. ColBERT / late interaction. Consider only if dense+FTS+rerank cannot meet recall on long or
+   fine-grained academic passages within latency/cost targets.
+4. GraphRAG / knowledge graphs. Consider only for demonstrated multi-hop/entity-relation research
+   questions; do not replace canonical text provenance.
+5. Contextual chunk embeddings. Evaluate against current structure-v1 baseline; retain exact source
+   spans and embedding identity.
+6. Adaptive retrieval / routing models. Prefer explicit rules first; learned routing requires
+   benchmark evidence and inspectable fallback.
+7. Self-RAG / CRAG. Treat as experimental orchestration, not a substitute for revision/ACL/citation
+   correctness.
+8. Semantic caching. Only after retrieval cache provenance is correct; never cache across evidence
+   revisions or authorization scopes.
+9. Citation entailment model. Tracked as RAG-P3-026; optional after structural guarantees.
+10. Provider-based LLM reranking. Keep optional due latency, cost and reproducibility concerns.
+

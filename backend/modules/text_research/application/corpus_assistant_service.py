@@ -13,9 +13,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.identity_access.models import User
+from backend.modules.rag.application.evidence_revision import StaleEvidenceRevisionError
 from backend.modules.rag.application.rag_answer_service import RagAnswerService
 from backend.modules.rag.application.retrieval_service import RetrievalService
-from backend.modules.rag.domain.enums import MessageRole, RetrievalIntent
+from backend.modules.rag.domain.enums import MessageRole
 from backend.modules.rag.infrastructure.rag_config import RagConfig
 from backend.modules.rag.infrastructure.repositories import RagRepository
 from backend.modules.text_research.application.access import ResearchAccessMixin
@@ -28,7 +29,6 @@ from backend.modules.text_research.application.corpus_scope_service import (
 )
 from backend.modules.text_research.domain.enums import AssistantScopeMode
 from backend.modules.text_research.domain.models import (
-    CorpusDocument,
     ResearchAssistantScopeSnapshot,
     ResearchAssistantThread,
 )
@@ -143,31 +143,50 @@ class CorpusAssistantService(ResearchAccessMixin):
                 "owner_scoped": False,
                 "retrieval_mode": retrieval_mode or "hybrid",
             },
-            intent=intent or RetrievalIntent.SEMANTIC_SEARCH,
+            intent=intent,
             persist_trace=True,
             evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
         )
         return scope, outcome
 
-    async def _rag_to_corpus_document_map(self, corpus_id: str) -> dict[str, str]:
-        result = await self.db.execute(
-            select(CorpusDocument).where(CorpusDocument.corpus_id == corpus_id)
-        )
-        docs = list(result.scalars().all())
-        return {d.rag_document_id: d.id for d in docs if d.rag_document_id}
+    @staticmethod
+    async def _rag_to_corpus_document_map(scope: CorpusScopeSnapshot) -> dict[str, str]:
+        """Resolve citations only through the immutable scope binding."""
+        return {
+            binding.rag_document_id: binding.corpus_document_id
+            for binding in scope.document_bindings
+            if binding.availability == "indexed" and binding.rag_document_id
+        }
 
     def _enrich_citations(
         self,
         citations: list,
         *,
         rag_to_corpus: dict[str, str],
+        revision_by_document: dict[str, str] | None = None,
     ) -> list[dict]:
         enriched: list[dict] = []
+        revision_map = revision_by_document or {}
         for c in citations:
+            corpus_document_id = rag_to_corpus.get(c.document_id)
+            if corpus_document_id is None:
+                # Never substitute a current corpus document for a citation outside
+                # the frozen scope / revision binding.
+                raise HTTPException(
+                    status_code=409,
+                    detail="historical_source_unavailable",
+                )
+            index_revision_id = getattr(c, "index_revision_id", None) or revision_map.get(
+                c.document_id
+            )
+            source_status = getattr(c, "source_status", None)
+            if revision_map and not index_revision_id:
+                # Missing frozen revision must not reopen as the live document.
+                source_status = "historical_source_unavailable"
             enriched.append(
                 {
                     "document_id": c.document_id,
-                    "corpus_document_id": rag_to_corpus.get(c.document_id),
+                    "corpus_document_id": corpus_document_id,
                     "chunk_id": c.chunk_id,
                     "filename": c.filename,
                     "score": c.score,
@@ -183,6 +202,10 @@ class CorpusAssistantService(ResearchAccessMixin):
                     "parent_context_id": getattr(c, "parent_context_id", None),
                     "offset_coordinate_system": getattr(c, "offset_coordinate_system", None),
                     "offset_scope": getattr(c, "offset_scope", None),
+                    "offset_scope_id": getattr(c, "offset_scope_id", None),
+                    "source_spans": getattr(c, "source_spans", None),
+                    "index_revision_id": index_revision_id,
+                    "source_status": source_status,
                 }
             )
         return enriched
@@ -300,6 +323,13 @@ class CorpusAssistantService(ResearchAccessMixin):
 
         conversation_id = thread.rag_conversation_id
 
+        frozen_revision_ids: list[str] | None = None
+        if (
+            isinstance(scope, CorpusScopeSnapshot)
+            and scope.scope_mode == AssistantScopeMode.FIXED.value
+        ):
+            frozen_revision_ids = await self.scope_service.frozen_revision_ids(scope)
+
         # Load prior turns BEFORE writing the new user message (no cross-thread leakage).
         prior_messages, _ = await self.rag_repo.list_messages(conversation_id, limit=100)
         ctx = self.conversation_context.build(
@@ -334,19 +364,27 @@ class CorpusAssistantService(ResearchAccessMixin):
         try:
             # I4: exactly one retrieve (resolved query), then answer_from_retrieval
             await emit("retrieval_started")
-            outcome = await self.retrieval.retrieve(
-                ctx.resolved_retrieval_query,
-                user_id=user.id,
-                project_id=scope.project_id,
-                filters={
-                    "document_ids": list(scope.rag_document_ids),
-                    "owner_scoped": False,
-                },
-                intent=intent or RetrievalIntent.EVIDENCE,
-                conversation_id=conversation_id,
-                persist_trace=True,
-                evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
-            )
+            try:
+                outcome = await self.retrieval.retrieve(
+                    ctx.resolved_retrieval_query,
+                    user_id=user.id,
+                    project_id=scope.project_id,
+                    filters={
+                        "document_ids": list(scope.rag_document_ids),
+                        "owner_scoped": False,
+                        **(
+                            {"index_revision_ids": frozen_revision_ids}
+                            if frozen_revision_ids is not None
+                            else {}
+                        ),
+                    },
+                    intent=intent,
+                    conversation_id=conversation_id,
+                    persist_trace=True,
+                    evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
+                )
+            except StaleEvidenceRevisionError as exc:
+                raise HTTPException(status_code=409, detail=str(exc)) from exc
             retrieval_completed = True
             await emit(
                 "retrieval_complete",
@@ -374,8 +412,19 @@ class CorpusAssistantService(ResearchAccessMixin):
                 {"status": answer.citation_validation_status},
             )
 
-            rag_to_corpus = await self._rag_to_corpus_document_map(corpus_id)
-            citation_payload = self._enrich_citations(answer.citations, rag_to_corpus=rag_to_corpus)
+            rag_to_corpus = await self._rag_to_corpus_document_map(scope)
+            revision_by_document = {
+                binding.rag_document_id: binding.index_revision_id
+                for binding in scope.document_bindings
+                if binding.availability == "indexed"
+                and binding.rag_document_id
+                and binding.index_revision_id
+            }
+            citation_payload = self._enrich_citations(
+                answer.citations,
+                rag_to_corpus=rag_to_corpus,
+                revision_by_document=revision_by_document,
+            )
 
             assistant_message = await self.rag_repo.create_message(
                 conversation_id=conversation_id,

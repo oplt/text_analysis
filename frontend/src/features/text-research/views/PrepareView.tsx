@@ -151,13 +151,13 @@ export default function PrepareView() {
 
     const dashboardQuery = useQuery({
         queryKey: queryKeys.textResearch.dashboard(ctx.selectedCorpusId),
-        queryFn: () => getDashboardSummary(ctx.selectedCorpusId),
+        queryFn: ({ signal }) => getDashboardSummary(ctx.selectedCorpusId, signal),
         enabled: Boolean(ctx.selectedCorpusId),
     });
 
     const runQuery = useQuery({
         queryKey: queryKeys.textResearch.run(runId ?? ""),
-        queryFn: () => getRun(runId!),
+        queryFn: ({ signal }) => getRun(runId!, signal),
         enabled: Boolean(runId),
         refetchInterval: (query) => {
             const status = query.state.data?.status;
@@ -173,13 +173,12 @@ export default function PrepareView() {
             ctx.selectedCorpusId,
             "segmentation"
         ),
-        queryFn: () =>
-            listRuns(ctx.projectId, {
+        queryFn: ({ signal }) => listRuns(ctx.projectId, {
                 corpus_id: ctx.selectedCorpusId,
                 run_type: "segmentation",
                 limit: 5,
                 offset: 0,
-            }),
+            }, signal),
         enabled: Boolean(ctx.projectId && ctx.selectedCorpusId),
     });
 

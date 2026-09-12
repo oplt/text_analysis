@@ -52,6 +52,8 @@ class CorpusSelection(BaseModel):
 class PreprocessingSpec(BaseModel):
     preprocessing_profile_id: str | None = None
     cleaning_profile_id: str | None = None
+    # Resolved config fingerprint — not the mutable DB profile alone.
+    preprocessing_config_hash: str | None = None
 
 
 class FeatureSelectionSpec(BaseModel):
@@ -137,7 +139,7 @@ class AnalysisSpecification(BaseModel):
     def normalize(self) -> AnalysisSpecification:
         """Return a canonical copy with stable key ordering and defaults filled."""
         payload = self.model_dump()
-        payload["corpus"]["filters"] = _sort_dict_deep(payload["corpus"]["filters"])
+        payload["corpus"]["filters"] = normalize_corpus_filters(payload["corpus"]["filters"])
         payload["analysis"]["parameters"] = _sort_dict_deep(payload["analysis"]["parameters"])
         payload["feature_extraction"] = _sort_dict_deep(payload["feature_extraction"])
         if payload.get("model"):
@@ -200,11 +202,13 @@ class AnalysisSpecification(BaseModel):
 
     def to_run_parameters(self) -> dict[str, Any]:
         """Flatten into AnalysisRun.parameters_json-compatible dict."""
-        payload = self.normalize().model_dump(mode="json")
-        payload["filters"] = self.corpus.filters
-        payload["unit_type"] = self.corpus.unit_type
-        payload["preprocessing_profile_id"] = self.preprocessing.preprocessing_profile_id
-        payload["cleaning_profile_id"] = self.preprocessing.cleaning_profile_id
+        normalized = self.normalize()
+        payload = normalized.model_dump(mode="json")
+        payload["filters"] = dict(normalized.corpus.filters)
+        payload["unit_type"] = normalized.corpus.unit_type
+        payload["preprocessing_profile_id"] = normalized.preprocessing.preprocessing_profile_id
+        payload["cleaning_profile_id"] = normalized.preprocessing.cleaning_profile_id
+        payload["preprocessing_config_hash"] = normalized.preprocessing.preprocessing_config_hash
         return payload
 
     @classmethod
@@ -217,6 +221,7 @@ class AnalysisSpecification(BaseModel):
         filters: dict[str, Any] | None = None,
         preprocessing_profile_id: str | None = None,
         cleaning_profile_id: str | None = None,
+        preprocessing_config_hash: str | None = None,
         snapshot_id: str | None = None,
         language_mode: Literal["auto", "manual"] = "auto",
         feature: dict[str, Any] | None = None,
@@ -232,12 +237,13 @@ class AnalysisSpecification(BaseModel):
                 corpus_id=corpus_id,
                 snapshot_id=snapshot_id,
                 unit_type=unit_type,
-                filters=filters or {},
+                filters=normalize_corpus_filters(filters),
                 language_mode=language_mode,
             ),
             preprocessing=PreprocessingSpec(
                 preprocessing_profile_id=preprocessing_profile_id,
                 cleaning_profile_id=cleaning_profile_id,
+                preprocessing_config_hash=preprocessing_config_hash,
             ),
             feature_extraction=FeatureExtractionSpec(**(feature or {})),
             analysis=AnalysisBlock(
@@ -252,6 +258,58 @@ class AnalysisSpecification(BaseModel):
         )
 
 
+_FILTER_KEY_ALIASES: dict[str, str] = {
+    "year": "publication_year",
+    "year_min": "publication_year_min",
+    "year_max": "publication_year_max",
+}
+
+_FILTER_INT_KEYS: frozenset[str] = frozenset(
+    {
+        "publication_year",
+        "publication_year_min",
+        "publication_year_max",
+    }
+)
+
+
+def normalize_corpus_filters(filters: dict[str, Any] | None) -> dict[str, Any]:
+    """Canonicalize corpus selection filters for stable hashing.
+
+    - Drops null values
+    - Maps year aliases onto publication_year*
+    - Coerces year fields to int when possible
+    - Sorts list values (e.g. document_ids)
+    - Deep-sorts keys
+    """
+    if not filters:
+        return {}
+    normalized: dict[str, Any] = {}
+    for key, value in filters.items():
+        if value is None:
+            continue
+        canon = _FILTER_KEY_ALIASES.get(key, key)
+        if canon in _FILTER_INT_KEYS:
+            try:
+                value = int(value)
+            except (TypeError, ValueError):
+                pass
+        elif isinstance(value, list):
+            value = sorted((_normalize_filter_list_item(item) for item in value), key=str)
+        elif isinstance(value, str):
+            value = value.strip()
+            if not value:
+                continue
+        normalized[canon] = value
+    return _sort_dict_deep(normalized)
+
+
+def _normalize_filter_list_item(value: Any) -> Any:
+    if isinstance(value, str):
+        return value.strip()
+    return value
+
+
 def _canonical_analysis_type(analysis_type: str) -> str:
     normalized = analysis_type.strip().lower()
     return ANALYSIS_TYPE_ALIASES.get(normalized, normalized)
@@ -263,3 +321,16 @@ def _sort_dict_deep(value: Any) -> Any:
     if isinstance(value, list):
         return [_sort_dict_deep(item) for item in value]
     return value
+
+
+def preprocessing_config_fingerprint(config: dict[str, Any] | None) -> str | None:
+    """Stable hash of a resolved preprocessing configuration dict."""
+    if not config:
+        return None
+    canonical = json.dumps(
+        _sort_dict_deep(config),
+        sort_keys=True,
+        separators=(",", ":"),
+        default=str,
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()

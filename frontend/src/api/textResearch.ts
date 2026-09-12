@@ -172,12 +172,18 @@ export async function createCorpus(
     });
 }
 
-export async function listCorpora(projectId: string): Promise<ResearchCorpus[]> {
-    return apiFetch(`${BASE}/projects/${projectId}/corpora`);
+export async function listCorpora(
+    projectId: string,
+    signal?: AbortSignal
+): Promise<ResearchCorpus[]> {
+    return apiFetch(`${BASE}/projects/${projectId}/corpora`, { signal });
 }
 
-export async function getCorpus(corpusId: string): Promise<ResearchCorpus> {
-    return apiFetch(`${BASE}/corpora/${corpusId}`);
+export async function getCorpus(
+    corpusId: string,
+    signal?: AbortSignal
+): Promise<ResearchCorpus> {
+    return apiFetch(`${BASE}/corpora/${corpusId}`, { signal });
 }
 
 export async function updateCorpus(
@@ -231,8 +237,11 @@ export async function listDocuments(
     return apiFetch(`${BASE}/corpora/${corpusId}/documents${qs ? `?${qs}` : ""}`, { signal });
 }
 
-export async function getDocument(documentId: string): Promise<CorpusDocument> {
-    return apiFetch(`${BASE}/documents/${documentId}`);
+export async function getDocument(
+    documentId: string,
+    signal?: AbortSignal
+): Promise<CorpusDocument> {
+    return apiFetch(`${BASE}/documents/${documentId}`, { signal });
 }
 
 export async function addDocument(
@@ -366,8 +375,11 @@ export async function createCodebook(
     });
 }
 
-export async function listCodebooks(projectId: string): Promise<Codebook[]> {
-    return apiFetch(`${BASE}/projects/${projectId}/codebooks`);
+export async function listCodebooks(
+    projectId: string,
+    signal?: AbortSignal
+): Promise<Codebook[]> {
+    return apiFetch(`${BASE}/projects/${projectId}/codebooks`, { signal });
 }
 
 export async function getCodebook(codebookId: string): Promise<Codebook> {
@@ -418,13 +430,14 @@ export async function updateLabel(
 
 export async function listAnnotationQueue(
     status?: string,
-    params: { limit?: number; offset?: number } = {}
+    params: { limit?: number; offset?: number } = {},
+    signal?: AbortSignal
 ): Promise<Paginated<AnnotationQueueItem>> {
     const search = new URLSearchParams();
     if (status) search.set("status", status);
     if (params.limit !== undefined) search.set("limit", String(params.limit));
     if (params.offset !== undefined) search.set("offset", String(params.offset));
-    return apiFetch(`${BASE}/annotations/queue${search.size ? `?${search}` : ""}`);
+    return apiFetch(`${BASE}/annotations/queue${search.size ? `?${search}` : ""}`, { signal });
 }
 
 export async function assignCorpusAnnotationTasks(
@@ -687,8 +700,11 @@ export async function listCampaignAdjudications(
 export type CorpusFilterParams = {
     organization?: string;
     organization_type?: string;
+    /** Exact year facet (MetadataFilterBar); also supports min/max range below. */
+    publication_year?: number;
     publication_year_min?: number;
     publication_year_max?: number;
+    country?: string;
     region?: string;
     cultural_sphere?: string;
     language?: string;
@@ -762,7 +778,10 @@ export async function runKwic(
         window_size?: number;
         case_sensitive?: boolean;
         query_mode?: string;
-        language?: string;
+        /** Lemma / linguistic query language (not a corpus metadata filter). */
+        query_language?: string;
+        /** Alias for query_language. */
+        kwic_language?: string;
         token_attribute?: string;
         max_matches?: number;
     }
@@ -858,8 +877,11 @@ export type ResearchDictionary = {
     created_at: string;
 };
 
-export async function listDictionaries(projectId: string): Promise<ResearchDictionary[]> {
-    return apiFetch(`${BASE}/projects/${projectId}/dictionaries`);
+export async function listDictionaries(
+    projectId: string,
+    signal?: AbortSignal
+): Promise<ResearchDictionary[]> {
+    return apiFetch(`${BASE}/projects/${projectId}/dictionaries`, { signal });
 }
 
 export async function createDictionary(
@@ -908,8 +930,11 @@ export async function createDictionaryVersion(dictionaryId: string): Promise<Res
 
 export type MetadataFacets = Record<string, Array<{ value: string; count: number }>>;
 
-export async function getCorpusMetadataFacets(corpusId: string): Promise<MetadataFacets> {
-    return apiFetch(`${BASE}/corpora/${corpusId}/facets`);
+export async function getCorpusMetadataFacets(
+    corpusId: string,
+    signal?: AbortSignal
+): Promise<MetadataFacets> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/facets`, { signal });
 }
 
 // ------------------------------------------------------------------
@@ -1007,7 +1032,11 @@ export async function getClassifierCoefficients(
 
 export async function predictClassifier(
     modelId: string,
-    payload: { unit_type: UnitType; only_unannotated?: boolean }
+    payload: {
+        unit_type: UnitType;
+        only_unannotated?: boolean;
+        filters?: CorpusFilterParams & Record<string, unknown>;
+    }
 ): Promise<AnalysisRun> {
     return apiFetch(`${BASE}/classifiers/${modelId}/predict`, {
         method: "POST",
@@ -1064,24 +1093,26 @@ export async function assignUncertainPredictions(
 export async function listClassifiers(
     projectId: string,
     corpusId?: string,
-    lifecycleStatus?: string
+    lifecycleStatus?: string,
+    signal?: AbortSignal
 ): Promise<TrainedModel[]> {
     const search = new URLSearchParams();
     if (corpusId) search.set("corpus_id", corpusId);
     if (lifecycleStatus) search.set("lifecycle_status", lifecycleStatus);
     const qs = search.toString() ? `?${search}` : "";
-    return apiFetch(`${BASE}/projects/${projectId}/classifiers${qs}`);
+    return apiFetch(`${BASE}/projects/${projectId}/classifiers${qs}`, { signal });
 }
 
 export async function listModels(
     projectId: string,
-    options: { corpusId?: string; lifecycleStatus?: string } = {}
+    options: { corpusId?: string; lifecycleStatus?: string } = {},
+    signal?: AbortSignal
 ): Promise<TrainedModel[]> {
     const search = new URLSearchParams();
     if (options.corpusId) search.set("corpus_id", options.corpusId);
     if (options.lifecycleStatus) search.set("lifecycle_status", options.lifecycleStatus);
     const qs = search.toString() ? `?${search}` : "";
-    return apiFetch(`${BASE}/projects/${projectId}/models${qs}`);
+    return apiFetch(`${BASE}/projects/${projectId}/models${qs}`, { signal });
 }
 
 export async function getClassifier(modelId: string): Promise<TrainedModel> {
@@ -1259,10 +1290,11 @@ export async function compareClassifierDrift(
 
 export async function listDatasetSnapshots(
     projectId: string,
-    corpusId?: string
+    corpusId?: string,
+    signal?: AbortSignal
 ): Promise<TrainingDatasetSnapshot[]> {
     const qs = corpusId ? `?corpus_id=${encodeURIComponent(corpusId)}` : "";
-    return apiFetch(`${BASE}/projects/${projectId}/dataset-snapshots${qs}`);
+    return apiFetch(`${BASE}/projects/${projectId}/dataset-snapshots${qs}`, { signal });
 }
 
 export async function freezeDataset(payload: {
@@ -1496,13 +1528,17 @@ export async function compareMeasurements(
 // Dashboard & runs
 // ------------------------------------------------------------------
 
-export async function getDashboardSummary(corpusId: string): Promise<DashboardSummary> {
-    return apiFetch(`${BASE}/corpora/${corpusId}/dashboard`);
+export async function getDashboardSummary(
+    corpusId: string,
+    signal?: AbortSignal
+): Promise<DashboardSummary> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/dashboard`, { signal });
 }
 
 export async function listRuns(
     projectId: string,
-    params?: { corpus_id?: string; run_type?: string; limit?: number; offset?: number }
+    params?: { corpus_id?: string; run_type?: string; limit?: number; offset?: number },
+    signal?: AbortSignal
 ): Promise<Paginated<AnalysisRun>> {
     const search = new URLSearchParams();
     if (params?.corpus_id) search.set("corpus_id", params.corpus_id);
@@ -1510,11 +1546,11 @@ export async function listRuns(
     if (params?.limit != null) search.set("limit", String(params.limit));
     if (params?.offset != null) search.set("offset", String(params.offset));
     const qs = search.toString();
-    return apiFetch(`${BASE}/projects/${projectId}/runs${qs ? `?${qs}` : ""}`);
+    return apiFetch(`${BASE}/projects/${projectId}/runs${qs ? `?${qs}` : ""}`, { signal });
 }
 
-export async function getRun(runId: string): Promise<AnalysisRun> {
-    return apiFetch(`${BASE}/runs/${runId}`);
+export async function getRun(runId: string, signal?: AbortSignal): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/runs/${runId}`, { signal });
 }
 
 export type ClonedRunParameters = {
@@ -1546,8 +1582,11 @@ export type RunProvenance = {
     runtime_now: Record<string, unknown>;
 };
 
-export async function getRunProvenance(runId: string): Promise<RunProvenance> {
-    return apiFetch(`${BASE}/runs/${runId}/provenance`);
+export async function getRunProvenance(
+    runId: string,
+    signal?: AbortSignal
+): Promise<RunProvenance> {
+    return apiFetch(`${BASE}/runs/${runId}/provenance`, { signal });
 }
 
 export async function rerunRun(runId: string, run_async = true): Promise<AnalysisRun> {
@@ -1603,16 +1642,22 @@ export async function exportRunJson(runId: string): Promise<unknown> {
 // Exports
 // ------------------------------------------------------------------
 
-export async function getExportManifest(corpusId: string): Promise<ExportManifest> {
-    return apiFetch(`${BASE}/corpora/${corpusId}/export/manifest`);
+export async function getExportManifest(
+    corpusId: string,
+    signal?: AbortSignal
+): Promise<ExportManifest> {
+    return apiFetch(`${BASE}/corpora/${corpusId}/export/manifest`, { signal });
 }
 
 export async function getQuantedaScript(corpusId: string): Promise<{ script: string }> {
     return apiFetch(`${BASE}/corpora/${corpusId}/export/quanteda-script`);
 }
 
-export async function listPreprocessingProfiles(projectId: string): Promise<PreprocessingProfile[]> {
-    return apiFetch(`${BASE}/projects/${projectId}/preprocessing-profiles`);
+export async function listPreprocessingProfiles(
+    projectId: string,
+    signal?: AbortSignal
+): Promise<PreprocessingProfile[]> {
+    return apiFetch(`${BASE}/projects/${projectId}/preprocessing-profiles`, { signal });
 }
 
 export type PreprocessingConfigPayload = {
@@ -1863,9 +1908,12 @@ export type AssistantScope = {
     unavailable_count: number;
     unavailable_corpus_document_ids: string[];
     unavailable_reasons: Record<string, string>;
+    /** Canonical corpus/RAG identity mapping (document_bindings is legacy). */
+    documents: CorpusScopeDocumentBinding[];
     document_bindings: CorpusScopeDocumentBinding[];
     warnings: string[];
     scope_mode: "fixed" | "live";
+    mapping_status?: "ok" | "unverifiable";
 };
 
 export type CorpusScopeDocumentBinding = {
@@ -1895,7 +1943,11 @@ export type AssistantCitation = {
     source_span_ids?: string[] | null;
     offset_coordinate_system?: string | null;
     offset_scope?: "parsed_document" | "page" | "canonical_document" | null;
+    offset_scope_id?: string | null;
+    source_spans?: Array<Record<string, unknown>> | null;
     parent_context_id?: string | null;
+    index_revision_id?: string | null;
+    source_status?: string | null;
 };
 
 export type AssistantClaim = {

@@ -2,14 +2,17 @@ import type { ReactNode } from "react";
 import { Alert, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
+import { useResearchContext } from "../hooks/useResearchContext";
 import { isActiveRunStatus } from "../runPolling";
 import type { AnalysisRun } from "../types";
+import { ActiveRunActions } from "./ActiveRunActions";
 import { ResultsInspector } from "./ResearchCharts";
 import { ResearchResultsTable } from "./ResearchResults";
 import { RunStatusChip } from "./ResearchShared";
 import { asRecord } from "./advancedAnalysisUtils";
 
 function ResultOutput({ run }: { run: AnalysisRun | undefined }) {
+    const ctx = useResearchContext();
     if (!run) return null;
     const results = asRecord(run.results);
     const firstArray = Object.values(results ?? {}).find((value) => Array.isArray(value)) as
@@ -34,10 +37,17 @@ function ResultOutput({ run }: { run: AnalysisRun | undefined }) {
         : [];
     return (
         <Stack spacing={1.5}>
-            <Typography variant="body2">
-                Run <RunStatusChip status={run.status} />{" "}
-                {run.progress_stage ? ` · ${run.progress_stage}` : ""}
-            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                <Typography variant="body2">
+                    Run <RunStatusChip status={run.status} />{" "}
+                    {run.progress_stage ? ` · ${run.progress_stage}` : ""}
+                </Typography>
+                <ActiveRunActions
+                    run={run}
+                    projectId={ctx.projectId}
+                    corpusId={ctx.selectedCorpusId}
+                />
+            </Stack>
             {run.error_message ? <Alert severity="error">{run.error_message}</Alert> : null}
             {isActiveRunStatus(run.status) ? (
                 <Typography color="text.secondary">Analysis in progress…</Typography>

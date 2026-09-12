@@ -9,7 +9,7 @@ const FIELDS = ["organization", "organization_type", "publication_year", "countr
 export function MetadataFilterBar({ corpusId, value, onChange }: { corpusId: string; value: Record<string, string>; onChange: (value: Record<string, string>) => void }) {
     const facets = useQuery({
         queryKey: queryKeys.textResearch.metadataFacets(corpusId),
-        queryFn: () => getCorpusMetadataFacets(corpusId),
+        queryFn: ({ signal }) => getCorpusMetadataFacets(corpusId, signal),
         enabled: Boolean(corpusId),
         staleTime: QUERY_STALE_TIMES.researchMetadataFacets,
     });

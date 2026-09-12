@@ -224,10 +224,18 @@ class TopicModelService(ResearchAccessMixin):
         return refreshed
 
     async def execute_training(self, run_id: str) -> AnalysisRun:
+        from backend.modules.text_research.application.run_lifecycle import (
+            RunCancelledError,
+            TERMINAL_RUN_STATUSES,
+            complete_if_active,
+            ensure_not_cancelled,
+            fail_if_active,
+        )
+
         run = await self.repo.get_run(run_id)
         if run is None:
             raise ValueError(f"AnalysisRun {run_id} not found")
-        if run.status in {AnalysisRunStatus.COMPLETED.value, AnalysisRunStatus.CANCELLED.value}:
+        if run.status in TERMINAL_RUN_STATUSES:
             return run
         params = loads(run.parameters_json, {})
 
@@ -240,6 +248,7 @@ class TopicModelService(ResearchAccessMixin):
         await self.db.commit()
 
         try:
+            run = await ensure_not_cancelled(self.repo, run)
             units = await self._select_texts(
                 run.corpus_id, unit_type=params["unit_type"], filters=params.get("filters")
             )
@@ -253,6 +262,7 @@ class TopicModelService(ResearchAccessMixin):
                 if profile is not None:
                     config.update(loads(profile.config_json, {}))
 
+            run = await ensure_not_cancelled(self.repo, run)
             prepared = await prepare_texts_cached_async(
                 texts,
                 config,
@@ -278,6 +288,7 @@ class TopicModelService(ResearchAccessMixin):
 
             await self.repo.update_run(run, progress_stage="training")
             await self.db.commit()
+            run = await ensure_not_cancelled(self.repo, run)
             result = train_topic_model(
                 [unit.text for unit in train_units],
                 algorithm=params["algorithm"],
@@ -294,6 +305,7 @@ class TopicModelService(ResearchAccessMixin):
 
             await self.repo.update_run(run, progress_stage="saving")
             await self.db.commit()
+            run = await ensure_not_cancelled(self.repo, run)
             model_path, model_artifact_metadata = model_storage.save_artifact_with_metadata(
                 result["model"], category="topic_models"
             )
@@ -351,9 +363,10 @@ class TopicModelService(ResearchAccessMixin):
                 params.get("group_by"),
             )
 
-            await self.repo.update_run(
+            run = await ensure_not_cancelled(self.repo, run)
+            await complete_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 completed_at=_utcnow(),
                 artifact_path=model_path,
@@ -387,10 +400,12 @@ class TopicModelService(ResearchAccessMixin):
                 ),
             )
             await self.db.commit()
+        except RunCancelledError:
+            await self.db.commit()
         except Exception as exc:  # noqa: BLE001
-            await self.repo.update_run(
+            await fail_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.FAILED.value,
                 completed_at=_utcnow(),
                 error_message=str(exc),
             )
@@ -489,10 +504,18 @@ class TopicModelService(ResearchAccessMixin):
 
     async def execute_k_sweep(self, run_id: str) -> AnalysisRun:
         """Perform a persisted K sweep in a worker-owned database session."""
+        from backend.modules.text_research.application.run_lifecycle import (
+            RunCancelledError,
+            TERMINAL_RUN_STATUSES,
+            complete_if_active,
+            ensure_not_cancelled,
+            fail_if_active,
+        )
+
         run = await self.repo.get_run(run_id)
         if run is None:
             raise ValueError(f"AnalysisRun {run_id} not found")
-        if run.status in {AnalysisRunStatus.COMPLETED.value, AnalysisRunStatus.CANCELLED.value}:
+        if run.status in TERMINAL_RUN_STATUSES:
             return run
         params = loads(run.parameters_json, {})
         await self.repo.update_run(
@@ -503,6 +526,7 @@ class TopicModelService(ResearchAccessMixin):
         )
         await self.db.commit()
         try:
+            run = await ensure_not_cancelled(self.repo, run)
             units = await self._select_texts(
                 run.corpus_id,
                 unit_type=params["unit_type"],
@@ -538,6 +562,7 @@ class TopicModelService(ResearchAccessMixin):
                 train_texts = list(train_prepared.original_units)
             await self.repo.update_run(run, progress_stage="training")
             await self.db.commit()
+            run = await ensure_not_cancelled(self.repo, run)
             rows = k_sweep(
                 train_texts,
                 params["k_values"],
@@ -548,9 +573,10 @@ class TopicModelService(ResearchAccessMixin):
                 prepared=train_prepared,
                 holdout_texts=holdout_texts,
             )
-            await self.repo.update_run(
+            run = await ensure_not_cancelled(self.repo, run)
+            await complete_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 completed_at=_utcnow(),
                 metrics_json=dumps(
@@ -566,10 +592,12 @@ class TopicModelService(ResearchAccessMixin):
                 ),
             )
             await self.db.commit()
+        except RunCancelledError:
+            await self.db.commit()
         except Exception as exc:  # noqa: BLE001
-            await self.repo.update_run(
+            await fail_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.FAILED.value,
                 completed_at=_utcnow(),
                 error_message=str(exc),
             )
@@ -635,10 +663,18 @@ class TopicModelService(ResearchAccessMixin):
 
     async def execute_seed_stability(self, run_id: str) -> AnalysisRun:
         """Perform a persisted multi-seed stability diagnostic in a worker."""
+        from backend.modules.text_research.application.run_lifecycle import (
+            RunCancelledError,
+            TERMINAL_RUN_STATUSES,
+            complete_if_active,
+            ensure_not_cancelled,
+            fail_if_active,
+        )
+
         run = await self.repo.get_run(run_id)
         if run is None:
             raise ValueError(f"AnalysisRun {run_id} not found")
-        if run.status in {AnalysisRunStatus.COMPLETED.value, AnalysisRunStatus.CANCELLED.value}:
+        if run.status in TERMINAL_RUN_STATUSES:
             return run
         params = loads(run.parameters_json, {})
         await self.repo.update_run(
@@ -649,6 +685,7 @@ class TopicModelService(ResearchAccessMixin):
         )
         await self.db.commit()
         try:
+            run = await ensure_not_cancelled(self.repo, run)
             units = await self._select_texts(
                 run.corpus_id,
                 unit_type=params["unit_type"],
@@ -671,6 +708,7 @@ class TopicModelService(ResearchAccessMixin):
             )
             await self.repo.update_run(run, progress_stage="training")
             await self.db.commit()
+            run = await ensure_not_cancelled(self.repo, run)
             stability = seed_stability(
                 list(prepared.original_units),
                 params["seeds"],
@@ -680,9 +718,10 @@ class TopicModelService(ResearchAccessMixin):
                 max_iter=int(params.get("max_iterations") or 25),
                 prepared=prepared,
             )
-            await self.repo.update_run(
+            run = await ensure_not_cancelled(self.repo, run)
+            await complete_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 completed_at=_utcnow(),
                 metrics_json=dumps(
@@ -700,10 +739,12 @@ class TopicModelService(ResearchAccessMixin):
                 ),
             )
             await self.db.commit()
+        except RunCancelledError:
+            await self.db.commit()
         except Exception as exc:  # noqa: BLE001
-            await self.repo.update_run(
+            await fail_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.FAILED.value,
                 completed_at=_utcnow(),
                 error_message=str(exc),
             )

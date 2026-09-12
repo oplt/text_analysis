@@ -5,7 +5,25 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
+
+# Conservative server-side resource ceilings (TASK-010). Frontend HTML min/max
+# are not protection — oversized requests must fail with 422 before work starts.
+MAX_RESULT_TOP_N = 10_000
+MAX_PAIRWISE_TOP_K = 50_000
+MAX_PAIRWISE_PAIRS = 100_000
+MAX_COOCCURRENCE_WINDOW = 100
+MAX_KWIC_WINDOW = 100
+MAX_KWIC_MATCHES = 50_000
+MAX_CLUSTERS = 500
+MAX_SVD_COMPONENTS = 500
+MAX_MINHASH_PERM = 512
+MAX_STATISTICAL_ROWS = 50_000
+MAX_STATISTICAL_INDEPENDENT_VARS = 64
+MAX_MEASUREMENT_VALUES = 100_000
+MAX_EMBEDDING_ITEMS = 10_000
+MAX_EMBEDDING_DIMS = 4_096
+MAX_EMBEDDING_TOTAL_FLOATS = 5_000_000
 
 
 class ResearchCorpusCreate(BaseModel):
@@ -500,8 +518,16 @@ class TrainingDatasetSnapshotResponse(BaseModel):
 class CorpusFilters(BaseModel):
     organization: str | None = None
     organization_type: str | None = None
+    publication_year: int | None = Field(
+        default=None,
+        description="Exact publication year filter (MetadataFilterBar / exact facet match).",
+    )
     publication_year_min: int | None = None
     publication_year_max: int | None = None
+    country: str | None = Field(
+        default=None,
+        description="Exact country metadata filter (aligned with MetadataFilterBar).",
+    )
     region: str | None = None
     cultural_sphere: str | None = None
     language: str | None = None
@@ -515,7 +541,7 @@ class AnalysisRequest(CorpusFilters):
 
 
 class FrequencyRequest(AnalysisRequest):
-    top_n: int = 50
+    top_n: int = Field(default=50, ge=1, le=MAX_RESULT_TOP_N)
     rate_per: float = Field(
         default=1000,
         gt=0,
@@ -529,7 +555,7 @@ class FrequencyRequest(AnalysisRequest):
 
 class NgramRequest(AnalysisRequest):
     n: int = Field(default=2, ge=1, le=10, description="N-gram order (1=unigram … 10 max).")
-    top_n: int = 50
+    top_n: int = Field(default=50, ge=1, le=MAX_RESULT_TOP_N)
     rate_per: float = Field(
         default=1000,
         gt=0,
@@ -560,6 +586,7 @@ class DfmTrimConfig(BaseModel):
     top_n: int | None = Field(
         default=None,
         ge=1,
+        le=MAX_RESULT_TOP_N,
         description="Keep top-N features by term frequency (rank convenience).",
     )
 
@@ -593,27 +620,71 @@ class DfmRequest(AnalysisRequest):
 
 
 class KwicRequest(AnalysisRequest):
+    """KWIC request.
+
+    ``language`` (from ``CorpusFilters``) is the corpus metadata filter only.
+    Lemma / linguistic matching uses ``query_language`` (alias ``kwic_language``).
+
+    Backward compatibility: legacy clients that sent ``language`` as the KWIC
+    lemma language (with no ``query_language``) still work — ``language`` remains
+    the corpus filter, and that same value is mirrored into ``query_language``
+    when lemma mode needs it. Prefer sending ``query_language`` explicitly.
+    """
+
     keyword: str = Field(description="Query string (word, phrase, regex, or wildcard).")
-    window_size: int = Field(default=5, ge=0, description="Token context width on each side.")
+    window_size: int = Field(
+        default=5, ge=0, le=MAX_KWIC_WINDOW, description="Token context width on each side."
+    )
     case_sensitive: bool = False
     query_mode: str = Field(
         default="auto",
         description="auto | word | phrase | exact_phrase | regex | wildcard | lemma",
     )
-    language: str | None = Field(
+    query_language: str | None = Field(
         default=None,
-        description="Language code for lemma matching (required when query_mode=lemma).",
+        validation_alias=AliasChoices("query_language", "kwic_language"),
+        description=(
+            "Language code for KWIC lemma matching (required when query_mode=lemma "
+            "or token_attribute=lemma). Alias: kwic_language. Not a corpus filter — "
+            "use `language` to filter documents by metadata language."
+        ),
     )
     token_attribute: str | None = Field(
         default=None,
         description="Optional token attribute: surface (default) or lemma.",
     )
-    max_matches: int | None = Field(default=None, ge=1)
+    max_matches: int | None = Field(default=None, ge=1, le=MAX_KWIC_MATCHES)
+
+    @model_validator(mode="after")
+    def _resolve_query_language_for_lemma(self) -> KwicRequest:
+        mode = (self.query_mode or "auto").strip().lower()
+        attr = (self.token_attribute or "").strip().lower()
+        needs_query_language = mode == "lemma" or attr == "lemma"
+        if not needs_query_language:
+            return self
+        if self.query_language:
+            return self
+        # Legacy: `language` was overloaded as KWIC query/lemma language.
+        # Keep it as the corpus filter and mirror into query_language.
+        if self.language:
+            self.query_language = self.language
+            return self
+        raise ValueError(
+            "query_language (or kwic_language) is required when query_mode=lemma "
+            "or token_attribute=lemma"
+        )
 
 
 class DictionaryAnalysisRequest(AnalysisRequest):
     dictionary_id: str | None = None
-    dictionary_terms: list[str] | None = None
+    dictionary_terms: list[str] | None = Field(
+        default=None,
+        description=(
+            "Optional custom terms. When provided together with dictionary_id, "
+            "these terms override the stored dictionary leaf expressions "
+            "(frontend helper-text contract; TASK-016)."
+        ),
+    )
     hierarchy: dict[str, Any] | None = Field(
         default=None,
         description="Optional inline hierarchical dictionary (user-defined).",
@@ -651,13 +722,13 @@ class KeynessRequest(BaseModel):
         description="Multiple-testing correction: bh (Benjamini–Hochberg) | none",
     )
     min_frequency: int = Field(default=1, ge=0)
-    top_n: int = 50
+    top_n: int = Field(default=50, ge=1, le=MAX_RESULT_TOP_N)
     run_async: bool = True
 
 
 class CooccurrenceRequest(AnalysisRequest):
-    window_size: int = Field(default=5, ge=1)
-    top_n: int = 50
+    window_size: int = Field(default=5, ge=1, le=MAX_COOCCURRENCE_WINDOW)
+    top_n: int = Field(default=50, ge=1, le=MAX_RESULT_TOP_N)
     association_method: str = Field(
         default="pmi",
         description="count | pmi | npmi | dice | log_dice | t_score",
@@ -695,7 +766,9 @@ class SimilarityRequest(AnalysisRequest):
             "(query-to-document) | group_centroid"
         ),
     )
-    top_k: int | None = Field(default=20, ge=1, description="Limit returned rows per request.")
+    top_k: int | None = Field(
+        default=20, ge=1, le=MAX_PAIRWISE_TOP_K, description="Limit returned rows per request."
+    )
     min_score: float | None = Field(default=None, description="Drop rows below this score.")
     group_by: str | None = Field(
         default=None,
@@ -714,7 +787,8 @@ class SimilarityRequest(AnalysisRequest):
         default=None,
         description=(
             "Required when method=embedding_cosine: mapping of text_unit_id -> vector. "
-            "Never computed by this platform; supply vectors from an existing provider."
+            "Never computed by this platform; supply vectors from an existing provider. "
+            "API-only until managed embedding artifacts exist (TASK-016)."
         ),
     )
     query_embedding: list[float] | None = Field(
@@ -722,6 +796,60 @@ class SimilarityRequest(AnalysisRequest):
         description="Required when mode=query and method=embedding_cosine.",
     )
     run_async: bool = False
+
+    @field_validator("embeddings")
+    @classmethod
+    def _bound_embeddings(cls, value: dict[str, list[float]] | None) -> dict[str, list[float]] | None:
+        if value is None:
+            return value
+        if len(value) > MAX_EMBEDDING_ITEMS:
+            raise ValueError(
+                f"embeddings may contain at most {MAX_EMBEDDING_ITEMS} unit vectors"
+            )
+        dims: int | None = None
+        total = 0
+        for unit_id, vector in value.items():
+            if not isinstance(vector, list) or not vector:
+                raise ValueError(f"embeddings[{unit_id!r}] must be a non-empty float list")
+            if len(vector) > MAX_EMBEDDING_DIMS:
+                raise ValueError(
+                    f"embeddings[{unit_id!r}] exceeds max dimension {MAX_EMBEDDING_DIMS}"
+                )
+            if dims is None:
+                dims = len(vector)
+            elif len(vector) != dims:
+                raise ValueError("all embedding vectors must share the same dimensionality")
+            total += len(vector)
+            if total > MAX_EMBEDDING_TOTAL_FLOATS:
+                raise ValueError(
+                    f"embeddings payload exceeds {MAX_EMBEDDING_TOTAL_FLOATS} total floats"
+                )
+        return value
+
+    @field_validator("query_embedding")
+    @classmethod
+    def _bound_query_embedding(cls, value: list[float] | None) -> list[float] | None:
+        if value is None:
+            return value
+        if len(value) > MAX_EMBEDDING_DIMS:
+            raise ValueError(f"query_embedding exceeds max dimension {MAX_EMBEDDING_DIMS}")
+        return value
+
+    @model_validator(mode="after")
+    def _embedding_cross_field(self) -> SimilarityRequest:
+        if self.method == "embedding_cosine" and self.mode == "pairwise" and not self.top_k:
+            raise ValueError(
+                "pairwise embedding_cosine requires top_k (dense all-pairs export is not allowed)"
+            )
+        if (
+            self.query_embedding is not None
+            and self.embeddings
+            and self.embeddings.values()
+        ):
+            sample = next(iter(self.embeddings.values()))
+            if len(self.query_embedding) != len(sample):
+                raise ValueError("query_embedding dimensionality must match embeddings vectors")
+        return self
 
 
 class DuplicateDetectionRequest(AnalysisRequest):
@@ -732,25 +860,31 @@ class DuplicateDetectionRequest(AnalysisRequest):
         ),
     )
     lexical_threshold: float = Field(default=0.85, ge=0, le=1)
-    char_ngram_size: int = Field(default=5, ge=1)
+    char_ngram_size: int = Field(default=5, ge=1, le=32)
     use_minhash: bool = Field(
         default=False, description="Convenience flag to add 'minhash' to methods."
     )
-    minhash_num_perm: int = Field(default=64, ge=1)
-    minhash_shingle_size: int = Field(default=3, ge=1)
+    minhash_num_perm: int = Field(default=64, ge=1, le=MAX_MINHASH_PERM)
+    minhash_shingle_size: int = Field(default=3, ge=1, le=32)
     minhash_threshold: float = Field(default=0.8, ge=0, le=1)
-    max_pairs: int | None = Field(default=1000, ge=1)
+    max_pairs: int | None = Field(default=1000, ge=1, le=MAX_PAIRWISE_PAIRS)
     run_async: bool = False
 
 
 class ClusteringRequest(AnalysisRequest):
-    n_clusters: int = Field(default=5, ge=2)
+    n_clusters: int = Field(default=5, ge=2, le=MAX_CLUSTERS)
     algorithm: str = Field(default="kmeans", description="kmeans | minibatch_kmeans")
     use_svd: bool = False
-    n_svd_components: int = Field(default=50, ge=2)
-    top_terms: int = Field(default=10, ge=1)
+    n_svd_components: int = Field(default=50, ge=2, le=MAX_SVD_COMPONENTS)
+    top_terms: int = Field(default=10, ge=1, le=MAX_RESULT_TOP_N)
     random_seed: int = 42
     run_async: bool = False
+
+    @model_validator(mode="after")
+    def _svd_vs_clusters(self) -> ClusteringRequest:
+        if self.use_svd and self.n_svd_components < self.n_clusters:
+            raise ValueError("n_svd_components must be >= n_clusters when use_svd is true")
+        return self
 
 
 class DimensionalityReductionRequest(AnalysisRequest):
@@ -1090,21 +1224,41 @@ class StatisticalModelRequest(BaseModel):
 
     model: str = Field(default="ols", description="ols | logistic")
     dependent_var: str
-    independent_vars: list[str]
-    rows: list[dict[str, Any]]
+    independent_vars: list[str] = Field(min_length=1, max_length=MAX_STATISTICAL_INDEPENDENT_VARS)
+    rows: list[dict[str, Any]] = Field(min_length=1, max_length=MAX_STATISTICAL_ROWS)
     add_intercept: bool = True
+
+    @model_validator(mode="after")
+    def _require_dependent_column(self) -> StatisticalModelRequest:
+        sample = self.rows[0]
+        if self.dependent_var not in sample:
+            raise ValueError(f"rows must include dependent_var column {self.dependent_var!r}")
+        missing = [name for name in self.independent_vars if name not in sample]
+        if missing:
+            raise ValueError(f"rows missing independent_vars columns: {missing}")
+        return self
 
 
 class MeasurementComparisonRequest(BaseModel):
     """Compare two user-aligned measurement series (§51)."""
 
     source_a: str
-    values_a: list[Any]
+    values_a: list[Any] = Field(min_length=1, max_length=MAX_MEASUREMENT_VALUES)
     source_b: str
-    values_b: list[Any]
+    values_b: list[Any] = Field(min_length=1, max_length=MAX_MEASUREMENT_VALUES)
     ids: list[str] | None = None
     value_kind: str = Field(default="categorical", description="categorical | continuous")
     subgroup: list[str] | None = None
+
+    @model_validator(mode="after")
+    def _aligned_series(self) -> MeasurementComparisonRequest:
+        if len(self.values_a) != len(self.values_b):
+            raise ValueError("values_a and values_b must have the same length")
+        if self.ids is not None and len(self.ids) != len(self.values_a):
+            raise ValueError("ids length must match values_a / values_b")
+        if self.subgroup is not None and len(self.subgroup) != len(self.values_a):
+            raise ValueError("subgroup length must match values_a / values_b")
+        return self
 
 
 class DictionaryCreate(BaseModel):
@@ -1161,6 +1315,8 @@ class AnalysisRunResponse(BaseModel):
     completed_at: datetime | None
     error_message: str | None
     created_at: datetime
+    rerunnable: bool = False
+    rerun_block_reason: str | None = None
 
 
 class DemoSeedRequest(BaseModel):
@@ -1251,7 +1407,7 @@ class AssistantMessageRequest(BaseModel):
 
 class AssistantRetrieveRequest(BaseModel):
     query: str = Field(min_length=1, max_length=4000)
-    intent: str | None = "semantic_search"
+    intent: str | None = None
     document_ids: list[str] | None = None
     top_k: int | None = Field(default=None, ge=1, le=50)
     retrieval_mode: str | None = Field(
@@ -1301,9 +1457,11 @@ class AssistantScopeResponse(BaseModel):
     unavailable_count: int
     unavailable_corpus_document_ids: list[str] = Field(default_factory=list)
     unavailable_reasons: dict[str, str] = Field(default_factory=dict)
+    documents: list[CorpusScopeDocumentBindingResponse] = Field(default_factory=list)
     document_bindings: list[CorpusScopeDocumentBindingResponse] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     scope_mode: Literal["fixed", "live"] = "fixed"
+    mapping_status: Literal["ok", "unverifiable"] = "ok"
 
 
 class CorpusScopeDocumentBindingResponse(BaseModel):
@@ -1334,6 +1492,8 @@ class AssistantCitationResponse(BaseModel):
     parent_context_id: str | None = None
     offset_coordinate_system: str | None = None
     offset_scope: str | None = None
+    offset_scope_id: str | None = None
+    source_spans: list[dict] | None = None
 
 
 class AssistantClaimResponse(BaseModel):

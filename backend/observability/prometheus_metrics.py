@@ -98,6 +98,40 @@ research_sse_active_connections = Gauge(
     "Active research analysis-run SSE streams",
 )
 
+research_schedule_decisions_total = Counter(
+    "research_schedule_decisions_total",
+    "Inline vs queue scheduling decisions for research analyses",
+    ["analysis_type", "decision"],
+)
+research_cache_outcomes_total = Counter(
+    "research_cache_outcomes_total",
+    "Research cache hit/miss outcomes",
+    ["cache", "outcome"],
+)
+research_stage_duration_seconds = Histogram(
+    "research_stage_duration_seconds",
+    "Research pipeline stage duration",
+    ["stage", "analysis_type"],
+    buckets=(0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 15.0, 60.0, 300.0),
+)
+research_run_transitions_total = Counter(
+    "research_run_transitions_total",
+    "Terminal AnalysisRun status transitions",
+    ["analysis_type", "status"],
+)
+research_artifact_bytes = Histogram(
+    "research_artifact_bytes",
+    "Persisted research artifact byte size",
+    ["analysis_type"],
+    buckets=(256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216),
+)
+research_result_bytes = Histogram(
+    "research_result_bytes",
+    "Research result payload byte size (serialized estimate)",
+    ["analysis_type"],
+    buckets=(256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216),
+)
+
 worker_task_queue_delay_seconds = Histogram(
     "worker_task_queue_delay_seconds",
     "Delay between Celery enqueue and task start",

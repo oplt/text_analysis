@@ -48,6 +48,7 @@ import {
     trainClassifier,
     type ClassifierCoefficient,
 } from "../../../api/textResearch";
+import { MetadataFilterBar } from "../components/MetadataFilterBar";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
@@ -66,13 +67,14 @@ import {
     RankedBarChart,
     ResultsInspector,
 } from "../components/ResearchCharts";
+import { ActiveRunActions } from "../components/ActiveRunActions";
 import { ResearchResultsTable } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
 import { ScientificWarnings } from "../components/ScientificWarnings";
 import { collectScientificWarnings } from "../components/scientificWarnings";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
-import { activeRunRefetchInterval } from "../runPolling";
+import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 import type { AnalysisRun, TrainedModel } from "../types";
 
 const ClassificationCalibrationPanel = lazy(() =>
@@ -315,6 +317,7 @@ export default function ClassificationView() {
 
     const [trainRunId, setTrainRunId] = useState<string | null>(null);
     const [predictRunId, setPredictRunId] = useState<string | null>(null);
+    const [predictFilters, setPredictFilters] = useState<Record<string, string>>({});
     const trainSseConnected = useRunEvents(trainRunId, ctx.projectId);
     const predictSseConnected = useRunEvents(predictRunId, ctx.projectId);
     const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
@@ -368,28 +371,28 @@ export default function ClassificationView() {
 
     const snapshotsQuery = useQuery({
         queryKey: queryKeys.textResearch.datasetSnapshots(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () => listDatasetSnapshots(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: ({ signal }) => listDatasetSnapshots(ctx.projectId, ctx.selectedCorpusId, signal),
         enabled: Boolean(ctx.projectId),
         staleTime: QUERY_STALE_TIMES.researchFrozenSnapshot,
     });
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
-        queryFn: () => listPreprocessingProfiles(ctx.projectId),
+        queryFn: ({ signal }) => listPreprocessingProfiles(ctx.projectId, signal),
         enabled: Boolean(ctx.projectId),
         staleTime: QUERY_STALE_TIMES.researchReference,
     });
 
     const classifiersQuery = useQuery({
         queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () => listClassifiers(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: ({ signal }) => listClassifiers(ctx.projectId, ctx.selectedCorpusId, undefined, signal),
         enabled: Boolean(ctx.projectId),
         staleTime: QUERY_STALE_TIMES.researchModelLifecycle,
     });
 
     const trainRunQuery = useQuery({
         queryKey: queryKeys.textResearch.run(trainRunId ?? ""),
-        queryFn: () => getRun(trainRunId!),
+        queryFn: ({ signal }) => getRun(trainRunId!, signal),
         enabled: Boolean(trainRunId),
         staleTime: (query) => researchRunStaleTime(query.state.data?.status),
         refetchInterval: (query) => activeRunRefetchInterval(query, trainSseConnected),
@@ -397,7 +400,7 @@ export default function ClassificationView() {
 
     const predictRunQuery = useQuery({
         queryKey: queryKeys.textResearch.run(predictRunId ?? ""),
-        queryFn: () => getRun(predictRunId!),
+        queryFn: ({ signal }) => getRun(predictRunId!, signal),
         enabled: Boolean(predictRunId),
         staleTime: (query) => researchRunStaleTime(query.state.data?.status),
         refetchInterval: (query) => activeRunRefetchInterval(query, predictSseConnected),
@@ -636,11 +639,18 @@ export default function ClassificationView() {
     });
 
     const predictMutation = useMutation({
-        mutationFn: () =>
-            predictClassifier(selectedModelId!, {
+        mutationFn: () => {
+            const filters: Record<string, string | number> = {};
+            for (const [key, value] of Object.entries(predictFilters)) {
+                if (!value) continue;
+                filters[key] = key === "publication_year" ? Number(value) : value;
+            }
+            return predictClassifier(selectedModelId!, {
                 unit_type: ctx.unitType,
                 only_unannotated: true,
-            }),
+                ...(Object.keys(filters).length ? { filters } : {}),
+            });
+        },
         onSuccess: (run) => {
             setPredictRunId(run.id);
             void uncertainQuery.refetch();
@@ -1038,10 +1048,26 @@ export default function ClassificationView() {
 
                     {trainRunId && trainRunQuery.data ? (
                         <Box>
-                            <Typography variant="body2" sx={{ mb: 1 }}>
-                                Training run —{" "}
-                                <RunStatusChip status={trainRunQuery.data.status} />
-                            </Typography>
+                            <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                                flexWrap="wrap"
+                                useFlexGap
+                                sx={{ mb: 1 }}
+                            >
+                                <Typography variant="body2">
+                                    Training run —{" "}
+                                    <RunStatusChip status={trainRunQuery.data.status} />
+                                </Typography>
+                                {isActiveRunStatus(trainRunQuery.data.status) ? (
+                                    <ActiveRunActions
+                                        run={trainRunQuery.data}
+                                        projectId={ctx.projectId}
+                                        corpusId={ctx.selectedCorpusId}
+                                    />
+                                ) : null}
+                            </Stack>
                             {trainRunQuery.data.error_message ? (
                                 <Alert severity="error">{trainRunQuery.data.error_message}</Alert>
                             ) : null}
@@ -1445,6 +1471,13 @@ export default function ClassificationView() {
                     <Typography color="text.secondary">Select a trained model above.</Typography>
                 ) : (
                     <Stack spacing={2}>
+                        {ctx.selectedCorpusId ? (
+                            <MetadataFilterBar
+                                corpusId={ctx.selectedCorpusId}
+                                value={predictFilters}
+                                onChange={setPredictFilters}
+                            />
+                        ) : null}
                         {predictRunId && predictRunQuery.data ? (
                             <Typography variant="body2">
                                 Predict run —{" "}

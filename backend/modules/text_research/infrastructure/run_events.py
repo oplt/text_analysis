@@ -38,6 +38,7 @@ def reset_run_events_redis_for_tests() -> None:
 
 def serialize_run(run: AnalysisRun) -> dict[str, Any]:
     """Build the JSON body streamed to SSE clients (matches AnalysisRunResponse)."""
+    from backend.modules.text_research.application.run_adapters import capability_for_run
 
     def _dt(value: datetime | None) -> str | None:
         if value is None:
@@ -46,6 +47,10 @@ def serialize_run(run: AnalysisRun) -> dict[str, Any]:
             value = value.replace(tzinfo=UTC)
         return value.isoformat()
 
+    parameters = loads(run.parameters_json)
+    capability = capability_for_run(
+        run, parameters if isinstance(parameters, dict) else {}
+    )
     return {
         "id": run.id,
         "project_id": run.project_id,
@@ -55,7 +60,7 @@ def serialize_run(run: AnalysisRun) -> dict[str, Any]:
         "run_version": int(getattr(run, "run_version", 1) or 1),
         "evidence_revision_hash": getattr(run, "evidence_revision_hash", None),
         "progress_stage": run.progress_stage,
-        "parameters": loads(run.parameters_json),
+        "parameters": parameters,
         "metrics": loads(run.metrics_json),
         "results": loads(run.results_json),
         "artifact_path": run.artifact_path,
@@ -65,6 +70,8 @@ def serialize_run(run: AnalysisRun) -> dict[str, Any]:
         "completed_at": _dt(run.completed_at),
         "error_message": run.error_message,
         "created_at": _dt(run.created_at) or datetime.now(UTC).isoformat(),
+        "rerunnable": capability.rerunnable,
+        "rerun_block_reason": capability.block_reason,
     }
 
 

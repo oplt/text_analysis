@@ -7,7 +7,11 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from backend.modules.text_research.domain.analysis_specification import AnalysisSpecification
+from backend.modules.text_research.domain.analysis_specification import (
+    AnalysisSpecification,
+    normalize_corpus_filters,
+    preprocessing_config_fingerprint,
+)
 from backend.modules.text_research.domain.analysis_task import AnalysisTask, resource_class_for
 from backend.modules.text_research.infrastructure import stage_cache
 from backend.modules.text_research.infrastructure.execution_policy import (
@@ -36,9 +40,60 @@ def build_spec_from_request(
     **kwargs: Any,
 ) -> AnalysisSpecification:
     """Construct a v2 specification from flat request-style arguments."""
+    if "filters" in kwargs:
+        kwargs = {**kwargs, "filters": normalize_corpus_filters(kwargs.get("filters"))}
     return AnalysisSpecification.from_flat(
         corpus_id=corpus_id,
         analysis_type=analysis_type,
+        **kwargs,
+    )
+
+
+def build_quantitative_spec(
+    analysis_type: str,
+    corpus_id: str,
+    *,
+    unit_type: str = "paragraph",
+    filters: dict[str, Any] | None = None,
+    preprocessing_profile_id: str | None = None,
+    cleaning_profile_id: str | None = None,
+    preprocessing_config: dict[str, Any] | PreprocessingConfig | None = None,
+    preprocessing_config_hash: str | None = None,
+    analysis_parameters: dict[str, Any] | None = None,
+    random_seed: int = 42,
+    snapshot_id: str | None = None,
+    **kwargs: Any,
+) -> AnalysisSpecification:
+    """Canonical quantitative AnalysisSpecification for scientific identity.
+
+    Includes corpus selection (unit type + normalized filters), resolved
+    preprocessing profile/config fingerprint, analysis parameters, and seed.
+    ``corpus_checksum`` / ``pipeline_checksum`` remain independent provenance
+    fields attached via :func:`attach_run_identity`.
+    """
+    config_dict: dict[str, Any] | None
+    if isinstance(preprocessing_config, PreprocessingConfig):
+        config_dict = preprocessing_config.to_dict()
+    elif isinstance(preprocessing_config, dict):
+        config_dict = dict(preprocessing_config)
+    else:
+        config_dict = None
+
+    config_hash = preprocessing_config_hash
+    if config_hash is None and config_dict is not None:
+        config_hash = preprocessing_config_fingerprint(config_dict)
+
+    return build_spec_from_request(
+        analysis_type,
+        corpus_id,
+        unit_type=unit_type,
+        filters=filters,
+        preprocessing_profile_id=preprocessing_profile_id,
+        cleaning_profile_id=cleaning_profile_id,
+        preprocessing_config_hash=config_hash,
+        analysis_parameters=analysis_parameters,
+        random_seed=random_seed,
+        snapshot_id=snapshot_id,
         **kwargs,
     )
 
@@ -177,24 +232,27 @@ async def execute_or_enqueue[T](
     enqueue: Callable[[], Awaitable[T]],
     force_inline: bool = False,
     force_async: bool = False,
+    run_id: str | None = None,
 ) -> T:
     """Run ``inline`` for small jobs; otherwise call ``enqueue`` (Celery path)."""
-    if should_enqueue_cpu_job(estimate, force_inline=force_inline, force_async=force_async):
-        logger.info(
-            "research analysis enqueue analysis_type=%s n_units=%s tokens=%s pairs=%s",
-            estimate.analysis_type,
-            estimate.n_units,
-            estimate.estimated_tokens,
-            estimate.estimated_pairs,
-        )
-        return await enqueue()
-    logger.debug(
-        "research analysis inline analysis_type=%s n_units=%s tokens=%s pairs=%s",
-        estimate.analysis_type,
-        estimate.n_units,
-        estimate.estimated_tokens,
-        estimate.estimated_pairs,
+    from backend.modules.text_research.application.research_observability import (
+        log_schedule_decision,
     )
+
+    enqueue_job = should_enqueue_cpu_job(
+        estimate, force_inline=force_inline, force_async=force_async
+    )
+    decision = "queue" if enqueue_job else "inline"
+    log_schedule_decision(
+        analysis_type=estimate.analysis_type,
+        decision=decision,
+        run_id=run_id,
+        n_units=estimate.n_units,
+        estimated_tokens=estimate.estimated_tokens,
+        estimated_pairs=estimate.estimated_pairs,
+    )
+    if enqueue_job:
+        return await enqueue()
     return await inline()
 
 
@@ -202,6 +260,7 @@ async def execute_or_enqueue[T](
 __all__ = [
     "WorkloadEstimate",
     "attach_run_identity",
+    "build_quantitative_spec",
     "build_spec_from_request",
     "estimate_workload",
     "execute_or_enqueue",

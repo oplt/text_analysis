@@ -53,7 +53,8 @@ export function AssistantScopeControls({ threadId, scope, liveScope, onUpdated }
         },
     });
 
-    const availableDocuments = liveScope?.document_bindings ?? scope?.document_bindings ?? [];
+    const availableDocuments =
+        liveScope?.documents ?? liveScope?.document_bindings ?? scope?.documents ?? scope?.document_bindings ?? [];
     const previousDocumentIds = scope?.corpus_document_ids ?? [];
     const liveDocumentIds = liveScope?.corpus_document_ids ?? [];
     const addedDocumentIds = difference(liveDocumentIds, previousDocumentIds);

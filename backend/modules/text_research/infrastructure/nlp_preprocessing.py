@@ -23,16 +23,15 @@ def _pkg_version(name: str) -> str | None:
 
 
 def spacy_available(model_name: str = DEFAULT_SPACY_MODEL) -> bool:
-    try:
-        import spacy  # noqa: F401
-    except ImportError:
-        return False
-    try:
-        import spacy
+    """Return True when spaCy + ``model_name`` can be loaded via the process cache.
 
-        spacy.load(model_name)
+    Always routes through :func:`_load_nlp` so availability checks share the same
+    cached pipeline as tokenization/provenance (TASK-011).
+    """
+    try:
+        _load_nlp(model_name)
         return True
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001 — missing dep / model must stay False
         return False
 
 
@@ -114,16 +113,47 @@ def pos_aware_lemmas(text: str, *, model_name: str = DEFAULT_SPACY_MODEL) -> lis
     return lemmas
 
 
-def noun_chunk_phrases(text: str, *, model_name: str = DEFAULT_SPACY_MODEL) -> list[str]:
-    """Return spaCy noun-chunk phrases (multi-token only), lowercased."""
+def noun_chunk_phrases(
+    text: str,
+    *,
+    model_name: str = DEFAULT_SPACY_MODEL,
+    use_lemmas: bool = False,
+) -> list[str]:
+    """Return spaCy noun-chunk phrases (multi-token only), lowercased.
+
+    When ``use_lemmas`` is True, phrase parts are spaCy lemmas so they align with
+    POS-lemmatized token streams (TASK-012).
+    """
     nlp = require_spacy(model_name)
     doc = nlp(text or "")
     phrases: list[str] = []
     for chunk in doc.noun_chunks:
-        parts = [t.text for t in chunk if not t.is_space and not t.is_punct]
+        parts: list[str] = []
+        for token in chunk:
+            if token.is_space or token.is_punct:
+                continue
+            part = (token.lemma_ if use_lemmas else token.text).strip()
+            if part:
+                parts.append(part.lower())
         if len(parts) >= 2:
-            phrases.append("_".join(p.lower() for p in parts))
+            phrases.append("_".join(parts))
     return phrases
+
+
+def morph_normalize_phrase_parts(
+    phrases: list[str],
+    *,
+    normalize_part,
+) -> list[str]:
+    """Apply ``normalize_part`` to each underscore-separated phrase component."""
+    if not phrases:
+        return phrases
+    out: list[str] = []
+    for phrase in phrases:
+        parts = [normalize_part(part) for part in phrase.split("_")]
+        if len(parts) >= 2:
+            out.append("_".join(parts))
+    return out
 
 
 def merge_phrase_tokens(

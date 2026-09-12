@@ -29,6 +29,8 @@ three methods (nothing here hardcodes research concepts — "document" vs
 
 from __future__ import annotations
 
+import heapq
+from collections import defaultdict
 from collections.abc import Sequence
 from typing import Any
 
@@ -39,6 +41,13 @@ from sklearn.metrics.pairwise import cosine_similarity as _sk_cosine_similarity
 SIMILARITY_METHODS: frozenset[str] = frozenset({"tfidf_cosine", "jaccard", "embedding_cosine"})
 SIMILARITY_MODES: frozenset[str] = frozenset({"pairwise", "query", "group_centroid"})
 CENTROID_TARGETS: frozenset[str] = frozenset({"between_groups", "item_to_own_group"})
+
+# Dense N×N is fine for small corpora; beyond this, top-K must use blocked paths.
+DENSE_PAIRWISE_MAX_N = 256
+# Exact all-pairs (no top_k) refuses above this ceiling to prevent unbounded allocation.
+EXACT_ALL_PAIRS_MAX_N = 2_000
+# Block height for sparse/blocked cosine (keeps peak similarity scratch ≤ block×N).
+PAIRWISE_BLOCK_SIZE = 256
 
 _EMBEDDING_ERROR = (
     "embedding_cosine requires precomputed embedding vectors. This platform does "
@@ -133,6 +142,18 @@ def _as_dense(matrix: Any) -> np.ndarray:
     return np.asarray(matrix)
 
 
+def _n_items_for_matrix(
+    *,
+    tokenized: list[list[str]] | None,
+    embeddings: Sequence[Sequence[float]] | None,
+) -> int:
+    if tokenized is not None:
+        return len(tokenized)
+    if embeddings is not None:
+        return len(embeddings)
+    return 0
+
+
 def build_similarity_matrix(
     method: str,
     *,
@@ -145,7 +166,16 @@ def build_similarity_matrix(
     Returns ``(matrix, metadata)``. ``metadata`` always includes the
     canonical ``method`` name plus method-specific provenance (vocabulary
     size, embedding dimensionality, ...).
+
+    For large N prefer :func:`pairwise_similarity` with ``top_k`` — this
+    helper refuses unbounded dense allocation above :data:`EXACT_ALL_PAIRS_MAX_N`.
     """
+    n = _n_items_for_matrix(tokenized=tokenized, embeddings=embeddings)
+    if n > EXACT_ALL_PAIRS_MAX_N:
+        raise ValueError(
+            f"dense similarity matrix refused for N={n} "
+            f"(ceiling {EXACT_ALL_PAIRS_MAX_N}); use pairwise_similarity(..., top_k=...)"
+        )
     canonical = normalize_similarity_method(method)
 
     if canonical == "tfidf_cosine":
@@ -156,6 +186,7 @@ def build_similarity_matrix(
         return sim, {
             "method": canonical,
             "vocabulary_size": len(vectorizer.get_feature_names_out()),
+            "computation": "dense",
         }
 
     if canonical == "jaccard":
@@ -168,7 +199,7 @@ def build_similarity_matrix(
             for j in range(i + 1, n):
                 score = jaccard_similarity(sets[i], sets[j])
                 sim[i, j] = sim[j, i] = score
-        return sim, {"method": canonical}
+        return sim, {"method": canonical, "computation": "dense"}
 
     if canonical == "embedding_cosine":
         if not embeddings:
@@ -177,9 +208,197 @@ def build_similarity_matrix(
         if arr.ndim != 2:
             raise ValueError("embeddings must be a 2D array of shape (n_items, dim)")
         sim = _sk_cosine_similarity(arr)
-        return sim, {"method": canonical, "embedding_dim": int(arr.shape[1])}
+        return sim, {
+            "method": canonical,
+            "embedding_dim": int(arr.shape[1]),
+            "computation": "dense",
+        }
 
     raise ValueError(f"Unsupported similarity method {method!r}")  # pragma: no cover
+
+
+def _heap_push_topk(
+    heap: list[tuple[float, int, int, int, int]],
+    *,
+    score: float,
+    i: int,
+    j: int,
+    top_k: int,
+) -> None:
+    """Maintain a min-heap of the best ``top_k`` pairs.
+
+    Heap order (smaller = worse): lower score first; on ties prefer larger
+    ``(i, j)`` as worse so smaller indices are retained (deterministic).
+    """
+    if top_k <= 0:
+        return
+    item = (score, -i, -j, i, j)
+    if len(heap) < top_k:
+        heapq.heappush(heap, item)
+        return
+    if item > heap[0]:
+        heapq.heapreplace(heap, item)
+
+
+def _heap_to_pairs(
+    heap: list[tuple[float, int, int, int, int]], ids: Sequence[str]
+) -> list[dict[str, Any]]:
+    ordered = sorted(heap, key=lambda item: (-item[0], item[3], item[4]))
+    return [
+        {"source_id": ids[i], "target_id": ids[j], "score": float(score)}
+        for score, _ni, _nj, i, j in ordered
+    ]
+
+
+def _use_dense_pairwise(n: int, top_k: int | None) -> bool:
+    if n <= DENSE_PAIRWISE_MAX_N:
+        return True
+    # Large N without top_k stays on dense only within the exact ceiling.
+    return top_k is None and n <= EXACT_ALL_PAIRS_MAX_N
+
+
+def _pairwise_topk_tfidf(
+    ids: Sequence[str],
+    tokenized: list[list[str]],
+    *,
+    top_k: int,
+    min_score: float | None,
+    include_self: bool,
+    tfidf_kwargs: dict[str, Any] | None,
+) -> dict[str, Any]:
+    matrix, vectorizer = _build_tfidf_matrix(tokenized, **(tfidf_kwargs or {}))
+    n = len(ids)
+    heap: list[tuple[float, int, int, int, int]] = []
+    pairs_tested = 0
+    block = max(1, min(PAIRWISE_BLOCK_SIZE, n))
+    for start in range(0, n, block):
+        end = min(start + block, n)
+        # (block × N) scratch — never N×N.
+        block_sims = _sk_cosine_similarity(matrix[start:end], matrix)
+        for local_i, i in enumerate(range(start, end)):
+            j_start = i if include_self else i + 1
+            for j in range(j_start, n):
+                score = float(block_sims[local_i, j])
+                if min_score is not None and score < min_score:
+                    continue
+                pairs_tested += 1
+                _heap_push_topk(heap, score=score, i=i, j=j, top_k=top_k)
+    limited = _heap_to_pairs(heap, ids)
+    return {
+        "mode": "pairwise",
+        "item_count": n,
+        "pairs_tested": pairs_tested,
+        "pairs_returned": len(limited),
+        "pairs": limited,
+        "method": "tfidf_cosine",
+        "vocabulary_size": len(vectorizer.get_feature_names_out()),
+        "computation": "blocked_topk",
+    }
+
+
+def _pairwise_topk_embedding(
+    ids: Sequence[str],
+    embeddings: Sequence[Sequence[float]],
+    *,
+    top_k: int,
+    min_score: float | None,
+    include_self: bool,
+) -> dict[str, Any]:
+    arr = np.asarray(embeddings, dtype=float)
+    if arr.ndim != 2:
+        raise ValueError("embeddings must be a 2D array of shape (n_items, dim)")
+    n = len(ids)
+    if arr.shape[0] != n:
+        raise ValueError("embeddings size does not match the number of ids")
+    heap: list[tuple[float, int, int, int, int]] = []
+    pairs_tested = 0
+    block = max(1, min(PAIRWISE_BLOCK_SIZE, n))
+    for start in range(0, n, block):
+        end = min(start + block, n)
+        block_sims = _sk_cosine_similarity(arr[start:end], arr)
+        for local_i, i in enumerate(range(start, end)):
+            j_start = i if include_self else i + 1
+            for j in range(j_start, n):
+                score = float(block_sims[local_i, j])
+                if min_score is not None and score < min_score:
+                    continue
+                pairs_tested += 1
+                _heap_push_topk(heap, score=score, i=i, j=j, top_k=top_k)
+    limited = _heap_to_pairs(heap, ids)
+    return {
+        "mode": "pairwise",
+        "item_count": n,
+        "pairs_tested": pairs_tested,
+        "pairs_returned": len(limited),
+        "pairs": limited,
+        "method": "embedding_cosine",
+        "embedding_dim": int(arr.shape[1]),
+        "computation": "blocked_topk",
+    }
+
+
+def _pairwise_topk_jaccard(
+    ids: Sequence[str],
+    tokenized: list[list[str]],
+    *,
+    top_k: int,
+    min_score: float | None,
+    include_self: bool,
+) -> dict[str, Any]:
+    """Exact Jaccard top-K without allocating an N×N matrix.
+
+    When ``min_score`` is set, an inverted index prunes pairs that share no
+    tokens (score 0). Approximate MinHash is intentionally *not* used here —
+    callers must request MinHash via duplicate-detection when approximation is
+    acceptable.
+    """
+    sets = [set(tokens) for tokens in tokenized]
+    n = len(ids)
+    heap: list[tuple[float, int, int, int, int]] = []
+    pairs_tested = 0
+
+    if min_score is not None and min_score > 0:
+        postings: dict[str, list[int]] = defaultdict(list)
+        for idx, tokens in enumerate(sets):
+            for token in tokens:
+                postings[token].append(idx)
+        candidates: set[tuple[int, int]] = set()
+        for members in postings.values():
+            for a_idx in range(len(members)):
+                for b_idx in range(a_idx + 1, len(members)):
+                    i, j = members[a_idx], members[b_idx]
+                    if i > j:
+                        i, j = j, i
+                    candidates.add((i, j))
+        if include_self:
+            for i in range(n):
+                candidates.add((i, i))
+        for i, j in candidates:
+            score = jaccard_similarity(sets[i], sets[j])
+            if score < min_score:
+                continue
+            pairs_tested += 1
+            _heap_push_topk(heap, score=score, i=i, j=j, top_k=top_k)
+    else:
+        for i in range(n):
+            j_start = i if include_self else i + 1
+            for j in range(j_start, n):
+                score = jaccard_similarity(sets[i], sets[j])
+                if min_score is not None and score < min_score:
+                    continue
+                pairs_tested += 1
+                _heap_push_topk(heap, score=score, i=i, j=j, top_k=top_k)
+
+    limited = _heap_to_pairs(heap, ids)
+    return {
+        "mode": "pairwise",
+        "item_count": n,
+        "pairs_tested": pairs_tested,
+        "pairs_returned": len(limited),
+        "pairs": limited,
+        "method": "jaccard",
+        "computation": "bounded_topk",
+    }
 
 
 def pairwise_similarity(
@@ -198,10 +417,56 @@ def pairwise_similarity(
     ``ids`` may be document ids, text-unit ids, or any caller-chosen key —
     this module has no notion of "document" vs "unit"; that distinction is
     entirely up to what the caller passes in.
+
+    Small N keeps the dense path for exact parity. Large N with ``top_k``
+    uses blocked / heap-bounded computation and never allocates an N×N matrix.
+    Large N without ``top_k`` is refused above :data:`EXACT_ALL_PAIRS_MAX_N`.
     """
     n = len(ids)
     if n < 2:
         raise ValueError("pairwise similarity requires at least 2 items")
+
+    if not _use_dense_pairwise(n, top_k):
+        if top_k is None:
+            raise ValueError(
+                f"exact pairwise similarity without top_k is limited to "
+                f"N<={EXACT_ALL_PAIRS_MAX_N}; got N={n}. Pass top_k for bounded "
+                "top-K computation, or reduce the corpus."
+            )
+        k = max(0, int(top_k))
+        canonical = normalize_similarity_method(method)
+        if canonical == "tfidf_cosine":
+            if not tokenized:
+                raise ValueError("tfidf_cosine requires 'tokenized' documents")
+            return _pairwise_topk_tfidf(
+                ids,
+                tokenized,
+                top_k=k,
+                min_score=min_score,
+                include_self=include_self,
+                tfidf_kwargs=tfidf_kwargs,
+            )
+        if canonical == "jaccard":
+            if tokenized is None:
+                raise ValueError("jaccard requires 'tokenized' documents")
+            return _pairwise_topk_jaccard(
+                ids,
+                tokenized,
+                top_k=k,
+                min_score=min_score,
+                include_self=include_self,
+            )
+        if canonical == "embedding_cosine":
+            if not embeddings:
+                raise ValueError(_EMBEDDING_ERROR)
+            return _pairwise_topk_embedding(
+                ids,
+                embeddings,
+                top_k=k,
+                min_score=min_score,
+                include_self=include_self,
+            )
+        raise ValueError(f"Unsupported similarity method {method!r}")  # pragma: no cover
 
     matrix, meta = build_similarity_matrix(
         method, tokenized=tokenized, embeddings=embeddings, tfidf_kwargs=tfidf_kwargs
@@ -216,10 +481,21 @@ def pairwise_similarity(
             score = float(matrix[i, j])
             if min_score is not None and score < min_score:
                 continue
-            pairs.append({"source_id": ids[i], "target_id": ids[j], "score": score})
-    pairs.sort(key=lambda row: -row["score"])
+            pairs.append(
+                {
+                    "source_id": ids[i],
+                    "target_id": ids[j],
+                    "score": score,
+                    "_i": i,
+                    "_j": j,
+                }
+            )
+    pairs.sort(key=lambda row: (-row["score"], row["_i"], row["_j"]))
     total_pairs = len(pairs)
     limited = pairs if top_k is None else pairs[: max(0, int(top_k))]
+    for row in limited:
+        row.pop("_i", None)
+        row.pop("_j", None)
 
     return {
         "mode": "pairwise",
@@ -503,9 +779,14 @@ def describe_similarity_capabilities() -> dict[str, Any]:
             "computed here and never forced into the default (lexical) similarity path"
         ),
         "grouping": "caller-supplied ids/group_keys only (no hardcoded categories)",
+        "dense_pairwise_max_n": DENSE_PAIRWISE_MAX_N,
+        "exact_all_pairs_max_n": EXACT_ALL_PAIRS_MAX_N,
         "notes": [
             "'pairwise' covers both document-to-document and unit-to-unit similarity — "
             "the granularity is whatever ids/tokenized the caller passes in.",
             "'jaccard' group centroids are pooled token-set profiles, not numeric means.",
+            "Large pairwise requests with top_k use blocked/heap-bounded computation "
+            "and never allocate a dense N×N matrix.",
+            "Exact all-pairs without top_k is refused above exact_all_pairs_max_n.",
         ],
     }

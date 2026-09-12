@@ -2,7 +2,12 @@
 
 Pipeline stages (all optional via config): encoding fix (ftfy) → Unicode
 normalization → whitespace normalize → lowercase → tokenization → number /
-stopword filters → stemming or lemmatization.
+stopword filters → (optional phrase merge in the same token space as morphology)
+→ stemming or lemmatization.
+
+When ``phrase_detection`` is enabled with stemming/lemmatization, phrase parts
+are normalized with the same morphology before merge so surface phrases are not
+silently dropped (TASK-012).
 
 Original text is never mutated. Stemming / lemmatization are never claimed
 unless the required language resources are actually available; requesting an
@@ -188,12 +193,19 @@ def describe_implementation(
     lemma_name = "simplemma" if cfg.lemmatization else None
     if cfg.pos_lemmatization:
         lemma_name = f"spacy:{cfg.spacy_model}"
-    from backend.modules.text_research.infrastructure.nlp_preprocessing import (
-        describe_spacy_provenance,
-        spacy_available,
+    uses_spacy = bool(
+        cfg.pos_lemmatization or cfg.entity_masking or cfg.phrase_detection or cfg.enable_ner
     )
+    spacy_meta: dict[str, Any] | None = None
+    spacy_is_available = False
+    if uses_spacy:
+        from backend.modules.text_research.infrastructure.nlp_preprocessing import (
+            describe_spacy_provenance,
+        )
 
-    spacy_meta = describe_spacy_provenance(cfg.spacy_model)
+        # Provenance routes through cached ``_load_nlp`` (TASK-011); skip when unused.
+        spacy_meta = describe_spacy_provenance(cfg.spacy_model)
+        spacy_is_available = bool(spacy_meta.get("available"))
     return {
         "preprocessing_implementation": PREPROCESSING_IMPLEMENTATION,
         "preprocessing_implementation_version": PREPROCESSING_IMPLEMENTATION_VERSION,
@@ -214,16 +226,12 @@ def describe_implementation(
             "spacy" if cfg.pos_lemmatization else ("simplemma" if cfg.lemmatization else None)
         ),
         "lemmatizer_package_version": (
-            spacy_meta.get("package_version")
+            (spacy_meta or {}).get("package_version")
             if cfg.pos_lemmatization
             else (_pkg_version("simplemma") if cfg.lemmatization else None)
         ),
-        "model_name": cfg.spacy_model
-        if (cfg.pos_lemmatization or cfg.entity_masking or cfg.phrase_detection or cfg.enable_ner)
-        else None,
-        "model_version": spacy_meta.get("model_version")
-        if (cfg.pos_lemmatization or cfg.entity_masking or cfg.phrase_detection or cfg.enable_ner)
-        else None,
+        "model_name": cfg.spacy_model if uses_spacy else None,
+        "model_version": (spacy_meta or {}).get("model_version") if uses_spacy else None,
         "spacy": spacy_meta,
         "entity_masking": bool(cfg.entity_masking),
         "phrase_detection": bool(cfg.phrase_detection),
@@ -234,11 +242,11 @@ def describe_implementation(
             "ftfy": _pkg_version("ftfy"),
             "snowballstemmer": _pkg_version("snowballstemmer"),
             "simplemma": _pkg_version("simplemma"),
-            "spacy": spacy_meta.get("package_version"),
+            "spacy": (spacy_meta or {}).get("package_version") if uses_spacy else _pkg_version("spacy"),
         },
         "stemming_available": stemming_available(lang_code),
         "lemmatization_available": lemmatization_available(lang_code),
-        "spacy_available": spacy_available(cfg.spacy_model),
+        "spacy_available": spacy_is_available,
         "stemming_requested": bool(cfg.stemming),
         "lemmatization_requested": bool(cfg.lemmatization),
         "degraded": profile.degraded,
@@ -355,20 +363,43 @@ def tokenize(text: str, config: dict[str, Any] | None = None) -> list[str]:
         stop_set = _stopword_set(cfg)
         tokens = [t for t in tokens if t in negation_words or t not in stop_set]
 
-    if not cfg.get("pos_lemmatization"):
+    # Phrase merge must share one token space with morphology (TASK-012).
+    # Preferred order: merge on surface (or POS-lemma) tokens, then apply
+    # stemming/lemmatization to non-phrase tokens; phrase parts are normalized
+    # with the same morphology so multi-word units survive.
+    if cfg.get("phrase_detection"):
+        from backend.modules.text_research.infrastructure.nlp_preprocessing import (
+            merge_phrase_tokens,
+            morph_normalize_phrase_parts,
+            noun_chunk_phrases,
+        )
+
+        phrases = noun_chunk_phrases(
+            text,
+            model_name=model_name,
+            use_lemmas=bool(cfg.get("pos_lemmatization")),
+        )
+        if not cfg.get("pos_lemmatization"):
+            if cfg.get("lemmatization"):
+                phrases = morph_normalize_phrase_parts(
+                    phrases, normalize_part=lambda p: lemmatize_token(p, language)
+                )
+                tokens = [
+                    t if t in negation_words else lemmatize_token(t, language) for t in tokens
+                ]
+            elif cfg.get("stemming"):
+                phrases = morph_normalize_phrase_parts(
+                    phrases, normalize_part=lambda p: snowball_stem(p, language)
+                )
+                tokens = [
+                    t if t in negation_words else snowball_stem(t, language) for t in tokens
+                ]
+        tokens = merge_phrase_tokens(tokens, phrases)
+    elif not cfg.get("pos_lemmatization"):
         if cfg.get("lemmatization"):
             tokens = [t if t in negation_words else lemmatize_token(t, language) for t in tokens]
         elif cfg.get("stemming"):
             tokens = [t if t in negation_words else snowball_stem(t, language) for t in tokens]
-
-    if cfg.get("phrase_detection"):
-        from backend.modules.text_research.infrastructure.nlp_preprocessing import (
-            merge_phrase_tokens,
-            noun_chunk_phrases,
-        )
-
-        phrases = noun_chunk_phrases(text, model_name=model_name)
-        tokens = merge_phrase_tokens(tokens, phrases)
 
     return tokens
 

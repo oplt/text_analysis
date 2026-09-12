@@ -1,4 +1,4 @@
-"""Tests for the universal StageRunner pipeline."""
+"""Tests for the headless StageRunner pipeline (CLI/tests adapter; not the production API path)."""
 
 from __future__ import annotations
 

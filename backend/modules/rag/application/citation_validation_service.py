@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
+from backend.modules.rag.domain.citation_validation_context import CitationValidationContext
 from backend.modules.rag.domain.models import Citation, ClaimCitation, RetrievedChunk
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
@@ -22,6 +23,7 @@ CitationValidationStatus = Literal[
     "incomplete",
     "empty_answer",
     "answer_mismatch",
+    "revision_mismatch",
 ]
 
 
@@ -66,25 +68,50 @@ def _parse_structured_payload(raw: str) -> dict | None:
     return payload if isinstance(payload, dict) else None
 
 
+def _chunk_revision_id(chunk: RetrievedChunk) -> str | None:
+    revision = chunk.index_revision_id
+    if revision:
+        return revision
+    metadata = chunk.metadata or {}
+    for key in ("index_revision_id", "revision_id", "document_revision"):
+        value = metadata.get(key)
+        if isinstance(value, str) and value:
+            return value
+    return None
+
+
+def _citation_from_chunk(
+    chunk: RetrievedChunk,
+    *,
+    citation_number: int | None = None,
+    used_in_answer: bool = False,
+) -> Citation:
+    return Citation(
+        document_id=chunk.document_id,
+        chunk_id=chunk.chunk_id,
+        filename=chunk.filename,
+        score=chunk.score,
+        snippet=(chunk.citation_content or chunk.content)[:400],
+        page_number=chunk.page_number,
+        chunk_index=chunk.chunk_index,
+        citation_number=citation_number,
+        section_heading=(chunk.metadata or {}).get("section_heading"),
+        used_in_answer=used_in_answer,
+        char_start=(chunk.metadata or {}).get("char_start"),
+        char_end=(chunk.metadata or {}).get("char_end"),
+        source_span_ids=(chunk.metadata or {}).get("source_span_ids"),
+        parent_context_id=chunk.parent_context_id,
+        offset_coordinate_system=(chunk.metadata or {}).get("offset_coordinate_system"),
+        offset_scope=(chunk.metadata or {}).get("offset_scope"),
+        offset_scope_id=(chunk.metadata or {}).get("offset_scope_id"),
+        source_spans=(chunk.metadata or {}).get("source_spans"),
+        index_revision_id=_chunk_revision_id(chunk),
+    )
+
+
 def _unused_citations(retrieved_chunks: list[RetrievedChunk]) -> list[Citation]:
     return [
-        Citation(
-            document_id=c.document_id,
-            chunk_id=c.chunk_id,
-            filename=c.filename,
-            score=c.score,
-            snippet=(c.citation_content or c.content)[:400],
-            page_number=c.page_number,
-            chunk_index=c.chunk_index,
-            section_heading=(c.metadata or {}).get("section_heading"),
-            used_in_answer=False,
-            char_start=(c.metadata or {}).get("char_start"),
-            char_end=(c.metadata or {}).get("char_end"),
-            source_span_ids=(c.metadata or {}).get("source_span_ids"),
-            parent_context_id=c.parent_context_id,
-            offset_coordinate_system=(c.metadata or {}).get("offset_coordinate_system"),
-            offset_scope=(c.metadata or {}).get("offset_scope"),
-        )
+        _citation_from_chunk(c, citation_number=None, used_in_answer=False)
         for c in retrieved_chunks
     ]
 
@@ -112,16 +139,113 @@ def _answer_matches_claims(answer: str, claims: list[ClaimCitation]) -> bool:
     return True
 
 
+def _resolve_revision_binding(
+    *,
+    context: CitationValidationContext | None,
+    expected_index_revision_ids: list[str] | None,
+) -> tuple[set[str] | None, dict[str, str], bool]:
+    """Return (allowed revision ids, per-document map, require revision identity)."""
+    revision_by_document: dict[str, str] = {}
+    expected_revisions: set[str] | None = None
+    require_revision = False
+
+    if expected_index_revision_ids is not None:
+        expected_revisions = set(expected_index_revision_ids)
+        require_revision = True
+
+    if context is not None:
+        if context.revision_by_document:
+            revision_by_document = dict(context.revision_by_document)
+            require_revision = True
+        if context.index_revision_ids:
+            expected_revisions = set(context.index_revision_ids)
+            require_revision = True
+        if context.evidence_revision_hash:
+            require_revision = True
+
+    return expected_revisions, revision_by_document, require_revision
+
+
+def _retrieved_revisions_consistent(
+    retrieved_chunks: list[RetrievedChunk],
+    *,
+    expected_revisions: set[str] | None,
+    revision_by_document: dict[str, str],
+    evidence_revision_hash: str | None,
+) -> bool:
+    """Fail closed when a frozen evidence hash cannot be reconciled with chunks."""
+    if not evidence_revision_hash:
+        return True
+    if not retrieved_chunks:
+        return True
+    if expected_revisions is None and not revision_by_document:
+        # Hash present but no revision allow-list → cannot verify; fail closed.
+        return False
+
+    seen_by_document: dict[str, str] = {}
+    for chunk in retrieved_chunks:
+        revision = _chunk_revision_id(chunk)
+        if revision is None:
+            return False
+        if expected_revisions is not None and revision not in expected_revisions:
+            return False
+        expected_for_doc = revision_by_document.get(chunk.document_id)
+        if expected_for_doc is not None and revision != expected_for_doc:
+            return False
+        prior = seen_by_document.get(chunk.document_id)
+        if prior is not None and prior != revision:
+            return False
+        seen_by_document[chunk.document_id] = revision
+    return True
+
+
+def _chunk_authorized(
+    chunk: RetrievedChunk,
+    *,
+    allowed_docs: set[str] | None,
+    expected_revisions: set[str] | None,
+    revision_by_document: dict[str, str],
+    require_revision: bool,
+) -> bool:
+    if allowed_docs is not None and chunk.document_id not in allowed_docs:
+        return False
+
+    revision = _chunk_revision_id(chunk)
+    if require_revision and revision is None:
+        # Missing revision must not be silently upgraded to "current".
+        return False
+    if expected_revisions is not None:
+        if revision is None or revision not in expected_revisions:
+            return False
+    expected_for_doc = revision_by_document.get(chunk.document_id)
+    if expected_for_doc is not None and revision != expected_for_doc:
+        return False
+    return True
+
+
 class CitationValidationService:
     def validate(
         self,
         *,
         raw_output: str,
         retrieved_chunks: list[RetrievedChunk],
-        allowed_document_ids: list[str] | None,
+        allowed_document_ids: list[str] | None = None,
+        expected_index_revision_ids: list[str] | None = None,
+        context: CitationValidationContext | None = None,
     ) -> ValidatedAnswer:
         by_id = {c.chunk_id: c for c in retrieved_chunks}
+
+        if context is not None and context.allowed_document_ids is not None:
+            allowed_document_ids = context.allowed_document_ids
         allowed_docs = set(allowed_document_ids) if allowed_document_ids is not None else None
+
+        expected_revisions, revision_by_document, require_revision = _resolve_revision_binding(
+            context=context,
+            expected_index_revision_ids=expected_index_revision_ids,
+        )
+        evidence_revision_hash = (
+            context.evidence_revision_hash if context is not None else None
+        )
 
         raw_text = (raw_output or "").strip()
         payload = _parse_structured_payload(raw_text)
@@ -155,6 +279,20 @@ class CitationValidationService:
                 ),
             )
 
+        if evidence_revision_hash and not _retrieved_revisions_consistent(
+            retrieved_chunks,
+            expected_revisions=expected_revisions,
+            revision_by_document=revision_by_document,
+            evidence_revision_hash=evidence_revision_hash,
+        ):
+            return ValidatedAnswer(
+                answer="",
+                claims=[],
+                citations=_unused_citations(retrieved_chunks),
+                citation_validation_failed=True,
+                citation_validation_status="revision_mismatch",
+            )
+
         raw_claims = [claim.model_dump() for claim in structured.claims]
         claims_structurally_valid = True
         explicitly_no_evidence = structured.no_evidence
@@ -175,6 +313,7 @@ class CitationValidationService:
         rejected_any = False
         accepted_any = False
         incomplete_any = not claims_structurally_valid
+        revision_rejected = False
 
         for item in raw_claims:
             if not isinstance(item, dict):
@@ -200,10 +339,30 @@ class CitationValidationService:
                 cid = chunk_id
                 chunk = by_id.get(cid)
                 if chunk is None:
+                    # Fabricated / not-in-retrieved-set chunk IDs fail closed.
                     rejected_any = True
                     continue
-                if allowed_docs is not None and chunk.document_id not in allowed_docs:
+                if not _chunk_authorized(
+                    chunk,
+                    allowed_docs=allowed_docs,
+                    expected_revisions=expected_revisions,
+                    revision_by_document=revision_by_document,
+                    require_revision=require_revision,
+                ):
                     rejected_any = True
+                    if require_revision and (
+                        _chunk_revision_id(chunk) is None
+                        or (
+                            expected_revisions is not None
+                            and _chunk_revision_id(chunk) not in expected_revisions
+                        )
+                        or (
+                            chunk.document_id in revision_by_document
+                            and _chunk_revision_id(chunk)
+                            != revision_by_document[chunk.document_id]
+                        )
+                    ):
+                        revision_rejected = True
                     continue
                 valid_ids.append(cid)
                 accepted_any = True
@@ -220,24 +379,7 @@ class CitationValidationService:
             chunk = by_id[chunk_id]
             number_by_chunk[chunk_id] = index
             citations.append(
-                Citation(
-                    document_id=chunk.document_id,
-                    chunk_id=chunk.chunk_id,
-                    filename=chunk.filename,
-                    score=chunk.score,
-                    snippet=(chunk.citation_content or chunk.content)[:400],
-                    page_number=chunk.page_number,
-                    chunk_index=chunk.chunk_index,
-                    citation_number=index,
-                    section_heading=(chunk.metadata or {}).get("section_heading"),
-                    used_in_answer=True,
-                    char_start=(chunk.metadata or {}).get("char_start"),
-                    char_end=(chunk.metadata or {}).get("char_end"),
-                    source_span_ids=(chunk.metadata or {}).get("source_span_ids"),
-                    parent_context_id=chunk.parent_context_id,
-                    offset_coordinate_system=(chunk.metadata or {}).get("offset_coordinate_system"),
-                    offset_scope=(chunk.metadata or {}).get("offset_scope"),
-                )
+                _citation_from_chunk(chunk, citation_number=index, used_in_answer=True)
             )
 
         for claim in claims:
@@ -248,33 +390,18 @@ class CitationValidationService:
             if chunk.chunk_id in used_set:
                 continue
             citations.append(
-                Citation(
-                    document_id=chunk.document_id,
-                    chunk_id=chunk.chunk_id,
-                    filename=chunk.filename,
-                    score=chunk.score,
-                    snippet=(chunk.citation_content or chunk.content)[:400],
-                    page_number=chunk.page_number,
-                    chunk_index=chunk.chunk_index,
-                    citation_number=None,
-                    section_heading=(chunk.metadata or {}).get("section_heading"),
-                    used_in_answer=False,
-                    char_start=(chunk.metadata or {}).get("char_start"),
-                    char_end=(chunk.metadata or {}).get("char_end"),
-                    source_span_ids=(chunk.metadata or {}).get("source_span_ids"),
-                    parent_context_id=chunk.parent_context_id,
-                    offset_coordinate_system=(chunk.metadata or {}).get("offset_coordinate_system"),
-                    offset_scope=(chunk.metadata or {}).get("offset_scope"),
-                )
+                _citation_from_chunk(chunk, citation_number=None, used_in_answer=False)
             )
 
         answer = "\n\n".join(claim.text for claim in claims)
         if incomplete_any:
-            status = "incomplete"
+            status: CitationValidationStatus = "incomplete"
+        elif rejected_any and not accepted_any and revision_rejected:
+            status = "revision_mismatch"
         elif not claims and not explicitly_no_evidence:
             status = "missing_claims" if not raw_claims else "invalid"
         elif rejected_any and not accepted_any:
-            status: CitationValidationStatus = "invalid"
+            status = "invalid"
         elif rejected_any:
             status = "partial"
         else:

@@ -18,7 +18,7 @@ from fastapi import HTTPException
 from backend.modules.text_research.application.access import ResearchAccessMixin
 from backend.modules.text_research.application.analysis_executor import (
     attach_run_identity,
-    build_spec_from_request,
+    build_quantitative_spec,
     estimate_workload,
     execute_or_enqueue,
     run_cpu_bound,
@@ -27,6 +27,7 @@ from backend.modules.text_research.application.analysis_executor import (
 from backend.modules.text_research.application.preprocessing_service import (
     PreprocessingProfileService,
 )
+from backend.modules.text_research.domain.analysis_specification import normalize_corpus_filters
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import (
     AnalysisRun,
@@ -93,17 +94,25 @@ async def _prepare_with_identity(
     unit_type: str,
     filters: dict[str, Any] | None = None,
     cleaning_profile_hash: str | None = None,
+    cleaning_profile_id: str | None = None,
+    preprocessing_profile_id: str | None = None,
     analysis_parameters: dict[str, Any] | None = None,
+    random_seed: int = 42,
 ) -> tuple[PreparedCorpusArtifact, dict[str, Any]]:
     """Reuse the prepared-corpus stage cache for deterministic preprocessing.
 
     Analysis-specific knobs (top_n, DFM weighting, …) stay out of the prep
     cache key so frequencies → DFM with identical scientific inputs share the
     tokenized artifact. Fitted IDF / classifiers are never stored here.
+
+    Scientific identity (``analysis_spec_hash``) includes unit type, normalized
+    filters (incl. language when present), resolved preprocessing fingerprint,
+    analysis parameters, and seed.
     """
+    prep_config = config.to_dict()
     prepared = await prepare_texts_cached_async(
         texts,
-        config.to_dict(),
+        prep_config,
         corpus_id=corpus_id,
         unit_type=unit_type,
         unit_ids=[u.id for u in units],
@@ -112,20 +121,39 @@ async def _prepare_with_identity(
         cleaning_profile_hash=cleaning_profile_hash,
         operation_config={},
     )
-    spec = build_spec_from_request(
+    spec = build_quantitative_spec(
         analysis_type,
         corpus_id,
+        unit_type=unit_type,
+        filters=filters,
+        preprocessing_profile_id=preprocessing_profile_id,
+        cleaning_profile_id=cleaning_profile_id,
+        preprocessing_config=prep_config,
         analysis_parameters=analysis_parameters or {},
+        random_seed=random_seed,
     )
+    cleaning_snapshot = None
+    if cleaning_profile_id or cleaning_profile_hash:
+        cleaning_snapshot = {
+            "id": cleaning_profile_id,
+            "config_hash": cleaning_profile_hash,
+        }
     identity = attach_run_identity(
         {
             "corpus_checksum": prepared.corpus_checksum,
             "pipeline_checksum": prepared.pipeline_checksum,
         },
         spec,
+        preprocessing_profile={
+            "id": preprocessing_profile_id,
+            "config": prep_config,
+        },
+        preprocessing_config=prep_config,
+        cleaning_profile=cleaning_snapshot,
     )
-    return prepared, identity
+    from backend.modules.text_research.application.run_dedup import attach_computation_identity
 
+    return prepared, attach_computation_identity(identity)
 
 def _filter_kwargs(filters: dict[str, Any]) -> dict[str, Any]:
     """Map analysis filter names onto repository document-select kwargs."""
@@ -238,6 +266,41 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             )
         return corpus, units, documents
 
+    async def _reuse_deterministic_run(
+        self,
+        corpus,
+        *,
+        user_id: str,
+        identity: dict[str, Any],
+        existing_run_id: str | None = None,
+    ) -> AnalysisRun | None:
+        """Return an in-flight or completed twin when identity is trustworthy."""
+        if existing_run_id:
+            return None
+        from backend.modules.text_research.application.run_dedup import (
+            attach_computation_identity,
+            find_reusable_run,
+            materialize_reuse_run,
+        )
+
+        identity = attach_computation_identity(identity)
+        computation_id = identity.get("computation_identity")
+        if not computation_id or not corpus.id:
+            return None
+        found = await find_reusable_run(
+            self.repo,
+            project_id=corpus.project_id,
+            corpus_id=corpus.id,
+            computation_identity_value=str(computation_id),
+        )
+        if found is None:
+            return None
+        reused = await materialize_reuse_run(
+            self.repo, source=found, user_id=user_id, parameters=identity
+        )
+        await self.db.commit()
+        return reused
+
     async def _persist_run(
         self,
         corpus,
@@ -249,23 +312,46 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         results: dict[str, Any],
         existing_run: AnalysisRun | None = None,
     ) -> AnalysisRun:
+        from backend.modules.text_research.application.result_artifacts import (
+            maybe_artifactize_results,
+        )
+        from backend.modules.text_research.application.run_dedup import attach_computation_identity
+
+        parameters = attach_computation_identity(parameters)
+        inline_results, artifact_ref = maybe_artifactize_results(
+            results,
+            producing_run_id=existing_run.id if existing_run is not None else None,
+        )
+        if artifact_ref:
+            metrics = {
+                **metrics,
+                "results_artifactized": True,
+                "results_artifact_id": artifact_ref,
+            }
+
         if existing_run is not None:
             from backend.modules.text_research.application.run_lifecycle import (
+                complete_if_active,
                 ensure_not_cancelled,
             )
 
             existing_run = await ensure_not_cancelled(self.repo, existing_run)
-            updated = await self.repo.update_run(
+            updated = await complete_if_active(
+                self.repo,
                 existing_run,
-                status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 parameters_json=dumps(parameters),
                 metrics_json=dumps(metrics),
-                results_json=dumps(results),
+                results_json=dumps(inline_results),
+                artifact_path=artifact_ref or existing_run.artifact_path,
                 completed_at=_utcnow(),
                 error_message=None,
             )
             await self.db.commit()
+            if updated is None:
+                refreshed = await self.repo.get_run(existing_run.id)
+                assert refreshed is not None
+                return refreshed
             return updated
 
         run = await self.repo.create_run(
@@ -276,7 +362,8 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 status=AnalysisRunStatus.COMPLETED.value,
                 parameters_json=dumps(parameters),
                 metrics_json=dumps(metrics),
-                results_json=dumps(results),
+                results_json=dumps(inline_results),
+                artifact_path=artifact_ref,
                 created_by=user_id,
                 started_at=_utcnow(),
                 completed_at=_utcnow(),
@@ -296,14 +383,36 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         estimate: Any,
     ) -> AnalysisRun:
         from backend.modules.text_research.application.execution_service import ExecutionService
+        from backend.modules.text_research.application.run_dedup import (
+            attach_computation_identity,
+            find_reusable_run,
+            materialize_reuse_run,
+        )
 
-        params = {
-            **parameters,
-            QUANT_OP_KEY: operation,
-            "workload_estimate": estimate.to_dict()
-            if hasattr(estimate, "to_dict")
-            else dict(estimate),
-        }
+        params = attach_computation_identity(
+            {
+                **parameters,
+                QUANT_OP_KEY: operation,
+                "workload_estimate": estimate.to_dict()
+                if hasattr(estimate, "to_dict")
+                else dict(estimate),
+            }
+        )
+        computation_id = params.get("computation_identity")
+        if computation_id and corpus.id:
+            found = await find_reusable_run(
+                self.repo,
+                project_id=corpus.project_id,
+                corpus_id=corpus.id,
+                computation_identity_value=str(computation_id),
+            )
+            if found is not None:
+                reused = await materialize_reuse_run(
+                    self.repo, source=found, user_id=user_id, parameters=params
+                )
+                await self.db.commit()
+                return reused
+
         run = await self.repo.create_run(
             AnalysisRun(
                 project_id=corpus.project_id,
@@ -344,13 +453,14 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
 
     async def execute_quantitative(self, run_id: str) -> AnalysisRun:
         """Worker entry: re-enter the matching quantitative method inline."""
+        from backend.modules.text_research.application.run_lifecycle import (
+            TERMINAL_RUN_STATUSES,
+        )
+
         run = await self.repo.get_run(run_id)
         if run is None:
             raise ValueError(f"AnalysisRun {run_id} not found")
-        if run.status in {
-            AnalysisRunStatus.COMPLETED.value,
-            AnalysisRunStatus.CANCELLED.value,
-        }:
+        if run.status in TERMINAL_RUN_STATUSES:
             return run
 
         params = loads(run.parameters_json, {}) or {}
@@ -499,9 +609,19 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 )
             raise ValueError(f"Unsupported quantitative operation {operation!r}")
         except Exception as exc:
-            await self.repo.update_run(
+            from backend.modules.text_research.application.run_lifecycle import (
+                RunCancelledError,
+                fail_if_active,
+            )
+
+            if isinstance(exc, RunCancelledError):
+                await self.db.commit()
+                refreshed = await self.repo.get_run(run_id)
+                assert refreshed is not None
+                return refreshed
+            await fail_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.FAILED.value,
                 progress_stage="failed",
                 error_message=str(exc),
                 completed_at=_utcnow(),
@@ -595,6 +715,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             units=units,
             unit_type=unit_type,
             filters=filters,
+            preprocessing_profile_id=preprocessing_profile_id,
         )
         return await self._persist_run(
             corpus,
@@ -629,6 +750,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         rate_per: float = 1000,
         group_by: str | None = None,
         force_inline: bool = False,
+        run_async: bool = False,
         existing_run_id: str | None = None,
         **filters: Any,
     ) -> AnalysisRun:
@@ -675,8 +797,17 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 units=units,
                 unit_type=unit_type,
                 filters=filters,
+                preprocessing_profile_id=preprocessing_profile_id,
                 analysis_parameters={"top_n": top_n, "rate_per": rate_per, "group_by": group_by},
             )
+            reused = await self._reuse_deterministic_run(
+                corpus,
+                user_id=user_id,
+                identity={**request_params, **identity, **config_params},
+                existing_run_id=existing_run_id,
+            )
+            if reused is not None:
+                return reused
             group_keys = _resolve_group_keys(units, documents, group_by)
 
             report = await run_cpu_bound(
@@ -720,6 +851,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             inline=_inline,
             enqueue=_enqueue,
             force_inline=force_inline or bool(existing_run_id),
+            force_async=run_async,
         )
 
     async def ngrams(
@@ -734,6 +866,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         rate_per: float = 1000,
         skip: int = 0,
         force_inline: bool = False,
+        run_async: bool = False,
         existing_run_id: str | None = None,
         **filters: Any,
     ) -> AnalysisRun:
@@ -757,7 +890,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             texts=texts,
             requested_top_k=top_n,
         )
-        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id)):
+        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id), force_async=run_async):
             return await self._enqueue_quantitative(
                 corpus,
                 AnalysisRunType.NGRAM_ANALYSIS,
@@ -783,6 +916,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             units=units,
             unit_type=unit_type,
             filters=filters,
+            preprocessing_profile_id=preprocessing_profile_id,
             analysis_parameters={"n": n, "top_n": top_n, "rate_per": rate_per, "skip": skip},
         )
         report = await asyncio.to_thread(
@@ -842,6 +976,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         force_sparse_only: bool = False,
         trim: dict[str, Any] | None = None,
         force_inline: bool = False,
+        run_async: bool = False,
         existing_run_id: str | None = None,
         **filters: Any,
     ) -> AnalysisRun:
@@ -863,7 +998,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             n_units=len(units),
             texts=texts,
         )
-        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id)):
+        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id), force_async=run_async):
             return await self._enqueue_quantitative(
                 corpus,
                 AnalysisRunType.DFM,
@@ -891,6 +1026,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             units=units,
             unit_type=unit_type,
             filters=filters,
+            preprocessing_profile_id=preprocessing_profile_id,
             analysis_parameters={"weighting": weighting, "trim": trim},
         )
         build_kwargs: dict[str, Any] = {
@@ -982,15 +1118,18 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         window_size: int = 5,
         case_sensitive: bool = False,
         query_mode: str = "auto",
-        language: str | None = None,
+        query_language: str | None = None,
         token_attribute: str | None = None,
         max_matches: int | None = None,
+        preprocessing_profile_id: str | None = None,
         **filters: Any,
     ) -> AnalysisRun:
         corpus, units, documents = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
-        config = PreprocessingConfig()
+        config, config_params = await self._resolve_config(
+            preprocessing_profile_id, user_id=user_id
+        )
         prepared, identity = await _prepare_with_identity(
             corpus_id=corpus.id,
             analysis_type="kwic",
@@ -999,6 +1138,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             units=units,
             unit_type=unit_type,
             filters=filters,
+            preprocessing_profile_id=preprocessing_profile_id,
             analysis_parameters={"keyword": keyword},
         )
         doc_lookup = self._document_lookup(units, documents)
@@ -1033,12 +1173,24 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 window_size=window_size,
                 case_sensitive=case_sensitive,
                 query_mode=query_mode,
-                language=language,
+                language=query_language,
                 token_attribute=token_attribute,
                 max_matches=max_matches,
             )
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+        from backend.modules.text_research.application.analysis_policy import (
+            validate_analysis_policy,
+        )
+
+        prep_raw = getattr(prepared, "preprocessing_profile", None)
+        prep_dict = prep_raw if isinstance(prep_raw, dict) else None
+        policy_warnings = validate_analysis_policy(
+            analysis_type="kwic",
+            case_sensitive=case_sensitive,
+            preprocessing=prep_dict,
+            language=query_language,
+        )
         return await self._persist_run(
             corpus,
             AnalysisRunType.KWIC,
@@ -1049,15 +1201,17 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                 "window_size": window_size,
                 "case_sensitive": case_sensitive,
                 "query_mode": query_mode,
-                "language": language,
+                "query_language": query_language,
                 "token_attribute": token_attribute,
                 "max_matches": max_matches,
                 "filters": filters,
                 **identity,
+                **config_params,
             },
             metrics={"unit_count": len(units), "match_count": len(matches)},
             results={
                 "matches": matches,
+                "scientific_warnings": policy_warnings,
                 "corpus_checksum": prepared.corpus_checksum,
                 "pipeline_checksum": prepared.pipeline_checksum,
             },
@@ -1078,6 +1232,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         rate_per: float = 1000.0,
         group_by: str | None = None,
         preprocessing_profile_id: str | None = None,
+        run_async: bool = False,  # accepted for API parity; dictionary stays inline today
         **filters: Any,
     ) -> AnalysisRun:
         from backend.modules.text_research.application.dictionary_service import DictionaryService
@@ -1100,11 +1255,16 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             units=units,
             unit_type=unit_type,
             filters=filters,
+            preprocessing_profile_id=preprocessing_profile_id,
             analysis_parameters={"group_by": group_by, "rate_per": rate_per},
         )
         doc_lookup = self._document_lookup(units, documents)
 
         dictionary_meta: dict[str, Any] = {"source": "user"}
+        # Precedence (TASK-016 / FE contract): when custom ``dictionary_terms`` are
+        # supplied together with ``dictionary_id``, the custom terms override the
+        # stored dictionary leaf expressions while retaining dictionary identity
+        # metadata. Explicit ``hierarchy`` always wins over flat terms.
         if dictionary_id:
             dictionary = await DictionaryService(self.db).get_dictionary(
                 dictionary_id, user_id=user_id
@@ -1114,9 +1274,37 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
                     status_code=400,
                     detail="Dictionary does not belong to this corpus project",
                 )
-            spec = DictionaryService.get_spec(dictionary)
-            if dictionary_language:
-                spec.language = dictionary_language
+            base_spec = DictionaryService.get_spec(dictionary)
+            resolved_language = dictionary_language or base_spec.language
+            if hierarchy is not None:
+                spec = parse_dictionary_payload(
+                    {
+                        "hierarchy": hierarchy,
+                        "exclusions": exclusions if exclusions is not None else [],
+                        "language": resolved_language,
+                        "source": "user",
+                    },
+                    language=resolved_language,
+                )
+                dictionary_meta["terms_source"] = "request_hierarchy_override"
+            elif dictionary_terms:
+                spec = parse_dictionary_payload(
+                    {
+                        "terms": dictionary_terms,
+                        "exclusions": exclusions
+                        if exclusions is not None
+                        else [e.to_dict() for e in base_spec.exclusions],
+                        "language": resolved_language,
+                        "source": "user",
+                    },
+                    language=resolved_language,
+                )
+                dictionary_meta["terms_source"] = "request_terms_override"
+            else:
+                spec = base_spec
+                if dictionary_language:
+                    spec.language = dictionary_language
+                dictionary_meta["terms_source"] = "dictionary_id"
             dictionary_meta.update(
                 {
                     "dictionary_id": dictionary.id,
@@ -1245,6 +1433,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         preprocessing_profile_id: str | None = None,
         top_n: int = 50,
         force_inline: bool = False,
+        run_async: bool = False,
         existing_run_id: str | None = None,
     ) -> AnalysisRun:
         if not filters_a or not filters_b:
@@ -1272,7 +1461,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             texts=[u.text for u in units_a] + [u.text for u in units_b],
             requested_top_k=top_n,
         )
-        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id)):
+        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id), force_async=run_async):
             return await self._enqueue_quantitative(
                 corpus,
                 AnalysisRunType.KEYNESS,
@@ -1304,11 +1493,14 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             units=units_a,
             unit_type=unit_type,
             filters=filters_a,
+            preprocessing_profile_id=preprocessing_profile_id,
             analysis_parameters={
                 "method": method,
                 "top_n": top_n,
                 "min_frequency": min_frequency,
                 "correction": correction,
+                "group_field": group_field,
+                "filters_b": normalize_corpus_filters(filters_b),
             },
         )
         prepared_b = await prepare_texts_cached_async(
@@ -1398,6 +1590,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         include_network: bool = True,
         preprocessing_profile_id: str | None = None,
         force_inline: bool = False,
+        run_async: bool = False,
         existing_run_id: str | None = None,
         **filters: Any,
     ) -> AnalysisRun:
@@ -1412,10 +1605,11 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             analysis_type="cooccurrence",
             n_units=len(units),
             texts=[u.text for u in units],
-            estimated_pairs=len(units) * max(window_size, 1),
+            pair_mode="cooccurrence",
+            window_size=window_size,
             requested_top_k=top_n,
         )
-        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id)):
+        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id), force_async=run_async):
             return await self._enqueue_quantitative(
                 corpus,
                 AnalysisRunType.COOCCURRENCE,
@@ -1444,6 +1638,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             units=units,
             unit_type=unit_type,
             filters=filters,
+            preprocessing_profile_id=preprocessing_profile_id,
             analysis_parameters={
                 "window_size": window_size,
                 "top_n": top_n,
@@ -1524,6 +1719,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         query_embedding: list[float] | None = None,
         preprocessing_profile_id: str | None = None,
         force_inline: bool = False,
+        run_async: bool = False,
         existing_run_id: str | None = None,
         **filters: Any,
     ) -> AnalysisRun:
@@ -1550,14 +1746,19 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         ids = [u.id for u in units]
         texts = [u.text for u in units]
 
+        n_groups = 0
+        if canonical_mode == "group_centroid" and group_by:
+            # Cheap cardinality hint for workload (full keys resolved later).
+            n_groups = len({_resolve_group_value(d, group_by) for d in documents})
         estimate = estimate_workload(
             analysis_type="similarity",
             n_units=len(units),
             texts=texts,
             pair_mode=canonical_mode,
             requested_top_k=top_k or 0,
+            n_groups=n_groups,
         )
-        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id)):
+        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id), force_async=run_async):
             return await self._enqueue_quantitative(
                 corpus,
                 AnalysisRunType.SIMILARITY,
@@ -1590,12 +1791,29 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             units=units,
             unit_type=unit_type,
             filters=filters,
+            preprocessing_profile_id=preprocessing_profile_id,
             analysis_parameters={
                 "method": canonical_method,
                 "mode": canonical_mode,
                 "group_by": group_by,
             },
         )
+        reused = await self._reuse_deterministic_run(
+            corpus,
+            user_id=user_id,
+            identity={
+                "unit_type": unit_type,
+                "method": canonical_method,
+                "mode": canonical_mode,
+                "top_k": top_k,
+                "filters": filters,
+                **identity,
+                **config_params,
+            },
+            existing_run_id=existing_run_id,
+        )
+        if reused is not None:
+            return reused
         tokenized = _tokenized_from_prepared(prepared)
 
         group_keys: list[str] | None = None
@@ -1739,6 +1957,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         minhash_threshold: float = 0.8,
         max_pairs: int | None = 1000,
         force_inline: bool = False,
+        run_async: bool = False,
         existing_run_id: str | None = None,
         **filters: Any,
     ) -> AnalysisRun:
@@ -1770,7 +1989,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             texts=[u.text for u in units],
             pair_mode="duplicate",
         )
-        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id)):
+        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id), force_async=run_async):
             return await self._enqueue_quantitative(
                 corpus,
                 AnalysisRunType.DUPLICATE_DETECTION,
@@ -1843,6 +2062,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         random_seed: int = 42,
         preprocessing_profile_id: str | None = None,
         force_inline: bool = False,
+        run_async: bool = False,
         existing_run_id: str | None = None,
         **filters: Any,
     ) -> AnalysisRun:
@@ -1851,6 +2071,14 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         corpus, units, _ = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
+        if n_clusters >= max(len(units), 1):
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"n_clusters ({n_clusters}) must be less than the number of "
+                    f"selected observations ({len(units)})"
+                ),
+            )
         config, config_params = await self._resolve_config(
             preprocessing_profile_id, user_id=user_id
         )
@@ -1861,7 +2089,9 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             texts=[u.text for u in units],
             n_clusters=n_clusters,
         )
-        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id)):
+        if should_enqueue_cpu_job(
+            estimate, force_inline=force_inline or bool(existing_run_id), force_async=run_async
+        ):
             return await self._enqueue_quantitative(
                 corpus,
                 AnalysisRunType.CLUSTERING,
@@ -1889,6 +2119,8 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             units=units,
             unit_type=unit_type,
             filters=filters,
+            preprocessing_profile_id=preprocessing_profile_id,
+            random_seed=random_seed,
             analysis_parameters={
                 "n_clusters": n_clusters,
                 "algorithm": algorithm,
@@ -1954,6 +2186,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         random_seed: int = 42,
         preprocessing_profile_id: str | None = None,
         force_inline: bool = False,
+        run_async: bool = False,
         existing_run_id: str | None = None,
         **filters: Any,
     ) -> AnalysisRun:
@@ -1972,7 +2205,7 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             n_units=len(units),
             texts=[u.text for u in units],
         )
-        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id)):
+        if should_enqueue_cpu_job(estimate, force_inline=force_inline or bool(existing_run_id), force_async=run_async):
             return await self._enqueue_quantitative(
                 corpus,
                 AnalysisRunType.DIMENSIONALITY_REDUCTION,
@@ -2031,12 +2264,23 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
         unit_type: str,
         **filters: Any,
     ) -> AnalysisRun:
-        from backend.modules.text_research.infrastructure.readability import readability_for_units
+        from backend.modules.text_research.application.analysis_operators import (
+            run_readability_operator,
+        )
+        from backend.modules.text_research.application.analysis_policy import (
+            validate_analysis_policy,
+        )
 
         corpus, units, _ = await self._select(
             corpus_id, user_id=user_id, unit_type=unit_type, filters=filters
         )
         config = PreprocessingConfig()
+        language = filters.get("language") or getattr(config, "language", None)
+        policy_warnings = validate_analysis_policy(
+            analysis_type="readability",
+            language=language if isinstance(language, str) else None,
+            preprocessing=config.to_dict(),
+        )
         prepared, identity = await _prepare_with_identity(
             corpus_id=corpus.id,
             analysis_type="readability",
@@ -2045,12 +2289,17 @@ class QuantitativeAnalysisService(ResearchAccessMixin):
             units=units,
             unit_type=unit_type,
             filters=filters,
+            preprocessing_profile_id=None,
         )
-        result = await asyncio.to_thread(
-            readability_for_units,
-            list(prepared.original_units),
-            [u.id for u in units],
-        )
+        result = await asyncio.to_thread(run_readability_operator, prepared)
+        if policy_warnings:
+            result = {
+                **result,
+                "scientific_warnings": [
+                    *list(result.get("scientific_warnings") or []),
+                    *policy_warnings,
+                ],
+            }
         return await self._persist_run(
             corpus,
             AnalysisRunType.READABILITY,

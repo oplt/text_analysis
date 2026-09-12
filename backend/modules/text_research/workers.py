@@ -180,7 +180,7 @@ def corpus_synthesis_sync(*, run_id: str, user_id: str) -> None:
         raise
 
 
-def queue_segmentation(*, run_id: str, user_id: str) -> None:
+def queue_segmentation(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
     from backend.workers.tasks import research_segmentation_task
 
     return dispatch_background_sync_job(
@@ -190,10 +190,11 @@ def queue_segmentation(*, run_id: str, user_id: str) -> None:
         celery_kwargs={"run_id": run_id, "user_id": user_id},
         queue=queue_for_resource_class("research_io"),
         job_name="research-segmentation",
+        task_id=task_id,
     )
 
 
-def queue_classifier_training(*, run_id: str, user_id: str) -> None:
+def queue_classifier_training(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
     from backend.workers.tasks import research_classifier_training_task
 
     return dispatch_background_sync_job(
@@ -203,10 +204,11 @@ def queue_classifier_training(*, run_id: str, user_id: str) -> None:
         celery_kwargs={"run_id": run_id, "user_id": user_id},
         queue=queue_for_resource_class(resource_class_for("classification")),
         job_name="research-classifier-training",
+        task_id=task_id,
     )
 
 
-def queue_topic_model_training(*, run_id: str, user_id: str) -> None:
+def queue_topic_model_training(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
     from backend.workers.tasks import research_topic_model_training_task
 
     return dispatch_background_sync_job(
@@ -216,10 +218,11 @@ def queue_topic_model_training(*, run_id: str, user_id: str) -> None:
         celery_kwargs={"run_id": run_id, "user_id": user_id},
         queue=queue_for_resource_class(resource_class_for("topic_model")),
         job_name="research-topic-model",
+        task_id=task_id,
     )
 
 
-def queue_topic_k_sweep(*, run_id: str, user_id: str) -> None:
+def queue_topic_k_sweep(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
     from backend.workers.tasks import research_topic_k_sweep_task
 
     return dispatch_background_sync_job(
@@ -229,10 +232,11 @@ def queue_topic_k_sweep(*, run_id: str, user_id: str) -> None:
         celery_kwargs={"run_id": run_id, "user_id": user_id},
         queue=queue_for_resource_class(resource_class_for("topic_model")),
         job_name="research-topic-k-sweep",
+        task_id=task_id,
     )
 
 
-def queue_topic_seed_stability(*, run_id: str, user_id: str) -> None:
+def queue_topic_seed_stability(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
     from backend.workers.tasks import research_topic_seed_stability_task
 
     return dispatch_background_sync_job(
@@ -242,10 +246,11 @@ def queue_topic_seed_stability(*, run_id: str, user_id: str) -> None:
         celery_kwargs={"run_id": run_id, "user_id": user_id},
         queue=queue_for_resource_class(resource_class_for("topic_model")),
         job_name="research-topic-seed-stability",
+        task_id=task_id,
     )
 
 
-def queue_robustness_sweep(*, run_id: str, user_id: str) -> None:
+def queue_robustness_sweep(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
     from backend.workers.tasks import research_robustness_sweep_task
 
     return dispatch_background_sync_job(
@@ -255,10 +260,11 @@ def queue_robustness_sweep(*, run_id: str, user_id: str) -> None:
         celery_kwargs={"run_id": run_id, "user_id": user_id},
         queue=queue_for_resource_class(resource_class_for("classification")),
         job_name="research-robustness-sweep",
+        task_id=task_id,
     )
 
 
-def queue_prediction(*, run_id: str, user_id: str) -> None:
+def queue_prediction(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
     from backend.workers.tasks import research_prediction_task
 
     return dispatch_background_sync_job(
@@ -268,10 +274,11 @@ def queue_prediction(*, run_id: str, user_id: str) -> None:
         celery_kwargs={"run_id": run_id, "user_id": user_id},
         queue=queue_for_resource_class(resource_class_for("classification")),
         job_name="research-prediction",
+        task_id=task_id,
     )
 
 
-def queue_quantitative_analysis(*, run_id: str, user_id: str) -> None:
+def queue_quantitative_analysis(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
     from backend.workers.tasks import research_quantitative_analysis_task
 
     return dispatch_background_sync_job(
@@ -281,10 +288,11 @@ def queue_quantitative_analysis(*, run_id: str, user_id: str) -> None:
         celery_kwargs={"run_id": run_id, "user_id": user_id},
         queue=queue_for_resource_class("research_cpu"),
         job_name="research-quantitative-analysis",
+        task_id=task_id,
     )
 
 
-def queue_corpus_synthesis(*, run_id: str, user_id: str) -> None:
+def queue_corpus_synthesis(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
     from backend.workers.tasks import research_corpus_synthesis_task
 
     return dispatch_background_sync_job(
@@ -294,10 +302,13 @@ def queue_corpus_synthesis(*, run_id: str, user_id: str) -> None:
         celery_kwargs={"run_id": run_id, "user_id": user_id},
         queue=queue_for_resource_class("research_cpu"),
         job_name="research-corpus-synthesis",
+        task_id=task_id,
     )
 
 
-def queue_research_operation(*, operation: str, run_id: str, user_id: str) -> str | None:
+def queue_research_operation(
+    *, operation: str, run_id: str, user_id: str, task_id: str | None = None
+) -> str | None:
     """Dispatch a named persisted operation through the shared worker boundary."""
     dispatchers = {
         "segmentation": queue_segmentation,
@@ -314,4 +325,4 @@ def queue_research_operation(*, operation: str, run_id: str, user_id: str) -> st
         dispatcher = dispatchers[operation]
     except KeyError as exc:
         raise ValueError(f"Unsupported research operation {operation!r}") from exc
-    return dispatcher(run_id=run_id, user_id=user_id)
+    return dispatcher(run_id=run_id, user_id=user_id, task_id=task_id)

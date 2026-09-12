@@ -1,0 +1,74 @@
+{
+  "cases": [
+    {
+      "id": "keyword",
+      "category": "keyword",
+      "query": "institutional accountability",
+      "intent": "fact",
+      "expected_document_ids": ["fixture-governance"],
+      "expected_source_ids": ["fixture-governance"],
+      "expected_chunk_ids": ["fixture-governance#0"],
+      "no_answer": false
+    },
+    {
+      "id": "semantic",
+      "category": "semantic",
+      "query": "who must answer for decisions",
+      "intent": "semantic_search",
+      "expected_document_ids": ["fixture-governance"],
+      "expected_source_ids": ["fixture-governance"],
+      "expected_chunk_ids": ["fixture-governance#0"],
+      "no_answer": false
+    },
+    {
+      "id": "multilingual",
+      "category": "multilingual",
+      "query": "sorumluluk ve hesap verebilirlik",
+      "intent": "evidence",
+      "expected_document_ids": ["fixture-multilingual"],
+      "expected_source_ids": ["fixture-multilingual"],
+      "expected_chunk_ids": ["fixture-multilingual#0"],
+      "no_answer": false
+    },
+    {
+      "id": "comparison",
+      "category": "comparison",
+      "query": "Compare governance and participation",
+      "intent": "comparison",
+      "expected_document_ids": ["fixture-governance", "fixture-participation"],
+      "expected_source_ids": ["fixture-governance", "fixture-participation"],
+      "expected_chunk_ids": ["fixture-governance#0", "fixture-participation#0"],
+      "no_answer": false
+    },
+    {
+      "id": "contradiction",
+      "category": "contradiction",
+      "query": "What evidence contradicts centralized control?",
+      "intent": "contradiction",
+      "expected_document_ids": ["fixture-participation"],
+      "expected_source_ids": ["fixture-participation"],
+      "expected_chunk_ids": ["fixture-participation#0"],
+      "no_answer": false
+    },
+    {
+      "id": "synthesis",
+      "category": "synthesis",
+      "query": "Synthesize the findings",
+      "intent": "synthesis",
+      "expected_document_ids": ["fixture-governance", "fixture-participation"],
+      "expected_source_ids": ["fixture-governance", "fixture-participation"],
+      "expected_chunk_ids": ["fixture-governance#0", "fixture-participation#0"],
+      "no_answer": false
+    },
+    {
+      "id": "no-answer",
+      "category": "no_answer",
+      "query": "What does the corpus say about astrophysics?",
+      "intent": "evidence",
+      "expected_document_ids": [],
+      "expected_source_ids": [],
+      "expected_chunk_ids": [],
+      "no_answer": true
+    }
+  ]
+}

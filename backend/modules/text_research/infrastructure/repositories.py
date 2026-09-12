@@ -1514,6 +1514,29 @@ class ResearchRepository:
         queue_run_event(self.db, run, previous=previous)
         return run
 
+    async def update_run_if_active(self, run: AnalysisRun, **fields: Any) -> AnalysisRun | None:
+        """Apply fields only when the run is still non-terminal.
+
+        Uses ``SELECT … FOR UPDATE`` so concurrent cancel/complete/fail
+        transitions serialize inside the same database transaction. Returns
+        ``None`` when the run is already terminal (no fields applied).
+        """
+        from backend.modules.text_research.domain.enums import AnalysisRunStatus
+
+        active_statuses = {
+            AnalysisRunStatus.QUEUED.value,
+            AnalysisRunStatus.RUNNING.value,
+            "pending",
+        }
+        stmt = select(AnalysisRun).where(AnalysisRun.id == run.id).with_for_update()
+        result = await self.db.execute(stmt)
+        locked = result.scalar_one_or_none()
+        if locked is None:
+            raise ValueError(f"AnalysisRun {run.id} not found")
+        if locked.status not in active_statuses:
+            return None
+        return await self.update_run(locked, **fields)
+
     async def list_runs(
         self,
         project_id: str,
@@ -1564,6 +1587,44 @@ class ResearchRepository:
         stmt = stmt.order_by(AnalysisRun.created_at.desc()).limit(1)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def find_run_by_computation_identity(
+        self,
+        *,
+        project_id: str,
+        corpus_id: str,
+        computation_identity: str,
+        statuses: list[str] | None = None,
+        exclude_run_id: str | None = None,
+        limit_scan: int = 100,
+    ) -> AnalysisRun | None:
+        """Locate a run whose parameters embed the given computation identity.
+
+        Scans recent runs for the corpus (identity lives in JSON parameters).
+        """
+        if not computation_identity:
+            return None
+        stmt = select(AnalysisRun).where(
+            AnalysisRun.project_id == project_id,
+            AnalysisRun.corpus_id == corpus_id,
+        )
+        if statuses:
+            stmt = stmt.where(AnalysisRun.status.in_(list(statuses)))
+        if exclude_run_id:
+            stmt = stmt.where(AnalysisRun.id != exclude_run_id)
+        stmt = stmt.order_by(AnalysisRun.created_at.desc()).limit(limit_scan)
+        result = await self.db.execute(stmt)
+        needle = f'"computation_identity": "{computation_identity}"'
+        for run in result.scalars().all():
+            blob = run.parameters_json or ""
+            if needle in blob or computation_identity in blob:
+                params = loads(blob, {}) or {}
+                if params.get("computation_identity") == computation_identity:
+                    return run
+                provenance = params.get("provenance") if isinstance(params.get("provenance"), dict) else {}
+                if provenance.get("computation_identity") == computation_identity:
+                    return run
+        return None
 
     # ------------------------------------------------------------------
     # TrainedModel

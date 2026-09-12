@@ -97,6 +97,16 @@ class CorpusScopeSnapshot:
     document_bindings: list[CorpusScopeDocumentBinding] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     scope_mode: str = AssistantScopeMode.FIXED.value
+    mapping_status: str = "ok"
+
+    @property
+    def documents(self) -> list[CorpusScopeDocumentBinding]:
+        """Canonical explicit corpus/RAG identity mapping.
+
+        ``document_bindings`` remains as the compatibility name used by older
+        callers and persisted snapshots.
+        """
+        return self.document_bindings
 
     def to_dict(self) -> dict:
         return {
@@ -116,13 +126,32 @@ class CorpusScopeSnapshot:
             "unavailable_count": self.unavailable_count,
             "unavailable_corpus_document_ids": self.unavailable_corpus_document_ids,
             "unavailable_reasons": self.unavailable_reasons,
+            "documents": [binding.to_dict() for binding in self.document_bindings],
             "document_bindings": [binding.to_dict() for binding in self.document_bindings],
             "warnings": self.warnings,
             "scope_mode": self.scope_mode,
+            "mapping_status": self.mapping_status,
         }
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> CorpusScopeSnapshot:
+        raw_bindings = value.get("documents", value.get("document_bindings", []))
+        if not isinstance(raw_bindings, list):
+            raw_bindings = []
+        document_bindings = [
+            CorpusScopeDocumentBinding.from_dict(binding)
+            for binding in raw_bindings
+            if isinstance(binding, dict)
+        ]
+        if "mapping_status" in value and value.get("mapping_status"):
+            mapping_status = str(value["mapping_status"])
+        elif document_bindings:
+            mapping_status = "ok"
+        elif value.get("rag_document_ids") or value.get("corpus_document_ids"):
+            # Legacy snapshots with parallel ID lists but no explicit mapping.
+            mapping_status = "unverifiable"
+        else:
+            mapping_status = "ok"
         return cls(
             corpus_id=str(value["corpus_id"]),
             project_id=str(value["project_id"]),
@@ -140,13 +169,10 @@ class CorpusScopeSnapshot:
             unavailable_count=int(value.get("unavailable_count", 0)),
             unavailable_corpus_document_ids=list(value.get("unavailable_corpus_document_ids", [])),
             unavailable_reasons=dict(value.get("unavailable_reasons", {})),
-            document_bindings=[
-                CorpusScopeDocumentBinding.from_dict(binding)
-                for binding in value.get("document_bindings", [])
-                if isinstance(binding, dict)
-            ],
+            document_bindings=document_bindings,
             warnings=list(value.get("warnings", [])),
             scope_mode=str(value.get("scope_mode", AssistantScopeMode.FIXED.value)),
+            mapping_status=mapping_status,
         )
 
 
@@ -220,7 +246,6 @@ class CorpusScopeService(ResearchAccessMixin):
             documents = [d for d in documents if d.id in subset]
 
         rag_ids = [d.rag_document_id for d in documents if d.rag_document_id]
-        corpus_doc_ids = [d.id for d in documents]
 
         # Authoritative RAG status (batched) — I2: no uploader filter
         rag_docs = await self.rag_repo.get_documents_by_ids(
@@ -231,7 +256,6 @@ class CorpusScopeService(ResearchAccessMixin):
         by_id = {d.id: d for d in rag_docs}
 
         indexed: set[str] = set()
-        unavailable: set[str] = set()
         unavailable_corpus_document_ids: list[str] = []
         unavailable_reasons: dict[str, str] = {}
         document_bindings: list[CorpusScopeDocumentBinding] = []
@@ -260,8 +284,6 @@ class CorpusScopeService(ResearchAccessMixin):
                 indexed.add(rag_id)
                 indexed_corpus_document_count += 1
             else:
-                if rag_id:
-                    unavailable.add(rag_id)
                 unavailable_corpus_document_ids.append(corpus_document.id)
                 unavailable_reasons[corpus_document.id] = reason
 
@@ -307,8 +329,29 @@ class CorpusScopeService(ResearchAccessMixin):
                 "unavailable or still indexing"
             )
 
-        # Evidence allow-list = indexed only (I1/I5); empty list if none
-        allow_list = sorted(indexed)
+        # Evidence allow-list and compatibility ID lists are derived from the
+        # explicit bindings only — never from independently sorted parallel arrays.
+        document_bindings = sorted(
+            document_bindings, key=lambda binding: binding.corpus_document_id
+        )
+        allow_list = sorted(
+            binding.rag_document_id
+            for binding in document_bindings
+            if binding.availability == "indexed" and binding.rag_document_id
+        )
+        unavailable_rag_ids = sorted(
+            {
+                binding.rag_document_id
+                for binding in document_bindings
+                if binding.availability == "unavailable" and binding.rag_document_id
+            }
+        )
+        corpus_document_ids = [binding.corpus_document_id for binding in document_bindings]
+        unavailable_corpus_document_ids = sorted(
+            binding.corpus_document_id
+            for binding in document_bindings
+            if binding.availability == "unavailable"
+        )
         revision_chunks = await self.rag_repo.list_evidence_revision_chunks(allow_list)
         chunks_by_document: dict[str, list[dict[str, Any]]] = {}
         for chunk in revision_chunks:
@@ -342,9 +385,9 @@ class CorpusScopeService(ResearchAccessMixin):
             project_id=corpus.project_id,
             corpus_name=corpus.name,
             rag_document_ids=allow_list,
-            corpus_document_ids=sorted(corpus_doc_ids),
+            corpus_document_ids=corpus_document_ids,
             indexed_rag_document_ids=allow_list,
-            unavailable_rag_document_ids=sorted(unavailable),
+            unavailable_rag_document_ids=unavailable_rag_ids,
             scope_hash=_scope_hash(allow_list, corpus_id=corpus.id, project_id=corpus.project_id),
             index_version=self.rag_config.index_version,
             retrieval_version=self.rag_config.retrieval_algorithm_version,
@@ -352,12 +395,11 @@ class CorpusScopeService(ResearchAccessMixin):
             total_documents=len(documents),
             indexed_count=indexed_corpus_document_count,
             unavailable_count=len(unavailable_corpus_document_ids),
-            unavailable_corpus_document_ids=sorted(unavailable_corpus_document_ids),
+            unavailable_corpus_document_ids=unavailable_corpus_document_ids,
             unavailable_reasons=unavailable_reasons,
-            document_bindings=sorted(
-                document_bindings, key=lambda binding: binding.corpus_document_id
-            ),
+            document_bindings=document_bindings,
             warnings=warnings,
+            mapping_status="ok",
         )
 
     async def resolve_for_thread(
@@ -396,6 +438,84 @@ class CorpusScopeService(ResearchAccessMixin):
             raise HTTPException(status_code=409, detail="Assistant thread scope boundary mismatch")
         snapshot.scope_mode = mode
         return snapshot
+
+    async def frozen_revision_ids(self, scope: CorpusScopeSnapshot) -> list[str]:
+        """Validate a fixed snapshot and return its exact revision allow-list.
+
+        A fixed scope is replayable only when every indexed member carries an
+        immutable revision and the stored evidence hash still describes those
+        revision chunks.  Never substitute a document's current revision.
+        """
+        bindings = [
+            binding
+            for binding in scope.document_bindings
+            if binding.availability == "indexed" and binding.rag_document_id
+        ]
+        revisions_by_document = {
+            binding.rag_document_id: binding.index_revision_id for binding in bindings
+        }
+        if (
+            set(revisions_by_document) != set(scope.rag_document_ids)
+            or any(not revision_id for revision_id in revisions_by_document.values())
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "historical_revision_unavailable: "
+                    "fixed scope has no exact revisions"
+                ),
+            )
+
+        revision_ids = [
+            str(revisions_by_document[document_id]) for document_id in scope.rag_document_ids
+        ]
+        available = await self.rag_repo.list_available_revision_ids(
+            document_ids=list(scope.rag_document_ids),
+            revision_ids=revision_ids,
+        )
+        if set(available) != set(revision_ids):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "historical_revision_unavailable: "
+                    "frozen revision is not retrievable"
+                ),
+            )
+
+        chunks = await self.rag_repo.list_evidence_revision_chunks(
+            list(scope.rag_document_ids), revision_ids=revision_ids
+        )
+        chunks_by_document: dict[str, list[dict[str, Any]]] = {}
+        for chunk in chunks:
+            chunks_by_document.setdefault(chunk.document_id, []).append(
+                chunk_revision_identity(chunk)
+            )
+        actual_hash = build_evidence_revision_hash(
+            corpus_id=scope.corpus_id,
+            project_id=scope.project_id,
+            document_revisions=[
+                {
+                    "rag_document_id": document_id,
+                    "content_fingerprint": next(
+                        binding.document_revision
+                        for binding in bindings
+                        if binding.rag_document_id == document_id
+                    ),
+                    "chunks": chunks_by_document.get(document_id, []),
+                }
+                for document_id in scope.rag_document_ids
+            ],
+            config=self.rag_config,
+        )
+        if actual_hash != scope.evidence_revision_hash:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "historical_revision_unavailable: "
+                    "frozen evidence hash no longer matches"
+                ),
+            )
+        return revision_ids
 
     async def record_scope_event(
         self,

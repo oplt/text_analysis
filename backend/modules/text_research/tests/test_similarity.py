@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import unittest
+import unittest.mock
+
+import numpy as np
 
 from backend.modules.text_research.infrastructure import quantitative
 from backend.modules.text_research.infrastructure import similarity as sim
@@ -89,6 +92,65 @@ class PairwiseSimilarityTests(unittest.TestCase):
             self.ids, method="jaccard", tokenized=self.tokenized, min_score=0.99
         )
         self.assertEqual(high_bar["pairs_returned"], 0)
+
+    def test_blocked_topk_matches_dense_for_small_overflow(self):
+        """Force blocked path by temporarily lowering the dense ceiling."""
+        n = 12
+        tokenized = [tokenize(f"topic alpha beta {i % 3}") for i in range(n)]
+        ids = [f"u{i}" for i in range(n)]
+        dense = sim.pairwise_similarity(ids, method="jaccard", tokenized=tokenized, top_k=5)
+        with (
+            unittest.mock.patch.object(sim, "DENSE_PAIRWISE_MAX_N", 4),
+            unittest.mock.patch.object(sim, "EXACT_ALL_PAIRS_MAX_N", 4),
+        ):
+            blocked = sim.pairwise_similarity(
+                ids, method="jaccard", tokenized=tokenized, top_k=5
+            )
+        self.assertEqual(blocked["computation"], "bounded_topk")
+        self.assertEqual(
+            [(p["source_id"], p["target_id"], round(p["score"], 8)) for p in dense["pairs"]],
+            [(p["source_id"], p["target_id"], round(p["score"], 8)) for p in blocked["pairs"]],
+        )
+
+    def test_large_topk_never_allocates_dense_nxn(self):
+        n = sim.DENSE_PAIRWISE_MAX_N + 20
+        tokenized = [["tok", f"v{i % 7}"] for i in range(n)]
+        ids = [f"id-{i}" for i in range(n)]
+        allocated: list[tuple[int, ...]] = []
+        real_ones = np.ones
+
+        def tracking_ones(shape, *args, **kwargs):
+            allocated.append(tuple(shape) if isinstance(shape, tuple) else (shape,))
+            return real_ones(shape, *args, **kwargs)
+
+        with unittest.mock.patch.object(np, "ones", side_effect=tracking_ones):
+            report = sim.pairwise_similarity(
+                ids, method="jaccard", tokenized=tokenized, top_k=10
+            )
+        self.assertEqual(report["computation"], "bounded_topk")
+        self.assertEqual(report["pairs_returned"], 10)
+        self.assertFalse(any(len(shape) == 2 and shape[0] == n and shape[1] == n for shape in allocated))
+
+    def test_exact_mode_ceiling_without_topk(self):
+        n = sim.EXACT_ALL_PAIRS_MAX_N + 1
+        tokenized = [["a"] for _ in range(n)]
+        ids = [f"u{i}" for i in range(n)]
+        with self.assertRaises(ValueError) as ctx:
+            sim.pairwise_similarity(ids, method="jaccard", tokenized=tokenized, top_k=None)
+        self.assertIn("top_k", str(ctx.exception))
+
+    def test_deterministic_tie_breaking(self):
+        tokenized = [["shared"], ["shared"], ["shared"]]
+        ids = ["c", "a", "b"]
+        with unittest.mock.patch.object(sim, "DENSE_PAIRWISE_MAX_N", 1):
+            report = sim.pairwise_similarity(
+                ids, method="jaccard", tokenized=tokenized, top_k=3
+            )
+        # Ties break by ascending index order (i, j), not lexicographic ids.
+        pairs = [(p["source_id"], p["target_id"]) for p in report["pairs"]]
+        self.assertEqual(pairs, [("c", "a"), ("c", "b"), ("a", "b")])
+        again = sim.pairwise_similarity(ids, method="jaccard", tokenized=tokenized, top_k=3)
+        self.assertEqual(pairs, [(p["source_id"], p["target_id"]) for p in again["pairs"]])
 
     def test_requires_at_least_two_items(self):
         with self.assertRaises(ValueError):

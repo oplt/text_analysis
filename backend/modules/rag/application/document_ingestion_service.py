@@ -316,6 +316,13 @@ class DocumentIngestionService:
                 parser_version=getattr(self.config, "parser_version", None),
                 chunker_version=getattr(self.config, "chunker_version", None),
                 index_version=getattr(self.config, "index_version", None),
+                embedding_provider=getattr(self.config, "embedding_provider", None),
+                embedding_model=getattr(self.config, "embedding_model", None),
+                embedding_model_version=getattr(self.config, "embedding_model_version", None),
+                embedding_dimensions=getattr(self.config, "embedding_dimensions", None),
+                embedding_preprocessing_version=getattr(
+                    self.config, "embedding_preprocessing_version", None
+                ),
             )
 
             chunks = await self.chunker.chunk(
@@ -379,6 +386,7 @@ class DocumentIngestionService:
                     for c in chunks
                 ],
                 revision_id=index_revision.id,
+                expected_embedding_dimensions=getattr(self.config, "embedding_dimensions", None),
             )
             await self.repo.activate_document_revision(document, index_revision)
 

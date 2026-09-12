@@ -84,6 +84,7 @@ class RetrievalOutcome:
     evidence_revision_hash: str | None = None
     index_revision_ids: list[str] = field(default_factory=list)
     cache_hit: bool = False
+    request_id: str | None = None
     retrieval_provenance: dict[str, Any] = field(default_factory=dict)
 
 
@@ -113,6 +114,10 @@ class Citation:
     parent_context_id: str | None = None
     offset_coordinate_system: str | None = None
     offset_scope: str | None = None
+    offset_scope_id: str | None = None
+    source_spans: list[dict[str, Any]] | None = None
+    index_revision_id: str | None = None
+    source_status: str | None = None
 
 
 @dataclass(slots=True)

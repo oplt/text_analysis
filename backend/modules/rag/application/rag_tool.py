@@ -50,6 +50,8 @@ async def rag_search_tool(
     bounded = builder.trim_chunks_to_token_budget(
         chunks,
         max_tokens=config.max_context_tokens,
+        overlap_dedupe_threshold=getattr(config, "context_overlap_dedupe_threshold", 0.8),
+        ordering_policy=getattr(config, "context_ordering_policy", "relevance"),
     )
     context = builder.build_document_context_block(bounded)
     return bounded, context

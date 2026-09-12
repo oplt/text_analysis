@@ -53,8 +53,14 @@ class PreprocessingConfigNlpTests(unittest.TestCase):
         meta = describe_implementation(cfg)
         self.assertEqual(meta["preprocessing_implementation_version"], "3")
         self.assertTrue(meta["lemmatization_requested"])
-        self.assertIn("spacy", meta)
-        self.assertIn("spacy_available", meta)
+        # Classical lemmatization does not load spaCy (TASK-011).
+        self.assertIsNone(meta["spacy"])
+        self.assertFalse(meta["spacy_available"])
+
+        spacy_cfg = PreprocessingConfig(phrase_detection=True, language="en")
+        spacy_meta = describe_implementation(spacy_cfg)
+        self.assertIn("spacy", spacy_meta)
+        self.assertIsNotNone(spacy_meta["spacy"])
 
     def test_classical_tokenize_still_works(self):
         tokens = tokenize(

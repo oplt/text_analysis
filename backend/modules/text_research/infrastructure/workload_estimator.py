@@ -2,6 +2,13 @@
 
 Used by :mod:`analysis_executor` to decide inline ``asyncio.to_thread`` vs
 Celery enqueue. Thresholds live on settings (``RESEARCH_ASYNC_*``).
+
+Pair/cost models mirror the algorithms after TASK-007:
+- pairwise + top_k → bounded heap/block work (``min(all_pairs, N·top_k)``)
+- query → N comparisons
+- group_centroid → G(G-1)/2
+- co-occurrence → token-window ops (caller passes ``estimated_pairs``)
+- topic/model sweeps → models × corpus scale
 """
 
 from __future__ import annotations
@@ -40,16 +47,59 @@ def estimate_token_count(texts: Sequence[str] | None, *, chars_per_token: float 
     return max(1, int(total_chars / max(chars_per_token, 1.0)))
 
 
-def estimate_pair_count(n_units: int, *, mode: str = "pairwise") -> int:
-    """Pair-count estimate for similarity / duplicate-style work."""
+def estimate_pair_count(
+    n_units: int,
+    *,
+    mode: str = "pairwise",
+    top_k: int = 0,
+    n_groups: int = 0,
+    window_size: int = 0,
+    n_models: int = 0,
+) -> int:
+    """Pair/operation-count estimate calibrated to analysis algorithm cost.
+
+    Modes:
+    - ``pairwise`` / ``all_pairs`` / ``duplicate``: undirected pairs; when
+      ``top_k > 0`` use bounded ``min(all_pairs, N·top_k)`` (TASK-007 path).
+    - ``query`` / ``top_k``: one score per candidate (N).
+    - ``group_centroid``: undirected group pairs.
+    - ``cooccurrence``: sliding-window token ops ≈ N · window.
+    - ``sweep`` / ``model_sweep``: models × corpus scale.
+    """
     n = max(0, int(n_units))
+    k = max(0, int(top_k))
+    key = (mode or "pairwise").strip().lower().replace("-", "_")
+
+    if key in {"query", "top_k"}:
+        return n
+
+    if key in {"group_centroid", "centroid", "between_groups"}:
+        g = max(0, int(n_groups))
+        if g < 2:
+            # Fall back to unit count when caller did not pass group cardinality.
+            g = n
+        if g < 2:
+            return 0
+        return g * (g - 1) // 2
+
+    if key in {"cooccurrence", "collocation", "window"}:
+        return n * max(1, int(window_size) if window_size else 1)
+
+    if key in {"sweep", "model_sweep", "topic_sweep"}:
+        models = max(1, int(n_models) if n_models else 1)
+        return models * max(n, 1)
+
     if n < 2:
         return 0
-    if mode in {"pairwise", "all_pairs", "duplicate"}:
-        return n * (n - 1) // 2
-    if mode in {"query", "top_k"}:
-        return n
-    return n * (n - 1) // 2
+
+    all_pairs = n * (n - 1) // 2
+    if key in {"pairwise", "all_pairs", "duplicate"} and k > 0:
+        # Blocked top-K still compares broadly, but returned/retained work is
+        # bounded; use min(all_pairs, N·k) as the async cost proxy.
+        return min(all_pairs, n * k)
+    if key in {"pairwise", "all_pairs", "duplicate"}:
+        return all_pairs
+    return all_pairs
 
 
 def estimate_workload(
@@ -66,23 +116,36 @@ def estimate_workload(
     n_seed_runs: int = 0,
     estimated_pairs: int | None = None,
     pair_mode: str = "pairwise",
+    n_groups: int = 0,
+    window_size: int = 0,
 ) -> WorkloadEstimate:
     """Build a :class:`WorkloadEstimate` from available request dimensions."""
     tokens = int(estimated_tokens) if estimated_tokens is not None else estimate_token_count(texts)
-    pairs = (
-        int(estimated_pairs)
-        if estimated_pairs is not None
-        else (
-            estimate_pair_count(n_units, mode=pair_mode)
-            if analysis_type
-            in {
-                "similarity",
-                "duplicate_detection",
-                "cooccurrence",
-            }
-            else 0
+    analysis = (analysis_type or "").strip().lower()
+    if estimated_pairs is not None:
+        pairs = int(estimated_pairs)
+    elif analysis in {"similarity", "duplicate_detection", "cooccurrence"}:
+        mode = pair_mode
+        if analysis == "cooccurrence" and pair_mode in {"pairwise", "all_pairs"}:
+            mode = "cooccurrence"
+        if analysis == "duplicate_detection" and pair_mode == "pairwise":
+            mode = "duplicate"
+        pairs = estimate_pair_count(
+            n_units,
+            mode=mode,
+            top_k=requested_top_k,
+            n_groups=n_groups,
+            window_size=window_size,
+            n_models=n_topic_models,
         )
-    )
+    elif analysis in {"topic_k_sweep", "topic_seed_stability", "robustness"}:
+        pairs = estimate_pair_count(
+            n_units,
+            mode="sweep",
+            n_models=max(n_topic_models, n_seed_runs, 1),
+        )
+    else:
+        pairs = 0
     return WorkloadEstimate(
         analysis_type=analysis_type,
         n_units=max(0, int(n_units)),

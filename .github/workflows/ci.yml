@@ -1,12 +1,12 @@
 # CI structure (Phase 21):
 # - backend-lint
-# - backend-tests (research unit)
-# - backend-rag-tests
+# - backend-tests (research unit; includes synthesis worker failure matrix)
+# - backend-rag-tests (includes RAG failure-injection matrix test_failure_matrix.py)
 # - backend-memory-agent-tests
 # - backend-benchmarks (performance; 100k optional via workflow_dispatch)
-# - migrations
+# - migrations (pgvector service; optional live revision ACL after upgrade)
 # - frontend (lint + unit + build)
-# - playwright-research
+# - playwright-research (pgvector service)
 # Nightly/expensive 100k benchmarks stay opt-in via include_100k.
 name: Current-HEAD quality gates
 
@@ -128,6 +128,8 @@ jobs:
     name: Backend RAG unit tests
     needs: [identity, backend-lock]
     runs-on: ubuntu-latest
+    # Failure-matrix tests are fake/deterministic and do not need live providers.
+    # pgvector lives on migrations + playwright; live revision ACL is skip-gated.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -139,13 +141,14 @@ jobs:
       - name: Install backend (frozen lock)
         working-directory: backend
         run: uv sync --frozen --extra dev --extra pdf
-      - name: Pytest RAG (+ shared pool/cache smoke)
+      - name: Pytest RAG (+ failure matrix + shared pool/cache smoke)
         run: |
           backend/.venv/bin/pytest \
             backend/modules/rag/tests \
             backend/tests/test_cache.py \
             backend/tests/test_pool_observability.py \
             backend/tests/test_database_pool.py \
+            backend/tests/integration/test_rag_pgvector_revision_acl.py \
             -q
       - name: Enhanced PDF parser smoke
         run: backend/.venv/bin/pytest backend/modules/rag/tests/test_parser_adapters.py -q
@@ -245,6 +248,15 @@ jobs:
           alembic heads
           alembic upgrade head
           alembic current
+      - name: RAG pgvector revision ACL (live, after migrate)
+        env:
+          DATABASE_URL: postgresql+asyncpg://text_analysis:text_analysis@localhost:5432/text_analysis
+        run: |
+          # Creates vector extension if migration did; live probe runs, unit filter
+          # contract always asserts. Skips cleanly only if extension/schema missing.
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 backend/.venv/bin/pytest \
+            -p pytest_asyncio.plugin \
+            backend/tests/integration/test_rag_pgvector_revision_acl.py -q --tb=short
 
   frontend:
     name: Frontend lint, tests, TypeScript build

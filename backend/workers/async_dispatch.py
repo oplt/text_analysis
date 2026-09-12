@@ -123,6 +123,7 @@ def dispatch_background_sync_job(
     celery_kwargs: dict[str, Any],
     queue: str,
     job_name: str,
+    task_id: str | None = None,
 ) -> str | None:
     """Queue work on Celery, or a bounded local executor in eager mode."""
     global _eager_warning_logged
@@ -143,13 +144,24 @@ def dispatch_background_sync_job(
             )
         future = executor.submit(target, **kwargs)
         future.add_done_callback(lambda completed: _release_eager_slot(completed, slots))
-        return None
+        return task_id
 
-    result = celery_task.apply_async(
-        kwargs=celery_kwargs,
-        queue=queue,
-        headers=_celery_observability_headers(),
-    )
+    apply_kwargs: dict[str, Any] = {
+        "kwargs": celery_kwargs,
+        "queue": queue,
+        "headers": _celery_observability_headers(),
+    }
+    if task_id:
+        apply_kwargs["task_id"] = task_id
+    try:
+        result = celery_task.apply_async(**apply_kwargs)
+    except Exception as exc:
+        # Celery raises on duplicate task_id when the prior task still exists —
+        # treat as successful idempotent republish of the same identity.
+        if task_id and "Duplicate" in type(exc).__name__:
+            logger.info("idempotent celery republish task_id=%s job=%s", task_id, job_name)
+            return task_id
+        raise
     return str(result.id)
 
 

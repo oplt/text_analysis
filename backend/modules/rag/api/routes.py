@@ -255,6 +255,12 @@ async def retrieve_chunks(
                 source_span_ids=(chunk.metadata or {}).get("source_span_ids"),
                 char_start=(chunk.metadata or {}).get("char_start"),
                 char_end=(chunk.metadata or {}).get("char_end"),
+                offset_coordinate_system=(chunk.metadata or {}).get(
+                    "offset_coordinate_system"
+                ),
+                offset_scope=(chunk.metadata or {}).get("offset_scope"),
+                offset_scope_id=(chunk.metadata or {}).get("offset_scope_id"),
+                source_spans=(chunk.metadata or {}).get("source_spans"),
             )
             for chunk in outcome.chunks
         ],
@@ -321,6 +327,10 @@ async def ask_rag(
                 char_end=c.char_end,
                 source_span_ids=c.source_span_ids,
                 parent_context_id=c.parent_context_id,
+                offset_coordinate_system=c.offset_coordinate_system,
+                offset_scope=c.offset_scope,
+                offset_scope_id=c.offset_scope_id,
+                source_spans=c.source_spans,
             )
             for c in result.citations
         ],

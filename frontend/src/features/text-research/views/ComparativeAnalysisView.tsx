@@ -105,7 +105,7 @@ export default function ComparativeAnalysisView() {
 
     const modelsQuery = useQuery({
         queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () => listClassifiers(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: ({ signal }) => listClassifiers(ctx.projectId, ctx.selectedCorpusId, undefined, signal),
         enabled: Boolean(ctx.projectId) && provenanceMode !== "human_only",
     });
 

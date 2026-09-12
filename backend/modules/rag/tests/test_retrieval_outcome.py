@@ -127,3 +127,55 @@ class RetrievalOutcomeTest(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(outcome.degraded)
         self.assertTrue(outcome.no_matches)
         self.assertEqual(outcome.chunks, [])
+
+    async def test_frozen_revision_mismatch_fails_closed(self):
+        from backend.modules.rag.application.evidence_revision import StaleEvidenceRevisionError
+
+        db = MagicMock()
+        service = RetrievalService(db)
+        service.config = SimpleNamespace(
+            enabled=True,
+            top_k=5,
+            embedding_dimensions=2,
+            retrieval_algorithm_version="hybrid-rrf-v1",
+            index_version="pgvector-fts-v1",
+            rrf_k=60,
+            parent_context_enabled=False,
+            retrieval_cache_artifact_version="v2",
+        )
+        service.embeddings = MagicMock()
+        service.embeddings.embed_texts = AsyncMock(return_value=[[1.0, 0.0]])
+        service.vector_store = MagicMock()
+        service.vector_store.similarity_search = AsyncMock(
+            return_value=[_chunk(index_revision_id="live-revision")]
+        )
+        service.repo = MagicMock()
+        service.repo.lexical_search = AsyncMock(return_value=[])
+        service.ranker = SimpleNamespace(name="none", version="0", rerank=lambda q, c, top_n: c[:top_n])
+
+        with (
+            patch(
+                "backend.modules.rag.application.retrieval_service.get_cached_retrieval",
+                AsyncMock(return_value=None),
+            ),
+            patch(
+                "backend.modules.rag.application.retrieval_service.set_cached_retrieval",
+                AsyncMock(),
+            ),
+            self.assertRaises(StaleEvidenceRevisionError),
+        ):
+            await service.retrieve(
+                "hello",
+                user_id="user-1",
+                project_id="proj-1",
+                filters={
+                    "document_ids": ["doc-1"],
+                    "owner_scoped": False,
+                    "index_revision_ids": ["frozen-revision"],
+                },
+                evidence_revision_hash="frozen-hash",
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()

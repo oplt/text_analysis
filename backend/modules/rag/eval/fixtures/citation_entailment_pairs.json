@@ -1,0 +1,16 @@
+{
+  "pairs": [
+    {
+      "id": "governance-supported",
+      "claim": "Decision makers must explain and justify decisions.",
+      "evidence": "Institutional accountability requires decision makers to explain and justify decisions.",
+      "entailed": true
+    },
+    {
+      "id": "participation-unsupported",
+      "claim": "Centralized control is never challenged.",
+      "evidence": "Participation distributes authority and can challenge centralized control through deliberation.",
+      "entailed": false
+    }
+  ]
+}

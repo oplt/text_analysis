@@ -29,7 +29,16 @@ Offline ranking comparison (no paid APIs):
 
 ```bash
 backend/.venv/bin/python -m backend.modules.rag.eval.retrieval_eval
+backend/.venv/bin/python -m backend.modules.rag.eval.rerank_experiments
+backend/.venv/bin/python -m backend.modules.rag.eval.chunking_experiments
 ```
+
+### Selective reranking defaults
+
+`RerankingConfig.intent_depth_overrides` caps depth by intent: FACT/DEFINITION → 0,
+evidence → ≤20, broader intents → ≤40 (`RAG_RERANK_MAX_DEPTH`). Offline fixture
+comparison lives in `eval/rerank_experiments.py`. Live quality remains
+NEEDS_LIVE_MEASUREMENT before changing defaults.
 
 Chunking is structure-aware (`structure-v1`). PDFs use the configured parser with a
 reliable pypdf fallback. Install the optional enhanced parser with
@@ -66,7 +75,7 @@ LangChain is used **only** in `infrastructure/` (`langchain_text_splitters`, opt
 
 ```env
 RAG_ENABLED=true
-RAG_VECTOR_BACKEND=pgvector    # pgvector | qdrant
+RAG_VECTOR_BACKEND=pgvector    # pgvector is the only supported backend
 RAG_EMBEDDING_PROVIDER=local   # uses existing AiProviderRegistry
 RAG_EMBEDDING_MODEL=text-embedding-3-small
 RAG_CHUNK_SIZE=1000
@@ -209,6 +218,27 @@ alembic upgrade head
 
 ```sh
 PYTHONPATH=. uv run --project backend python -m unittest discover -s backend/modules/rag/tests -v
+```
+
+### Failure matrix (RAG-P1-021)
+
+Deterministic failure-injection coverage (no cloud provider secrets):
+
+```sh
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 backend/.venv/bin/pytest \
+  -p pytest_asyncio.plugin \
+  backend/modules/rag/tests/test_failure_matrix.py \
+  backend/modules/text_research/tests/test_synthesis_worker_failures.py \
+  -q --tb=short
+```
+
+pgvector revision ACL live probe (skips unless `DATABASE_URL` reaches Postgres with the
+`vector` extension; CI enables it after `alembic upgrade head` on `pgvector/pgvector`):
+
+```sh
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 backend/.venv/bin/pytest \
+  -p pytest_asyncio.plugin \
+  backend/tests/integration/test_rag_pgvector_revision_acl.py -q --tb=short
 ```
 
 ## Vector backend

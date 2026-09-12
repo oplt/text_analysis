@@ -90,6 +90,101 @@ class CorpusScopeServiceTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertEqual(snapshot.document_bindings, [])
+        self.assertEqual(snapshot.mapping_status, "ok")
+
+    def test_legacy_scope_with_ids_but_no_bindings_is_unverifiable(self):
+        from backend.modules.text_research.application.corpus_scope_service import (
+            CorpusScopeSnapshot,
+        )
+
+        snapshot = CorpusScopeSnapshot.from_dict(
+            {
+                "corpus_id": "corp-1",
+                "project_id": "proj-1",
+                "scope_hash": "scope-hash",
+                "rag_document_ids": ["rag-1"],
+                "corpus_document_ids": ["cd-1"],
+            }
+        )
+
+        self.assertEqual(snapshot.document_bindings, [])
+        self.assertEqual(snapshot.mapping_status, "unverifiable")
+
+    async def test_fixed_scope_requires_exact_revisions_and_matching_evidence_hash(self):
+        from backend.modules.text_research.application.corpus_scope_service import (
+            CorpusScopeDocumentBinding,
+            CorpusScopeSnapshot,
+        )
+
+        service = CorpusScopeService(MagicMock())
+        scope = CorpusScopeSnapshot(
+            corpus_id="corp-1",
+            project_id="proj-1",
+            corpus_name="Corpus",
+            rag_document_ids=["rag-1"],
+            corpus_document_ids=["cd-1"],
+            indexed_rag_document_ids=["rag-1"],
+            unavailable_rag_document_ids=[],
+            scope_hash="scope",
+            index_version="index",
+            retrieval_version="retrieval",
+            evidence_revision_hash="frozen",
+            total_documents=1,
+            indexed_count=1,
+            unavailable_count=0,
+            document_bindings=[
+                CorpusScopeDocumentBinding("cd-1", "rag-1", "indexed", index_revision_id=None)
+            ],
+        )
+
+        with self.assertRaises(HTTPException) as context:
+            await service.frozen_revision_ids(scope)
+        self.assertEqual(context.exception.status_code, 409)
+
+    async def test_citation_mapping_uses_scope_bindings_not_id_positions(self):
+        from backend.modules.rag.domain.models import Citation
+        from backend.modules.text_research.application.corpus_assistant_service import (
+            CorpusAssistantService,
+        )
+        from backend.modules.text_research.application.corpus_scope_service import (
+            CorpusScopeDocumentBinding,
+            CorpusScopeSnapshot,
+        )
+
+        scope = CorpusScopeSnapshot(
+            corpus_id="corp-1",
+            project_id="proj-1",
+            corpus_name="Corpus",
+            rag_document_ids=["rag-a", "rag-z"],
+            corpus_document_ids=["cd-a", "cd-unavailable", "cd-z"],
+            indexed_rag_document_ids=["rag-a", "rag-z"],
+            unavailable_rag_document_ids=[],
+            scope_hash="scope",
+            index_version="index",
+            retrieval_version="retrieval",
+            evidence_revision_hash="evidence",
+            total_documents=3,
+            indexed_count=2,
+            unavailable_count=1,
+            document_bindings=[
+                CorpusScopeDocumentBinding("cd-z", "rag-z", "indexed"),
+                CorpusScopeDocumentBinding("cd-unavailable", None, "unavailable"),
+                CorpusScopeDocumentBinding("cd-a", "rag-a", "indexed"),
+            ],
+        )
+        service = CorpusAssistantService(MagicMock())
+        mapping = await service._rag_to_corpus_document_map(scope)
+
+        citation = Citation(
+            document_id="rag-z",
+            chunk_id="chunk-z",
+            filename="z.pdf",
+            score=0.9,
+            snippet="evidence",
+        )
+        enriched = service._enrich_citations([citation], rag_to_corpus=mapping)
+
+        self.assertEqual(enriched[0]["corpus_document_id"], "cd-z")
 
     async def test_subset_cannot_expand_beyond_corpus(self):
         service = CorpusScopeService(MagicMock())

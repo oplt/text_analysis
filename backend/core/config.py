@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     # Max in-process single-flight locks for identical embedding misses.
     CACHE_EMBEDDING_FLIGHT_LOCKS_MAX: int = 1024
     CACHE_RETRIEVAL_TTL_SECONDS: int = 180
+    RAG_RETRIEVAL_CACHE_ARTIFACT_VERSION: str = "v2"
     CACHE_PLATFORM_TTL_SECONDS: int = 300
     CACHE_SETTINGS_TTL_SECONDS: int = 60
     CACHE_OBSERVABILITY_STATUS_TTL_SECONDS: int = 30
@@ -185,15 +186,22 @@ class Settings(BaseSettings):
     RAG_VECTOR_BACKEND: str = "pgvector"
     RAG_EMBEDDING_PROVIDER: str = ""
     RAG_EMBEDDING_MODEL: str = "text-embedding-3-small"
+    RAG_EMBEDDING_MODEL_VERSION: str = ""
     RAG_EMBEDDING_DIMENSIONS: int = 1536
+    RAG_EMBEDDING_PREPROCESSING_VERSION: str = "unicode-nfc-v1"
     RAG_CHUNK_SIZE: int = 1000
     RAG_CHUNK_OVERLAP: int = 150
+    RAG_CHUNK_POLICY_VERSION: str = "structure-v1"
+    RAG_PARENT_WINDOW_SIZE: int = 3
     RAG_TOP_K: int = 5
     RAG_SCORE_THRESHOLD: float = 0.3
     RAG_RERANK_ENABLED: bool = False
     RAG_RERANK_HEURISTIC_ENABLED: bool = False
     RAG_RERANK_CANDIDATE_MULTIPLIER: int = 3
+    RAG_RERANK_MAX_DEPTH: int = 40
+    RAG_CONTEXT_OVERLAP_DEDUPE_THRESHOLD: float = 0.8
     RAG_EXPECTED_VECTOR_DIMENSIONS: int = 1536
+    RAG_EXACT_VECTOR_FALLBACK_MAX_ROWS: int = 5000
     RAG_REQUIRE_ANN_INDEX: bool = False
     RAG_MAX_CONTEXT_TOKENS: int = 6000
     RAG_ALLOWED_FILE_TYPES: str = "pdf,txt,md,docx,csv"
@@ -206,6 +214,8 @@ class Settings(BaseSettings):
     # Hybrid retrieval / research assistant
     RAG_DENSE_CANDIDATES: int = 40
     RAG_LEXICAL_CANDIDATES: int = 40
+    RAG_RETRIEVAL_BRANCH_CONCURRENCY: int = 2
+    RAG_QUERY_VARIANT_CONCURRENCY: int = 3
     RAG_FUSION_METHOD: str = "rrf"
     RAG_RRF_K: int = 60
     RAG_SOURCE_MAX_CHUNKS_PER_DOCUMENT: int = 3
@@ -213,6 +223,7 @@ class Settings(BaseSettings):
     # Maximum document-finding fan-in for each reduction node; never a corpus
     # exclusion limit.
     RAG_SYNTHESIS_MAX_DOCUMENTS: int = 25
+    RAG_SYNTHESIS_REDUCE_TOKEN_BUDGET: int = 6000
     RAG_SYNTHESIS_BATCH_SIZE: int = 8
     RAG_SYNTHESIS_ASYNC_DOCUMENT_THRESHOLD: int = 8
     RAG_SYNTHESIS_PASSAGES_PER_DOCUMENT: int = 3
@@ -222,7 +233,11 @@ class Settings(BaseSettings):
     RAG_PDF_PARSER: str = "auto"
     RAG_PDF_OCR_ENABLED: bool = False
     RAG_PDF_OCR_MIN_TEXT_CHARS: int = 40
+    RAG_PDF_TEXT_QUALITY_THRESHOLD: float = 0.65
     RAG_PDF_TABLE_EXTRACTION_ENABLED: bool = False
+    RAG_PDF_HEADER_FOOTER_SUPPRESSION: bool = True
+    RAG_TEXT_DECODE_MAX_REPLACEMENT_RATIO: float = 0.02
+    RAG_CONTEXT_ORDERING_POLICY: str = "relevance"
     RAG_PARSER_VERSION: str = "pdf-auto-v1"
     RAG_INDEX_VERSION: str = "pgvector-fts-v1"
 

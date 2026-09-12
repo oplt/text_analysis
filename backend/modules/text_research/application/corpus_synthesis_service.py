@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from fastapi import HTTPException
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.modules.identity_access.models import User
+from backend.modules.rag.application.evidence_revision import StaleEvidenceRevisionError
 from backend.modules.rag.application.rag_answer_service import RagAnswerService
 from backend.modules.rag.application.retrieval_service import RetrievalService
 from backend.modules.rag.domain.enums import RetrievalIntent
@@ -23,8 +23,13 @@ from backend.modules.text_research.application.corpus_synthesis_provenance impor
     build_document_map_finding,
     build_synthesis_provenance,
 )
+from backend.modules.text_research.application.hierarchical_reduce import (
+    filter_claims_to_supporting_chunks,
+    pack_reduction_nodes,
+    write_reduce_checkpoint,
+)
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
-from backend.modules.text_research.domain.models import AnalysisRun, CorpusDocument, dumps, loads
+from backend.modules.text_research.domain.models import AnalysisRun, dumps, loads
 
 
 class CorpusSynthesisService(ResearchAccessMixin):
@@ -40,30 +45,64 @@ class CorpusSynthesisService(ResearchAccessMixin):
     async def _rag_to_corpus_document_map(self, scope) -> dict[str, str]:
         """Map citations through immutable scope bindings, never array position."""
         bindings = getattr(scope, "document_bindings", None)
+        mapping_status = getattr(scope, "mapping_status", "ok")
+        if mapping_status == "unverifiable":
+            raise HTTPException(
+                status_code=409,
+                detail="Corpus scope mapping is unverifiable; refuse positional ID pairing",
+            )
         if isinstance(bindings, list) and bindings:
             return {
                 binding.rag_document_id: binding.corpus_document_id
                 for binding in bindings
                 if binding.rag_document_id and binding.availability == "indexed"
             }
-        if bindings is None:
-            # Test doubles and non-snapshot callers have no persisted scope to resolve.
-            return {}
-
-        rag_document_ids = list(getattr(scope, "rag_document_ids", []))
-        if not rag_document_ids:
-            return {}
-        result = await self.db.execute(
-            select(CorpusDocument.id, CorpusDocument.rag_document_id).where(
-                CorpusDocument.corpus_id == scope.corpus_id,
-                CorpusDocument.rag_document_id.in_(rag_document_ids),
+        # Empty bindings are only valid when the scope itself has no indexed docs.
+        if list(getattr(scope, "rag_document_ids", []) or []):
+            raise HTTPException(
+                status_code=409,
+                detail="Corpus scope mapping is unverifiable; refuse positional ID pairing",
             )
-        )
-        return {
-            rag_document_id: corpus_document_id
-            for corpus_document_id, rag_document_id in result.all()
-            if rag_document_id
-        }
+        return {}
+
+    def _enrich_citations(
+        self,
+        citations: list,
+        *,
+        rag_to_corpus: dict[str, str],
+    ) -> list[dict]:
+        enriched: list[dict] = []
+        for citation in citations:
+            corpus_document_id = rag_to_corpus.get(citation.document_id)
+            if corpus_document_id is None:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Citation document is not present in the frozen corpus scope",
+                )
+            enriched.append(
+                {
+                    "document_id": citation.document_id,
+                    "corpus_document_id": corpus_document_id,
+                    "chunk_id": citation.chunk_id,
+                    "filename": citation.filename,
+                    "snippet": citation.snippet,
+                    "citation_number": citation.citation_number,
+                    "used_in_answer": citation.used_in_answer,
+                    "page_number": citation.page_number,
+                    "section_heading": citation.section_heading,
+                    "char_start": getattr(citation, "char_start", None),
+                    "char_end": getattr(citation, "char_end", None),
+                    "source_span_ids": getattr(citation, "source_span_ids", None),
+                    "parent_context_id": getattr(citation, "parent_context_id", None),
+                    "offset_coordinate_system": getattr(
+                        citation, "offset_coordinate_system", None
+                    ),
+                    "offset_scope": getattr(citation, "offset_scope", None),
+                    "offset_scope_id": getattr(citation, "offset_scope_id", None),
+                    "source_spans": getattr(citation, "source_spans", None),
+                }
+            )
+        return enriched
 
     def _freeze_scope(self, scope) -> dict:
         """Serialize the exact evidence authority required by an async run."""
@@ -79,7 +118,7 @@ class CorpusSynthesisService(ResearchAccessMixin):
         if missing_revisions:
             raise HTTPException(
                 status_code=409,
-                detail="Frozen synthesis evidence is missing an index revision",
+                detail="historical_revision_unavailable: frozen synthesis missing index revision",
             )
         return {
             "scope": scope.to_dict(),
@@ -94,7 +133,9 @@ class CorpusSynthesisService(ResearchAccessMixin):
     def _frozen_scope_from_run(params: dict, run: AnalysisRun) -> CorpusScopeSnapshot:
         frozen = params.get("frozen_synthesis_scope")
         if not isinstance(frozen, dict) or not isinstance(frozen.get("scope"), dict):
-            raise ValueError("Frozen synthesis scope is missing; cannot reproduce this run")
+            raise ValueError(
+                "historical_revision_unavailable: frozen synthesis scope is missing"
+            )
         scope = CorpusScopeSnapshot.from_dict(frozen["scope"])
         if scope.corpus_id != run.corpus_id or scope.project_id != run.project_id:
             raise ValueError("Frozen synthesis scope boundary mismatch")
@@ -102,6 +143,10 @@ class CorpusSynthesisService(ResearchAccessMixin):
             raise ValueError("Frozen synthesis scope hash mismatch")
         if params.get("evidence_revision_hash") != scope.evidence_revision_hash:
             raise ValueError("Frozen synthesis evidence revision mismatch")
+        if getattr(scope, "mapping_status", "ok") == "unverifiable":
+            raise ValueError(
+                "historical_revision_unavailable: frozen synthesis mapping is unverifiable"
+            )
         return scope
 
     async def synthesize(
@@ -187,13 +232,18 @@ class CorpusSynthesisService(ResearchAccessMixin):
 
     async def execute_synthesis(self, run_id: str) -> AnalysisRun:
         """Celery / worker entry for async corpus synthesis."""
+        from backend.modules.text_research.application.run_lifecycle import (
+            RunCancelledError,
+            TERMINAL_RUN_STATUSES,
+            complete_if_active,
+            ensure_not_cancelled,
+            fail_if_active,
+        )
+
         run = await self.repo.get_run(run_id)
         if run is None:
             raise ValueError(f"AnalysisRun {run_id} not found")
-        if run.status in {
-            AnalysisRunStatus.COMPLETED.value,
-            AnalysisRunStatus.CANCELLED.value,
-        }:
+        if run.status in TERMINAL_RUN_STATUSES:
             return run
 
         params = loads(run.parameters_json, {}) or {}
@@ -218,30 +268,23 @@ class CorpusSynthesisService(ResearchAccessMixin):
         await self.db.commit()
 
         try:
+            run = await ensure_not_cancelled(self.repo, run)
             scope = self._frozen_scope_from_run(params, run)
-            frozen_revision_ids = [
-                binding.index_revision_id
-                for binding in scope.document_bindings
-                if binding.availability == "indexed" and binding.index_revision_id
-            ]
-            available_revision_ids = await self.retrieval.repo.list_available_revision_ids(
-                document_ids=list(scope.rag_document_ids),
-                revision_ids=frozen_revision_ids,
-            )
-            if set(available_revision_ids) != set(frozen_revision_ids):
-                raise ValueError(
-                    "Frozen synthesis evidence is no longer retrievable; "
-                    "reproduction cannot continue"
-                )
+            # Existence of the revision IDs alone is insufficient: the queued
+            # evidence hash must still describe those exact retained chunks.
+            # This also fails closed for incomplete legacy bindings.
+            await self.scope_service.frozen_revision_ids(scope)
+            run = await ensure_not_cancelled(self.repo, run)
             result = await self._synthesize_sync(
                 user=user,
                 query=query,
                 scope=scope,
                 allow_list=list(scope.rag_document_ids),
             )
-            await self.repo.update_run(
+            run = await ensure_not_cancelled(self.repo, run)
+            await complete_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.COMPLETED.value,
                 progress_stage="completed",
                 completed_at=datetime.now(UTC),
                 results_json=dumps(result),
@@ -249,10 +292,12 @@ class CorpusSynthesisService(ResearchAccessMixin):
                 evidence_revision_hash=result.get("evidence_revision_hash"),
             )
             await self.db.commit()
+        except RunCancelledError:
+            await self.db.commit()
         except Exception as exc:
-            await self.repo.update_run(
+            await fail_if_active(
+                self.repo,
                 run,
-                status=AnalysisRunStatus.FAILED.value,
                 progress_stage="failed",
                 error_message=str(exc)[:2000],
                 completed_at=datetime.now(UTC),
@@ -342,24 +387,55 @@ class CorpusSynthesisService(ResearchAccessMixin):
         for batch_start in range(0, len(considered_ids), batch_size):
             document_batch = considered_ids[batch_start : batch_start + batch_size]
             for rag_document_id in document_batch:
-                outcome = await self.retrieval.retrieve(
-                    query,
-                    user_id=user.id,
-                    project_id=scope.project_id,
-                    top_k=per_doc,
-                    filters={
-                        "document_ids": [rag_document_id],
-                        "owner_scoped": False,
-                        **(
-                            {"index_revision_ids": [revision_by_document[rag_document_id]]}
-                            if rag_document_id in revision_by_document
-                            else {}
-                        ),
-                    },
-                    intent=RetrievalIntent.SYNTHESIS,
-                    persist_trace=True,
-                    evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
-                )
+                revision_id = revision_by_document.get(rag_document_id)
+                if not revision_id:
+                    findings.append(
+                        {
+                            "rag_document_id": rag_document_id,
+                            "supporting_chunk_ids": [],
+                            "missing_evidence": True,
+                            "missing_evidence_reason": "historical_revision_unavailable",
+                            "map_failure": True,
+                        }
+                    )
+                    continue
+                try:
+                    outcome = await self.retrieval.retrieve(
+                        query,
+                        user_id=user.id,
+                        project_id=scope.project_id,
+                        top_k=per_doc,
+                        filters={
+                            "document_ids": [rag_document_id],
+                            "owner_scoped": False,
+                            "index_revision_ids": [revision_id],
+                        },
+                        intent=RetrievalIntent.SYNTHESIS,
+                        persist_trace=True,
+                        evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
+                    )
+                except StaleEvidenceRevisionError as exc:
+                    findings.append(
+                        {
+                            "rag_document_id": rag_document_id,
+                            "supporting_chunk_ids": [],
+                            "missing_evidence": True,
+                            "missing_evidence_reason": str(exc.code),
+                            "map_failure": True,
+                        }
+                    )
+                    continue
+                except Exception as exc:
+                    findings.append(
+                        {
+                            "rag_document_id": rag_document_id,
+                            "supporting_chunk_ids": [],
+                            "missing_evidence": True,
+                            "missing_evidence_reason": f"map_retrieval_failed:{type(exc).__name__}",
+                            "map_failure": True,
+                        }
+                    )
+                    continue
                 if outcome.retrieval_trace_id:
                     trace_ids.append(outcome.retrieval_trace_id)
                 finding = build_document_map_finding(
@@ -381,15 +457,24 @@ class CorpusSynthesisService(ResearchAccessMixin):
         reduction_nodes = findings_with_evidence or findings
         chunks_by_id = {chunk.chunk_id: chunk for chunk in map_chunks}
         fan_in = max(1, int(getattr(self.rag_config, "synthesis_max_documents", 25)))
+        reduce_token_budget = max(
+            512, int(getattr(self.rag_config, "synthesis_reduce_token_budget", 6000))
+        )
         reduction_stages: list[dict] = []
+        reduction_checkpoints: dict[str, dict] = {}
         final_answer = None
         final_reduce_query = ""
         level = 1
 
         while reduction_nodes:
             next_nodes: list[dict] = []
-            for start in range(0, len(reduction_nodes), fan_in):
-                batch = reduction_nodes[start : start + fan_in]
+            for batch_index, batch in enumerate(
+                pack_reduction_nodes(
+                    reduction_nodes,
+                    max_tokens=reduce_token_budget,
+                    max_items=fan_in,
+                )
+            ):
                 batch_chunk_ids = list(
                     dict.fromkeys(
                         chunk_id
@@ -430,38 +515,53 @@ class CorpusSynthesisService(ResearchAccessMixin):
                     document_ids=allow_list,
                     include_memory=False,
                 )
+                supporting_allow = set(batch_chunk_ids)
+                kept_claims, rejected_claims = filter_claims_to_supporting_chunks(
+                    batch_answer.claims, supporting_allow
+                )
                 claimed_chunk_ids = list(
                     dict.fromkeys(
-                        chunk_id for claim in batch_answer.claims for chunk_id in claim.chunk_ids
+                        chunk_id
+                        for claim in kept_claims
+                        for chunk_id in claim.get("chunk_ids", [])
                     )
                 )
-                next_nodes.append(
-                    {
-                        "reduction_level": level,
-                        "source_document_ids": list(
-                            dict.fromkeys(
-                                document_id
-                                for finding in batch
-                                for document_id in finding.get(
-                                    "source_document_ids", [finding.get("rag_document_id")]
-                                )
-                                if document_id
+                node = {
+                    "reduction_level": level,
+                    "source_document_ids": list(
+                        dict.fromkeys(
+                            document_id
+                            for finding in batch
+                            for document_id in finding.get(
+                                "source_document_ids", [finding.get("rag_document_id")]
                             )
-                        ),
-                        "supporting_chunk_ids": claimed_chunk_ids or batch_chunk_ids,
-                        "claims": [
-                            {"text": claim.text, "chunk_ids": claim.chunk_ids}
-                            for claim in batch_answer.claims
-                        ],
-                        "missing_evidence": batch_answer.no_context_found,
-                    }
+                            if document_id
+                        )
+                    ),
+                    "supporting_chunk_ids": claimed_chunk_ids or batch_chunk_ids,
+                    "claims": kept_claims,
+                    "rejected_claims": rejected_claims,
+                    "missing_evidence": batch_answer.no_context_found,
+                }
+                next_nodes.append(node)
+                reduction_checkpoints = write_reduce_checkpoint(
+                    reduction_checkpoints,
+                    level=level,
+                    batch=batch_index,
+                    payload={
+                        "supporting_chunk_ids": node["supporting_chunk_ids"],
+                        "source_document_ids": node["source_document_ids"],
+                        "claim_count": len(kept_claims),
+                        "rejected_claim_count": len(rejected_claims),
+                    },
                 )
                 reduction_stages.append(
                     {
                         "level": level,
+                        "batch": batch_index,
                         "input_count": len(batch),
-                        "source_document_ids": next_nodes[-1]["source_document_ids"],
-                        "supporting_chunk_ids": next_nodes[-1]["supporting_chunk_ids"],
+                        "source_document_ids": node["source_document_ids"],
+                        "supporting_chunk_ids": node["supporting_chunk_ids"],
                     }
                 )
                 final_answer = batch_answer
@@ -490,6 +590,14 @@ class CorpusSynthesisService(ResearchAccessMixin):
         answer = final_answer
         rag_to_corpus_document = await self._rag_to_corpus_document_map(scope)
         docs_with_evidence = len(findings_with_evidence)
+        omitted_documents = [
+            {
+                "rag_document_id": finding["rag_document_id"],
+                "reason": finding["missing_evidence_reason"],
+            }
+            for finding in findings
+            if finding.get("map_failure") and finding.get("missing_evidence_reason")
+        ]
         provenance = build_synthesis_provenance(
             original_question=query,
             evidence_revision_hash=getattr(answer, "evidence_revision_hash", None)
@@ -499,7 +607,7 @@ class CorpusSynthesisService(ResearchAccessMixin):
             user_id=user.id,
             documents_in_scope=allow_list,
             documents_considered=considered_ids,
-            omitted_documents=[],
+            omitted_documents=omitted_documents,
             findings=findings,
             retrieval_trace_ids=trace_ids,
             reduction_prompt=final_reduce_query,
@@ -507,30 +615,10 @@ class CorpusSynthesisService(ResearchAccessMixin):
             created_at=datetime.now(UTC),
         )
         provenance["reduction_stages"] = reduction_stages
-        return {
-            "mode": "sync",
-            "answer": answer.answer,
-            "citations": [
-                {
-                    "document_id": c.document_id,
-                    "corpus_document_id": rag_to_corpus_document.get(c.document_id),
-                    "chunk_id": c.chunk_id,
-                    "filename": c.filename,
-                    "snippet": c.snippet,
-                    "citation_number": c.citation_number,
-                    "used_in_answer": c.used_in_answer,
-                    "page_number": c.page_number,
-                    "section_heading": c.section_heading,
-                    "char_start": getattr(c, "char_start", None),
-                    "char_end": getattr(c, "char_end", None),
-                    "source_span_ids": getattr(c, "source_span_ids", None),
-                    "parent_context_id": getattr(c, "parent_context_id", None),
-                    "offset_coordinate_system": getattr(c, "offset_coordinate_system", None),
-                    "offset_scope": getattr(c, "offset_scope", None),
-                }
-                for c in answer.citations
-            ],
-            "claims": [
+        provenance["reduction_checkpoints"] = reduction_checkpoints
+        map_supporting_ids = set(seen_chunk_ids)
+        filtered_claims, rejected_final_claims = filter_claims_to_supporting_chunks(
+            [
                 {
                     "text": claim.text,
                     "chunk_ids": claim.chunk_ids,
@@ -538,6 +626,16 @@ class CorpusSynthesisService(ResearchAccessMixin):
                 }
                 for claim in answer.claims
             ],
+            map_supporting_ids,
+        )
+        provenance["rejected_claim_escapes"] = rejected_final_claims
+        return {
+            "mode": "sync",
+            "answer": answer.answer,
+            "citations": self._enrich_citations(
+                answer.citations, rag_to_corpus=rag_to_corpus_document
+            ),
+            "claims": filtered_claims,
             "scope": scope.to_dict(),
             "evidence_revision_hash": getattr(answer, "evidence_revision_hash", None),
             "document_findings": findings,
@@ -546,8 +644,8 @@ class CorpusSynthesisService(ResearchAccessMixin):
             "documents_considered": len(considered_ids),
             "documents_with_evidence": docs_with_evidence,
             "truncated": truncated,
-            "omitted_document_count": 0,
-            "omitted_document_ids": [],
+            "omitted_document_count": len(omitted_documents),
+            "omitted_document_ids": [item["rag_document_id"] for item in omitted_documents],
             "coverage": {
                 "documents_in_scope": len(allow_list),
                 "documents_with_retrieved_evidence": docs_with_evidence,
@@ -562,4 +660,5 @@ class CorpusSynthesisService(ResearchAccessMixin):
             "retrieval_trace_id": None,
             "citation_validation_status": answer.citation_validation_status,
             "synthesis_provenance": provenance,
+            "reduction_checkpoints": list(reduction_checkpoints.values()),
         }

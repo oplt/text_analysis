@@ -19,25 +19,26 @@ class CancelledRunTests(unittest.IsolatedAsyncioTestCase):
             id="run-1",
             status=AnalysisRunStatus.QUEUED.value,
             artifact_namespace=None,
+            celery_task_id=None,
+        )
+        cancelled_run = SimpleNamespace(
+            id="run-1",
+            status=AnalysisRunStatus.CANCELLED.value,
+            cancellation_requested=True,
+            artifact_namespace=None,
         )
         service = RunService(MagicMock())
         service.get_run_or_404 = AsyncMock(return_value=run)
         service.repo = MagicMock()
-        service.repo.update_run = AsyncMock()
-        service.repo.get_run = AsyncMock(
-            return_value=SimpleNamespace(
-                id="run-1",
-                status=AnalysisRunStatus.CANCELLED.value,
-                cancellation_requested=True,
-            )
-        )
+        service.repo.update_run_if_active = AsyncMock(return_value=cancelled_run)
+        service.repo.get_run = AsyncMock(return_value=cancelled_run)
         service.db = MagicMock()
         service.db.commit = AsyncMock()
 
         cancelled = await service.cancel_run("run-1", user_id="user-1")
 
         self.assertEqual(cancelled.status, AnalysisRunStatus.CANCELLED.value)
-        update_kwargs = service.repo.update_run.await_args.kwargs
+        update_kwargs = service.repo.update_run_if_active.await_args.kwargs
         self.assertEqual(update_kwargs["status"], AnalysisRunStatus.CANCELLED.value)
         self.assertTrue(update_kwargs["cancellation_requested"])
         service.db.commit.assert_awaited_once()

@@ -26,6 +26,7 @@ import {
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { ActiveRunActions } from "../components/ActiveRunActions";
 import { AskAboutThisButton } from "../components/assistant/AskAboutThisButton";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { PageTabs } from "../../../components/ui/PageTabs";
@@ -195,51 +196,50 @@ export default function TopicsView() {
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
-        queryFn: () => listPreprocessingProfiles(ctx.projectId),
+        queryFn: ({ signal }) => listPreprocessingProfiles(ctx.projectId, signal),
         enabled: Boolean(ctx.projectId),
     });
 
     const runQuery = useQuery({
         queryKey: queryKeys.textResearch.run(runId ?? ""),
-        queryFn: () => getRun(runId!),
+        queryFn: ({ signal }) => getRun(runId!, signal),
         enabled: Boolean(runId),
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });
 
     const kSweepQuery = useQuery({
         queryKey: queryKeys.textResearch.run(kSweepRunId ?? ""),
-        queryFn: () => getRun(kSweepRunId!),
+        queryFn: ({ signal }) => getRun(kSweepRunId!, signal),
         enabled: Boolean(kSweepRunId),
         refetchInterval: (query) => activeRunRefetchInterval(query, kSweepSse),
     });
 
     const stabilityQuery = useQuery({
         queryKey: queryKeys.textResearch.run(stabilityRunId ?? ""),
-        queryFn: () => getRun(stabilityRunId!),
+        queryFn: ({ signal }) => getRun(stabilityRunId!, signal),
         enabled: Boolean(stabilityRunId),
         refetchInterval: (query) => activeRunRefetchInterval(query, stabilitySse),
     });
 
     const topicRunsQuery = useQuery({
         queryKey: queryKeys.textResearch.runs(ctx.projectId, ctx.selectedCorpusId, "topic_model"),
-        queryFn: () =>
-            listRuns(ctx.projectId, {
+        queryFn: ({ signal }) => listRuns(ctx.projectId, {
                 corpus_id: ctx.selectedCorpusId || undefined,
                 run_type: "topic_model",
                 limit: 50,
-            }),
+            }, signal),
         enabled: Boolean(ctx.projectId) && (tab === "compare" || tab === "ksweep" || tab === "stability"),
     });
 
     const compareAQuery = useQuery({
         queryKey: queryKeys.textResearch.run(compareAId),
-        queryFn: () => getRun(compareAId),
+        queryFn: ({ signal }) => getRun(compareAId, signal),
         enabled: Boolean(compareAId),
     });
 
     const compareBQuery = useQuery({
         queryKey: queryKeys.textResearch.run(compareBId),
-        queryFn: () => getRun(compareBId),
+        queryFn: ({ signal }) => getRun(compareBId, signal),
         enabled: Boolean(compareBId),
     });
 
@@ -1008,7 +1008,14 @@ export default function TopicsView() {
                                         ) : null}
                                     </>
                                 ) : isActiveRunStatus(runQuery.data.status) ? (
-                                    <Typography color="text.secondary">Training in progress…</Typography>
+                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                        <Typography color="text.secondary">Training in progress…</Typography>
+                                        <ActiveRunActions
+                                            run={runQuery.data}
+                                            projectId={ctx.projectId}
+                                            corpusId={ctx.selectedCorpusId}
+                                        />
+                                    </Stack>
                                 ) : (
                                     <Typography color="text.secondary">No topic results yet.</Typography>
                                 )}

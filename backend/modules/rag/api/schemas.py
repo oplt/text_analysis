@@ -78,6 +78,10 @@ class RagRetrievedChunkResponse(BaseModel):
     source_span_ids: list[str] | None = None
     char_start: int | None = None
     char_end: int | None = None
+    offset_coordinate_system: str | None = None
+    offset_scope: str | None = None
+    offset_scope_id: str | None = None
+    source_spans: list[dict] | None = None
 
 
 class RagCoverageResponse(BaseModel):
@@ -124,6 +128,10 @@ class RagCitationResponse(BaseModel):
     char_end: int | None = None
     source_span_ids: list[str] | None = None
     parent_context_id: str | None = None
+    offset_coordinate_system: str | None = None
+    offset_scope: str | None = None
+    offset_scope_id: str | None = None
+    source_spans: list[dict] | None = None
 
 
 class RagAskResponse(BaseModel):

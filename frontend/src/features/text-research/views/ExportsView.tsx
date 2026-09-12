@@ -63,7 +63,7 @@ export default function ExportsView() {
 
     const manifestQuery = useQuery({
         queryKey: queryKeys.textResearch.exportManifest(ctx.selectedCorpusId),
-        queryFn: () => getExportManifest(ctx.selectedCorpusId),
+        queryFn: ({ signal }) => getExportManifest(ctx.selectedCorpusId, signal),
         enabled: Boolean(ctx.selectedCorpusId),
     });
 
@@ -75,18 +75,18 @@ export default function ExportsView() {
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
-        queryFn: () => listPreprocessingProfiles(ctx.projectId),
+        queryFn: ({ signal }) => listPreprocessingProfiles(ctx.projectId, signal),
         enabled: Boolean(ctx.projectId) && tab === "models",
     });
 
     const classifiersQuery = useQuery({
         queryKey: queryKeys.textResearch.classifiers(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () => listClassifiers(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: ({ signal }) => listClassifiers(ctx.projectId, ctx.selectedCorpusId, undefined, signal),
         enabled: Boolean(ctx.projectId && ctx.selectedCorpusId) && tab === "models",
     });
     const runsQuery = useQuery({
         queryKey: queryKeys.textResearch.runs(ctx.projectId, ctx.selectedCorpusId),
-        queryFn: () => listRuns(ctx.projectId, { corpus_id: ctx.selectedCorpusId, limit: 100 }),
+        queryFn: ({ signal }) => listRuns(ctx.projectId, { corpus_id: ctx.selectedCorpusId, limit: 100 }, signal),
         enabled: Boolean(ctx.projectId && ctx.selectedCorpusId) && tab === "analysis",
     });
 

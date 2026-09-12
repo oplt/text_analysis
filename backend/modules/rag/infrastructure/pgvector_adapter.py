@@ -106,6 +106,7 @@ class PgVectorAdapter:
                 owner_scoped=owner_scoped,
                 exclude_parents=exclude_parents,
                 index_revision_ids=index_revision_ids,
+                exact_max_rows=getattr(self.config, "exact_vector_fallback_max_rows", 5000),
             )
 
         if indexed:
@@ -122,6 +123,7 @@ class PgVectorAdapter:
                 score_threshold=relaxed_threshold,
                 owner_scoped=owner_scoped,
                 exclude_parents=exclude_parents,
+                index_revision_ids=index_revision_ids,
             )
             if relaxed:
                 logger.debug(
@@ -145,6 +147,7 @@ class PgVectorAdapter:
             owner_scoped=owner_scoped,
             exclude_parents=exclude_parents,
             index_revision_ids=index_revision_ids,
+            exact_max_rows=getattr(self.config, "exact_vector_fallback_max_rows", 5000),
         )
 
     async def delete_document(self, document_id: str, user_id: str) -> None:

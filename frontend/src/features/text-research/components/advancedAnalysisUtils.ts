@@ -29,7 +29,7 @@ export function useAnalysisRun() {
     const sseConnected = useRunEvents(runId, ctx.projectId);
     const runQuery = useQuery({
         queryKey: queryKeys.textResearch.run(runId ?? ""),
-        queryFn: () => getRun(runId!),
+        queryFn: ({ signal }) => getRun(runId!, signal),
         enabled: Boolean(runId),
         staleTime: (query) => researchRunStaleTime(query.state.data?.status),
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),

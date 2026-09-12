@@ -11,13 +11,58 @@ from typing import Any
 from backend.modules.rag.domain.models import RetrievedChunk
 
 
+class StaleEvidenceRevisionError(ValueError):
+    """Retrieved chunks do not match the frozen revision allow-list."""
+
+    code = "stale_evidence_revision"
+
+
+def assert_chunks_match_revision_allow_list(
+    chunks: Iterable[RetrievedChunk],
+    index_revision_ids: list[str] | None,
+) -> None:
+    """Fail closed when frozen retrieval returns chunks outside its revision set."""
+    if index_revision_ids is None:
+        return
+    allowed = set(index_revision_ids)
+    for chunk in chunks:
+        revision = chunk.index_revision_id or (chunk.metadata or {}).get("revision_id")
+        if revision is None or revision not in allowed:
+            raise StaleEvidenceRevisionError(
+                "stale_evidence_revision: retrieved chunk outside frozen revision allow-list"
+            )
+
+
 def _config_identity(config: Any) -> dict[str, Any]:
+    if all(hasattr(config, name) for name in ("parsing", "chunking", "embedding")):
+        identity = {
+            "parsing": config.parsing.canonical_provenance_dict(),
+            "parsing_fingerprint": config.parsing.fingerprint(),
+            "chunking": config.chunking.canonical_provenance_dict(),
+            "chunking_fingerprint": config.chunking.fingerprint(),
+            "embedding": config.embedding.canonical_provenance_dict(),
+            "embedding_fingerprint": config.embedding.fingerprint(),
+        }
+        if hasattr(config, "generation"):
+            identity["generation"] = config.generation.canonical_provenance_dict()
+            identity["generation_fingerprint"] = config.generation.fingerprint()
+        if hasattr(config, "synthesis"):
+            identity["synthesis"] = config.synthesis.canonical_provenance_dict()
+            identity["synthesis_fingerprint"] = config.synthesis.fingerprint()
+        if hasattr(config, "reranking"):
+            identity["reranking"] = config.reranking.canonical_provenance_dict()
+            identity["reranking_fingerprint"] = config.reranking.fingerprint()
+        return identity
     return {
         "parser_version": getattr(config, "parser_version", None),
         "chunker_version": getattr(config, "chunker_version", None),
         "embedding_provider": getattr(config, "embedding_provider", None),
         "embedding_model": getattr(config, "embedding_model", None),
+        "embedding_model_version": getattr(config, "embedding_model_version", None),
         "embedding_dimensions": getattr(config, "embedding_dimensions", None),
+        "embedding_preprocessing_version": getattr(
+            config, "embedding_preprocessing_version", None
+        ),
         "retrieval_algorithm_version": getattr(config, "retrieval_algorithm_version", None),
         "index_version": getattr(config, "index_version", None),
         "fusion_method": getattr(config, "fusion_method", None),
