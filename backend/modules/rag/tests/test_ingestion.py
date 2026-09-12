@@ -2,6 +2,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from backend.lib.vectors import estimate_tokens
 from backend.modules.rag.application.chunking_service import ChunkingService
 from backend.modules.rag.application.document_ingestion_service import DocumentIngestionService
 from backend.modules.rag.application.document_parser_service import DocumentParserService
@@ -65,7 +66,7 @@ class IngestionParserTest(unittest.IsolatedAsyncioTestCase):
     def test_chunking_creates_indexed_chunks(self):
         config = SimpleNamespace(chunk_size=50, chunk_overlap=10)
         chunker = ChunkingService(config)
-        docs = [ParsedDocument(content="A" * 120, metadata={})]
+        docs = [ParsedDocument(content="word " * 120, metadata={})]
 
         async def run():
             with patch(
@@ -86,6 +87,7 @@ class IngestionParserTest(unittest.IsolatedAsyncioTestCase):
         import asyncio
 
         chunks = asyncio.run(run())
+        self.assertGreater(estimate_tokens(docs[0].content), config.chunk_size)
         self.assertGreater(len(chunks), 1)
         self.assertEqual(chunks[0].metadata["document_id"], "doc-1")
         self.assertEqual(chunks[0].metadata["user_id"], "user-a")

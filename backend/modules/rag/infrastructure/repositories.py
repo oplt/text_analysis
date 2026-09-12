@@ -18,6 +18,7 @@ from backend.lib.vector_search import (
 from backend.lib.vectors import vector_literal
 from backend.modules.rag.domain.enums import DocumentStatus, IngestionJobStatus
 from backend.modules.rag.domain.models import RetrievedChunk
+from backend.modules.rag.infrastructure.lexical_languages import POSTGRES_TEXT_SEARCH_CONFIGS
 from backend.modules.rag.infrastructure.models import (
     RagChunk,
     RagConversation,
@@ -34,6 +35,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 logger = logging.getLogger(__name__)
 
 _IN_CLAUSE_BATCH = 500
+_LANGUAGE_METADATA_SQL = """
+COALESCE(
+    c.metadata_json::json->>'language',
+    c.metadata_json::json->>'language_code',
+    d.metadata_json::json->>'language',
+    d.metadata_json::json->>'language_code',
+    ''
+)
+"""
+_LANGUAGE_CONFIG_CASE_SQL = "\n".join(
+    [
+        "CASE lower(split_part(" + _LANGUAGE_METADATA_SQL + ", '-', 1))",
+        *[
+            f"WHEN '{language}' THEN '{config}'"
+            for language, config in sorted(POSTGRES_TEXT_SEARCH_CONFIGS.items())
+        ],
+        "ELSE 'simple' END",
+    ]
+)
 
 
 class RagRepository:
@@ -270,9 +290,7 @@ class RagRepository:
                 token_count=item["token_count"],
                 metadata_json=json.dumps(meta, ensure_ascii=True),
                 embedding_json=(
-                    json.dumps(embedding, ensure_ascii=True)
-                    if embedding is not None
-                    else None
+                    json.dumps(embedding, ensure_ascii=True) if embedding is not None else None
                 ),
                 vector_external_id=item.get("vector_external_id"),
                 content_hash=item.get("content_hash"),
@@ -311,10 +329,7 @@ class RagRepository:
             .where(RagChunk.document_id.in_(document_ids))
             .where(
                 (RagChunk.revision_id == RagDocument.current_revision_id)
-                | (
-                    RagDocument.current_revision_id.is_(None)
-                    & RagChunk.revision_id.is_(None)
-                )
+                | (RagDocument.current_revision_id.is_(None) & RagChunk.revision_id.is_(None))
             )
             .order_by(RagChunk.document_id, RagChunk.chunk_index)
         )
@@ -329,17 +344,10 @@ class RagRepository:
             result = await self.db.execute(
                 select(RagChunk)
                 .join(RagDocument, RagDocument.id == RagChunk.document_id)
-                .where(
-                    RagChunk.document_id.in_(
-                        document_ids[start : start + _IN_CLAUSE_BATCH]
-                    )
-                )
+                .where(RagChunk.document_id.in_(document_ids[start : start + _IN_CLAUSE_BATCH]))
                 .where(
                     (RagChunk.revision_id == RagDocument.current_revision_id)
-                    | (
-                        RagDocument.current_revision_id.is_(None)
-                        & RagChunk.revision_id.is_(None)
-                    )
+                    | (RagDocument.current_revision_id.is_(None) & RagChunk.revision_id.is_(None))
                 )
                 .order_by(RagChunk.document_id, RagChunk.chunk_index, RagChunk.id)
             )
@@ -370,10 +378,7 @@ class RagRepository:
             .where(
                 RagChunk.document_id == document_id,
                 (RagChunk.revision_id == RagDocument.current_revision_id)
-                | (
-                    RagDocument.current_revision_id.is_(None)
-                    & RagChunk.revision_id.is_(None)
-                ),
+                | (RagDocument.current_revision_id.is_(None) & RagChunk.revision_id.is_(None)),
             )
             .order_by(RagChunk.chunk_index)
         )
@@ -391,6 +396,7 @@ class RagRepository:
         owner_scoped: bool,
         params: dict,
         exclude_parents: bool = False,
+        index_revision_ids: list[str] | None = None,
     ) -> list[str] | None:
         """Build shared WHERE clauses. Returns None when empty allow-list (I1)."""
         from backend.modules.rag.application.document_scope import (
@@ -404,9 +410,17 @@ class RagRepository:
         filters = [
             "d.status = 'indexed'",
             "d.deleted_at IS NULL",
-            "(d.current_revision_id = c.revision_id OR "
-            "(d.current_revision_id IS NULL AND c.revision_id IS NULL))",
         ]
+        if index_revision_ids is None:
+            filters.append(
+                "(d.current_revision_id = c.revision_id OR "
+                "(d.current_revision_id IS NULL AND c.revision_id IS NULL))"
+            )
+        elif not index_revision_ids:
+            return None
+        else:
+            filters.append("c.revision_id = ANY(:index_revision_ids)")
+            params["index_revision_ids"] = index_revision_ids
         if owner_scoped:
             filters.append("c.user_id = :user_id")
             params["user_id"] = user_id
@@ -436,6 +450,7 @@ class RagRepository:
         score_threshold: float,
         owner_scoped: bool = True,
         exclude_parents: bool = False,
+        index_revision_ids: list[str] | None = None,
     ) -> list[RetrievedChunk] | None:
         if not await check_pgvector_is_available(self.db):
             return None
@@ -454,14 +469,13 @@ class RagRepository:
             owner_scoped=owner_scoped,
             params=params,
             exclude_parents=exclude_parents,
+            index_revision_ids=index_revision_ids,
         )
         if filters is None:
             return []
 
         filters.append("c.embedding IS NOT NULL")
-        filters.append(
-            "(1 - (c.embedding <=> CAST(:query_vec AS vector))) >= :score_threshold"
-        )
+        filters.append("(1 - (c.embedding <=> CAST(:query_vec AS vector))) >= :score_threshold")
 
         sql = f"""
             SELECT
@@ -516,6 +530,7 @@ class RagRepository:
         score_threshold: float,
         owner_scoped: bool = True,
         exclude_parents: bool = False,
+        index_revision_ids: list[str] | None = None,
     ) -> list[RetrievedChunk]:
         params: dict = {
             "max_candidates": json_fallback_max_candidates(top_k),
@@ -527,6 +542,7 @@ class RagRepository:
             owner_scoped=owner_scoped,
             params=params,
             exclude_parents=exclude_parents,
+            index_revision_ids=index_revision_ids,
         )
         if filters is None:
             return []
@@ -603,6 +619,7 @@ class RagRepository:
         top_k: int,
         owner_scoped: bool = True,
         exclude_parents: bool = False,
+        index_revision_ids: list[str] | None = None,
     ) -> list[RetrievedChunk]:
         """Independent PostgreSQL full-text lexical ranking path."""
         params: dict = {
@@ -616,34 +633,44 @@ class RagRepository:
             owner_scoped=owner_scoped,
             params=params,
             exclude_parents=exclude_parents,
+            index_revision_ids=index_revision_ids,
         )
         if filters is None:
             return []
 
-        # Prefer content_tsv when available; fall back to plainto_tsquery on content.
+        # A document's declared language uses its PostgreSQL stemmer where
+        # available; every document is additionally searched with ``simple``.
+        # This keeps Turkish and unknown languages safe and handles mixed corpora.
         sql = f"""
-            SELECT
-                c.id AS chunk_id,
-                c.document_id,
-                c.content,
-                c.chunk_index,
-                c.metadata_json,
-                c.revision_id,
-                d.original_filename,
-                ts_rank_cd(
+            WITH scoped_chunks AS (
+                SELECT
+                    c.id AS chunk_id,
+                    c.document_id,
+                    c.content,
+                    c.chunk_index,
+                    c.metadata_json,
+                    c.revision_id,
+                    d.original_filename,
+                    ({_LANGUAGE_CONFIG_CASE_SQL})::regconfig AS language_config,
                     COALESCE(
                         c.content_tsv,
                         to_tsvector('simple', coalesce(c.content, ''))
-                    ),
-                    plainto_tsquery('simple', :query)
-                ) AS score
-            FROM rag_chunks c
-            INNER JOIN rag_documents d ON d.id = c.document_id
-            WHERE {" AND ".join(filters)}
-              AND COALESCE(
-                    c.content_tsv,
-                    to_tsvector('simple', coalesce(c.content, ''))
-                  ) @@ plainto_tsquery('simple', :query)
+                    ) AS simple_vector
+                FROM rag_chunks c
+                INNER JOIN rag_documents d ON d.id = c.document_id
+                WHERE {" AND ".join(filters)}
+            )
+            SELECT *, GREATEST(
+                ts_rank_cd(
+                    to_tsvector(language_config, coalesce(content, '')),
+                    plainto_tsquery(language_config, :query)
+                ),
+                ts_rank_cd(simple_vector, plainto_tsquery('simple', :query))
+            ) AS score
+            FROM scoped_chunks
+            WHERE to_tsvector(language_config, coalesce(content, ''))
+                @@ plainto_tsquery(language_config, :query)
+               OR simple_vector @@ plainto_tsquery('simple', :query)
             ORDER BY score DESC
             LIMIT :top_k
         """
@@ -895,8 +922,7 @@ class RagRepository:
             context_message_ids_json=json.dumps(
                 context_message_ids
                 if context_message_ids is not None
-                else meta.get("context_message_ids")
-                or [],
+                else meta.get("context_message_ids") or [],
                 ensure_ascii=True,
             ),
             ai_run_id=ai_run_id or meta.get("ai_run_id"),
@@ -929,3 +955,22 @@ class RagRepository:
             return []
         result = await self.db.execute(select(RagChunk).where(RagChunk.id.in_(chunk_ids)))
         return list(result.scalars().all())
+
+    async def list_available_revision_ids(
+        self, *, document_ids: list[str], revision_ids: list[str]
+    ) -> list[str]:
+        """Return frozen revisions that still have retrievable chunk evidence."""
+        if not document_ids or not revision_ids:
+            return []
+        result = await self.db.execute(
+            select(RagChunk.revision_id)
+            .join(RagDocument, RagDocument.id == RagChunk.document_id)
+            .where(
+                RagChunk.document_id.in_(document_ids),
+                RagChunk.revision_id.in_(revision_ids),
+                RagDocument.deleted_at.is_(None),
+                RagDocument.status == DocumentStatus.INDEXED.value,
+            )
+            .distinct()
+        )
+        return [revision_id for revision_id in result.scalars().all() if revision_id]

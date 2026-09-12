@@ -67,7 +67,6 @@ function ResearchLayoutInner() {
     const activeRoute = routeFromPath(location.pathname, projectId);
     const activeStageId = stageIdFromPath(location.pathname, projectId);
     const { stages } = useResearchWorkflow(activeRoute);
-    const [contextOpen, setContextOpen] = useState(false);
     const [workflowOpen, setWorkflowOpen] = useState(false);
     const [citationDoc, setCitationDoc] = useState<CorpusDocument | null>(null);
     const [citationSnippet, setCitationSnippet] = useState<string | null>(null);
@@ -75,12 +74,10 @@ function ResearchLayoutInner() {
     const [citationCharStart, setCitationCharStart] = useState<number | null>(null);
     const [citationCharEnd, setCitationCharEnd] = useState<number | null>(null);
     const [citationSourceSpanIds, setCitationSourceSpanIds] = useState<string[] | null>(null);
-
-    useEffect(() => {
-        if (ctx.askPanelOpenNonce > 0) {
-            setContextOpen(true);
-        }
-    }, [ctx.askPanelOpenNonce]);
+    const [citationOffsetScope, setCitationOffsetScope] = useState<
+        "parsed_document" | "page" | "canonical_document" | null
+    >(null);
+    const [citationOpenError, setCitationOpenError] = useState<string | null>(null);
 
     useEffect(() => {
         if (projectId) {
@@ -90,14 +87,17 @@ function ResearchLayoutInner() {
 
     function handleSelectStage(stage: WorkflowStageState) {
         if (stage.status === "blocked") {
-            setWorkflowOpen(true);
+            openWorkflow();
             return;
         }
         navigate(`/research/${projectId}/${stage.route}`);
     }
 
     async function handleOpenCitation(citation: AssistantCitation) {
-        if (!citation.corpus_document_id) return;
+        if (!citation.corpus_document_id) {
+            setCitationOpenError("This citation no longer has an accessible corpus document.");
+            return;
+        }
         try {
             const document = await getDocument(citation.corpus_document_id);
             setCitationDoc(document);
@@ -106,12 +106,23 @@ function ResearchLayoutInner() {
             setCitationCharStart(citation.char_start ?? null);
             setCitationCharEnd(citation.char_end ?? null);
             setCitationSourceSpanIds(citation.source_span_ids ?? null);
+            setCitationOffsetScope(citation.offset_scope ?? null);
         } catch {
-            // Preserve the existing no-op behavior when a citation is no longer accessible.
+            setCitationOpenError("Could not open this citation source. It may no longer be available.");
         }
     }
 
-    const contextDrawerOpen = contextOpen && !showInlineContext;
+    function openWorkflow() {
+        if (!showInlineContext) ctx.setAskPanelOpen(false);
+        setWorkflowOpen(true);
+    }
+
+    function openAskCorpus() {
+        if (!showInlineContext) setWorkflowOpen(false);
+        ctx.setAskPanelOpen(true);
+    }
+
+    const contextDrawerOpen = ctx.askPanelOpen && !showInlineContext;
 
     const contextPanel = (
         <SectionCard
@@ -125,7 +136,7 @@ function ResearchLayoutInner() {
                     <IconButton
                         aria-label="Close Ask Corpus panel"
                         size="small"
-                        onClick={() => setContextOpen(false)}
+                        onClick={() => ctx.setAskPanelOpen(false)}
                     >
                         <CloseIcon fontSize="small" />
                     </IconButton>
@@ -144,7 +155,7 @@ function ResearchLayoutInner() {
                         variant="outlined"
                         size="small"
                         startIcon={<AskIcon />}
-                        onClick={() => setContextOpen(true)}
+                        onClick={openAskCorpus}
                     >
                         Ask Corpus
                     </Button>
@@ -158,7 +169,7 @@ function ResearchLayoutInner() {
                         activeStageId && activeStageId !== "dashboard" ? activeStageId : false
                     }
                     onSelectStage={handleSelectStage}
-                    onOpenWorkflow={() => setWorkflowOpen(true)}
+                    onOpenWorkflow={openWorkflow}
                 />
             </Box>
 
@@ -166,7 +177,7 @@ function ResearchLayoutInner() {
                 <Button
                     variant="contained"
                     size="small"
-                    onClick={() => setWorkflowOpen(true)}
+                    onClick={openWorkflow}
                     aria-label="Open all workflow stages"
                     sx={{
                         position: "fixed",
@@ -285,10 +296,16 @@ function ResearchLayoutInner() {
                 ) : null}
             </Box>
 
+            {citationOpenError ? (
+                <Alert severity="error" onClose={() => setCitationOpenError(null)} sx={{ mb: 1 }}>
+                    {citationOpenError}
+                </Alert>
+            ) : null}
+
             <Drawer
                 anchor="right"
                 open={contextDrawerOpen}
-                onClose={() => setContextOpen(false)}
+                onClose={() => ctx.setAskPanelOpen(false)}
                 PaperProps={{ sx: { width: { xs: "100%", sm: 400 }, p: 2 } }}
             >
                 {contextPanel}
@@ -303,6 +320,7 @@ function ResearchLayoutInner() {
                 charStart={citationCharStart}
                 charEnd={citationCharEnd}
                 sourceSpanIds={citationSourceSpanIds}
+                offsetScope={citationOffsetScope}
                 onClose={() => {
                     setCitationDoc(null);
                     setCitationSnippet(null);
@@ -310,6 +328,7 @@ function ResearchLayoutInner() {
                     setCitationCharStart(null);
                     setCitationCharEnd(null);
                     setCitationSourceSpanIds(null);
+                    setCitationOffsetScope(null);
                 }}
             />
 

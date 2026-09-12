@@ -109,11 +109,7 @@ def _merge_non_overlapping_chunks(group: list[DocumentChunk]) -> str:
             continue
         max_overlap = min(len(merged), len(content))
         overlap = next(
-            (
-                size
-                for size in range(max_overlap, 7, -1)
-                if merged[-size:] == content[:size]
-            ),
+            (size for size in range(max_overlap, 7, -1) if merged[-size:] == content[:size]),
             0,
         )
         suffix = content[overlap:].lstrip("\n")
@@ -181,9 +177,7 @@ class ChunkingService:
                         "chunker_version": getattr(self.config, "chunker_version", None),
                         "embedding_provider": getattr(self.config, "embedding_provider", None),
                         "embedding_model": getattr(self.config, "embedding_model", None),
-                        "embedding_dimensions": getattr(
-                            self.config, "embedding_dimensions", None
-                        ),
+                        "embedding_dimensions": getattr(self.config, "embedding_dimensions", None),
                         "source_type": "upload",
                         **{
                             k: v

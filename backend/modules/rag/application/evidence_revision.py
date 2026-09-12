@@ -18,9 +18,7 @@ def _config_identity(config: Any) -> dict[str, Any]:
         "embedding_provider": getattr(config, "embedding_provider", None),
         "embedding_model": getattr(config, "embedding_model", None),
         "embedding_dimensions": getattr(config, "embedding_dimensions", None),
-        "retrieval_algorithm_version": getattr(
-            config, "retrieval_algorithm_version", None
-        ),
+        "retrieval_algorithm_version": getattr(config, "retrieval_algorithm_version", None),
         "index_version": getattr(config, "index_version", None),
         "fusion_method": getattr(config, "fusion_method", None),
         "rrf_k": getattr(config, "rrf_k", None),
@@ -53,13 +51,11 @@ def chunk_revision_identity(chunk: Any) -> dict[str, Any]:
         or metadata.get("content_hash")
         or hashlib.sha256(content.encode("utf-8")).hexdigest(),
         "content_fingerprint": hashlib.sha256(content.encode("utf-8")).hexdigest(),
-        "parser_version": getattr(chunk, "parser_version", None)
-        or metadata.get("parser_version"),
+        "parser_version": getattr(chunk, "parser_version", None) or metadata.get("parser_version"),
         "chunker_version": getattr(chunk, "chunker_version", None)
         or metadata.get("chunker_version"),
         "parent_chunk_id": getattr(chunk, "parent_chunk_id", None),
-        "source_unit_ids": metadata.get("source_unit_ids")
-        or metadata.get("source_span_ids"),
+        "source_unit_ids": metadata.get("source_unit_ids") or metadata.get("source_span_ids"),
         "vector_external_id": getattr(chunk, "vector_external_id", None),
         "metadata": metadata,
     }

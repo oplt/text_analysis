@@ -83,6 +83,27 @@ export async function apiFetch<T>(
     return response.json();
 }
 
+export async function apiFetchStream(path: string, options: RequestInit = {}): Promise<Response> {
+    const headers = new Headers(options.headers ?? {});
+    if (options.body !== undefined && !headers.has("Content-Type")) {
+        headers.set("Content-Type", "application/json");
+    }
+    if (!headers.has("X-CSRF-Token")) {
+        const csrfValue = readCookie("csrf_token");
+        if (csrfValue) headers.set("X-CSRF-Token", csrfValue);
+    }
+    const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers,
+        credentials: "include",
+    });
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: "Request failed" }));
+        throw new Error(error.detail ?? "Request failed");
+    }
+    return response;
+}
+
 export async function apiFetchItems<T>(
     path: string,
     options: RequestInit = {}

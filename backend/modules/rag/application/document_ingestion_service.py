@@ -350,8 +350,7 @@ class DocumentIngestionService:
             retrieval_chunks = [
                 chunk
                 for chunk in chunks
-                if chunk.chunk_index >= 0
-                and (chunk.metadata or {}).get("chunk_role") != "parent"
+                if chunk.chunk_index >= 0 and (chunk.metadata or {}).get("chunk_role") != "parent"
             ]
             for chunk in chunks:
                 chunk.embedding = None

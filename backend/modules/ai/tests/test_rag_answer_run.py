@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from backend.modules.ai.application.rag_answer_prompt import (
     DEFAULT_RAG_ANSWER_SYSTEM_PROMPT,
+    RAG_STRUCTURED_OUTPUT_CONTRACT,
     resolve_rag_answer_prompt,
 )
 from backend.modules.ai.service import AiService
@@ -19,7 +20,10 @@ class RagAnswerPromptTest(unittest.IsolatedAsyncioTestCase):
         spec = await resolve_rag_answer_prompt(repo, user)
 
         self.assertIsNone(spec.template_id)
-        self.assertEqual(spec.system_prompt, DEFAULT_RAG_ANSWER_SYSTEM_PROMPT)
+        self.assertEqual(
+            spec.system_prompt,
+            f"{RAG_STRUCTURED_OUTPUT_CONTRACT}\n\n{DEFAULT_RAG_ANSWER_SYSTEM_PROMPT}",
+        )
 
     async def test_resolve_rag_answer_prompt_selects_active_version_from_paginated_result(self):
         repo = MagicMock()
@@ -49,7 +53,11 @@ class RagAnswerPromptTest(unittest.IsolatedAsyncioTestCase):
         repo.list_prompt_versions.assert_awaited_once_with("tpl-1", limit=200, offset=0)
         self.assertEqual(spec.template_id, "tpl-1")
         self.assertEqual(spec.version_id, "ver-active")
-        self.assertEqual(spec.system_prompt, "Custom RAG prompt")
+        self.assertEqual(
+            spec.system_prompt,
+            f"{RAG_STRUCTURED_OUTPUT_CONTRACT}\n\nCustom RAG prompt",
+        )
+        self.assertEqual(spec.response_format, "json")
 
 
 class AiServiceRagAnswerTest(unittest.IsolatedAsyncioTestCase):

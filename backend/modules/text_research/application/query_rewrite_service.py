@@ -23,8 +23,7 @@ class QueryRewriteService:
             (
                 self._compact(turn.get("content", ""))
                 for turn in reversed(prior_turns)
-                if turn.get("role", "").lower() == "user"
-                and self._compact(turn.get("content", ""))
+                if turn.get("role", "").lower() == "user" and self._compact(turn.get("content", ""))
             ),
             "",
         )

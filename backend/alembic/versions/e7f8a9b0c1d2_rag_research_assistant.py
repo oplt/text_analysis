@@ -7,6 +7,7 @@ Revises: d5e6f7a8b9c0
 from __future__ import annotations
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "e7f8a9b0c1d2"
@@ -141,7 +142,9 @@ def upgrade() -> None:
     op.create_table(
         "rag_conversations",
         sa.Column("id", sa.String(), primary_key=True),
-        sa.Column("user_id", sa.String(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "user_id", sa.String(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column("project_id", sa.String(length=128), nullable=True),
         sa.Column("organization_id", sa.String(length=128), nullable=True),
         sa.Column("title", sa.String(length=512), nullable=False, server_default="Untitled"),
@@ -157,9 +160,16 @@ def upgrade() -> None:
     op.create_table(
         "rag_retrieval_traces",
         sa.Column("id", sa.String(), primary_key=True),
-        sa.Column("user_id", sa.String(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "user_id", sa.String(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column("project_id", sa.String(length=128), nullable=True),
-        sa.Column("conversation_id", sa.String(), sa.ForeignKey("rag_conversations.id", ondelete="SET NULL"), nullable=True),
+        sa.Column(
+            "conversation_id",
+            sa.String(),
+            sa.ForeignKey("rag_conversations.id", ondelete="SET NULL"),
+            nullable=True,
+        ),
         sa.Column("query", sa.Text(), nullable=False),
         sa.Column("intent", sa.String(length=64), nullable=True),
         sa.Column("scope_hash", sa.String(length=64), nullable=True),
@@ -175,7 +185,9 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
     )
     op.create_index("ix_rag_retrieval_traces_user_id", "rag_retrieval_traces", ["user_id"])
-    op.create_index("ix_rag_retrieval_traces_conversation_id", "rag_retrieval_traces", ["conversation_id"])
+    op.create_index(
+        "ix_rag_retrieval_traces_conversation_id", "rag_retrieval_traces", ["conversation_id"]
+    )
     op.create_index("ix_rag_retrieval_traces_created_at", "rag_retrieval_traces", ["created_at"])
 
     op.create_table(
@@ -216,8 +228,15 @@ def upgrade() -> None:
             sa.ForeignKey("research_corpora.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column("project_id", sa.String(), sa.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("user_id", sa.String(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "project_id",
+            sa.String(),
+            sa.ForeignKey("projects.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        sa.Column(
+            "user_id", sa.String(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+        ),
         sa.Column(
             "rag_conversation_id",
             sa.String(),
@@ -228,8 +247,12 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
     )
-    op.create_index("ix_research_assistant_threads_corpus_id", "research_assistant_threads", ["corpus_id"])
-    op.create_index("ix_research_assistant_threads_project_id", "research_assistant_threads", ["project_id"])
+    op.create_index(
+        "ix_research_assistant_threads_corpus_id", "research_assistant_threads", ["corpus_id"]
+    )
+    op.create_index(
+        "ix_research_assistant_threads_project_id", "research_assistant_threads", ["project_id"]
+    )
     op.create_index(
         "ix_research_assistant_threads_rag_conversation_id",
         "research_assistant_threads",

@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps.auth import get_current_user
 from backend.api.deps.db import get_db
+from backend.db.session import SessionLocal
 from backend.modules.identity_access.models import User
 from backend.modules.text_research.api.schemas import (
     AssistantConversationDetailResponse,
@@ -40,6 +43,36 @@ def _thread_response(thread) -> AssistantThreadResponse:
         created_at=thread.created_at,
         updated_at=thread.updated_at,
         scope_mode=getattr(thread, "scope_mode", "fixed"),
+    )
+
+
+def _message_response(result: dict) -> AssistantMessageResponse:
+    return AssistantMessageResponse(
+        thread_id=result["thread_id"],
+        conversation_id=result["conversation_id"],
+        message_id=result["message_id"],
+        retrieval_trace_id=result["retrieval_trace_id"],
+        query=result["query"],
+        original_query=result.get("original_query"),
+        resolved_retrieval_query=result.get("resolved_retrieval_query"),
+        answer=result["answer"],
+        citations=result["citations"],
+        claims=result["claims"],
+        retrieved_chunk_ids=result["retrieved_chunk_ids"],
+        model_name=result["model_name"],
+        latency_ms=result["latency_ms"],
+        no_context_found=result["no_context_found"],
+        retrieval_degraded=result["retrieval_degraded"],
+        degradation_reason=result["degradation_reason"],
+        citation_validation_failed=result["citation_validation_failed"],
+        citation_validation_status=result.get("citation_validation_status", "valid"),
+        evidence_revision_hash=result.get("evidence_revision_hash"),
+        injection_chunks_filtered=result["injection_chunks_filtered"],
+        scope=AssistantScopeResponse(**result["scope"]),
+        coverage=result["coverage"],
+        context_message_ids=result.get("context_message_ids") or [],
+        ai_run_id=result.get("ai_run_id"),
+        fusion_method=result.get("fusion_method"),
     )
 
 
@@ -90,9 +123,7 @@ async def get_assistant_conversation(
     service = CorpusAssistantService(db)
     thread, messages = await service.get_thread(thread_id, user_id=current_user.id)
     scope = await service.get_thread_scope(thread, user_id=current_user.id)
-    scope_events = await service.scope_service.list_scope_events(
-        thread.id, user_id=current_user.id
-    )
+    scope_events = await service.scope_service.list_scope_events(thread.id, user_id=current_user.id)
     return AssistantConversationDetailResponse(
         thread=_thread_response(thread),
         messages=[
@@ -172,32 +203,59 @@ async def post_assistant_message(
         intent=body.intent,
         document_subset=body.document_ids,
     )
-    return AssistantMessageResponse(
-        thread_id=result["thread_id"],
-        conversation_id=result["conversation_id"],
-        message_id=result["message_id"],
-        retrieval_trace_id=result["retrieval_trace_id"],
-        query=result["query"],
-        original_query=result.get("original_query"),
-        resolved_retrieval_query=result.get("resolved_retrieval_query"),
-        answer=result["answer"],
-        citations=result["citations"],
-        claims=result["claims"],
-        retrieved_chunk_ids=result["retrieved_chunk_ids"],
-        model_name=result["model_name"],
-        latency_ms=result["latency_ms"],
-        no_context_found=result["no_context_found"],
-        retrieval_degraded=result["retrieval_degraded"],
-        degradation_reason=result["degradation_reason"],
-        citation_validation_failed=result["citation_validation_failed"],
-        citation_validation_status=result.get("citation_validation_status", "valid"),
-        evidence_revision_hash=result.get("evidence_revision_hash"),
-        injection_chunks_filtered=result["injection_chunks_filtered"],
-        scope=AssistantScopeResponse(**result["scope"]),
-        coverage=result["coverage"],
-        context_message_ids=result.get("context_message_ids") or [],
-        ai_run_id=result.get("ai_run_id"),
-        fusion_method=result.get("fusion_method"),
+    return _message_response(result)
+
+
+@router.post("/corpora/{corpus_id}/assistant/messages/stream")
+async def stream_assistant_message(
+    corpus_id: str,
+    body: AssistantMessageRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Stream neutral turn progress; only the persisted validated answer is emitted."""
+    queue: asyncio.Queue[tuple[str, dict | None]] = asyncio.Queue()
+
+    async def emit(event: str, payload: dict) -> None:
+        await queue.put((event, payload))
+
+    async def run_turn() -> None:
+        try:
+            async with SessionLocal() as session:
+                result = await CorpusAssistantService(session).ask(
+                    corpus_id=corpus_id,
+                    user=current_user,
+                    query=body.query,
+                    thread_id=body.thread_id,
+                    intent=body.intent,
+                    document_subset=body.document_ids,
+                    progress_callback=emit,
+                )
+            await queue.put(("turn_completed", _message_response(result).model_dump(mode="json")))
+        except Exception as exc:
+            detail = getattr(exc, "detail", "Assistant turn failed")
+            await queue.put(("turn_failed", {"detail": str(detail)}))
+        finally:
+            await queue.put(("_end", None))
+
+    task = asyncio.create_task(run_turn())
+
+    async def events():
+        try:
+            while True:
+                event, payload = await queue.get()
+                if event == "_end":
+                    return
+                yield f"event: {event}\ndata: {json.dumps(payload, separators=(',', ':'))}\n\n"
+        finally:
+            # A disconnected client does not cancel the durable turn. The background
+            # task completes with its own session, and reload reads the persisted result.
+            if task.done():
+                task.result()
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 

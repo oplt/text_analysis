@@ -35,6 +35,7 @@ class RagConfig:
     evidence_top_k: int = 12
     synthesis_max_documents: int = 25
     synthesis_batch_size: int = 8
+    synthesis_async_document_threshold: int = 8
     synthesis_passages_per_document: int = 3
     parent_context_enabled: bool = False
     pdf_parser: str = "auto"
@@ -76,6 +77,9 @@ class RagConfig:
             evidence_top_k=max(1, settings.RAG_EVIDENCE_TOP_K),
             synthesis_max_documents=max(1, settings.RAG_SYNTHESIS_MAX_DOCUMENTS),
             synthesis_batch_size=max(1, settings.RAG_SYNTHESIS_BATCH_SIZE),
+            synthesis_async_document_threshold=max(
+                1, settings.RAG_SYNTHESIS_ASYNC_DOCUMENT_THRESHOLD
+            ),
             synthesis_passages_per_document=max(1, settings.RAG_SYNTHESIS_PASSAGES_PER_DOCUMENT),
             parent_context_enabled=settings.RAG_PARENT_CONTEXT_ENABLED,
             pdf_parser=settings.RAG_PDF_PARSER.strip().lower() or "auto",
@@ -136,9 +140,7 @@ async def validate_rag_index_health(
         return
     validate_rag_config(config)
     enforce_health = (
-        strict
-        if strict is not None
-        else config.require_ann_index or settings.is_production
+        strict if strict is not None else config.require_ann_index or settings.is_production
     )
     if not enforce_health:
         return

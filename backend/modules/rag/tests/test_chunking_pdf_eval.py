@@ -43,17 +43,14 @@ class StructureChunkingTests(unittest.TestCase):
         )
         self.assertTrue(
             all(
-                meta["offset_coordinate_system"]
-                == "unicode_code_points_zero_based_end_exclusive"
+                meta["offset_coordinate_system"] == "unicode_code_points_zero_based_end_exclusive"
                 for _content, meta in first
             )
         )
 
     def test_recursive_pieces_have_piece_level_offsets(self):
         text = "one two three four five six seven eight nine ten"
-        pieces = split_documents(
-            [ParsedDocument(content=text)], chunk_size=4, chunk_overlap=1
-        )
+        pieces = split_documents([ParsedDocument(content=text)], chunk_size=4, chunk_overlap=1)
 
         self.assertGreater(len(pieces), 1)
         self.assertTrue(
@@ -97,13 +94,33 @@ class EvalHarnessTests(unittest.TestCase):
             "k": 3,
             "relevant_chunk_ids": ["c-rel-1", "c-rel-2"],
             "dense": [
-                {"chunk_id": "c-rel-1", "document_id": "d1", "score": 0.9, "content": "accountability"},
+                {
+                    "chunk_id": "c-rel-1",
+                    "document_id": "d1",
+                    "score": 0.9,
+                    "content": "accountability",
+                },
                 {"chunk_id": "c-noise", "document_id": "d1", "score": 0.8, "content": "tables"},
-                {"chunk_id": "c-rel-2", "document_id": "d2", "score": 0.7, "content": "self-reliance"},
+                {
+                    "chunk_id": "c-rel-2",
+                    "document_id": "d2",
+                    "score": 0.7,
+                    "content": "self-reliance",
+                },
             ],
             "lexical": [
-                {"chunk_id": "c-rel-2", "document_id": "d2", "score": 0.6, "content": "self-reliance"},
-                {"chunk_id": "c-rel-1", "document_id": "d1", "score": 0.5, "content": "accountability"},
+                {
+                    "chunk_id": "c-rel-2",
+                    "document_id": "d2",
+                    "score": 0.6,
+                    "content": "self-reliance",
+                },
+                {
+                    "chunk_id": "c-rel-1",
+                    "document_id": "d1",
+                    "score": 0.5,
+                    "content": "accountability",
+                },
             ],
         }
         results = run_strategies(case)

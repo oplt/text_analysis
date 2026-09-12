@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from backend.modules.rag.domain.models import Citation, ClaimCitation, RetrievedChunk
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 _JSON_FENCE = re.compile(r"```(?:json)?\s*([\s\S]*?)```", re.IGNORECASE)
 
@@ -32,6 +33,23 @@ class ValidatedAnswer:
     citation_validation_failed: bool = False
     citation_validation_status: CitationValidationStatus = "valid"
     no_evidence: bool = False
+
+
+class RagStructuredClaim(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1)
+    chunk_ids: list[str] = Field(min_length=1)
+
+
+class RagStructuredAnswer(BaseModel):
+    """The only provider contract accepted for grounded RAG answers."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    claims: list[RagStructuredClaim] = Field(default_factory=list)
+    no_evidence: bool
+    insufficient_evidence_reason: str | None = None
 
 
 def _parse_structured_payload(raw: str) -> dict | None:
@@ -64,6 +82,8 @@ def _unused_citations(retrieved_chunks: list[RetrievedChunk]) -> list[Citation]:
             char_end=(c.metadata or {}).get("char_end"),
             source_span_ids=(c.metadata or {}).get("source_span_ids"),
             parent_context_id=c.parent_context_id,
+            offset_coordinate_system=(c.metadata or {}).get("offset_coordinate_system"),
+            offset_scope=(c.metadata or {}).get("offset_scope"),
         )
         for c in retrieved_chunks
     ]
@@ -84,9 +104,7 @@ def _answer_matches_claims(answer: str, claims: list[ClaimCitation]) -> bool:
         if not normalized:
             return False
         if any(
-            normalized == claim
-            or normalized in claim
-            or claim in normalized
+            normalized == claim or normalized in claim or claim in normalized
             for claim in claim_texts
         ):
             continue
@@ -117,21 +135,35 @@ class CitationValidationService:
                 citation_validation_status="empty_answer" if not raw_text else "unstructured",
             )
 
-        answer_value = payload.get("answer")
-        answer = answer_value.strip() if isinstance(answer_value, str) else ""
-        raw_claims = payload.get("claims")
-        if raw_claims is None:
-            raw_claims = []
-        claims_structurally_valid = isinstance(raw_claims, list)
-        if not claims_structurally_valid:
-            raw_claims = []
-        explicitly_no_evidence = payload.get("no_evidence") is True or payload.get(
-            "no_context"
-        ) is True
-
-        if explicitly_no_evidence and answer and not raw_claims:
+        # Older persisted/model responses included a free-form ``answer`` key.
+        # Ignore it: the rendered answer is always reconstructed from validated
+        # claims (or the explicit insufficient-evidence reason) below.
+        payload = dict(payload)
+        payload.pop("answer", None)
+        payload.setdefault("no_evidence", False)
+        payload.setdefault("insufficient_evidence_reason", None)
+        try:
+            structured = RagStructuredAnswer.model_validate(payload)
+        except ValidationError:
             return ValidatedAnswer(
-                answer=answer,
+                answer="",
+                claims=[],
+                citations=_unused_citations(retrieved_chunks),
+                citation_validation_failed=True,
+                citation_validation_status=(
+                    "incomplete" if "claims" in payload else "unstructured"
+                ),
+            )
+
+        raw_claims = [claim.model_dump() for claim in structured.claims]
+        claims_structurally_valid = True
+        explicitly_no_evidence = structured.no_evidence
+        if explicitly_no_evidence and not raw_claims:
+            return ValidatedAnswer(
+                answer=(
+                    structured.insufficient_evidence_reason
+                    or "The retrieved evidence is insufficient to answer this question."
+                ),
                 claims=[],
                 citations=_unused_citations(retrieved_chunks),
                 citation_validation_status="no_evidence",
@@ -203,6 +235,8 @@ class CitationValidationService:
                     char_end=(chunk.metadata or {}).get("char_end"),
                     source_span_ids=(chunk.metadata or {}).get("source_span_ids"),
                     parent_context_id=chunk.parent_context_id,
+                    offset_coordinate_system=(chunk.metadata or {}).get("offset_coordinate_system"),
+                    offset_scope=(chunk.metadata or {}).get("offset_scope"),
                 )
             )
 
@@ -229,12 +263,13 @@ class CitationValidationService:
                     char_end=(chunk.metadata or {}).get("char_end"),
                     source_span_ids=(chunk.metadata or {}).get("source_span_ids"),
                     parent_context_id=chunk.parent_context_id,
+                    offset_coordinate_system=(chunk.metadata or {}).get("offset_coordinate_system"),
+                    offset_scope=(chunk.metadata or {}).get("offset_scope"),
                 )
             )
 
-        if not answer:
-            status: CitationValidationStatus = "empty_answer"
-        elif incomplete_any:
+        answer = "\n\n".join(claim.text for claim in claims)
+        if incomplete_any:
             status = "incomplete"
         elif not claims and not explicitly_no_evidence:
             status = "missing_claims" if not raw_claims else "invalid"
@@ -242,8 +277,6 @@ class CitationValidationService:
             status: CitationValidationStatus = "invalid"
         elif rejected_any:
             status = "partial"
-        elif not _answer_matches_claims(answer, claims):
-            status = "answer_mismatch"
         else:
             status = "valid"
 

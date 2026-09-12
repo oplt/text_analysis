@@ -75,6 +75,7 @@ class PgVectorAdapter:
         if document_ids_is_empty_allow_list(document_ids):
             return []
         exclude_parents = bool((filters or {}).get("exclude_parents", False))
+        index_revision_ids = (filters or {}).get("index_revision_ids")
 
         indexed = await self.repo.similarity_search_indexed(
             user_id=user_id,
@@ -85,6 +86,7 @@ class PgVectorAdapter:
             score_threshold=self.config.score_threshold,
             owner_scoped=owner_scoped,
             exclude_parents=exclude_parents,
+            index_revision_ids=index_revision_ids,
         )
         if indexed is None:
             from backend.modules.rag.infrastructure import metrics
@@ -103,6 +105,7 @@ class PgVectorAdapter:
                 score_threshold=self.config.score_threshold,
                 owner_scoped=owner_scoped,
                 exclude_parents=exclude_parents,
+                index_revision_ids=index_revision_ids,
             )
 
         if indexed:
@@ -141,6 +144,7 @@ class PgVectorAdapter:
             score_threshold=self.config.score_threshold,
             owner_scoped=owner_scoped,
             exclude_parents=exclude_parents,
+            index_revision_ids=index_revision_ids,
         )
 
     async def delete_document(self, document_id: str, user_id: str) -> None:

@@ -30,19 +30,19 @@ CITATION_FAILURE_ANSWER = (
 
 STRUCTURED_CLAIM_INSTRUCTION = (
     "Respond with a single JSON object only, of the form:\n"
-    '{"answer":"...","claims":[{"text":"...","chunk_ids":["chunk-id"]}],'
-    '"no_evidence":false}.\n'
-    "Every substantive answer statement must be repeated in a cited claim. "
+    '{"claims":[{"text":"...","chunk_ids":["chunk-id"]}],'
+    '"no_evidence":false,"insufficient_evidence_reason":null}.\n'
+    "Every substantive answer statement must be one cited claim. "
     "Every claim must cite chunk_ids from the provided sources. "
-    "Do not invent chunk IDs. If evidence is insufficient, say so in answer "
-    "and set no_evidence to true with an empty claims array."
+    "Do not invent chunk IDs. If evidence is insufficient, set no_evidence to true, "
+    "claims to [], and explain why in insufficient_evidence_reason."
 )
 
 STRUCTURED_REPAIR_INSTRUCTION = (
     "Your previous reply failed citation validation. "
     "Reply again with ONLY the JSON object "
-    '{"answer":"...","claims":[{"text":"...","chunk_ids":["chunk-id"]}],'
-    '"no_evidence":false}. Every answer statement must appear in a cited claim. '
+    '{"claims":[{"text":"...","chunk_ids":["chunk-id"]}],'
+    '"no_evidence":false,"insufficient_evidence_reason":null}. '
     "If evidence is insufficient, set no_evidence to true and claims to []."
 )
 
@@ -204,9 +204,7 @@ class RagAnswerService:
             document_context=document_context or None,
         )
         if conversation_context:
-            system_context = (
-                f"{system_context or ''}\n\n{conversation_context}".strip()
-            )
+            system_context = f"{system_context or ''}\n\n{conversation_context}".strip()
         combined = f"{system_context or ''}\n\n{STRUCTURED_CLAIM_INSTRUCTION}".strip()
         chunk_ids = [c.chunk_id for c in bounded_chunks]
 

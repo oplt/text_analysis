@@ -67,14 +67,14 @@ class CitationIntegrityTests(unittest.TestCase):
         self.assertEqual(result.claims[0].chunk_ids, ["c1"])
         self.assertEqual([c.chunk_id for c in result.citations if c.used_in_answer], ["c1"])
 
-    def test_answer_must_be_represented_by_claim_text(self):
+    def test_rendered_answer_is_reconstructed_from_claim_text(self):
         result = self.validate(
             '{"answer":"The project uses PostgreSQL.","claims":['
             '{"text":"The project uses SQLite.","chunk_ids":["c1"]}]}'
         )
 
-        self.assertEqual(result.citation_validation_status, "answer_mismatch")
-        self.assertTrue(result.citation_validation_failed)
+        self.assertEqual(result.citation_validation_status, "valid")
+        self.assertEqual(result.answer, "The project uses SQLite.")
 
     def test_malformed_json_fails(self):
         result = self.validate("not json")
@@ -82,10 +82,10 @@ class CitationIntegrityTests(unittest.TestCase):
         self.assertEqual(result.citation_validation_status, "unstructured")
         self.assertTrue(result.citation_validation_failed)
 
-    def test_empty_answer_fails(self):
+    def test_empty_claims_without_no_evidence_fails(self):
         result = self.validate('{"answer":"","claims":[]}')
 
-        self.assertEqual(result.citation_validation_status, "empty_answer")
+        self.assertEqual(result.citation_validation_status, "missing_claims")
         self.assertTrue(result.citation_validation_failed)
 
     def test_explicit_no_context_is_valid_without_claims(self):

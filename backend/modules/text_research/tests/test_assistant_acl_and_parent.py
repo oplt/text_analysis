@@ -90,9 +90,7 @@ class ParentExpandAllowListTests(unittest.IsolatedAsyncioTestCase):
         )
         repo.get_chunks_by_ids = AsyncMock(side_effect=[[child_row], [parent_row]])
 
-        expanded = await expand_parent_chunks(
-            [child], repo=repo, document_ids=["doc-a"]
-        )
+        expanded = await expand_parent_chunks([child], repo=repo, document_ids=["doc-a"])
         self.assertEqual(expanded[0].content, "child-child-1")
 
     async def test_parent_inside_allow_list_adds_generation_context(self):
@@ -107,9 +105,7 @@ class ParentExpandAllowListTests(unittest.IsolatedAsyncioTestCase):
         )
         repo.get_chunks_by_ids = AsyncMock(side_effect=[[child_row], [parent_row]])
 
-        expanded = await expand_parent_chunks(
-            [child], repo=repo, document_ids=["doc-a"]
-        )
+        expanded = await expand_parent_chunks([child], repo=repo, document_ids=["doc-a"])
         self.assertEqual(expanded[0].content, "child-child-1")
         self.assertEqual(expanded[0].citation_content, "child-child-1")
         self.assertEqual(expanded[0].context_content, "PARENT TEXT")

@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Backward-compatible alias; prefer ``reranker_port.build_reranker``."""
+
+from __future__ import annotations
 
 from backend.modules.rag.application.reranker_port import (
     NoOpReranker,

@@ -2,10 +2,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import dataclass
 
 from backend.core.cache import cache_delete_pattern, cache_get_json, cache_key, cache_set_json
 from backend.core.config import settings
 from backend.modules.rag.domain.models import RetrievedChunk
+
+
+@dataclass(frozen=True, slots=True)
+class CachedRetrieval:
+    """A retrieval result together with the algorithm run that produced it."""
+
+    chunks: list[RetrievedChunk]
+    provenance: dict
 
 
 def _scope_token(value: str | None) -> str:
@@ -90,7 +99,7 @@ async def get_cached_retrieval(
     top_k: int,
     filters: dict | None,
     variant: str = "vector-v1",
-) -> list[RetrievedChunk] | None:
+) -> CachedRetrieval | None:
     payload = await cache_get_json(
         retrieval_cache_key(
             user_id=user_id,
@@ -101,7 +110,15 @@ async def get_cached_retrieval(
             variant=variant,
         )
     )
-    return deserialize_retrieved_chunks(payload)
+    # Entries created before provenance was persisted are deliberately cache
+    # misses: presenting them as reproducible would be misleading.
+    if not isinstance(payload, dict):
+        return None
+    chunks = deserialize_retrieved_chunks(payload.get("chunks"))
+    provenance = payload.get("provenance")
+    if chunks is None or not isinstance(provenance, dict):
+        return None
+    return CachedRetrieval(chunks=chunks, provenance=provenance)
 
 
 async def set_cached_retrieval(
@@ -112,6 +129,7 @@ async def set_cached_retrieval(
     top_k: int,
     filters: dict | None,
     chunks: list[RetrievedChunk],
+    provenance: dict,
     variant: str = "vector-v1",
 ) -> None:
     await cache_set_json(
@@ -123,7 +141,7 @@ async def set_cached_retrieval(
             filters=filters,
             variant=variant,
         ),
-        serialize_retrieved_chunks(chunks),
+        {"chunks": serialize_retrieved_chunks(chunks), "provenance": provenance},
         ttl_seconds=settings.CACHE_RETRIEVAL_TTL_SECONDS,
     )
 

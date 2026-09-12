@@ -7,6 +7,7 @@ import pytest
 
 import backend.modules.ai.providers as providers
 from backend.modules.ai.providers import (
+    LocalHeuristicProvider,
     OpenAIProvider,
     ProviderGenerateRequest,
     close_ai_provider_http_clients,
@@ -60,6 +61,28 @@ def test_openai_provider_reuses_shared_http_client(monkeypatch) -> None:
 
     asyncio.run(_run())
     assert len(created_clients) == 1
+
+
+def test_local_json_output_uses_the_rag_structured_contract() -> None:
+    result = asyncio.run(
+        LocalHeuristicProvider().generate(
+            ProviderGenerateRequest(
+                model="local-heuristic",
+                system_prompt="system",
+                user_prompt="user",
+                response_format="json",
+                temperature=0.2,
+            )
+        )
+    )
+
+    assert result.output_json == {
+        "claims": [],
+        "no_evidence": True,
+        "insufficient_evidence_reason": (
+            "Local heuristic provider cannot synthesize grounded claims."
+        ),
+    }
 
 
 def test_post_with_retry_retries_transient_status_codes(monkeypatch) -> None:

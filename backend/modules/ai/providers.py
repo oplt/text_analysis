@@ -92,6 +92,46 @@ class BaseAiProvider:
         raise NotImplementedError
 
 
+_RAG_STRUCTURED_CONTRACT_MARKER = "NON-OVERRIDABLE OUTPUT CONTRACT"
+_RAG_STRUCTURED_RESPONSE_SCHEMA = {
+    "name": "rag_structured_answer",
+    "strict": True,
+    "schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "claims": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "text": {"type": "string", "minLength": 1},
+                        "chunk_ids": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "minItems": 1,
+                        },
+                    },
+                    "required": ["text", "chunk_ids"],
+                },
+            },
+            "no_evidence": {"type": "boolean"},
+            "insufficient_evidence_reason": {"type": ["string", "null"]},
+        },
+        "required": ["claims", "no_evidence", "insufficient_evidence_reason"],
+    },
+}
+
+
+def _openai_response_format(request: ProviderGenerateRequest) -> dict[str, object]:
+    if request.response_format != "json":
+        return {"type": "text"}
+    if _RAG_STRUCTURED_CONTRACT_MARKER in request.system_prompt:
+        return {"type": "json_schema", "json_schema": _RAG_STRUCTURED_RESPONSE_SCHEMA}
+    return {"type": "json_object"}
+
+
 def _hash_embedding(text: str, dimensions: int = 32) -> list[float]:
     values: list[float] = []
     for index in range(dimensions):
@@ -111,10 +151,11 @@ class LocalHeuristicProvider(BaseAiProvider):
         summary = prompt[:1500]
         if request.response_format == "json":
             payload = {
-                "provider": self.key,
-                "model": request.model,
-                "summary": summary,
-                "system_context": system[:400],
+                "claims": [],
+                "no_evidence": True,
+                "insufficient_evidence_reason": (
+                    "Local heuristic provider cannot synthesize grounded claims."
+                ),
             }
             output_text = json.dumps(payload, indent=2)
             output_json = payload
@@ -154,9 +195,7 @@ class OpenAIProvider(BaseAiProvider):
             json={
                 "model": request.model,
                 "temperature": request.temperature,
-                "response_format": {"type": "json_object"}
-                if request.response_format == "json"
-                else {"type": "text"},
+                "response_format": _openai_response_format(request),
                 "messages": [
                     {"role": "system", "content": request.system_prompt},
                     {"role": "user", "content": request.user_prompt},

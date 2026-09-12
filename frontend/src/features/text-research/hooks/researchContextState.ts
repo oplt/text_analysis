@@ -32,7 +32,8 @@ export type ResearchContextValue = {
     askAbout: (payload: AskAboutPayload) => void;
     pendingAsk: PendingAsk | null;
     clearPendingAsk: () => void;
-    askPanelOpenNonce: number;
+    askPanelOpen: boolean;
+    setAskPanelOpen: (open: boolean) => void;
 };
 
 export const ResearchContext = createContext<ResearchContextValue | null>(null);

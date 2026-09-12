@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import logging
 from typing import Protocol
@@ -27,6 +28,75 @@ def _stable_block_id(*, page_number: int, block_index: int, text: str, bbox) -> 
         separators=(",", ":"),
     )
     return f"block-{hashlib.sha256(payload.encode('utf-8')).hexdigest()[:32]}"
+
+
+def _extract_ocr_text(page, fitz) -> tuple[str, dict]:
+    """OCR a text-poor page only when explicitly enabled and dependencies exist."""
+    if not settings.RAG_PDF_OCR_ENABLED:
+        return "", {"ocr_enabled": False, "ocr_ran": False}
+    try:
+        import pytesseract
+        from PIL import Image
+    except ImportError:
+        return "", {
+            "ocr_enabled": True,
+            "ocr_available": False,
+            "ocr_ran": False,
+            "ocr_unavailable_reason": "pytesseract_or_pillow_not_installed",
+        }
+    try:
+        pixmap = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+        image = Image.open(io.BytesIO(pixmap.tobytes("png")))
+        text = pytesseract.image_to_string(image).strip()
+        return text, {
+            "ocr_enabled": True,
+            "ocr_available": True,
+            "ocr_ran": bool(text),
+            "ocr_engine": "tesseract",
+            "ocr_engine_version": str(pytesseract.get_tesseract_version()),
+            "ocr_transformed_extract": bool(text),
+        }
+    except Exception as exc:  # noqa: BLE001 - OCR is optional enrichment
+        logger.info("Optional PDF OCR was unavailable: %s", type(exc).__name__)
+        return "", {
+            "ocr_enabled": True,
+            "ocr_available": True,
+            "ocr_ran": False,
+            "ocr_unavailable_reason": type(exc).__name__,
+        }
+
+
+def _extract_tables(page, *, page_number: int) -> list[dict]:
+    """Return table cells as structured blocks, never prose-flattened text."""
+    if not settings.RAG_PDF_TABLE_EXTRACTION_ENABLED or not hasattr(page, "find_tables"):
+        return []
+    try:
+        found = page.find_tables()
+        tables = getattr(found, "tables", found) or []
+        result: list[dict] = []
+        for table_index, table in enumerate(tables):
+            rows = table.extract()
+            normalized_rows = [[cell if cell is not None else "" for cell in row] for row in rows]
+            bbox = list(table.bbox) if getattr(table, "bbox", None) else None
+            table_id = _stable_block_id(
+                page_number=page_number,
+                block_index=10_000 + table_index,
+                text=json.dumps(normalized_rows, ensure_ascii=False),
+                bbox=bbox,
+            )
+            result.append(
+                {
+                    "block_id": table_id,
+                    "table_index": table_index,
+                    "page_number": page_number,
+                    "bbox": bbox,
+                    "rows": normalized_rows,
+                }
+            )
+        return result
+    except Exception as exc:  # noqa: BLE001 - tables are optional enrichment
+        logger.info("Optional PDF table extraction failed: %s", type(exc).__name__)
+        return []
 
 
 class PdfParserAdapter(Protocol):
@@ -65,6 +135,7 @@ class BasicPypdfParser:
                         metadata={
                             "format": "pdf",
                             "page_number": index,
+                            "source_span_ids": [f"pdf-page-{index}"],
                             "parser": self.name,
                             "parser_quality": "basic_text",
                             "configured_parser": configured_parser,
@@ -144,6 +215,15 @@ class EnhancedPdfParser:
                 if not text:
                     # Fall back to plain text extraction for the page.
                     text = (page.get_text("text") or "").strip().replace("-\n", "")
+                text_poor = len(text) < max(1, settings.RAG_PDF_OCR_MIN_TEXT_CHARS)
+                ocr_text, ocr_metadata = (
+                    _extract_ocr_text(page, fitz)
+                    if text_poor
+                    else ("", {"ocr_enabled": False, "ocr_ran": False})
+                )
+                if ocr_text:
+                    text = ocr_text
+                tables = _extract_tables(page, page_number=index)
                 if text:
                     docs.append(
                         ParsedDocument(
@@ -151,6 +231,10 @@ class EnhancedPdfParser:
                             metadata={
                                 "format": "pdf",
                                 "page_number": index,
+                                "source_span_ids": [
+                                    f"pdf-page-{index}",
+                                    *(block["block_id"] for block in text_blocks),
+                                ],
                                 "parser": self.name,
                                 "parser_quality": (
                                     "enhanced_layout" if text_blocks else "enhanced_text"
@@ -160,11 +244,38 @@ class EnhancedPdfParser:
                                 "fallback_reason": fallback_reason,
                                 "layout_extraction_available": True,
                                 "layout_extraction_ran": True,
-                                "table_extraction_available": False,
-                                "table_extraction_ran": False,
-                                "ocr_ran": False,
+                                "table_extraction_available": hasattr(page, "find_tables"),
+                                "table_extraction_ran": bool(tables),
+                                "table_blocks": tables,
+                                "text_poor": text_poor,
+                                **ocr_metadata,
                                 "reading_order": "pymupdf_blocks",
                                 "blocks": text_blocks,
+                            },
+                            page_number=index,
+                        )
+                    )
+                for table in tables:
+                    docs.append(
+                        ParsedDocument(
+                            content=json.dumps(
+                                {
+                                    "kind": "pdf_table",
+                                    "table_index": table["table_index"],
+                                    "rows": table["rows"],
+                                },
+                                ensure_ascii=False,
+                            ),
+                            metadata={
+                                "format": "pdf",
+                                "parsed_block_type": "table",
+                                "page_number": index,
+                                "source_span_ids": [table["block_id"]],
+                                "parser": self.name,
+                                "table_extraction_available": True,
+                                "table_extraction_ran": True,
+                                "table": table,
+                                "ocr_ran": False,
                             },
                             page_number=index,
                         )

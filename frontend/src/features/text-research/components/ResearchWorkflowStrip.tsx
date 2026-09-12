@@ -1,6 +1,5 @@
 import {
     Box,
-    Button,
     LinearProgress,
     Stack,
     Tooltip,
@@ -11,10 +10,12 @@ import { useTheme } from "@mui/material/styles";
 import { ExpandMore as ExpandIcon } from "@mui/icons-material";
 import {
     StatusIcon,
+} from "../workflowDisplay";
+import {
     compactStageDetail,
     statusAccent,
     workflowProgress,
-} from "../workflowDisplay";
+} from "../workflowDisplayModel";
 import type { WorkflowStageState } from "../workflow";
 
 type ResearchWorkflowStripProps = {

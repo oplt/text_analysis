@@ -85,9 +85,7 @@ def _detect_language(query: str) -> str:
     if any(marker in lowered for marker in ("ı", "ğ", "ş")):
         return "tr"
     scores = {
-        language: sum(
-            1 for word in re.findall(r"[\wÀ-ÿ]+", lowered) if word in markers
-        )
+        language: sum(1 for word in re.findall(r"[\wÀ-ÿ]+", lowered) if word in markers)
         for language, markers in _LANGUAGE_MARKERS.items()
     }
     language, score = max(scores.items(), key=lambda item: item[1])

@@ -70,10 +70,7 @@ class RagContextBuilder:
                     f"page_number: {page}",
                     f"content: {context_content}",
                     *(
-                        [
-                            "citation_content: "
-                            f"{chunk.citation_content or chunk.content}"
-                        ]
+                        [f"citation_content: {chunk.citation_content or chunk.content}"]
                         if chunk.context_content is not None
                         else []
                     ),

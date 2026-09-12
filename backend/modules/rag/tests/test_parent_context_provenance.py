@@ -43,12 +43,8 @@ class ParentContextProvenanceTests(unittest.IsolatedAsyncioTestCase):
         repo.get_chunks_by_ids = AsyncMock(
             side_effect=[
                 [
-                    SimpleNamespace(
-                        id="child-a", parent_chunk_id="parent-1", document_id="doc-1"
-                    ),
-                    SimpleNamespace(
-                        id="child-b", parent_chunk_id="parent-1", document_id="doc-1"
-                    ),
+                    SimpleNamespace(id="child-a", parent_chunk_id="parent-1", document_id="doc-1"),
+                    SimpleNamespace(id="child-b", parent_chunk_id="parent-1", document_id="doc-1"),
                 ],
                 [
                     SimpleNamespace(
@@ -70,10 +66,13 @@ class ParentContextProvenanceTests(unittest.IsolatedAsyncioTestCase):
             allowed_document_ids=["doc-1"],
         )
 
-        self.assertEqual([item.context_content for item in expanded], [
-            "parent page one\n\nparent page two",
-            None,
-        ])
+        self.assertEqual(
+            [item.context_content for item in expanded],
+            [
+                "parent page one\n\nparent page two",
+                None,
+            ],
+        )
         self.assertIn("parent page one", context)
         self.assertNotIn("\ncontent: exact child A\n", context)
         self.assertIn("citation_content: exact child A", context)
@@ -110,9 +109,7 @@ class ParentContextProvenanceTests(unittest.IsolatedAsyncioTestCase):
             ]
         )
 
-        expanded = await expand_parent_chunks(
-            [child], repo=repo, document_ids=["doc-allowed"]
-        )
+        expanded = await expand_parent_chunks([child], repo=repo, document_ids=["doc-allowed"])
 
         self.assertEqual(expanded[0].content, "child evidence")
         self.assertIsNone(expanded[0].context_content)

@@ -22,7 +22,7 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
     const [codebookSelection, setCodebookSelection] = useState("");
     const [unitType, setUnitType] = useState<UnitType>("paragraph");
     const [pendingAsk, setPendingAsk] = useState<PendingAsk | null>(null);
-    const [askPanelOpenNonce, setAskPanelOpenNonce] = useState(0);
+    const [askPanelOpen, setAskPanelOpen] = useState(false);
 
     const askAbout = useCallback((payload: AskAboutPayload) => {
         setPendingAsk({
@@ -31,7 +31,7 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
             autoSubmit: payload.autoSubmit ?? true,
             nonce: Date.now(),
         });
-        setAskPanelOpenNonce((n) => n + 1);
+        setAskPanelOpen(true);
     }, []);
 
     const clearPendingAsk = useCallback(() => setPendingAsk(null), []);
@@ -145,7 +145,8 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
             askAbout,
             pendingAsk,
             clearPendingAsk,
-            askPanelOpenNonce,
+            askPanelOpen,
+            setAskPanelOpen,
         }),
         [
             projectId,
@@ -163,7 +164,7 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
             askAbout,
             pendingAsk,
             clearPendingAsk,
-            askPanelOpenNonce,
+            askPanelOpen,
         ]
     );
 

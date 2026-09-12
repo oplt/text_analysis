@@ -1301,8 +1301,19 @@ class AssistantScopeResponse(BaseModel):
     unavailable_count: int
     unavailable_corpus_document_ids: list[str] = Field(default_factory=list)
     unavailable_reasons: dict[str, str] = Field(default_factory=dict)
+    document_bindings: list[CorpusScopeDocumentBindingResponse] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     scope_mode: Literal["fixed", "live"] = "fixed"
+
+
+class CorpusScopeDocumentBindingResponse(BaseModel):
+    corpus_document_id: str
+    rag_document_id: str | None = None
+    availability: Literal["indexed", "unavailable"]
+    status: str | None = None
+    unavailable_reason: str | None = None
+    index_revision_id: str | None = None
+    document_revision: str | None = None
 
 
 class AssistantCitationResponse(BaseModel):
@@ -1321,6 +1332,8 @@ class AssistantCitationResponse(BaseModel):
     char_end: int | None = None
     source_span_ids: list[str] | None = None
     parent_context_id: str | None = None
+    offset_coordinate_system: str | None = None
+    offset_scope: str | None = None
 
 
 class AssistantClaimResponse(BaseModel):

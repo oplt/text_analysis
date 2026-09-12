@@ -50,6 +50,7 @@ def _filters_for_cache(
     owner_scoped: bool,
     intent: str,
     retrieval_mode: str = "hybrid",
+    index_revision_ids: list[str] | None = None,
 ) -> dict:
     """Always include document_ids key when not None so [] ≠ omitted (I1/I5)."""
     filters: dict = {
@@ -59,6 +60,8 @@ def _filters_for_cache(
     }
     if document_ids is not None:
         filters["document_ids"] = sorted(document_ids)
+    if index_revision_ids is not None:
+        filters["index_revision_ids"] = sorted(index_revision_ids)
     return filters
 
 
@@ -83,6 +86,46 @@ def _actual_fusion_method(
     if lexical and lexical_ok and (not dense_ok or not dense):
         return "lexical_only"
     return "none"
+
+
+def _retrieval_provenance(
+    *,
+    plan,
+    config: RagConfig,
+    ranker,
+    fusion_method: str,
+    dense_candidate_count: int,
+    lexical_candidate_count: int,
+    fused_candidate_count: int,
+    query_variants: list[dict],
+    chunks: list[RetrievedChunk],
+    index_revision_ids: list[str] | None,
+) -> dict:
+    """Persist the facts needed to reproduce a cached retrieval result."""
+    return {
+        "intent": plan.intent.value,
+        "retrieval_algorithm_version": getattr(
+            config, "retrieval_algorithm_version", "hybrid-rrf-v1"
+        ),
+        "fusion_method": fusion_method,
+        "dense_candidate_count": dense_candidate_count,
+        "lexical_candidate_count": lexical_candidate_count,
+        "fused_candidate_count": fused_candidate_count,
+        "query_variants": query_variants,
+        "query_expansion_version": (QUERY_EXPANSION_VERSION if len(query_variants) > 1 else None),
+        "diversification_strategy": "per_document" if plan.diversify else "none",
+        "source_cap": plan.max_per_document if plan.diversify else None,
+        "reranker": f"{ranker.name}:{ranker.version}",
+        "top_k": plan.top_k,
+        "score_threshold": getattr(config, "score_threshold", None),
+        "result_chunk_ids": [chunk.chunk_id for chunk in chunks],
+        "index_revision_ids": list(
+            dict.fromkeys(
+                (index_revision_ids or [])
+                + [chunk.index_revision_id for chunk in chunks if chunk.index_revision_id]
+            )
+        ),
+    }
 
 
 class RetrievalService:
@@ -115,10 +158,9 @@ class RetrievalService:
             return RetrievalOutcome(chunks=[], no_matches=True)
 
         document_ids, owner_scoped = _parse_scope(filters)
+        index_revision_ids = (filters or {}).get("index_revision_ids")
         retrieval_mode = str((filters or {}).get("retrieval_mode") or "hybrid").lower()
-        plan = plan_retrieval(
-            intent, self.config, top_k=top_k, retrieval_mode=retrieval_mode
-        )
+        plan = plan_retrieval(intent, self.config, top_k=top_k, retrieval_mode=retrieval_mode)
         exclude_parents = bool(getattr(self.config, "parent_context_enabled", False))
 
         # I1: explicit empty allow-list → zero evidence, never widen.
@@ -162,6 +204,7 @@ class RetrievalService:
             owner_scoped=owner_scoped,
             intent=plan.intent.value,
             retrieval_mode=retrieval_mode,
+            index_revision_ids=index_revision_ids,
         )
         cache_variant = (
             f"{getattr(self.config, 'retrieval_algorithm_version', 'hybrid-rrf-v1')}"
@@ -183,7 +226,13 @@ class RetrievalService:
                 variant=cache_variant,
             )
             if cached is not None:
-                filtered, removed = exclude_injection_flagged_chunks(cached)
+                try:
+                    cached_intent = RetrievalIntent(
+                        cached.provenance.get("intent", plan.intent.value)
+                    )
+                except ValueError:
+                    cached_intent = plan.intent
+                filtered, removed = exclude_injection_flagged_chunks(cached.chunks)
                 filtered = filter_to_allow_list(filtered, document_ids)
                 if plan.diversify:
                     filtered, coverage = diversify_by_document(
@@ -201,8 +250,7 @@ class RetrievalService:
                     )
                     if coverage.documents_in_scope:
                         coverage.coverage_ratio = (
-                            coverage.documents_with_retrieved_evidence
-                            / coverage.documents_in_scope
+                            coverage.documents_with_retrieved_evidence / coverage.documents_in_scope
                         )
                 if removed:
                     metrics.rag_injection_chunks_filtered_total.inc(removed)
@@ -216,10 +264,17 @@ class RetrievalService:
                     chunks=filtered,
                     injection_chunks_filtered=removed,
                     no_matches=len(filtered) == 0,
-                    intent=plan.intent,
-                    fusion_method="cached",
+                    intent=cached_intent,
+                    fusion_method=cached.provenance.get("fusion_method"),
                     coverage=coverage,
+                    dense_candidate_count=int(cached.provenance.get("dense_candidate_count", 0)),
+                    lexical_candidate_count=int(
+                        cached.provenance.get("lexical_candidate_count", 0)
+                    ),
+                    fused_candidate_count=int(cached.provenance.get("fused_candidate_count", 0)),
                     scope_hash=scope_hash_for_document_ids(document_ids),
+                    cache_hit=True,
+                    retrieval_provenance=cached.provenance,
                 )
                 outcome.evidence_revision_hash = evidence_revision_hash or (
                     build_retrieved_evidence_revision_hash(
@@ -238,13 +293,11 @@ class RetrievalService:
                         conversation_id=conversation_id,
                         document_ids=document_ids,
                         latency_ms=int((perf_counter() - started) * 1000),
-                        query_variants=query_variants_meta,
+                        query_variants=cached.provenance.get("query_variants", []),
                     )
                 return outcome
 
-            variants = self.query_expansion.expand_if_needed(
-                query, multi_query=plan.multi_query
-            )
+            variants = self.query_expansion.expand_if_needed(query, multi_query=plan.multi_query)
             ranked_lists: list[list[RetrievedChunk]] = []
             total_dense = 0
             total_lexical = 0
@@ -270,6 +323,7 @@ class RetrievalService:
                     user_id=user_id,
                     project_id=project_id,
                     document_ids=document_ids,
+                    index_revision_ids=index_revision_ids,
                     owner_scoped=owner_scoped,
                     top_k=plan.dense_candidates,
                     exclude_parents=exclude_parents,
@@ -284,6 +338,7 @@ class RetrievalService:
                         user_id=user_id,
                         project_id=project_id,
                         document_ids=document_ids,
+                        index_revision_ids=index_revision_ids,
                         top_k=plan.lexical_candidates,
                         owner_scoped=owner_scoped,
                         exclude_parents=exclude_parents,
@@ -325,9 +380,7 @@ class RetrievalService:
                 lexical_ok=any_lexical_ok,
                 dense=[c for lst in ranked_lists for c in lst if "dense" in c.retrieval_sources]
                 or ([] if not any_dense_ok else fused),
-                lexical=[
-                    c for lst in ranked_lists for c in lst if "lexical" in c.retrieval_sources
-                ]
+                lexical=[c for lst in ranked_lists for c in lst if "lexical" in c.retrieval_sources]
                 or ([] if not any_lexical_ok else fused),
                 planned_dense=plan.dense_candidates,
                 planned_lexical=plan.lexical_candidates,
@@ -342,19 +395,19 @@ class RetrievalService:
             degraded = False
             degradation_reason: str | None = None
             if dense_attempted and lexical_attempted:
-                if any_dense_ok and not any_lexical_ok and fused:
+                if any_dense_ok and not any_lexical_ok:
                     degraded = True
                     degradation_reason = "lexical_branch_failed"
-                elif any_lexical_ok and not any_dense_ok and fused:
+                elif any_lexical_ok and not any_dense_ok:
                     degraded = True
                     degradation_reason = "dense_branch_failed"
                 elif not any_dense_ok and not any_lexical_ok:
                     degraded = True
                     degradation_reason = "both_branches_failed"
-            elif dense_attempted and not any_dense_ok and not fused:
+            elif dense_attempted and not any_dense_ok:
                 degraded = True
                 degradation_reason = "dense_branch_failed"
-            elif lexical_attempted and not any_lexical_ok and not fused:
+            elif lexical_attempted and not any_lexical_ok:
                 degraded = True
                 degradation_reason = "lexical_branch_failed"
 
@@ -415,6 +468,18 @@ class RetrievalService:
                 degraded=degraded,
                 degradation_reason=degradation_reason,
             )
+            outcome.retrieval_provenance = _retrieval_provenance(
+                plan=plan,
+                config=self.config,
+                ranker=self.ranker,
+                fusion_method=fusion_method,
+                dense_candidate_count=total_dense,
+                lexical_candidate_count=total_lexical,
+                fused_candidate_count=len(fused),
+                query_variants=query_variants_meta,
+                chunks=filtered,
+                index_revision_ids=index_revision_ids,
+            )
             outcome.evidence_revision_hash = evidence_revision_hash or (
                 build_retrieved_evidence_revision_hash(
                     project_id=project_id,
@@ -435,6 +500,7 @@ class RetrievalService:
                     top_k=plan.top_k,
                     filters=cache_filters,
                     chunks=filtered,
+                    provenance=outcome.retrieval_provenance,
                     variant=cache_variant,
                 )
             metrics.rag_retrieved_chunks.observe(len(filtered))
@@ -498,6 +564,7 @@ class RetrievalService:
         user_id: str,
         project_id: str | None,
         document_ids: list[str] | None,
+        index_revision_ids: list[str] | None,
         owner_scoped: bool,
         top_k: int,
         exclude_parents: bool,
@@ -517,6 +584,8 @@ class RetrievalService:
             }
             if document_ids is not None:
                 search_filters["document_ids"] = document_ids
+            if index_revision_ids is not None:
+                search_filters["index_revision_ids"] = index_revision_ids
             dense = await self.vector_store.similarity_search(
                 query,
                 user_id=user_id,
@@ -537,6 +606,7 @@ class RetrievalService:
         user_id: str,
         project_id: str | None,
         document_ids: list[str] | None,
+        index_revision_ids: list[str] | None,
         owner_scoped: bool,
         top_k: int,
         exclude_parents: bool,
@@ -552,6 +622,7 @@ class RetrievalService:
                 top_k=top_k,
                 owner_scoped=owner_scoped,
                 exclude_parents=exclude_parents,
+                index_revision_ids=index_revision_ids,
             )
             return lexical, True, None
         except Exception as exc:
@@ -573,16 +644,16 @@ class RetrievalService:
     ) -> RetrievalOutcome:
         chunk_revision_ids = list(
             dict.fromkeys(
-                chunk.index_revision_id
-                for chunk in outcome.chunks
-                if chunk.index_revision_id
+                chunk.index_revision_id for chunk in outcome.chunks if chunk.index_revision_id
             )
         )
         outcome.index_revision_ids = (
             chunk_revision_ids
+            or outcome.retrieval_provenance.get("index_revision_ids", [])
             or await self.repo.list_current_revision_ids(document_ids)
         )
         coverage = outcome.coverage
+        provenance = dict(outcome.retrieval_provenance)
         trace = await self.repo.create_retrieval_trace(
             user_id=user_id,
             project_id=project_id,
@@ -609,9 +680,7 @@ class RetrievalService:
                     "char_end": (c.metadata or {}).get("char_end"),
                     "source_unit_ids": (c.metadata or {}).get("source_unit_ids")
                     or (c.metadata or {}).get("source_span_ids"),
-                    "offset_coordinate_system": (c.metadata or {}).get(
-                        "offset_coordinate_system"
-                    ),
+                    "offset_coordinate_system": (c.metadata or {}).get("offset_coordinate_system"),
                     "parent_context_id": c.parent_context_id,
                     "index_revision_id": c.index_revision_id,
                     "context_content": c.context_content,
@@ -631,18 +700,34 @@ class RetrievalService:
                 "coverage_ratio": coverage.coverage_ratio if coverage else 0.0,
             },
             config={
+                **provenance,
+                "cache_hit": outcome.cache_hit,
+                "original_fusion_method": provenance.get("fusion_method", outcome.fusion_method),
                 "fusion_method": outcome.fusion_method,
-                "retrieval_algorithm_version": getattr(
-                    self.config, "retrieval_algorithm_version", "hybrid-rrf-v1"
+                "retrieval_algorithm_version": provenance.get(
+                    "retrieval_algorithm_version",
+                    getattr(self.config, "retrieval_algorithm_version", "hybrid-rrf-v1"),
                 ),
                 "index_version": getattr(self.config, "index_version", "pgvector-fts-v1"),
-                "dense_candidate_count": outcome.dense_candidate_count,
-                "lexical_candidate_count": outcome.lexical_candidate_count,
-                "fused_candidate_count": outcome.fused_candidate_count,
-                "reranker": f"{self.ranker.name}:{self.ranker.version}",
-                "query_variants": query_variants or [],
+                "dense_candidate_count": provenance.get(
+                    "dense_candidate_count", outcome.dense_candidate_count
+                ),
+                "lexical_candidate_count": provenance.get(
+                    "lexical_candidate_count", outcome.lexical_candidate_count
+                ),
+                "fused_candidate_count": provenance.get(
+                    "fused_candidate_count", outcome.fused_candidate_count
+                ),
+                "reranker": provenance.get("reranker", f"{self.ranker.name}:{self.ranker.version}"),
+                "query_variants": provenance.get("query_variants", query_variants or []),
                 "query_expansion_version": (
-                    QUERY_EXPANSION_VERSION if query_variants and len(query_variants) > 1 else None
+                    provenance.get("query_expansion_version")
+                    if provenance
+                    else (
+                        QUERY_EXPANSION_VERSION
+                        if query_variants and len(query_variants) > 1
+                        else None
+                    )
                 ),
                 "branch_errors": branch_errors or [],
                 "original_query": query,

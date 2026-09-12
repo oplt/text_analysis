@@ -89,14 +89,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.identity.outputs.sha }}
-      - uses: astral-sh/ruff-action@v3
+      - uses: astral-sh/setup-uv@v5
         with:
-          version: "0.11.2"
-          args: "check backend"
-      - uses: astral-sh/ruff-action@v3
-        with:
-          version: "0.11.2"
-          args: "format --check backend"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Install backend lint environment (frozen lock)
+        working-directory: backend
+        run: uv sync --frozen --extra dev
+      - name: Ruff check
+        run: backend/.venv/bin/ruff check backend
+      - name: Ruff format check
+        run: backend/.venv/bin/ruff format --check backend
 
   backend-tests:
     name: Backend unit tests (research)
@@ -212,7 +215,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: text_analysis
           POSTGRES_PASSWORD: text_analysis
@@ -273,7 +276,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: text_analysis
           POSTGRES_PASSWORD: text_analysis

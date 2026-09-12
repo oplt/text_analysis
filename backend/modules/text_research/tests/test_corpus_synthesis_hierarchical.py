@@ -15,12 +15,133 @@ from backend.modules.rag.domain.models import (
     RetrievalOutcome,
     RetrievedChunk,
 )
+from backend.modules.text_research.application.corpus_scope_service import (
+    CorpusScopeDocumentBinding,
+    CorpusScopeSnapshot,
+)
 from backend.modules.text_research.application.corpus_synthesis_service import (
     CorpusSynthesisService,
 )
 
 
 class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
+    def test_async_synthesis_freezes_and_reconstructs_scope(self):
+        service = CorpusSynthesisService(AsyncMock())
+        service.rag_config = SimpleNamespace(synthesis_passages_per_document=2)
+        scope = CorpusScopeSnapshot(
+            corpus_id="corpus-1",
+            project_id="project-1",
+            corpus_name="Corpus",
+            rag_document_ids=["rag-1"],
+            corpus_document_ids=["corpus-document-1"],
+            indexed_rag_document_ids=["rag-1"],
+            unavailable_rag_document_ids=[],
+            scope_hash="scope-hash",
+            index_version="index-v1",
+            retrieval_version="retrieval-v1",
+            evidence_revision_hash="evidence-hash",
+            total_documents=1,
+            indexed_count=1,
+            unavailable_count=0,
+            document_bindings=[
+                CorpusScopeDocumentBinding(
+                    "corpus-document-1",
+                    "rag-1",
+                    "indexed",
+                    index_revision_id="revision-1",
+                )
+            ],
+        )
+
+        frozen = service._freeze_scope(scope)
+        reconstructed = service._frozen_scope_from_run(
+            {
+                "scope_hash": "scope-hash",
+                "evidence_revision_hash": "evidence-hash",
+                "frozen_synthesis_scope": frozen,
+            },
+            SimpleNamespace(corpus_id="corpus-1", project_id="project-1"),
+        )
+
+        self.assertEqual(frozen["retrieval_config"]["synthesis_passages_per_document"], 2)
+        self.assertEqual(reconstructed.document_bindings[0].index_revision_id, "revision-1")
+
+    async def test_citations_use_explicit_binding_not_sorted_id_positions(self):
+        service = CorpusSynthesisService(AsyncMock())
+        service.rag_config = SimpleNamespace(
+            synthesis_batch_size=8,
+            synthesis_passages_per_document=1,
+        )
+        cited_chunk = RetrievedChunk(
+            chunk_id="chunk-z",
+            document_id="rag-z",
+            content="Evidence from Z",
+            score=0.9,
+            filename="z.pdf",
+            chunk_index=0,
+        )
+        service.retrieval = SimpleNamespace(
+            retrieve=AsyncMock(
+                return_value=RetrievalOutcome(
+                    chunks=[cited_chunk],
+                    intent=RetrievalIntent.SYNTHESIS,
+                )
+            )
+        )
+        service.answers = SimpleNamespace(
+            answer_from_retrieval=AsyncMock(
+                return_value=RagAnswer(
+                    query="question",
+                    answer="answer",
+                    citations=[
+                        Citation(
+                            document_id="rag-z",
+                            chunk_id="chunk-z",
+                            filename="z.pdf",
+                            score=0.9,
+                            snippet="Evidence from Z",
+                        )
+                    ],
+                    retrieved_chunk_ids=["chunk-z"],
+                    model_name="test",
+                    latency_ms=1,
+                )
+            )
+        )
+        scope = SimpleNamespace(
+            corpus_id="corpus-1",
+            project_id="project-1",
+            scope_hash="scope-hash",
+            evidence_revision_hash=None,
+            corpus_document_ids=["corpus-a", "corpus-b", "corpus-unavailable"],
+            document_bindings=[
+                CorpusScopeDocumentBinding(
+                    "corpus-b", "rag-a", "indexed", index_revision_id="revision-a"
+                ),
+                CorpusScopeDocumentBinding("corpus-unavailable", None, "unavailable"),
+                CorpusScopeDocumentBinding(
+                    "corpus-a", "rag-z", "indexed", index_revision_id="revision-z"
+                ),
+            ],
+            to_dict=lambda: {},
+        )
+
+        result = await service._synthesize_sync(
+            user=SimpleNamespace(id="user-1"),
+            query="question",
+            scope=scope,
+            allow_list=["rag-a", "rag-z"],
+        )
+
+        self.assertEqual(result["citations"][0]["corpus_document_id"], "corpus-a")
+        self.assertEqual(
+            [
+                call.kwargs["filters"]["index_revision_ids"]
+                for call in service.retrieval.retrieve.await_args_list
+            ],
+            [["revision-a"], ["revision-z"]],
+        )
+
     async def test_hierarchical_synthesis_uses_map_findings_not_union(self):
         service = CorpusSynthesisService(AsyncMock())
         service.rag_config = SimpleNamespace(
@@ -83,27 +204,32 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
 
         service.retrieval = SimpleNamespace(retrieve=fake_retrieve)
 
+        reduction_chunk_sets: list[set[str]] = []
+
         async def fake_answer(query, *, outcome, **kwargs):
-            assert {c.chunk_id for c in outcome.chunks} == {"ca", "cb", "cc"}
+            reduction_chunk_sets.append({c.chunk_id for c in outcome.chunks})
             assert outcome.fusion_method == "deterministic_map_reduce"
+            chunk = outcome.chunks[0] if outcome.chunks else chunk_a
             return RagAnswer(
                 query=query,
                 answer="Synthesized",
                 citations=[
                     Citation(
-                        document_id="d1",
-                        chunk_id="ca",
-                        filename="a.pdf",
-                        score=0.9,
-                        snippet="Doc1",
+                        document_id=chunk.document_id,
+                        chunk_id=chunk.chunk_id,
+                        filename=chunk.filename,
+                        score=chunk.score,
+                        snippet=chunk.content,
                         used_in_answer=True,
                         citation_number=1,
                     )
                 ],
                 claims=[
-                    ClaimCitation(text="Synthesized", chunk_ids=["ca"], citation_numbers=[1])
+                    ClaimCitation(
+                        text="Synthesized", chunk_ids=[chunk.chunk_id], citation_numbers=[1]
+                    )
                 ],
-                retrieved_chunk_ids=["ca", "cb", "cc"],
+                retrieved_chunk_ids=[chunk.chunk_id],
                 model_name="test",
                 latency_ms=1,
                 coverage=RetrievalCoverage(
@@ -137,6 +263,7 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["documents_with_evidence"], 3)
         self.assertEqual(result["answer"], "Synthesized")
         self.assertEqual(len(retrieve_calls), 3)
+        self.assertEqual(reduction_chunk_sets, [{"ca", "cb"}, {"cc"}, {"ca", "cc"}])
         self.assertIsNone(result["retrieval_trace_id"])
         self.assertEqual(result["retrieval_trace_ids"], ["t1", "t2", "t3"])
         self.assertEqual(result["omitted_document_count"], 0)

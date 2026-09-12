@@ -33,6 +33,50 @@ from backend.modules.text_research.domain.models import (
 
 
 @dataclass(slots=True)
+class CorpusScopeDocumentBinding:
+    """Immutable corpus-document to RAG-document provenance within one scope."""
+
+    corpus_document_id: str
+    rag_document_id: str | None
+    availability: str
+    status: str | None = None
+    unavailable_reason: str | None = None
+    index_revision_id: str | None = None
+    document_revision: str | None = None
+
+    def to_dict(self) -> dict[str, str | None]:
+        return {
+            "corpus_document_id": self.corpus_document_id,
+            "rag_document_id": self.rag_document_id,
+            "availability": self.availability,
+            "status": self.status,
+            "unavailable_reason": self.unavailable_reason,
+            "index_revision_id": self.index_revision_id,
+            "document_revision": self.document_revision,
+        }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> CorpusScopeDocumentBinding:
+        return cls(
+            corpus_document_id=str(value["corpus_document_id"]),
+            rag_document_id=(
+                str(value["rag_document_id"]) if value.get("rag_document_id") else None
+            ),
+            availability=str(value.get("availability", "unavailable")),
+            status=str(value["status"]) if value.get("status") else None,
+            unavailable_reason=(
+                str(value["unavailable_reason"]) if value.get("unavailable_reason") else None
+            ),
+            index_revision_id=(
+                str(value["index_revision_id"]) if value.get("index_revision_id") else None
+            ),
+            document_revision=(
+                str(value["document_revision"]) if value.get("document_revision") else None
+            ),
+        )
+
+
+@dataclass(slots=True)
 class CorpusScopeSnapshot:
     corpus_id: str
     project_id: str
@@ -50,6 +94,7 @@ class CorpusScopeSnapshot:
     unavailable_count: int
     unavailable_corpus_document_ids: list[str] = field(default_factory=list)
     unavailable_reasons: dict[str, str] = field(default_factory=dict)
+    document_bindings: list[CorpusScopeDocumentBinding] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     scope_mode: str = AssistantScopeMode.FIXED.value
 
@@ -71,6 +116,7 @@ class CorpusScopeSnapshot:
             "unavailable_count": self.unavailable_count,
             "unavailable_corpus_document_ids": self.unavailable_corpus_document_ids,
             "unavailable_reasons": self.unavailable_reasons,
+            "document_bindings": [binding.to_dict() for binding in self.document_bindings],
             "warnings": self.warnings,
             "scope_mode": self.scope_mode,
         }
@@ -92,10 +138,13 @@ class CorpusScopeSnapshot:
             total_documents=int(value.get("total_documents", 0)),
             indexed_count=int(value.get("indexed_count", 0)),
             unavailable_count=int(value.get("unavailable_count", 0)),
-            unavailable_corpus_document_ids=list(
-                value.get("unavailable_corpus_document_ids", [])
-            ),
+            unavailable_corpus_document_ids=list(value.get("unavailable_corpus_document_ids", [])),
             unavailable_reasons=dict(value.get("unavailable_reasons", {})),
+            document_bindings=[
+                CorpusScopeDocumentBinding.from_dict(binding)
+                for binding in value.get("document_bindings", [])
+                if isinstance(binding, dict)
+            ],
             warnings=list(value.get("warnings", [])),
             scope_mode=str(value.get("scope_mode", AssistantScopeMode.FIXED.value)),
         )
@@ -185,6 +234,7 @@ class CorpusScopeService(ResearchAccessMixin):
         unavailable: set[str] = set()
         unavailable_corpus_document_ids: list[str] = []
         unavailable_reasons: dict[str, str] = {}
+        document_bindings: list[CorpusScopeDocumentBinding] = []
         indexed_corpus_document_count = 0
         for corpus_document in documents:
             rag_id = corpus_document.rag_document_id
@@ -214,6 +264,38 @@ class CorpusScopeService(ResearchAccessMixin):
                     unavailable.add(rag_id)
                 unavailable_corpus_document_ids.append(corpus_document.id)
                 unavailable_reasons[corpus_document.id] = reason
+
+            metadata: dict[str, Any] = {}
+            if rag_document is not None:
+                try:
+                    metadata = json.loads(rag_document.metadata_json or "{}")
+                except (TypeError, ValueError, json.JSONDecodeError):
+                    metadata = {}
+                if not isinstance(metadata, dict):
+                    metadata = {}
+            document_bindings.append(
+                CorpusScopeDocumentBinding(
+                    corpus_document_id=corpus_document.id,
+                    rag_document_id=rag_id,
+                    availability="indexed" if reason is None else "unavailable",
+                    status=(str(rag_document.status) if rag_document is not None else None),
+                    unavailable_reason=reason,
+                    index_revision_id=(
+                        current_revision_id
+                        if rag_document is not None
+                        and isinstance(
+                            current_revision_id := getattr(
+                                rag_document, "current_revision_id", None
+                            ),
+                            str,
+                        )
+                        else None
+                    ),
+                    document_revision=(
+                        metadata.get("checksum_sha256") or metadata.get("document_revision")
+                    ),
+                )
+            )
 
         if not documents:
             warnings.append("Corpus has no documents")
@@ -263,9 +345,7 @@ class CorpusScopeService(ResearchAccessMixin):
             corpus_document_ids=sorted(corpus_doc_ids),
             indexed_rag_document_ids=allow_list,
             unavailable_rag_document_ids=sorted(unavailable),
-            scope_hash=_scope_hash(
-                allow_list, corpus_id=corpus.id, project_id=corpus.project_id
-            ),
+            scope_hash=_scope_hash(allow_list, corpus_id=corpus.id, project_id=corpus.project_id),
             index_version=self.rag_config.index_version,
             retrieval_version=self.rag_config.retrieval_algorithm_version,
             evidence_revision_hash=evidence_revision_hash,
@@ -274,6 +354,9 @@ class CorpusScopeService(ResearchAccessMixin):
             unavailable_count=len(unavailable_corpus_document_ids),
             unavailable_corpus_document_ids=sorted(unavailable_corpus_document_ids),
             unavailable_reasons=unavailable_reasons,
+            document_bindings=sorted(
+                document_bindings, key=lambda binding: binding.corpus_document_id
+            ),
             warnings=warnings,
         )
 

@@ -150,9 +150,7 @@ def test_validate_rag_index_health_accepts_cosine_ann_index():
         ),
     ],
 )
-def test_validate_rag_index_health_rejects_invalid_production_schema(
-    db_kwargs, message
-):
+def test_validate_rag_index_health_rejects_invalid_production_schema(db_kwargs, message):
     with pytest.raises(RuntimeError, match=message):
         asyncio.run(
             validate_rag_index_health(

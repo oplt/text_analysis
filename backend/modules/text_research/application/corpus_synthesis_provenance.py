@@ -69,9 +69,7 @@ def build_document_map_finding(
         "disagreements": [],
         "exceptions": [],
         "missing_evidence": missing,
-        "missing_evidence_reason": (
-            "No valid per-document retrieval hits" if missing else None
-        ),
+        "missing_evidence_reason": ("No valid per-document retrieval hits" if missing else None),
         "invalid_chunk_ids": invalid_chunk_ids,
         "chunk_reference_validation": "invalid" if invalid_chunk_ids else "valid",
         "passages": passages,
@@ -159,8 +157,7 @@ def build_synthesis_provenance(
         },
         "final_claims": claims,
         "final_citations": [
-            _citation_dict(citation)
-            for citation in (getattr(answer, "citations", None) or [])
+            _citation_dict(citation) for citation in (getattr(answer, "citations", None) or [])
         ],
         "citation_validation_status": getattr(answer, "citation_validation_status", None),
     }

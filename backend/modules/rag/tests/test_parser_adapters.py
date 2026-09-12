@@ -10,6 +10,8 @@ from backend.modules.rag.infrastructure.langchain_document_loaders import _parse
 from backend.modules.rag.infrastructure.pdf_parsers import (
     BasicPypdfParser,
     EnhancedPdfParser,
+    _extract_ocr_text,
+    _extract_tables,
     _stable_block_id,
     parse_pdf_with_fallback,
 )
@@ -45,6 +47,34 @@ class PdfParserSmokeTests(unittest.TestCase):
         self.assertEqual(result, [])
         parse.assert_called_once_with(b"not a pdf", configured_parser="pypdf")
 
+    def test_ocr_is_not_attempted_without_explicit_configuration(self):
+        text, metadata = _extract_ocr_text(object(), object())
+
+        self.assertEqual(text, "")
+        self.assertFalse(metadata["ocr_enabled"])
+        self.assertFalse(metadata["ocr_ran"])
+
+    def test_table_extraction_preserves_structured_cells(self):
+        class Table:
+            bbox = (1, 2, 30, 40)
+
+            def extract(self):
+                return [["year", "count"], ["2025", "3"]]
+
+        class Page:
+            def find_tables(self):
+                return type("Found", (), {"tables": [Table()]})()
+
+        with patch(
+            "backend.modules.rag.infrastructure.pdf_parsers.settings.RAG_PDF_TABLE_EXTRACTION_ENABLED",
+            True,
+        ):
+            tables = _extract_tables(Page(), page_number=2)
+
+        self.assertEqual(tables[0]["page_number"], 2)
+        self.assertEqual(tables[0]["bbox"], [1, 2, 30, 40])
+        self.assertEqual(tables[0]["rows"], [["year", "count"], ["2025", "3"]])
+
     @unittest.skipUnless(
         find_spec("pymupdf") or find_spec("fitz"),
         "PyMuPDF optional dependency is not installed",
@@ -68,7 +98,7 @@ class PdfParserSmokeTests(unittest.TestCase):
         self.assertEqual(metadata["parser"], EnhancedPdfParser.name)
         self.assertEqual(metadata["parser_quality"], "enhanced_layout")
         self.assertTrue(metadata["layout_extraction_available"])
-        self.assertFalse(metadata["table_extraction_available"])
+        self.assertTrue(metadata["table_extraction_available"])
         self.assertFalse(metadata["table_extraction_ran"])
         self.assertFalse(metadata["ocr_ran"])
         self.assertEqual(len(metadata["blocks"]), 1)

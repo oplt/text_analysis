@@ -49,9 +49,7 @@ async def expand_parent_chunks(
         )
         for row in parents
     ]
-    allowed_parents = {
-        c.chunk_id for c in filter_to_allow_list(parent_as_retrieved, document_ids)
-    }
+    allowed_parents = {c.chunk_id for c in filter_to_allow_list(parent_as_retrieved, document_ids)}
 
     child_to_parent = {
         chunk.chunk_id: row.parent_chunk_id
@@ -59,8 +57,7 @@ async def expand_parent_chunks(
         if (row := child_by_id.get(chunk.chunk_id)) is not None
         and getattr(row, "document_id", None) == chunk.document_id
         and row.parent_chunk_id in allowed_parents
-        and getattr(parent_by_id.get(row.parent_chunk_id), "document_id", None)
-        == chunk.document_id
+        and getattr(parent_by_id.get(row.parent_chunk_id), "document_id", None) == chunk.document_id
     }
     if not child_to_parent:
         return chunks
@@ -110,9 +107,7 @@ async def expand_parent_chunks(
                 citation_chunk_id=provenance["citation_chunk_id"],
                 context_content=parent.content,
                 parent_context_id=parent_id,
-                retrieval_sources=tuple(
-                    dict.fromkeys([*chunk.retrieval_sources, "parent_expand"])
-                ),
+                retrieval_sources=tuple(dict.fromkeys([*chunk.retrieval_sources, "parent_expand"])),
             )
         )
     return expanded

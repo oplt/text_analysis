@@ -726,6 +726,9 @@ class ResearchAssistantScopeSnapshot(Base):
     unavailable_reasons_json: Mapped[str] = mapped_column(
         Text, nullable=False, default="{}", server_default="{}"
     )
+    document_bindings_json: Mapped[str] = mapped_column(
+        Text, nullable=False, default="[]", server_default="[]"
+    )
     scope_mode: Mapped[str] = mapped_column(String(16), default="fixed", server_default="fixed")
     index_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     retrieval_version: Mapped[str | None] = mapped_column(String(64), nullable=True)

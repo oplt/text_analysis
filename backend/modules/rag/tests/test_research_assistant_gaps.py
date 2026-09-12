@@ -270,9 +270,7 @@ class ParentExpandTests(unittest.IsolatedAsyncioTestCase):
             document_ids=["d1"],
         )
         self.assertEqual([c.content for c in expanded], [child_a.content, child_b.content])
-        self.assertEqual(
-            [c.context_content for c in expanded], ["PARENT CONTEXT WINDOW", None]
-        )
+        self.assertEqual([c.context_content for c in expanded], ["PARENT CONTEXT WINDOW", None])
         self.assertEqual([c.parent_context_id for c in expanded], ["parent-1", "parent-1"])
         self.assertTrue(any(c.metadata.get("parent_deduped") for c in expanded))
 
@@ -304,9 +302,7 @@ class ParentExpandTests(unittest.IsolatedAsyncioTestCase):
             raw_output=json.dumps(
                 {
                     "answer": "The exact child passage.",
-                    "claims": [
-                        {"text": "The exact child passage.", "chunk_ids": ["child-a"]}
-                    ],
+                    "claims": [{"text": "The exact child passage.", "chunk_ids": ["child-a"]}],
                 }
             ),
             retrieved_chunks=expanded,

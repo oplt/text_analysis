@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from backend.lib.retrieval_cache import (
+    CachedRetrieval,
     deserialize_retrieved_chunks,
     get_cached_retrieval,
     invalidate_retrieval_cache,
@@ -87,10 +88,14 @@ def test_get_and_set_cached_retrieval() -> None:
                 top_k=5,
                 filters=None,
                 chunks=[chunk],
+                provenance={"fusion_method": "rrf", "result_chunk_ids": ["chunk-1"]},
             )
             cache_set.assert_awaited_once()
 
-            cache_get.return_value = serialize_retrieved_chunks([chunk])
+            cache_get.return_value = {
+                "chunks": serialize_retrieved_chunks([chunk]),
+                "provenance": {"fusion_method": "rrf", "result_chunk_ids": ["chunk-1"]},
+            }
             cached = await get_cached_retrieval(
                 user_id="user-1",
                 project_id="proj-1",
@@ -100,7 +105,8 @@ def test_get_and_set_cached_retrieval() -> None:
             )
 
         assert cached is not None
-        assert cached[0].chunk_id == "chunk-1"
+        assert cached.chunks[0].chunk_id == "chunk-1"
+        assert cached.provenance["fusion_method"] == "rrf"
 
     asyncio.run(_run())
 
@@ -149,20 +155,46 @@ def test_retrieval_service_uses_cached_results() -> None:
     service.embeddings.embed_texts = AsyncMock()
     service.vector_store = MagicMock()
     service.vector_store.similarity_search = AsyncMock()
+    service.repo = MagicMock()
+    service.repo.create_retrieval_trace = AsyncMock(return_value=SimpleNamespace(id="trace-1"))
+    service.repo.list_current_revision_ids = AsyncMock(return_value=["revision-current"])
 
     async def _run() -> None:
         with patch(
             "backend.modules.rag.application.retrieval_service.get_cached_retrieval",
-            AsyncMock(return_value=[chunk]),
+            AsyncMock(
+                return_value=CachedRetrieval(
+                    chunks=[chunk],
+                    provenance={
+                        "intent": "fact",
+                        "fusion_method": "rrf",
+                        "dense_candidate_count": 4,
+                        "lexical_candidate_count": 3,
+                        "fused_candidate_count": 5,
+                        "result_chunk_ids": ["chunk-1"],
+                        "index_revision_ids": ["revision-cached"],
+                        "query_variants": [{"label": "original", "text": "hello"}],
+                    },
+                )
+            ),
         ) as cache_get:
             results = await service.retrieve(
                 "hello",
                 user_id="user-1",
                 project_id=None,
                 top_k=5,
+                persist_trace=True,
             )
 
-        assert results.chunks == [chunk]
+        assert [result.chunk_id for result in results.chunks] == [chunk.chunk_id]
+        assert results.cache_hit is True
+        assert results.fusion_method == "rrf"
+        assert results.retrieval_provenance["result_chunk_ids"] == ["chunk-1"]
+        assert results.index_revision_ids == ["revision-cached"]
+        trace_config = service.repo.create_retrieval_trace.await_args.kwargs["config"]
+        assert trace_config["cache_hit"] is True
+        assert trace_config["original_fusion_method"] == "rrf"
+        assert trace_config["query_variants"] == [{"label": "original", "text": "hello"}]
         cache_get.assert_awaited_once()
         service.embeddings.embed_texts.assert_not_called()
         service.vector_store.similarity_search.assert_not_called()

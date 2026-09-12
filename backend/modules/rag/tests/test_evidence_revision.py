@@ -84,12 +84,8 @@ def test_evidence_revision_hash_changes_for_content_and_index_inputs():
 
 
 def test_evidence_revision_hash_changes_when_content_hash_is_stale():
-    first = SimpleNamespace(
-        id="chunk-1", chunk_index=0, content="first", content_hash="same"
-    )
-    second = SimpleNamespace(
-        id="chunk-1", chunk_index=0, content="second", content_hash="same"
-    )
+    first = SimpleNamespace(id="chunk-1", chunk_index=0, content="first", content_hash="same")
+    second = SimpleNamespace(id="chunk-1", chunk_index=0, content="second", content_hash="same")
     first_revision = {
         "rag_document_id": "doc-1",
         "chunks": [chunk_revision_identity(first)],

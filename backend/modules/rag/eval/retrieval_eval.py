@@ -127,9 +127,7 @@ def document_coverage_at_k(
     if not relevant:
         return 0.0
     retrieved_documents = {
-        chunk_to_document[chunk_id]
-        for chunk_id in ranked_ids[:k]
-        if chunk_id in chunk_to_document
+        chunk_to_document[chunk_id] for chunk_id in ranked_ids[:k] if chunk_id in chunk_to_document
     }
     return len(retrieved_documents & relevant) / len(relevant)
 
@@ -183,16 +181,22 @@ def evaluate_citations(
 
     precision = len(cited & gold_chunk_ids) / len(cited) if cited else 0.0
     recall = len(cited & gold_chunk_ids) / len(gold_chunk_ids) if gold_chunk_ids else 0.0
-    validity = 1.0 if validated.citation_validation_status in {"valid", "no_evidence"} else (
-        0.5 if validated.citation_validation_status == "partial" else 0.0
+    validity = (
+        1.0
+        if validated.citation_validation_status in {"valid", "no_evidence"}
+        else (0.5 if validated.citation_validation_status == "partial" else 0.0)
     )
     claims = validated.claims
     unsupported = sum(1 for claim in claims if not claim.chunk_ids)
-    unsupported_rate = unsupported / len(claims) if claims else (
-        1.0 if validated.citation_validation_status != "valid" else 0.0
+    unsupported_rate = (
+        unsupported / len(claims)
+        if claims
+        else (1.0 if validated.citation_validation_status != "valid" else 0.0)
     )
-    grounded = 1.0 - unsupported_rate if claims else (
-        1.0 if validated.citation_validation_status == "valid" and not cited else 0.0
+    grounded = (
+        1.0 - unsupported_rate
+        if claims
+        else (1.0 if validated.citation_validation_status == "valid" and not cited else 0.0)
     )
     return CitationMetrics(
         citation_precision=precision,
@@ -335,14 +339,17 @@ def run_benchmark(payload: dict[str, Any] | None = None) -> dict[str, Any]:
     for strategy in strategy_names:
         values = [case["strategies"][strategy] for case in cases]
         ranking[strategy] = {
-            metric: sum(value[metric] for value in values) / len(values)
-            for metric in values[0]
+            metric: sum(value[metric] for value in values) / len(values) for metric in values[0]
         }
     citation_cases = [case["citation"] for case in cases if "citation" in case]
-    citation = {
-        metric: sum(value[metric] for value in citation_cases) / len(citation_cases)
-        for metric in citation_cases[0]
-    } if citation_cases else {}
+    citation = (
+        {
+            metric: sum(value[metric] for value in citation_cases) / len(citation_cases)
+            for metric in citation_cases[0]
+        }
+        if citation_cases
+        else {}
+    )
     categories = {case.get("category") for case in payload["cases"]}
     missing_categories = sorted(REQUIRED_CATEGORIES - categories)
     if missing_categories:

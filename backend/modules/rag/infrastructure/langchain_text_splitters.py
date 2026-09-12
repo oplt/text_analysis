@@ -235,6 +235,9 @@ def split_documents(
                 "block_ids": source_unit_ids,
                 "document_revision": source_revision,
                 "offset_coordinate_system": "unicode_code_points_zero_based_end_exclusive",
+                "offset_scope": (
+                    "page" if base_meta.get("page_number") is not None else "parsed_document"
+                ),
             }
             if section:
                 meta["section_heading"] = section

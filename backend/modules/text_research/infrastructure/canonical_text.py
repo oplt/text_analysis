@@ -96,6 +96,7 @@ def build_canonical_from_pages(
                 "section_heading": page.get("section_heading"),
                 "char_start": start,
                 "char_end": end,
+                "source_span_ids": list(page.get("source_span_ids") or []),
             }
         )
         parts.append(content)
@@ -143,6 +144,7 @@ def build_canonical_from_full_text(
                     "section_heading": None,
                     "char_start": 0,
                     "char_end": len(normalized),
+                    "source_span_ids": [],
                 }
             ]
             if normalized

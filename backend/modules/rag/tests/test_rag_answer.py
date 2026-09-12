@@ -41,8 +41,8 @@ class RagAnswerTest(unittest.IsolatedAsyncioTestCase):
             return_value=SimpleNamespace(
                 id="run-1",
                 output_text=(
-                    '{"answer":"The project uses PostgreSQL.",'
-                    '"claims":[{"text":"The project uses PostgreSQL.","chunk_ids":["c1"]}]}'
+                    '{"claims":[{"text":"The project uses PostgreSQL.","chunk_ids":["c1"]}],'
+                    '"no_evidence":false,"insufficient_evidence_reason":null}'
                 ),
                 model_name="local-heuristic",
             )
@@ -82,8 +82,8 @@ class RagAnswerTest(unittest.IsolatedAsyncioTestCase):
             return_value=SimpleNamespace(
                 id="run-1",
                 output_text=(
-                    '{"answer":"The project uses PostgreSQL.",'
-                    '"claims":[{"text":"The project uses PostgreSQL.","chunk_ids":["c1"]}]}'
+                    '{"claims":[{"text":"The project uses PostgreSQL.","chunk_ids":["c1"]}],'
+                    '"no_evidence":false,"insufficient_evidence_reason":null}'
                 ),
                 model_name="local-heuristic",
             )

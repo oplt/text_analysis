@@ -210,15 +210,19 @@ class Settings(BaseSettings):
     RAG_RRF_K: int = 60
     RAG_SOURCE_MAX_CHUNKS_PER_DOCUMENT: int = 3
     RAG_EVIDENCE_TOP_K: int = 12
-    # Retained for configuration compatibility; synthesis processes the full
-    # authorized corpus and uses RAG_SYNTHESIS_BATCH_SIZE for bounded work.
+    # Maximum document-finding fan-in for each reduction node; never a corpus
+    # exclusion limit.
     RAG_SYNTHESIS_MAX_DOCUMENTS: int = 25
     RAG_SYNTHESIS_BATCH_SIZE: int = 8
+    RAG_SYNTHESIS_ASYNC_DOCUMENT_THRESHOLD: int = 8
     RAG_SYNTHESIS_PASSAGES_PER_DOCUMENT: int = 3
     RAG_PARENT_CONTEXT_ENABLED: bool = False
     RAG_RETRIEVAL_ALGORITHM_VERSION: str = "hybrid-rrf-v1"
     RAG_CHUNKER_VERSION: str = "structure-v1"
     RAG_PDF_PARSER: str = "auto"
+    RAG_PDF_OCR_ENABLED: bool = False
+    RAG_PDF_OCR_MIN_TEXT_CHARS: int = 40
+    RAG_PDF_TABLE_EXTRACTION_ENABLED: bool = False
     RAG_PARSER_VERSION: str = "pdf-auto-v1"
     RAG_INDEX_VERSION: str = "pgvector-fts-v1"
 

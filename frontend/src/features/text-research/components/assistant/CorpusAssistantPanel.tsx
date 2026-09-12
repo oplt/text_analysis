@@ -24,7 +24,7 @@ import {
     getAssistantScope,
     getRun,
     listAssistantThreads,
-    postAssistantMessage,
+    postAssistantMessageStream,
     postAssistantSynthesize,
     createResearchMemo,
     saveAssistantAsResearchMemo,
@@ -32,6 +32,7 @@ import {
     type AssistantClaim,
     type AssistantMessageResult,
     type AssistantScope,
+    type AssistantScopeEvent,
     type AssistantSynthesizeResult,
     type AssistantSynthesisProvenance,
     type AssistantThread,
@@ -109,6 +110,7 @@ function emptyScope(partial?: Partial<AssistantScope> | null): AssistantScope {
         unavailable_count: 0,
         unavailable_corpus_document_ids: [],
         unavailable_reasons: {},
+        document_bindings: [],
         warnings: [],
         scope_mode: "fixed",
         ...partial,
@@ -293,6 +295,32 @@ function ClaimsWithCitations({
     );
 }
 
+function ScopeEventAudit({ events }: { events: AssistantScopeEvent[] }) {
+    return (
+        <Box>
+            <Typography variant="subtitle2">Scope history</Typography>
+            {events.length ? (
+                <Stack spacing={0.5} mt={0.5}>
+                    {events.map((event) => (
+                        <Typography key={event.id} variant="caption" color="text.secondary">
+                            {new Date(event.created_at).toLocaleString()} · {event.action.replaceAll("_", " ")}
+                            {" · "}
+                            {event.scope_mode === "live" ? "live corpus" : "fixed snapshot"}
+                            {" · evidence "}
+                            {event.evidence_revision_hash?.slice(0, 12) ?? "—"}
+                            {event.reason ? ` · ${event.reason}` : ""}
+                        </Typography>
+                    ))}
+                </Stack>
+            ) : (
+                <Typography variant="caption" color="text.secondary">
+                    Scope changes will appear here.
+                </Typography>
+            )}
+        </Box>
+    );
+}
+
 export function CorpusAssistantPanel({ onOpenCitation }: Props) {
     const queryClient = useQueryClient();
     const [mode, setMode] = useState<PanelMode>("ask");
@@ -305,6 +333,10 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
     const [synthesisQuery, setSynthesisQuery] = useState("");
     const [synthesisError, setSynthesisError] = useState<string | null>(null);
     const [lastSynthesisRunId, setLastSynthesisRunId] = useState<string | null>(null);
+    const [assistantStage, setAssistantStage] = useState<string | null>(null);
+    const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+    const [memoSavedMessageId, setMemoSavedMessageId] = useState<string | null>(null);
+    const [threadDisplayLimit, setThreadDisplayLimit] = useState(5);
 
     const ctx = useResearchContext();
     const corpusId = ctx.selectedCorpus?.id ?? "";
@@ -345,6 +377,7 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
         setSynthesisQuery("");
         setSynthesisError(null);
         setLastSynthesisRunId(null);
+        setThreadDisplayLimit(5);
     }, [corpusId]);
 
     useEffect(() => {
@@ -403,13 +436,23 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
     }, [synthesisRunQuery.data, synthesisRunId, synthesisQuery, scopeQuery.data]);
 
     const askMutation = useMutation({
-        mutationFn: (payload: { query: string; intent?: string }) =>
-            postAssistantMessage(corpusId, {
+        mutationFn: async (payload: { query: string; intent?: string }) =>
+            postAssistantMessageStream(
+                corpusId,
+                {
                 query: payload.query,
                 thread_id: threadId,
                 intent: payload.intent ?? RESEARCHER_MODE_INTENT[researcherMode],
-            }),
+                },
+                (event, eventPayload) => {
+                    setAssistantStage(event);
+                    if (event === "turn_created" && typeof eventPayload.thread_id === "string") {
+                        setThreadId(eventPayload.thread_id);
+                    }
+                }
+            ),
         onSuccess: (result: AssistantMessageResult) => {
+            setAssistantStage(null);
             setThreadId(result.thread_id);
             setLastResult(result);
             void queryClient.invalidateQueries({
@@ -419,6 +462,12 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                 queryKey: queryKeys.textResearch.assistantConversation(result.thread_id),
             });
             setMode("ask");
+        },
+        onError: () => {
+            setAssistantStage(null);
+            void queryClient.invalidateQueries({
+                queryKey: queryKeys.textResearch.assistantThreads(corpusId),
+            });
         },
     });
 
@@ -474,6 +523,26 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
             });
         },
     });
+
+    const savePersistedMessageMemoMutation = useMutation({
+        mutationFn: (message: { id: string; body: string }) =>
+            saveAssistantAsResearchMemo(corpusId, {
+                message_id: message.id,
+                title: "Ask Corpus answer",
+                body: message.body,
+            }),
+        onSuccess: (_memo, message) => {
+            setMemoSavedMessageId(message.id);
+            void queryClient.invalidateQueries({
+                queryKey: queryKeys.textResearch.memos(projectId, corpusId),
+            });
+        },
+    });
+
+    async function copyPersistedAnswer(messageId: string, content: string) {
+        await navigator.clipboard.writeText(content);
+        setCopiedMessageId(messageId);
+    }
 
     function submitQuestion(query: string, intentOverride?: string) {
         const trimmed = query.trim();
@@ -583,7 +652,14 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                 <Tab value="evidence" label="Evidence" />
             </Tabs>
 
-            {mode === "context" ? <ResearchContextBar /> : null}
+            {mode === "context" ? (
+                <Stack spacing={1.5}>
+                    <ResearchContextBar />
+                    <ScopeEventAudit
+                        events={(conversationQuery.data?.scope_events ?? []) as AssistantScopeEvent[]}
+                    />
+                </Stack>
+            ) : null}
 
             {mode === "ask" ? (
                 <Stack spacing={1.5}>
@@ -607,6 +683,7 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                         </Box>
                     ) : null}
                     <AssistantScopeControls
+                        key={scope?.scope_hash ?? "no-scope"}
                         threadId={threadId}
                         scope={scope ?? null}
                         liveScope={scopeQuery.data ?? null}
@@ -731,7 +808,11 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                             <Typography variant="body2">
                                 {researcherMode === "synthesis" || synthesizeMutation.isPending
                                     ? "Running corpus synthesis…"
-                                    : "Retrieving evidence…"}
+                                    : assistantStage === "generation_started"
+                                      ? "Analyzing retrieved evidence…"
+                                      : assistantStage === "citation_validation_complete"
+                                        ? "Validating citations…"
+                                        : "Retrieving evidence…"}
                             </Typography>
                         </Stack>
                     ) : null}
@@ -771,7 +852,7 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                                 Recent threads
                             </Typography>
                             <Stack spacing={0.5} mt={0.5}>
-                                {threadsQuery.data?.slice(0, 5).map((thread) => (
+                                {threadsQuery.data?.slice(0, threadDisplayLimit).map((thread) => (
                                     <Button
                                         key={thread.id}
                                         size="small"
@@ -782,6 +863,14 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                                         {thread.title}
                                     </Button>
                                 ))}
+                                {(threadsQuery.data?.length ?? 0) > threadDisplayLimit ? (
+                                    <Button
+                                        size="small"
+                                        onClick={() => setThreadDisplayLimit((limit) => limit + 10)}
+                                    >
+                                        Load more conversations
+                                    </Button>
+                                ) : null}
                             </Stack>
                         </Box>
                     ) : null}
@@ -797,6 +886,12 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                                     : [];
                                 const msgClaims = Array.isArray(msg.claims) ? msg.claims : [];
                                 const meta = msg.metadata ?? {};
+                                const turnFailed = meta.turn_status === "failed";
+                                const turnCompleted = meta.turn_status === "completed";
+                                const retryable = meta.retryable === true;
+                                const retryQuery = String(
+                                    meta.original_query ?? meta.query ?? ""
+                                ).trim();
                                 const status = meta.citation_validation_status as
                                     | string
                                     | undefined;
@@ -828,6 +923,31 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                                             {isAssistant ? "Assistant" : "You"}
                                         </Typography>
                                         {isAssistant ? (
+                                            turnFailed ? (
+                                                <Alert
+                                                    severity="error"
+                                                    action={
+                                                        retryable && retryQuery ? (
+                                                            <Button
+                                                                color="inherit"
+                                                                size="small"
+                                                                disabled={isBusy}
+                                                                onClick={() => submitQuestion(retryQuery)}
+                                                            >
+                                                                Retry
+                                                            </Button>
+                                                        ) : undefined
+                                                    }
+                                                >
+                                                    {String(
+                                                        meta.safe_error_summary ??
+                                                            "The assistant could not complete this request."
+                                                    )}
+                                                    {meta.retrieval_completed === true
+                                                        ? " Evidence retrieval completed before generation failed."
+                                                        : " Evidence retrieval did not complete."}
+                                                </Alert>
+                                            ) : (
                                             <>
                                                 {statusWarning ? (
                                                     <Alert severity="warning" sx={{ mb: 1 }}>
@@ -872,7 +992,67 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                                                             ))}
                                                     </Stack>
                                                 ) : null}
+                                                {turnCompleted && msg.id ? (
+                                                    <Stack spacing={0.5} mt={1}>
+                                                        <Stack direction="row" spacing={0.75}>
+                                                            <Button
+                                                            size="small"
+                                                            variant="outlined"
+                                                            onClick={() =>
+                                                                savePersistedMessageMemoMutation.mutate({
+                                                                    id: msg.id!,
+                                                                    body: msg.content ?? "",
+                                                                })
+                                                            }
+                                                            disabled={
+                                                                savePersistedMessageMemoMutation.isPending
+                                                            }
+                                                        >
+                                                            Save as memo
+                                                            </Button>
+                                                            <Button
+                                                            size="small"
+                                                            onClick={() =>
+                                                                void copyPersistedAnswer(
+                                                                    msg.id!,
+                                                                    msg.content ?? ""
+                                                                )
+                                                            }
+                                                        >
+                                                            {copiedMessageId === msg.id ? "Copied" : "Copy"}
+                                                            </Button>
+                                                            <Button
+                                                            size="small"
+                                                            onClick={() => {
+                                                                if (conversationQuery.data?.thread) {
+                                                                    setLastResult(
+                                                                        messageToResult(
+                                                                            msg,
+                                                                            conversationQuery.data.thread,
+                                                                            conversationQuery.data.scope
+                                                                        )
+                                                                    );
+                                                                }
+                                                                setMode("evidence");
+                                                            }}
+                                                        >
+                                                            Show evidence
+                                                            </Button>
+                                                        </Stack>
+                                                        {memoSavedMessageId === msg.id ? (
+                                                            <Typography variant="caption" color="success.main">
+                                                                Research memo saved.
+                                                            </Typography>
+                                                        ) : null}
+                                                        {savePersistedMessageMemoMutation.isError ? (
+                                                            <Typography variant="caption" color="error.main">
+                                                                Could not save memo: {getQueryErrorMessage(savePersistedMessageMemoMutation.error)}
+                                                            </Typography>
+                                                        ) : null}
+                                                    </Stack>
+                                                ) : null}
                                             </>
+                                            )
                                         ) : (
                                             <Typography
                                                 variant="body2"

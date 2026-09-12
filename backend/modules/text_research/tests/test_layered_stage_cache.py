@@ -317,7 +317,6 @@ class AsyncStageCacheTests(unittest.IsolatedAsyncioTestCase):
                 lambda: ({"stage_name": "async_stage"}, {"ok": True}),
                 payload_format="json",
             )
-
         self.assertEqual(loaded["payload"], {"ok": True})
         again = await stage_cache.get_or_compute_async(
             key,

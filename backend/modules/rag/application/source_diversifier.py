@@ -30,9 +30,7 @@ def diversify_by_document(
         documents_in_scope=documents_in_scope,
         documents_with_retrieved_evidence=docs_with_evidence,
         retrieved_passage_count=len(selected),
-        coverage_ratio=(
-            docs_with_evidence / documents_in_scope if documents_in_scope > 0 else 0.0
-        ),
+        coverage_ratio=(docs_with_evidence / documents_in_scope if documents_in_scope > 0 else 0.0),
     )
     return selected, coverage
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -153,11 +154,7 @@ class CorpusAssistantService(ResearchAccessMixin):
             select(CorpusDocument).where(CorpusDocument.corpus_id == corpus_id)
         )
         docs = list(result.scalars().all())
-        return {
-            d.rag_document_id: d.id
-            for d in docs
-            if d.rag_document_id
-        }
+        return {d.rag_document_id: d.id for d in docs if d.rag_document_id}
 
     def _enrich_citations(
         self,
@@ -184,6 +181,8 @@ class CorpusAssistantService(ResearchAccessMixin):
                     "char_end": getattr(c, "char_end", None),
                     "source_span_ids": getattr(c, "source_span_ids", None),
                     "parent_context_id": getattr(c, "parent_context_id", None),
+                    "offset_coordinate_system": getattr(c, "offset_coordinate_system", None),
+                    "offset_scope": getattr(c, "offset_scope", None),
                 }
             )
         return enriched
@@ -210,18 +209,35 @@ class CorpusAssistantService(ResearchAccessMixin):
         resolved_retrieval_query: str,
         context_message_ids: list[str],
         error: Exception,
+        scope: CorpusScopeSnapshot,
+        retrieval_trace_id: str | None,
+        retrieval_completed: bool,
     ) -> None:
         await self.db.rollback()
-        error_message = str(error)[:500] or type(error).__name__
+        status_code = getattr(error, "status_code", None)
+        retryable = not isinstance(status_code, int) or status_code >= 500
+        failure_type = "generation_failed" if retrieval_completed else "retrieval_failed"
+        safe_error_summary = (
+            "The assistant could not complete this request. Please try again."
+            if retryable
+            else "This request could not be completed with the selected corpus scope."
+        )
         failed_assistant = await self.rag_repo.create_message(
             conversation_id=conversation_id,
             role=MessageRole.ASSISTANT.value,
-            content="I couldn't complete this request. Please try again.",
+            content=safe_error_summary,
             model_name="error",
+            retrieval_trace_id=retrieval_trace_id,
+            evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
             metadata={
                 "turn_status": "failed",
-                "error_type": type(error).__name__,
-                "error_message": error_message,
+                "failure_type": failure_type,
+                "safe_error_summary": safe_error_summary,
+                "retrieval_trace_id": retrieval_trace_id,
+                "retrieval_completed": retrieval_completed,
+                "scope_hash": getattr(scope, "scope_hash", None),
+                "evidence_revision_hash": getattr(scope, "evidence_revision_hash", None),
+                "retryable": retryable,
                 "original_query": original_query,
                 "resolved_retrieval_query": resolved_retrieval_query,
                 "context_message_ids": context_message_ids,
@@ -232,8 +248,8 @@ class CorpusAssistantService(ResearchAccessMixin):
             pending_user_message,
             status="failed",
             failed_assistant_message_id=failed_assistant.id,
-            error_type=type(error).__name__,
-            error_message=error_message,
+            failure_type=failure_type,
+            retryable=retryable,
         )
         await self.db.commit()
 
@@ -246,6 +262,7 @@ class CorpusAssistantService(ResearchAccessMixin):
         thread_id: str | None = None,
         intent: str | None = None,
         document_subset: list[str] | None = None,
+        progress_callback: Callable[[str, dict], Awaitable[None]] | None = None,
     ) -> dict:
         """Run one turn with explicit pending, completed, and failed states.
 
@@ -254,6 +271,11 @@ class CorpusAssistantService(ResearchAccessMixin):
         scope snapshot, and completed user state commit together. Failures roll
         back uncommitted work and commit a failed assistant message.
         """
+
+        async def emit(event: str, payload: dict | None = None) -> None:
+            if progress_callback is not None:
+                await progress_callback(event, payload or {})
+
         if not self.rag_config.enabled:
             raise HTTPException(status_code=503, detail="RAG is disabled")
 
@@ -265,8 +287,7 @@ class CorpusAssistantService(ResearchAccessMixin):
                 raise HTTPException(
                     status_code=409,
                     detail=(
-                        "Update thread scope explicitly before sending a message "
-                        "with a new scope"
+                        "Update thread scope explicitly before sending a message with a new scope"
                     ),
                 )
             scope = await self.scope_service.resolve_for_thread(thread, user_id=user.id)
@@ -299,9 +320,20 @@ class CorpusAssistantService(ResearchAccessMixin):
         )
         # The pending user turn is durable before the external AI call starts.
         await self.db.commit()
+        await emit(
+            "turn_created",
+            {
+                "thread_id": thread.id,
+                "conversation_id": conversation_id,
+                "message_id": pending_user_message.id,
+            },
+        )
 
+        outcome = None
+        retrieval_completed = False
         try:
             # I4: exactly one retrieve (resolved query), then answer_from_retrieval
+            await emit("retrieval_started")
             outcome = await self.retrieval.retrieve(
                 ctx.resolved_retrieval_query,
                 user_id=user.id,
@@ -315,7 +347,16 @@ class CorpusAssistantService(ResearchAccessMixin):
                 persist_trace=True,
                 evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
             )
+            retrieval_completed = True
+            await emit(
+                "retrieval_complete",
+                {
+                    "retrieval_trace_id": outcome.retrieval_trace_id,
+                    "retrieved_chunk_count": len(outcome.chunks),
+                },
+            )
 
+            await emit("generation_started")
             answer = await self.answers.answer_from_retrieval(
                 query,
                 outcome=outcome,
@@ -327,6 +368,10 @@ class CorpusAssistantService(ResearchAccessMixin):
                 resolved_retrieval_query=ctx.resolved_retrieval_query,
                 context_message_ids=ctx.prior_message_ids,
                 commit=False,
+            )
+            await emit(
+                "citation_validation_complete",
+                {"status": answer.citation_validation_status},
             )
 
             rag_to_corpus = await self._rag_to_corpus_document_map(corpus_id)
@@ -392,6 +437,12 @@ class CorpusAssistantService(ResearchAccessMixin):
             unavailable_reasons = getattr(scope, "unavailable_reasons", {})
             if not isinstance(unavailable_reasons, dict):
                 unavailable_reasons = {}
+            scope_bindings = getattr(scope, "document_bindings", [])
+            document_bindings = (
+                [binding.to_dict() for binding in scope_bindings]
+                if isinstance(scope_bindings, list)
+                else []
+            )
 
             snapshot_row = ResearchAssistantScopeSnapshot(
                 id=str(uuid4()),
@@ -413,6 +464,7 @@ class CorpusAssistantService(ResearchAccessMixin):
                     unavailable_corpus_document_ids, ensure_ascii=True
                 ),
                 unavailable_reasons_json=json.dumps(unavailable_reasons, ensure_ascii=True),
+                document_bindings_json=json.dumps(document_bindings, ensure_ascii=True),
                 scope_mode=scope.scope_mode,
                 index_version=scope.index_version,
                 retrieval_version=scope.retrieval_version,
@@ -462,16 +514,12 @@ class CorpusAssistantService(ResearchAccessMixin):
                         answer.coverage.documents_in_scope if answer.coverage else 0
                     ),
                     "documents_with_retrieved_evidence": (
-                        answer.coverage.documents_with_retrieved_evidence
-                        if answer.coverage
-                        else 0
+                        answer.coverage.documents_with_retrieved_evidence if answer.coverage else 0
                     ),
                     "retrieved_passage_count": (
                         answer.coverage.retrieved_passage_count if answer.coverage else 0
                     ),
-                    "coverage_ratio": answer.coverage.coverage_ratio
-                    if answer.coverage
-                    else 0.0,
+                    "coverage_ratio": answer.coverage.coverage_ratio if answer.coverage else 0.0,
                 },
                 "context_message_ids": ctx.prior_message_ids,
                 "ai_run_id": answer.ai_run_id,
@@ -487,6 +535,9 @@ class CorpusAssistantService(ResearchAccessMixin):
                     resolved_retrieval_query=ctx.resolved_retrieval_query,
                     context_message_ids=ctx.prior_message_ids,
                     error=exc,
+                    scope=scope,
+                    retrieval_trace_id=getattr(outcome, "retrieval_trace_id", None),
+                    retrieval_completed=retrieval_completed,
                 )
             except Exception:
                 logger.exception("Failed to persist failed assistant turn")
@@ -494,9 +545,7 @@ class CorpusAssistantService(ResearchAccessMixin):
                 raise
             raise HTTPException(status_code=502, detail="Assistant turn failed") from exc
 
-    async def _get_thread_or_404(
-        self, thread_id: str, *, user_id: str
-    ) -> ResearchAssistantThread:
+    async def _get_thread_or_404(self, thread_id: str, *, user_id: str) -> ResearchAssistantThread:
         result = await self.db.execute(
             select(ResearchAssistantThread).where(ResearchAssistantThread.id == thread_id)
         )

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compactStageDetail, workflowProgress } from "./workflowDisplay";
+import { compactStageDetail, workflowProgress } from "./workflowDisplayModel";
 import type { WorkflowStageState } from "./workflow";
 
 function stage(

@@ -52,6 +52,44 @@ class CorpusScopeServiceTests(unittest.IsolatedAsyncioTestCase):
         scope = await service.resolve(corpus_id="corp-1", user_id="user-1")
         self.assertEqual(scope.rag_document_ids, ["rag-ok"])
         self.assertEqual(scope.unavailable_rag_document_ids, ["rag-pending"])
+        self.assertEqual(
+            [binding.to_dict() for binding in scope.document_bindings],
+            [
+                {
+                    "corpus_document_id": "cd1",
+                    "rag_document_id": "rag-ok",
+                    "availability": "indexed",
+                    "status": DocumentStatus.INDEXED.value,
+                    "unavailable_reason": None,
+                    "index_revision_id": None,
+                    "document_revision": None,
+                },
+                {
+                    "corpus_document_id": "cd2",
+                    "rag_document_id": "rag-pending",
+                    "availability": "unavailable",
+                    "status": DocumentStatus.EMBEDDING.value,
+                    "unavailable_reason": "not_indexed",
+                    "index_revision_id": None,
+                    "document_revision": None,
+                },
+            ],
+        )
+
+    def test_scope_snapshot_accepts_legacy_persisted_scope_without_bindings(self):
+        from backend.modules.text_research.application.corpus_scope_service import (
+            CorpusScopeSnapshot,
+        )
+
+        snapshot = CorpusScopeSnapshot.from_dict(
+            {
+                "corpus_id": "corp-1",
+                "project_id": "proj-1",
+                "scope_hash": "scope-hash",
+            }
+        )
+
+        self.assertEqual(snapshot.document_bindings, [])
 
     async def test_subset_cannot_expand_beyond_corpus(self):
         service = CorpusScopeService(MagicMock())
@@ -71,10 +109,7 @@ class CorpusScopeServiceTests(unittest.IsolatedAsyncioTestCase):
         service = CorpusScopeService(MagicMock())
         corpus = MagicMock(id="corp-1", project_id="proj-1", name="Large")
         service.get_corpus_or_404 = AsyncMock(return_value=corpus)
-        first_page = [
-            SimpleNamespace(id=f"cd-{i}", rag_document_id=f"rag-{i}")
-            for i in range(50)
-        ]
+        first_page = [SimpleNamespace(id=f"cd-{i}", rag_document_id=f"rag-{i}") for i in range(50)]
         last_page = [SimpleNamespace(id="cd-50", rag_document_id="rag-50")]
         service.repo.list_documents = AsyncMock(side_effect=[first_page, last_page])
         service.rag_repo.get_documents_by_ids = AsyncMock(
@@ -253,18 +288,33 @@ class CorpusAssistantSingleRetrieveTests(unittest.IsolatedAsyncioTestCase):
         service.db.commit = AsyncMock()
 
         user = MagicMock(id="user-1")
-        result = await service.ask(corpus_id="corp-1", user=user, query="What?")
+        events: list[str] = []
+
+        async def on_progress(event: str, _payload: dict) -> None:
+            events.append(event)
+
+        result = await service.ask(
+            corpus_id="corp-1", user=user, query="What?", progress_callback=on_progress
+        )
 
         service.retrieval.retrieve.assert_awaited_once()
         call_filters = service.retrieval.retrieve.await_args.kwargs["filters"]
         self.assertEqual(call_filters["document_ids"], ["rag-1"])
         self.assertFalse(call_filters["owner_scoped"])
         service.answers.answer_from_retrieval.assert_awaited_once()
-        self.assertFalse(
-            service.answers.answer_from_retrieval.await_args.kwargs["commit"]
-        )
+        self.assertFalse(service.answers.answer_from_retrieval.await_args.kwargs["commit"])
         service.answers.answer.assert_not_awaited()
         self.assertEqual(result["retrieval_trace_id"], "trace-1")
+        self.assertEqual(
+            events,
+            [
+                "turn_created",
+                "retrieval_started",
+                "retrieval_complete",
+                "generation_started",
+                "citation_validation_complete",
+            ],
+        )
 
     async def test_generation_failure_persists_failed_assistant_turn(self):
         from backend.modules.text_research.application.corpus_assistant_service import (
@@ -285,9 +335,7 @@ class CorpusAssistantSingleRetrieveTests(unittest.IsolatedAsyncioTestCase):
             metadata_json='{"turn_status":"pending"}',
         )
         failed_assistant = SimpleNamespace(id="m-failed")
-        service.rag_repo.create_message = AsyncMock(
-            side_effect=[pending_user, failed_assistant]
-        )
+        service.rag_repo.create_message = AsyncMock(side_effect=[pending_user, failed_assistant])
         service.retrieval.retrieve = AsyncMock(
             return_value=RetrievalOutcome(chunks=[], no_matches=True)
         )
@@ -311,7 +359,9 @@ class CorpusAssistantSingleRetrieveTests(unittest.IsolatedAsyncioTestCase):
         )
         failed_call = service.rag_repo.create_message.await_args_list[1]
         self.assertEqual(failed_call.kwargs["metadata"]["turn_status"], "failed")
-        self.assertEqual(failed_call.kwargs["metadata"]["error_type"], "RuntimeError")
+        self.assertEqual(failed_call.kwargs["metadata"]["failure_type"], "generation_failed")
+        self.assertTrue(failed_call.kwargs["metadata"]["retrieval_completed"])
+        self.assertTrue(failed_call.kwargs["metadata"]["retryable"])
 
     async def test_existing_fixed_thread_keeps_persisted_subset_when_ids_omitted(self):
         from backend.modules.text_research.application.corpus_assistant_service import (
@@ -380,9 +430,7 @@ class CorpusAssistantSingleRetrieveTests(unittest.IsolatedAsyncioTestCase):
             thread_id="thread-1",
         )
 
-        service.scope_service.resolve_for_thread.assert_awaited_once_with(
-            thread, user_id="user-1"
-        )
+        service.scope_service.resolve_for_thread.assert_awaited_once_with(thread, user_id="user-1")
         filters = service.retrieval.retrieve.await_args.kwargs["filters"]
         self.assertEqual(filters["document_ids"], ["rag-subset"])
 

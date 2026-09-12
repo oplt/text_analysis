@@ -1,4 +1,4 @@
-import { apiFetch, type Paginated } from "./client";
+import { apiFetch, apiFetchStream, type Paginated } from "./client";
 import type {
     AnalysisRun,
     Annotation,
@@ -317,6 +317,8 @@ export async function getSourceText(documentId: string): Promise<{
         char_start?: number | null;
         char_end?: number | null;
         source_span_ids?: string[] | null;
+        offset_coordinate_system?: string | null;
+        offset_scope?: "parsed_document" | "page" | "canonical_document" | null;
     }>;
 }> {
     return apiFetch(`${BASE}/documents/${documentId}/source-text`);
@@ -1861,8 +1863,19 @@ export type AssistantScope = {
     unavailable_count: number;
     unavailable_corpus_document_ids: string[];
     unavailable_reasons: Record<string, string>;
+    document_bindings: CorpusScopeDocumentBinding[];
     warnings: string[];
     scope_mode: "fixed" | "live";
+};
+
+export type CorpusScopeDocumentBinding = {
+    corpus_document_id: string;
+    rag_document_id: string | null;
+    availability: "indexed" | "unavailable";
+    status: string | null;
+    unavailable_reason: string | null;
+    index_revision_id: string | null;
+    document_revision: string | null;
 };
 
 export type AssistantCitation = {
@@ -1880,6 +1893,8 @@ export type AssistantCitation = {
     char_start?: number | null;
     char_end?: number | null;
     source_span_ids?: string[] | null;
+    offset_coordinate_system?: string | null;
+    offset_scope?: "parsed_document" | "page" | "canonical_document" | null;
     parent_context_id?: string | null;
 };
 
@@ -2051,6 +2066,53 @@ export async function postAssistantMessage(
     });
 }
 
+export type AssistantMessageStreamEvent =
+    | "turn_created"
+    | "retrieval_started"
+    | "retrieval_complete"
+    | "generation_started"
+    | "citation_validation_complete";
+
+export async function postAssistantMessageStream(
+    corpusId: string,
+    payload: {
+        query: string;
+        thread_id?: string | null;
+        intent?: string | null;
+        document_ids?: string[] | null;
+    },
+    onEvent: (event: AssistantMessageStreamEvent, payload: Record<string, unknown>) => void,
+    signal?: AbortSignal
+): Promise<AssistantMessageResult> {
+    const response = await apiFetchStream(`${BASE}/corpora/${corpusId}/assistant/messages/stream`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        signal,
+    });
+    if (!response.body) throw new Error("Assistant stream was unavailable.");
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+        const { done, value } = await reader.read();
+        buffer += decoder.decode(value, { stream: !done });
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+        for (const item of events) {
+            const event = item.match(/^event: (.+)$/m)?.[1];
+            const data = item.match(/^data: (.+)$/m)?.[1];
+            if (!event || !data) continue;
+            const parsed = JSON.parse(data) as Record<string, unknown>;
+            if (event === "turn_completed") return parsed as AssistantMessageResult;
+            if (event === "turn_failed") throw new Error(String(parsed.detail ?? "Assistant turn failed."));
+            onEvent(event as AssistantMessageStreamEvent, parsed);
+        }
+        if (done) break;
+    }
+    throw new Error("Assistant stream ended before the turn completed.");
+}
+
 export async function postAssistantSynthesize(
     corpusId: string,
     payload: {
@@ -2067,9 +2129,13 @@ export async function postAssistantSynthesize(
 
 export async function listResearchMemos(
     projectId: string,
-    corpusId?: string
+    corpusId?: string,
+    includeArchived = false
 ): Promise<ResearchMemo[]> {
-    const query = corpusId ? `?corpus_id=${encodeURIComponent(corpusId)}` : "";
+    const params = new URLSearchParams();
+    if (corpusId) params.set("corpus_id", corpusId);
+    if (includeArchived) params.set("include_archived", "true");
+    const query = params.size ? `?${params}` : "";
     return apiFetch(`${BASE}/projects/${projectId}/memos${query}`);
 }
 

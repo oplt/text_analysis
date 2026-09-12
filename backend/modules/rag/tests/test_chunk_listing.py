@@ -21,6 +21,7 @@ class RagChunkListingTest(unittest.IsolatedAsyncioTestCase):
                         content=long_content,
                         token_count=120,
                         metadata_json=json.dumps({"page_number": 1}),
+                        revision_id="revision-1",
                     )
                 ],
                 1,
@@ -56,6 +57,7 @@ class RagChunkListingTest(unittest.IsolatedAsyncioTestCase):
                         content=long_content,
                         token_count=120,
                         metadata_json="{}",
+                        revision_id="revision-1",
                     )
                 ],
                 1,

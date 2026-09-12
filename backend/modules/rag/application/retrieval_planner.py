@@ -57,11 +57,11 @@ def plan_retrieval(
         final_k = max(base_k, evidence_top_k)
         dense = dense_candidates
         lexical = lexical_candidates
-    elif resolved_intent in {RetrievalIntent.EVIDENCE, RetrievalIntent.COMPARISON}:
-        final_k = max(base_k, evidence_top_k)
-        dense = dense_candidates
-        lexical = lexical_candidates
-    elif resolved_intent == RetrievalIntent.SYNTHESIS:
+    elif resolved_intent in {
+        RetrievalIntent.EVIDENCE,
+        RetrievalIntent.COMPARISON,
+        RetrievalIntent.SYNTHESIS,
+    }:
         final_k = max(base_k, evidence_top_k)
         dense = dense_candidates
         lexical = lexical_candidates

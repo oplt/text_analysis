@@ -16,6 +16,10 @@ import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import type { CorpusDocument } from "../types";
+import {
+    resolveCitationHighlightRange,
+    type PageProvenance,
+} from "./citationOffsetResolver";
 
 type MetadataDraft = {
     title: string;
@@ -60,56 +64,8 @@ type CorpusDocumentDrawerProps = {
     charStart?: number | null;
     charEnd?: number | null;
     sourceSpanIds?: string[] | null;
+    offsetScope?: "parsed_document" | "page" | "canonical_document" | null;
 };
-
-type PageProvenance = {
-    page_number?: number | null;
-    char_start?: number | null;
-    char_end?: number | null;
-    source_span_ids?: string[] | null;
-};
-
-function validRange(
-    start: number | null | undefined,
-    end: number | null | undefined,
-    textLength: number
-): { start: number; end: number } | null {
-    if (
-        typeof start !== "number" ||
-        typeof end !== "number" ||
-        !Number.isInteger(start) ||
-        !Number.isInteger(end) ||
-        start < 0 ||
-        end <= start ||
-        end > textLength
-    ) {
-        return null;
-    }
-    return { start, end };
-}
-
-function resolveHighlightRange(
-    text: string,
-    charStart: number | null | undefined,
-    charEnd: number | null | undefined,
-    pageNumber: number | null | undefined,
-    pageProvenance: PageProvenance[] | undefined,
-    sourceSpanIds: string[] | null | undefined
-): { start: number; end: number } | null {
-    const offsetRange = validRange(charStart, charEnd, text.length);
-    if (offsetRange) return offsetRange;
-
-    const requestedSpans = new Set(sourceSpanIds ?? []);
-    if (pageNumber == null && requestedSpans.size === 0) return null;
-    const page = pageProvenance?.find(
-        (candidate) =>
-            ((pageNumber != null && candidate.page_number === pageNumber) ||
-                (requestedSpans.size > 0 &&
-                    (candidate.source_span_ids ?? []).some((id) => requestedSpans.has(id)))) &&
-            validRange(candidate.char_start, candidate.char_end, text.length)
-    );
-    return page ? validRange(page.char_start, page.char_end, text.length) : null;
-}
 
 export function CorpusDocumentDrawer({
     document,
@@ -128,6 +84,7 @@ function CorpusDocumentDrawerContent({
     charStart,
     charEnd,
     sourceSpanIds,
+    offsetScope,
 }: CorpusDocumentDrawerProps) {
     const client = useQueryClient();
     const { showToast } = useSnackbar();
@@ -273,6 +230,7 @@ function CorpusDocumentDrawerContent({
                                         pageNumber={pageHint}
                                         pageProvenance={sourceQuery.data?.page_provenance}
                                         sourceSpanIds={sourceSpanIds}
+                                        offsetScope={offsetScope}
                                     />
                                 </QueryBoundary>
                             )}
@@ -309,6 +267,7 @@ function HighlightedSourceText({
     pageNumber,
     pageProvenance,
     sourceSpanIds,
+    offsetScope,
 }: {
     text: string;
     snippet?: string | null;
@@ -317,19 +276,21 @@ function HighlightedSourceText({
     pageNumber?: number | null;
     pageProvenance?: PageProvenance[];
     sourceSpanIds?: string[] | null;
+    offsetScope?: "parsed_document" | "page" | "canonical_document" | null;
 }) {
     const markRef = useRef<HTMLElement | null>(null);
     const needle = (snippet ?? "").trim();
     const lowerText = text.toLowerCase();
     const lowerNeedle = needle.toLowerCase();
-    const exactRange = resolveHighlightRange(
+    const exactRange = resolveCitationHighlightRange({
         text,
         charStart,
         charEnd,
         pageNumber,
         pageProvenance,
-        sourceSpanIds
-    );
+        sourceSpanIds,
+        offsetScope,
+    });
     const index = exactRange?.start ?? (needle ? lowerText.indexOf(lowerNeedle) : -1);
     const matchEnd = exactRange?.end ?? (index >= 0 ? index + needle.length : -1);
 
