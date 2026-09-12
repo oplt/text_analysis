@@ -84,7 +84,12 @@ def _storage_configured() -> bool:
         return False
 
 
-def save_artifact_with_metadata(obj: Any, *, category: str) -> tuple[str, dict[str, Any]]:
+def save_artifact_with_metadata(
+    obj: Any,
+    *,
+    category: str,
+    namespace: str | None = None,
+) -> tuple[str, dict[str, Any]]:
     """Persist an artifact and return its stable reference plus audit metadata."""
     artifact_id = str(uuid4())
     with tempfile.NamedTemporaryFile(suffix=".joblib", delete=False) as tmp:
@@ -95,11 +100,19 @@ def save_artifact_with_metadata(obj: Any, *, category: str) -> tuple[str, dict[s
         digest = _sha256_bytes(payload)
         filename = f"{artifact_id}-{digest[:12]}.joblib"
 
+        if namespace:
+            namespace_path = Path(namespace)
+            if namespace_path.is_absolute() or ".." in namespace_path.parts:
+                raise ValueError("Artifact namespace must be a relative path")
+            relative_directory = namespace_path / category
+        else:
+            relative_directory = Path(category)
+
         if _storage_configured():
             from backend.core.config import settings
             from backend.core.storage import object_storage
 
-            object_key = f"research-artifacts/{category}/{filename}"
+            object_key = f"research-artifacts/{relative_directory.as_posix()}/{filename}"
             object_storage.upload_bytes_sync(
                 object_key=object_key,
                 body=payload,
@@ -114,7 +127,7 @@ def save_artifact_with_metadata(obj: Any, *, category: str) -> tuple[str, dict[s
             reference = f"{S3_PREFIX}{settings.STORAGE_BUCKET}/{object_key}"
             object_key_value: str | None = object_key
         else:
-            directory = ARTIFACT_ROOT / category
+            directory = ARTIFACT_ROOT / relative_directory
             directory.mkdir(parents=True, exist_ok=True)
             path = directory / filename
             with tempfile.NamedTemporaryFile(dir=directory, delete=False) as staged:
@@ -139,9 +152,13 @@ def save_artifact_with_metadata(obj: Any, *, category: str) -> tuple[str, dict[s
             tmp_path.unlink(missing_ok=True)
 
 
-def save_artifact(obj: Any, *, category: str) -> str:
+def save_artifact(obj: Any, *, category: str, namespace: str | None = None) -> str:
     """Backward-compatible artifact save API returning only its reference."""
-    reference, _metadata = save_artifact_with_metadata(obj, category=category)
+    reference, _metadata = save_artifact_with_metadata(
+        obj,
+        category=category,
+        namespace=namespace,
+    )
     return reference
 
 

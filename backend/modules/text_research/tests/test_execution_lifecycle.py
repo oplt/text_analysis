@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import unittest
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from backend.modules.text_research.application.execution_service import ExecutionService
@@ -29,7 +31,10 @@ class ExecutionLifecycleTests(unittest.IsolatedAsyncioTestCase):
         async def _refresh(_run):
             commit_order.append("refresh")
 
-        db = MagicMock(commit=AsyncMock(side_effect=_commit), refresh=AsyncMock(side_effect=_refresh))
+        db = MagicMock(
+            commit=AsyncMock(side_effect=_commit),
+            refresh=AsyncMock(side_effect=_refresh),
+        )
 
         def _queue(**kwargs):
             commit_order.append(f"publish:{kwargs.get('task_id')}")
@@ -96,14 +101,16 @@ class ExecutionLifecycleTests(unittest.IsolatedAsyncioTestCase):
                 raise RuntimeError("db down after publish")
 
         db = MagicMock(commit=AsyncMock(side_effect=_commit), refresh=AsyncMock())
-        with patch(
-            "backend.modules.text_research.workers.queue_research_operation",
-            return_value="celery-recover",
+        with (
+            patch(
+                "backend.modules.text_research.workers.queue_research_operation",
+                return_value="celery-recover",
+            ),
+            self.assertRaises(RuntimeError),
         ):
-            with self.assertRaises(RuntimeError):
-                await ExecutionService.submit(
-                    db=db, run=run, operation="quantitative", user_id="user-1"
-                )
+            await ExecutionService.submit(
+                db=db, run=run, operation="quantitative", user_id="user-1"
+            )
         # Identity was committed first; celery_task_id was assigned in memory.
         self.assertTrue(run.execution_key)
         self.assertEqual(run.celery_task_id, "celery-recover")
@@ -142,13 +149,63 @@ class ExecutionLifecycleTests(unittest.IsolatedAsyncioTestCase):
             parameters_json=dumps({}),
         )
         db = MagicMock(commit=AsyncMock(), refresh=AsyncMock())
-        with patch(
-            "backend.modules.text_research.workers.queue_research_operation",
-            side_effect=RuntimeError("broker down"),
+        with (
+            patch(
+                "backend.modules.text_research.workers.queue_research_operation",
+                side_effect=RuntimeError("broker down"),
+            ),
+            self.assertRaises(RuntimeError),
         ):
-            with self.assertRaises(RuntimeError):
-                await ExecutionService.submit(
-                    db=db, run=run, operation="topic_training", user_id="user-1"
-                )
+            await ExecutionService.submit(
+                db=db, run=run, operation="topic_training", user_id="user-1"
+            )
         self.assertIsNone(run.celery_task_id)
         self.assertTrue(run.execution_key)
+
+    async def test_claim_allows_only_one_worker_to_execute(self):
+        db = MagicMock(commit=AsyncMock())
+        queued = SimpleNamespace(
+            id="run-claim",
+            status=AnalysisRunStatus.QUEUED.value,
+            execution_key="execution-key",
+        )
+        with patch(
+            "backend.modules.text_research.infrastructure.repositories.ResearchRepository"
+        ) as repo_cls:
+            repo = repo_cls.return_value
+            repo.get_run = AsyncMock(return_value=queued)
+            repo.claim_run_for_execution = AsyncMock(
+                side_effect=[SimpleNamespace(id="run-claim"), None]
+            )
+            first = await ExecutionService.claim_run_for_execution(db=db, run_id="run-claim")
+            second = await ExecutionService.claim_run_for_execution(db=db, run_id="run-claim")
+
+        self.assertTrue(first)
+        self.assertFalse(second)
+        self.assertEqual(repo.claim_run_for_execution.await_count, 2)
+        db.commit.assert_awaited_once()
+
+
+class PredictionWorkerDeliveryTests(unittest.TestCase):
+    def test_duplicate_prediction_delivery_executes_only_the_claimed_worker(self) -> None:
+        from backend.modules.text_research import workers
+
+        def _run_in_test_session(factory):
+            asyncio.run(factory(MagicMock()))
+
+        with (
+            patch.object(workers, "_run_with_session", side_effect=_run_in_test_session),
+            patch.object(
+                workers,
+                "_claim_run_for_execution",
+                new=AsyncMock(side_effect=[True, False]),
+            ),
+            patch(
+                "backend.modules.text_research.application.prediction_service.PredictionService"
+            ) as service_cls,
+        ):
+            service_cls.return_value.execute_prediction = AsyncMock()
+            workers.prediction_sync(run_id="prediction-run", user_id="user-1")
+            workers.prediction_sync(run_id="prediction-run", user_id="user-1")
+
+        service_cls.return_value.execute_prediction.assert_awaited_once_with("prediction-run")

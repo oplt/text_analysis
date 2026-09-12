@@ -688,7 +688,8 @@ export default function ReliabilityView() {
 
     const campaignsQuery = useQuery({
         queryKey: ["text-research", ctx.projectId, "annotation-campaigns", ctx.selectedCorpusId],
-        queryFn: () => listAnnotationCampaigns(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: ({ signal }) =>
+            listAnnotationCampaigns(ctx.projectId, ctx.selectedCorpusId, signal),
         enabled: Boolean(ctx.projectId && ctx.selectedCorpusId),
     });
 

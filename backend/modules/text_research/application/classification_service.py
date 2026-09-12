@@ -42,6 +42,7 @@ from backend.modules.text_research.infrastructure.classifiers import (
     grouped_train_val_test_split,
     infer_task_type,
 )
+from backend.modules.text_research.infrastructure.embeddings import embedding_identity
 from backend.modules.text_research.infrastructure.error_analysis import classifier_error_report
 from backend.modules.text_research.infrastructure.prepared_corpus_builder import (
     prepare_texts_cached_async,
@@ -55,6 +56,34 @@ from backend.modules.text_research.infrastructure.provenance import (
 
 def _utcnow() -> datetime:
     return datetime.now(UTC)
+
+
+def build_fit_kwargs(
+    params: dict[str, Any],
+    *,
+    label_names: list[str],
+    task_type: str,
+    split: dict[str, Any],
+) -> dict[str, Any]:
+    """Build shared fit options without duplicating the explicit task type."""
+    return {
+        "label_names": label_names if task_type == "multilabel" else None,
+        "class_weight": params["class_weight"],
+        "C": params["regularization_c"],
+        "random_seed": params["random_seed"],
+        "X_val_texts": split.get("X_val") or None,
+        "y_val": split.get("y_val") or None,
+        "groups_test": split["groups_test"],
+        "tune_thresholds": params.get("tune_thresholds", True),
+        "threshold_objective": params.get("threshold_objective", "f1"),
+        "threshold_utility_tp": params.get("threshold_utility_tp", 1.0),
+        "threshold_utility_tn": params.get("threshold_utility_tn", 1.0),
+        "threshold_utility_fp": params.get("threshold_utility_fp", -1.0),
+        "threshold_utility_fn": params.get("threshold_utility_fn", -1.0),
+        "n_bootstrap": params.get("n_bootstrap", 200),
+        "ci_confidence_level": params.get("ci_confidence_level", 0.95),
+        "calibration_method": params.get("calibration_method", "sigmoid"),
+    }
 
 
 class ClassificationService(ResearchAccessMixin):
@@ -116,6 +145,7 @@ class ClassificationService(ResearchAccessMixin):
     ) -> AnalysisRun:
         snapshot = await self.get_snapshot_or_404(snapshot_id, user_id=user_id)
         corpus = await self.get_corpus_or_404(snapshot.corpus_id, user_id=user_id)
+        resolved_embedding_identity = embedding_identity(embedding_provider)
 
         params = {
             "snapshot_id": snapshot_id,
@@ -157,6 +187,7 @@ class ClassificationService(ResearchAccessMixin):
             "nested_cv_outer_splits": nested_cv_outer_splits,
             "nested_cv_inner_splits": nested_cv_inner_splits,
             "embedding_provider": embedding_provider,
+            "embedding_identity": resolved_embedding_identity,
             "threshold_objective": threshold_objective,
             "threshold_utility_tp": threshold_utility_tp,
             "threshold_utility_tn": threshold_utility_tn,
@@ -204,9 +235,32 @@ class ClassificationService(ResearchAccessMixin):
                     "regularization_c": regularization_c,
                     "nb_alpha": nb_alpha,
                     "sgd_loss": sgd_loss,
+                    "embedding_identity": resolved_embedding_identity,
                 },
             },
             validation=validation_spec,
+            analysis_parameters={
+                "use_word_ngrams": use_word_ngrams,
+                "use_char_ngrams": use_char_ngrams,
+                "char_ngram_range": (char_ngram_min, char_ngram_max),
+                "val_size": val_size,
+                "tune_hyperparameters": tune_hyperparameters,
+                "hyperparameter_search_type": hyperparameter_search_type,
+                "hyperparameter_param_grid": hyperparameter_param_grid,
+                "hyperparameter_n_iter": hyperparameter_n_iter,
+                "hyperparameter_scoring": hyperparameter_scoring,
+                "tune_thresholds": tune_thresholds,
+                "threshold_objective": threshold_objective,
+                "threshold_utility": {
+                    "tp": threshold_utility_tp,
+                    "tn": threshold_utility_tn,
+                    "fp": threshold_utility_fp,
+                    "fn": threshold_utility_fn,
+                },
+                "n_bootstrap": n_bootstrap,
+                "ci_confidence_level": ci_confidence_level,
+                "calibration_method": calibration_method,
+            },
             random_seed=random_seed,
         )
         params = attach_run_identity(params, spec)
@@ -238,8 +292,8 @@ class ClassificationService(ResearchAccessMixin):
 
     async def execute_training(self, run_id: str) -> AnalysisRun:
         from backend.modules.text_research.application.run_lifecycle import (
-            RunCancelledError,
             TERMINAL_RUN_STATUSES,
+            RunCancelledError,
             complete_if_active,
             ensure_not_cancelled,
             fail_if_active,
@@ -433,25 +487,11 @@ class ClassificationService(ResearchAccessMixin):
             await self.repo.update_run(run, progress_stage="training")
             await self.db.commit()
             run = await ensure_not_cancelled(self.repo, run)
-            fit_kwargs = {
-                "task_type": task_type,
-                "label_names": label_names if task_type == "multilabel" else None,
-                "class_weight": params["class_weight"],
-                "C": params["regularization_c"],
-                "random_seed": params["random_seed"],
-                "X_val_texts": split.get("X_val") or None,
-                "y_val": split.get("y_val") or None,
-                "groups_test": split["groups_test"],
-                "tune_thresholds": params.get("tune_thresholds", True),
-                "threshold_objective": params.get("threshold_objective", "f1"),
-                "threshold_utility_tp": params.get("threshold_utility_tp", 1.0),
-                "threshold_utility_tn": params.get("threshold_utility_tn", 1.0),
-                "threshold_utility_fp": params.get("threshold_utility_fp", -1.0),
-                "threshold_utility_fn": params.get("threshold_utility_fn", -1.0),
-                "n_bootstrap": params.get("n_bootstrap", 200),
-                "ci_confidence_level": params.get("ci_confidence_level", 0.95),
-                "calibration_method": params.get("calibration_method", "sigmoid"),
-            }
+            # task_type is passed positionally/by-name once; keep it out of
+            # fit_kwargs to avoid "got multiple values for keyword argument".
+            fit_kwargs = build_fit_kwargs(
+                params, label_names=label_names, task_type=task_type, split=split
+            )
             if feature_family == "embedding":
                 fit_result = classifiers.fit_embedding_text_classifier(
                     split["X_train"],
@@ -517,12 +557,16 @@ class ClassificationService(ResearchAccessMixin):
             run = await ensure_not_cancelled(self.repo, run)
             model_artifact_path, model_artifact_metadata = (
                 model_storage.save_artifact_with_metadata(
-                    fit_result["model"], category="research_classifiers"
+                    fit_result["model"],
+                    category="research_classifiers",
+                    namespace=run.artifact_namespace,
                 )
             )
             vectorizer_artifact_path, vectorizer_artifact_metadata = (
                 model_storage.save_artifact_with_metadata(
-                    fit_result["vectorizer"], category="research_vectorizers"
+                    fit_result["vectorizer"],
+                    category="research_vectorizers",
+                    namespace=run.artifact_namespace,
                 )
             )
 

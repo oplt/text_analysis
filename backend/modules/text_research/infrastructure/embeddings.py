@@ -20,11 +20,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+from importlib import metadata
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
 from sklearn.feature_extraction import FeatureHasher
+
+from backend.modules.text_research.infrastructure.artifact_store import ArtifactStore
 
 
 @runtime_checkable
@@ -130,6 +133,121 @@ def get_embedding_provider(name: str = "hashing", **kwargs: Any) -> EmbeddingPro
 def get_default_embedding_provider() -> EmbeddingProvider:
     """Resolve the active provider (default: lightweight hashing baseline)."""
     return get_embedding_provider("hashing")
+
+
+def embedding_identity(
+    provider_name: str = "hashing", *, model_name: str | None = None
+) -> dict[str, Any]:
+    """Stable provider/model identity suitable for analysis specification hashes."""
+    resolved_model = model_name
+    dimension: int | None = None
+    revision: str | None = None
+    if provider_name == "hashing":
+        resolved_model = resolved_model or "sklearn.feature_hasher"
+        dimension = 256
+        try:
+            revision = metadata.version("scikit-learn")
+        except metadata.PackageNotFoundError:
+            revision = None
+    elif provider_name == "sentence_transformers":
+        resolved_model = resolved_model or "all-MiniLM-L6-v2"
+        try:
+            revision = metadata.version("sentence-transformers")
+        except metadata.PackageNotFoundError:
+            revision = None
+    identity = {
+        "provider": provider_name,
+        "model_name": resolved_model,
+        "revision": revision,
+        "dimension": dimension,
+    }
+    identity["checksum"] = hashlib.sha256(
+        json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    return identity
+
+
+def embedding_unit_ids_checksum(unit_ids: list[str]) -> str:
+    """Checksum the selected unit set in deterministic order."""
+    canonical = json.dumps(sorted(str(unit_id) for unit_id in unit_ids), separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def create_managed_embedding_artifact(
+    *,
+    project_id: str,
+    corpus_id: str,
+    embeddings: dict[str, list[float]],
+    provider: str,
+    model: str | None = None,
+    store: ArtifactStore | None = None,
+) -> str:
+    """Persist vectors with the ownership and shape contract required by workers."""
+    if not embeddings:
+        raise ValueError("Managed embedding artifacts require at least one vector")
+    dimensions = {len(vector) for vector in embeddings.values()}
+    if len(dimensions) != 1 or 0 in dimensions:
+        raise ValueError("Managed embedding artifact vectors must have one non-zero dimension")
+    normalized = {
+        str(unit_id): [float(value) for value in vector] for unit_id, vector in embeddings.items()
+    }
+    unit_ids = sorted(normalized)
+    content_checksum = hashlib.sha256(
+        json.dumps(normalized, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+    descriptor = (store or ArtifactStore()).put(
+        "embeddings",
+        normalized,
+        checksum=content_checksum,
+        metadata={
+            "project_id": str(project_id),
+            "corpus_id": str(corpus_id),
+            "unit_ids_checksum": embedding_unit_ids_checksum(unit_ids),
+            "unit_count": len(unit_ids),
+            "dim": dimensions.pop(),
+            "provider": provider,
+            "model": model,
+            "content_checksum": content_checksum,
+        },
+    )
+    return descriptor.artifact_id
+
+
+def load_managed_embedding_artifact(
+    artifact_id: str,
+    *,
+    project_id: str,
+    corpus_id: str,
+    unit_ids: list[str],
+    expected_dim: int | None = None,
+    store: ArtifactStore | None = None,
+) -> tuple[dict[str, list[float]], dict[str, Any]]:
+    """Load vectors only when immutable ownership, selection, and shape match."""
+    artifact_store = store or ArtifactStore()
+    descriptor = artifact_store.get(artifact_id)
+    if descriptor is None or descriptor.artifact_type != "embeddings":
+        raise ValueError("Managed embedding artifact was not found")
+    metadata = descriptor.metadata
+    if metadata.get("project_id") != str(project_id) or metadata.get("corpus_id") != str(corpus_id):
+        raise PermissionError("Managed embedding artifact does not belong to this corpus")
+    if metadata.get("content_checksum") != descriptor.checksum:
+        raise ValueError("Managed embedding artifact checksum metadata is invalid")
+    if metadata.get("unit_ids_checksum") != embedding_unit_ids_checksum(unit_ids):
+        raise ValueError("Managed embedding artifact does not match the selected text units")
+    payload = artifact_store.load(artifact_id)
+    if not isinstance(payload, dict):
+        raise ValueError("Managed embedding artifact payload is invalid")
+    if ArtifactStore._payload_checksum(payload) != descriptor.checksum:
+        raise ValueError("Managed embedding artifact content checksum does not match its payload")
+    vectors = {
+        str(unit_id): [float(value) for value in vector] for unit_id, vector in payload.items()
+    }
+    dim = metadata.get("dim")
+    if not isinstance(dim, int) or any(len(vector) != dim for vector in vectors.values()):
+        raise ValueError("Managed embedding artifact dimensionality is invalid")
+    if expected_dim is not None and dim != expected_dim:
+        raise ValueError("Managed embedding artifact dimensionality does not match the query")
+    return vectors, metadata
 
 
 def _cache_key(text: str, provider_name: str, *, model_name: str | None = None) -> str:

@@ -28,6 +28,7 @@ class PredictionSetModelTests(unittest.TestCase):
             "model_version",
             "dataset_snapshot_id",
             "analysis_run_id",
+            "status",
             "metadata_json",
         ):
             self.assertIn(name, column_names)
@@ -78,6 +79,7 @@ class PredictionSetServiceTests(unittest.IsolatedAsyncioTestCase):
             model_version=2,
             dataset_snapshot_id="snapshot-1",
             analysis_run_id="run-1",
+            status="published",
             created_by="user-1",
             created_at=datetime.now(UTC),
             metadata_json=dumps(
@@ -115,6 +117,7 @@ class PredictionSetServiceTests(unittest.IsolatedAsyncioTestCase):
             model_version=2,
             dataset_snapshot_id="snapshot-1",
             analysis_run_id="run-1",
+            status="published",
             created_by="user-1",
             created_at=datetime.now(UTC),
             metadata_json=dumps(
@@ -146,6 +149,7 @@ class PredictionSetServiceTests(unittest.IsolatedAsyncioTestCase):
         self.service.repo.list_predictions_for_units.assert_awaited_once_with(
             "model-1",
             ["u-1"],
+            prediction_set_id="ps-1",
         )
         self.assertEqual(payload["prediction_set"].id, "ps-1")
         self.assertEqual(payload["predictions"][0].text_unit_id, "u-1")

@@ -556,13 +556,18 @@ class ModelPrediction(Base):
     __tablename__ = "research_model_predictions"
     __table_args__ = (
         UniqueConstraint(
-            "trained_model_id",
+            "prediction_set_id",
             "text_unit_id",
-            name="uq_prediction_model_unit",
+            name="uq_prediction_set_unit",
         ),
     )
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid4()))
+    prediction_set_id: Mapped[str | None] = mapped_column(
+        ForeignKey("research_prediction_sets.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
     trained_model_id: Mapped[str] = mapped_column(
         ForeignKey("research_trained_models.id", ondelete="CASCADE"), index=True
     )
@@ -601,6 +606,7 @@ class PredictionSet(Base):
     analysis_run_id: Mapped[str] = mapped_column(
         ForeignKey("research_analysis_runs.id", ondelete="CASCADE"), index=True
     )
+    status: Mapped[str] = mapped_column(String(32), default="draft", index=True)
     created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     metadata_json: Mapped[str] = mapped_column(Text)

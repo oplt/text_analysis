@@ -47,8 +47,7 @@ def _attach_parent_windows(
     current_boundary: str | None = None
     for leaf in leaves:
         boundary = leaf.metadata.get("structural_parent_id") or "|".join(
-            str(leaf.metadata.get(key) or "")
-            for key in ("offset_scope", "offset_scope_id")
+            str(leaf.metadata.get(key) or "") for key in ("offset_scope", "offset_scope_id")
         )
         if current and (boundary != current_boundary or len(current) >= window):
             groups.append(current)
@@ -97,9 +96,7 @@ def _attach_parent_windows(
                 "offset_scope_id": first.metadata.get("offset_scope_id"),
                 "offset_coordinate_system": first.metadata.get("offset_coordinate_system"),
                 "source_spans": [
-                    span
-                    for child in group
-                    for span in child.metadata.get("source_spans") or []
+                    span for child in group for span in child.metadata.get("source_spans") or []
                 ],
                 "structural_parent_id": first.metadata.get("structural_parent_id"),
                 "page_numbers": list(

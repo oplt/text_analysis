@@ -30,6 +30,7 @@ from backend.modules.text_research.domain.prepared_corpus import (
     build_prepared_artifact,
 )
 from backend.modules.text_research.infrastructure import model_storage
+from backend.modules.text_research.infrastructure.embeddings import embedding_identity
 from backend.modules.text_research.infrastructure.prepared_corpus_builder import (
     prepare_texts,
     prepare_texts_cached_async,
@@ -165,6 +166,9 @@ class TopicModelService(ResearchAccessMixin):
                 status_code=422,
                 detail="No text units match the requested corpus/unit_type/filters",
             )
+        resolved_embedding_identity = embedding_identity(
+            embedding_provider or "hashing", model_name=embedding_model_name
+        )
 
         params = {
             "unit_type": unit_type,
@@ -178,6 +182,7 @@ class TopicModelService(ResearchAccessMixin):
             "holdout_unit_ids": holdout_unit_ids,
             "embedding_provider": embedding_provider or "hashing",
             "embedding_model_name": embedding_model_name,
+            "embedding_identity": resolved_embedding_identity,
             "persist_embedding_artifacts": persist_embedding_artifacts,
             "filters": filters,
         }
@@ -192,7 +197,11 @@ class TopicModelService(ResearchAccessMixin):
                 "n_topics": n_topics,
                 "max_iterations": max_iterations,
                 "group_by": group_by,
+                "holdout_fraction": holdout_fraction,
+                "holdout_unit_ids": sorted(holdout_unit_ids or ()),
                 "embedding_provider": params["embedding_provider"],
+                "embedding_identity": resolved_embedding_identity,
+                "persist_embedding_artifacts": persist_embedding_artifacts,
             },
             random_seed=random_seed,
         )
@@ -225,8 +234,8 @@ class TopicModelService(ResearchAccessMixin):
 
     async def execute_training(self, run_id: str) -> AnalysisRun:
         from backend.modules.text_research.application.run_lifecycle import (
-            RunCancelledError,
             TERMINAL_RUN_STATUSES,
+            RunCancelledError,
             complete_if_active,
             ensure_not_cancelled,
             fail_if_active,
@@ -307,11 +316,15 @@ class TopicModelService(ResearchAccessMixin):
             await self.db.commit()
             run = await ensure_not_cancelled(self.repo, run)
             model_path, model_artifact_metadata = model_storage.save_artifact_with_metadata(
-                result["model"], category="topic_models"
+                result["model"],
+                category="topic_models",
+                namespace=run.artifact_namespace,
             )
             vectorizer_path, vectorizer_artifact_metadata = (
                 model_storage.save_artifact_with_metadata(
-                    result["vectorizer"], category="topic_vectorizers"
+                    result["vectorizer"],
+                    category="topic_vectorizers",
+                    namespace=run.artifact_namespace,
                 )
             )
 
@@ -330,7 +343,9 @@ class TopicModelService(ResearchAccessMixin):
             ]
             distribution_path, distribution_artifact_metadata = (
                 model_storage.save_artifact_with_metadata(
-                    doc_topic_rows, category="topic_distributions"
+                    doc_topic_rows,
+                    category="topic_distributions",
+                    namespace=run.artifact_namespace,
                 )
             )
             dominant_counts = {str(k): v for k, v in Counter(dominant).items()}
@@ -505,8 +520,8 @@ class TopicModelService(ResearchAccessMixin):
     async def execute_k_sweep(self, run_id: str) -> AnalysisRun:
         """Perform a persisted K sweep in a worker-owned database session."""
         from backend.modules.text_research.application.run_lifecycle import (
-            RunCancelledError,
             TERMINAL_RUN_STATUSES,
+            RunCancelledError,
             complete_if_active,
             ensure_not_cancelled,
             fail_if_active,
@@ -664,8 +679,8 @@ class TopicModelService(ResearchAccessMixin):
     async def execute_seed_stability(self, run_id: str) -> AnalysisRun:
         """Perform a persisted multi-seed stability diagnostic in a worker."""
         from backend.modules.text_research.application.run_lifecycle import (
-            RunCancelledError,
             TERMINAL_RUN_STATUSES,
+            RunCancelledError,
             complete_if_active,
             ensure_not_cancelled,
             fail_if_active,

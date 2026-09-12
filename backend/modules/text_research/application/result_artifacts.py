@@ -98,15 +98,15 @@ def maybe_artifactize_results(
     }
     # Preserve scalar / small summary fields; preview large arrays.
     for key, value in results.items():
-        if key in _LARGE_ARRAY_KEYS or (
-            isinstance(value, list) and len(value) > preview_rows
-        ):
+        if key in _LARGE_ARRAY_KEYS or (isinstance(value, list) and len(value) > preview_rows):
             inline[f"{key}_preview"] = _preview_value(value, preview_rows=preview_rows)
             if isinstance(value, list):
                 inline[f"{key}_total"] = len(value)
-        elif isinstance(value, (str, int, float, bool)) or value is None:
-            inline[key] = value
-        elif isinstance(value, dict) and serialized_size_bytes(value) <= max_inline_bytes // 4:
+        elif (
+            isinstance(value, (str, int, float, bool))
+            or value is None
+            or (isinstance(value, dict) and serialized_size_bytes(value) <= max_inline_bytes // 4)
+        ):
             inline[key] = value
         else:
             inline[f"{key}_preview"] = _preview_value(value, preview_rows=preview_rows)

@@ -90,7 +90,7 @@ class PredictionSetDriftAggregationTests(unittest.IsolatedAsyncioTestCase):
 
         call_count = {"n": 0}
 
-        async def list_predictions_tracked(model_id, ids):
+        async def list_predictions_tracked(model_id, ids, *, prediction_set_id=None):
             call_count["n"] += 1
             self.assertEqual(len(ids), n)
             # First call baseline, second current (same model id).

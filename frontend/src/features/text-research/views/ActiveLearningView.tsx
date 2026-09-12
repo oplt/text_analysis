@@ -86,7 +86,8 @@ export default function ActiveLearningView() {
             ctx.projectId,
             ctx.selectedCorpusId
         ),
-        queryFn: () => listAnnotationCampaigns(ctx.projectId, ctx.selectedCorpusId),
+        queryFn: ({ signal }) =>
+            listAnnotationCampaigns(ctx.projectId, ctx.selectedCorpusId, signal),
         enabled: Boolean(ctx.projectId),
         staleTime: QUERY_STALE_TIMES.researchAnnotationQueue,
     });

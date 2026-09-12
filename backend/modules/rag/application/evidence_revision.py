@@ -60,9 +60,7 @@ def _config_identity(config: Any) -> dict[str, Any]:
         "embedding_model": getattr(config, "embedding_model", None),
         "embedding_model_version": getattr(config, "embedding_model_version", None),
         "embedding_dimensions": getattr(config, "embedding_dimensions", None),
-        "embedding_preprocessing_version": getattr(
-            config, "embedding_preprocessing_version", None
-        ),
+        "embedding_preprocessing_version": getattr(config, "embedding_preprocessing_version", None),
         "retrieval_algorithm_version": getattr(config, "retrieval_algorithm_version", None),
         "index_version": getattr(config, "index_version", None),
         "fusion_method": getattr(config, "fusion_method", None),

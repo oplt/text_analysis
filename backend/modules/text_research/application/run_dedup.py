@@ -30,6 +30,46 @@ NEVER_REUSE = frozenset(
         AnalysisRunStatus.CANCELLED.value,
     }
 )
+IDENTITY_COMPLETE_OPS = frozenset(
+    {
+        "corpus_stats",
+        "frequencies",
+        "ngrams",
+        "dfm",
+        "kwic",
+        "dictionary",
+        "keyness",
+        "cooccurrence",
+        "clustering",
+        "dimensionality_reduction",
+        "duplicate_detection",
+        # Only lexical similarity is reusable; raw vectors remain transient.
+        "similarity",
+    }
+)
+
+
+def _is_reusable_source(run: AnalysisRun) -> bool:
+    """Require a complete, allowlisted identity before reusing a source run."""
+    params = loads(getattr(run, "parameters_json", None), {}) or {}
+    spec = params.get("analysis_specification")
+    analysis = spec.get("analysis") if isinstance(spec, dict) else None
+    operation = analysis.get("type") if isinstance(analysis, dict) else None
+    if operation not in IDENTITY_COMPLETE_OPS:
+        return False
+    if operation == "similarity" and (
+        params.get("has_embeddings")
+        or (isinstance(analysis, dict) and analysis.get("parameters", {}).get("has_embeddings"))
+        or params.get("method") == "embedding_cosine"
+    ):
+        return False
+    provenance = params.get("provenance") if isinstance(params.get("provenance"), dict) else {}
+    return bool(
+        (params.get("analysis_spec_hash") or provenance.get("analysis_spec_hash"))
+        and (params.get("corpus_checksum") or provenance.get("corpus_checksum"))
+        and (params.get("pipeline_checksum") or provenance.get("pipeline_checksum"))
+        and (params.get("engine_version") or provenance.get("engine_version"))
+    )
 
 
 def build_computation_identity(
@@ -61,11 +101,9 @@ def identity_from_parameters(parameters: dict[str, Any] | None) -> str | None:
         return existing
     provenance = params.get("provenance") if isinstance(params.get("provenance"), dict) else {}
     return build_computation_identity(
-        analysis_spec_hash=params.get("analysis_spec_hash")
-        or provenance.get("analysis_spec_hash"),
+        analysis_spec_hash=params.get("analysis_spec_hash") or provenance.get("analysis_spec_hash"),
         corpus_checksum=params.get("corpus_checksum") or provenance.get("corpus_checksum"),
-        pipeline_checksum=params.get("pipeline_checksum")
-        or provenance.get("pipeline_checksum"),
+        pipeline_checksum=params.get("pipeline_checksum") or provenance.get("pipeline_checksum"),
         engine_version=params.get("engine_version") or provenance.get("engine_version"),
     )
 
@@ -95,7 +133,7 @@ async def find_reusable_run(
         statuses=sorted(ACTIVE_STATUSES),
         exclude_run_id=exclude_run_id,
     )
-    if active is not None and active.status not in NEVER_REUSE:
+    if active is not None and active.status not in NEVER_REUSE and _is_reusable_source(active):
         return active
     completed = await repo.find_run_by_computation_identity(
         project_id=project_id,
@@ -104,7 +142,11 @@ async def find_reusable_run(
         statuses=sorted(REUSABLE_COMPLETED),
         exclude_run_id=exclude_run_id,
     )
-    if completed is not None and completed.status not in NEVER_REUSE:
+    if (
+        completed is not None
+        and completed.status not in NEVER_REUSE
+        and _is_reusable_source(completed)
+    ):
         return completed
     return None
 

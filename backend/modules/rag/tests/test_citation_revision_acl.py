@@ -40,11 +40,7 @@ def _context(
 
 
 def _valid_payload(chunk_id: str = "chunk") -> str:
-    return (
-        '{"claims":[{"text":"claim","chunk_ids":["'
-        + chunk_id
-        + '"]}],"no_evidence":false}'
-    )
+    return '{"claims":[{"text":"claim","chunk_ids":["' + chunk_id + '"]}],"no_evidence":false}'
 
 
 def test_fabricated_chunk_not_in_retrieved_set_is_invalid():

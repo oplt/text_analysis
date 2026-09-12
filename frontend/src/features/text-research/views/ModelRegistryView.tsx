@@ -148,7 +148,7 @@ export default function ModelRegistryView() {
 
     const predictionSetsQuery = useQuery({
         queryKey: queryKeys.textResearch.predictionSets(selectedModel?.corpus_id ?? ""),
-        queryFn: () => listPredictionSets(selectedModel!.corpus_id, { limit: 50 }),
+        queryFn: ({ signal }) => listPredictionSets(selectedModel!.corpus_id, { limit: 50 }, signal),
         enabled: Boolean(selectedModel?.corpus_id),
         staleTime: QUERY_STALE_TIMES.researchPredictionSets,
     });

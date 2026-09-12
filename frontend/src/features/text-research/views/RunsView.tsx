@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Alert,
     Button,
     Checkbox,
+    FormControlLabel,
     Stack,
     Table,
     TableBody,
@@ -24,6 +25,7 @@ import { useSnackbar } from "../../../app/snackbarContext";
 import {
     cloneRunParameters,
     compareRuns,
+    getAnalysisCapabilities,
     getRun,
     getRunProvenance,
     listRuns,
@@ -37,6 +39,7 @@ import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { ActiveRunActions } from "../components/ActiveRunActions";
 import { ResultsInspector } from "../components/ResearchCharts";
+import { FullResultsActions } from "../components/ResearchResults";
 import { RunStatusChip } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
@@ -62,9 +65,17 @@ function ReproduceButton({
     pending,
     onReproduce,
 }: {
-    run: Pick<AnalysisRun, "id" | "rerunnable" | "rerun_block_reason">;
+    run: Pick<
+        AnalysisRun,
+        | "id"
+        | "rerunnable"
+        | "rerun_block_reason"
+        | "replayable"
+        | "exact_reproducible"
+        | "exact_reproduce_block_reason"
+    >;
     pending: boolean;
-    onReproduce: (runId: string) => void;
+    onReproduce: (runId: string, exact: boolean) => void;
 }) {
     const action = reproduceActionState(run);
     const button = (
@@ -72,21 +83,35 @@ function ReproduceButton({
             <Button
                 size="small"
                 startIcon={<RerunIcon />}
-                disabled={!action.enabled || pending}
-                onClick={() => onReproduce(run.id)}
+                disabled={!action.replay.enabled || pending}
+                onClick={() => onReproduce(run.id, false)}
             >
-                Reproduce
+                Replay
             </Button>
         </span>
     );
-    if (!action.enabled && action.reason) {
+    if (!action.replay.enabled && action.replay.reason) {
         return (
-            <Tooltip title={action.reason}>
+            <Tooltip title={action.replay.reason}>
                 {button}
             </Tooltip>
         );
     }
-    return button;
+    return (
+        <>
+            {button}
+            {action.exact.enabled ? (
+                <Button
+                    size="small"
+                    startIcon={<RerunIcon />}
+                    disabled={pending}
+                    onClick={() => onReproduce(run.id, true)}
+                >
+                    Exact reproduce
+                </Button>
+            ) : null}
+        </>
+    );
 }
 
 export default function RunsView() {
@@ -99,12 +124,17 @@ export default function RunsView() {
     const [clonedParams, setClonedParams] = useState<ClonedRunParameters | null>(null);
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(50);
+    const [listCorpusId, setListCorpusId] = useState(ctx.selectedCorpusId);
+    const [rerunAsync, setRerunAsync] = useState(true);
     const sseConnected = useRunEvents(selectedRunId, ctx.projectId);
-    const pageOffset = page * pageSize;
 
-    useEffect(() => {
+    // Reset paging when corpus selection changes without setState-in-effect.
+    if (listCorpusId !== ctx.selectedCorpusId) {
+        setListCorpusId(ctx.selectedCorpusId);
         setPage(0);
-    }, [ctx.selectedCorpusId]);
+    }
+
+    const pageOffset = page * pageSize;
 
     const runsQuery = useQuery({
         queryKey: queryKeys.textResearch.runs(ctx.projectId, ctx.selectedCorpusId, undefined, {
@@ -130,6 +160,10 @@ export default function RunsView() {
         enabled: Boolean(selectedRunId),
         refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
     });
+    const capabilitiesQuery = useQuery({
+        queryKey: ["text-research", "analysis-capabilities"],
+        queryFn: ({ signal }) => getAnalysisCapabilities(signal),
+    });
 
     const provenanceQuery = useQuery({
         queryKey: queryKeys.textResearch.runProvenance(selectedRunId ?? ""),
@@ -151,7 +185,8 @@ export default function RunsView() {
     };
 
     const rerunMutation = useMutation({
-        mutationFn: (runId: string) => rerunRun(runId, true),
+        mutationFn: ({ runId, exact, runAsync }: { runId: string; exact: boolean; runAsync: boolean }) =>
+            rerunRun(runId, runAsync, exact),
         onSuccess: async (run) => {
             setSelectedRunId(run.id);
             await invalidateRuns();
@@ -180,6 +215,8 @@ export default function RunsView() {
     const runs = runsQuery.data?.items ?? [];
     const runsTotal = runsQuery.data?.total ?? 0;
     const selectedRun = runQuery.data;
+    const supportsAsyncRerun = (run: AnalysisRun) =>
+        capabilitiesQuery.data?.run_types[run.run_type]?.async === true;
 
     const toggleCompare = (runId: string) => {
         setCompareIds((prev) => {
@@ -279,8 +316,12 @@ export default function RunsView() {
                                                     <ReproduceButton
                                                         run={run}
                                                         pending={rerunMutation.isPending}
-                                                        onReproduce={(runId) =>
-                                                            rerunMutation.mutate(runId)
+                                                        onReproduce={(runId, exact) =>
+                                                            rerunMutation.mutate({
+                                                                runId,
+                                                                exact,
+                                                                runAsync: supportsAsyncRerun(run) && rerunAsync,
+                                                            })
                                                         }
                                                     />
                                                     <Button
@@ -370,8 +411,12 @@ export default function RunsView() {
                                         <ReproduceButton
                                             run={selectedRun}
                                             pending={rerunMutation.isPending}
-                                            onReproduce={(runId) =>
-                                                rerunMutation.mutate(runId)
+                                            onReproduce={(runId, exact) =>
+                                                rerunMutation.mutate({
+                                                    runId,
+                                                    exact,
+                                                    runAsync: supportsAsyncRerun(selectedRun) && rerunAsync,
+                                                })
                                             }
                                         />
                                         {isActiveRunStatus(selectedRun.status) ? (
@@ -396,22 +441,37 @@ export default function RunsView() {
                                 <Typography variant="body2">
                                     Artifact: {selectedRun.artifact_path ?? "—"}
                                 </Typography>
+                                {supportsAsyncRerun(selectedRun) ? (
+                                    <FormControlLabel
+                                        control={
+                                            <Checkbox
+                                                checked={rerunAsync}
+                                                onChange={(event) => setRerunAsync(event.target.checked)}
+                                            />
+                                        }
+                                        label="Run replay asynchronously"
+                                    />
+                                ) : (
+                                    <Typography variant="body2" color="text.secondary">
+                                        Replay is inline only.
+                                    </Typography>
+                                )}
                                 {selectedRun.error_message ? (
                                     <Alert severity="error">{selectedRun.error_message}</Alert>
                                 ) : null}
 
-                                {selectedRun.rerunnable === false ? (
+                                {selectedRun.replayable === false || selectedRun.rerunnable === false ? (
                                     <Alert severity="warning">
-                                        Reproduce is unavailable
+                                        Replay is unavailable
                                         {selectedRun.rerun_block_reason
                                             ? `: ${selectedRun.rerun_block_reason}`
                                             : " for this run type."}
                                     </Alert>
                                 ) : (
                                     <Alert severity="info">
-                                        Use Reproduce for one-click re-execution with the
-                                        original parameters, seeds, and analysis specification
-                                        when the run is marked rerunnable.
+                                        Replay re-executes the original normalized parameters.
+                                        Exact reproduce is available only when frozen inputs and
+                                        checksums were persisted.
                                     </Alert>
                                 )}
 
@@ -467,6 +527,7 @@ export default function RunsView() {
                                         error: selectedRun.error_message,
                                     }}
                                 />
+                                <FullResultsActions run={selectedRun} />
                             </Stack>
                         ) : null}
                     </QueryBoundary>

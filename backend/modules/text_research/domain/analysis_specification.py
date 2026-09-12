@@ -8,6 +8,7 @@ normalize through :class:`AnalysisSpecification` (v2): validate â†’ normalize â†
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 from typing import Any, Literal
@@ -17,6 +18,8 @@ from pydantic import BaseModel, Field, model_validator
 ANALYSIS_TYPES: frozenset[str] = frozenset(
     {
         "frequencies",
+        "corpus_stats",
+        "ngrams",
         "dfm",
         "kwic",
         "dictionary",
@@ -26,6 +29,8 @@ ANALYSIS_TYPES: frozenset[str] = frozenset(
         "classification",
         "clustering",
         "similarity",
+        "dimensionality_reduction",
+        "duplicate_detection",
         "statistical_model",
         "measurement_validation",
         "readability",
@@ -34,7 +39,7 @@ ANALYSIS_TYPES: frozenset[str] = frozenset(
 
 ANALYSIS_TYPE_ALIASES: dict[str, str] = {
     "frequency_analysis": "frequencies",
-    "ngram_analysis": "frequencies",
+    "ngram_analysis": "ngrams",
     "dictionary_analysis": "dictionary",
     "classifier_training": "classification",
     "classifier_prediction": "classification",
@@ -290,10 +295,8 @@ def normalize_corpus_filters(filters: dict[str, Any] | None) -> dict[str, Any]:
             continue
         canon = _FILTER_KEY_ALIASES.get(key, key)
         if canon in _FILTER_INT_KEYS:
-            try:
+            with contextlib.suppress(TypeError, ValueError):
                 value = int(value)
-            except (TypeError, ValueError):
-                pass
         elif isinstance(value, list):
             value = sorted((_normalize_filter_list_item(item) for item in value), key=str)
         elif isinstance(value, str):

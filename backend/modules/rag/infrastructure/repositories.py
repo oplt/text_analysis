@@ -625,6 +625,7 @@ class RagRepository:
             }
             for row in result.mappings().all()
         ]
+
         def build_match(row: dict, score: float) -> RetrievedChunk:
             meta = json.loads(row["metadata_json"] or "{}")
             return RetrievedChunk(

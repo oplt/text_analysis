@@ -103,9 +103,7 @@ class PairwiseSimilarityTests(unittest.TestCase):
             unittest.mock.patch.object(sim, "DENSE_PAIRWISE_MAX_N", 4),
             unittest.mock.patch.object(sim, "EXACT_ALL_PAIRS_MAX_N", 4),
         ):
-            blocked = sim.pairwise_similarity(
-                ids, method="jaccard", tokenized=tokenized, top_k=5
-            )
+            blocked = sim.pairwise_similarity(ids, method="jaccard", tokenized=tokenized, top_k=5)
         self.assertEqual(blocked["computation"], "bounded_topk")
         self.assertEqual(
             [(p["source_id"], p["target_id"], round(p["score"], 8)) for p in dense["pairs"]],
@@ -124,12 +122,12 @@ class PairwiseSimilarityTests(unittest.TestCase):
             return real_ones(shape, *args, **kwargs)
 
         with unittest.mock.patch.object(np, "ones", side_effect=tracking_ones):
-            report = sim.pairwise_similarity(
-                ids, method="jaccard", tokenized=tokenized, top_k=10
-            )
+            report = sim.pairwise_similarity(ids, method="jaccard", tokenized=tokenized, top_k=10)
         self.assertEqual(report["computation"], "bounded_topk")
         self.assertEqual(report["pairs_returned"], 10)
-        self.assertFalse(any(len(shape) == 2 and shape[0] == n and shape[1] == n for shape in allocated))
+        self.assertFalse(
+            any(len(shape) == 2 and shape[0] == n and shape[1] == n for shape in allocated)
+        )
 
     def test_exact_mode_ceiling_without_topk(self):
         n = sim.EXACT_ALL_PAIRS_MAX_N + 1
@@ -143,9 +141,7 @@ class PairwiseSimilarityTests(unittest.TestCase):
         tokenized = [["shared"], ["shared"], ["shared"]]
         ids = ["c", "a", "b"]
         with unittest.mock.patch.object(sim, "DENSE_PAIRWISE_MAX_N", 1):
-            report = sim.pairwise_similarity(
-                ids, method="jaccard", tokenized=tokenized, top_k=3
-            )
+            report = sim.pairwise_similarity(ids, method="jaccard", tokenized=tokenized, top_k=3)
         # Ties break by ascending index order (i, j), not lexicographic ids.
         pairs = [(p["source_id"], p["target_id"]) for p in report["pairs"]]
         self.assertEqual(pairs, [("c", "a"), ("c", "b"), ("a", "b")])

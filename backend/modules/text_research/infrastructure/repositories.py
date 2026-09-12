@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,6 +38,7 @@ from backend.modules.text_research.domain.models import (
     TrainedModel,
     TrainingDatasetSnapshot,
     dumps,
+    loads,
 )
 from backend.modules.text_research.infrastructure.out_of_core import (
     iter_item_batches,
@@ -1219,16 +1220,29 @@ class ResearchRepository:
         return rows
 
     async def list_annotations_for_corpus(
-        self, corpus_id: str, *, campaign_id: str | None = None
+        self,
+        corpus_id: str,
+        *,
+        campaign_id: str | None = None,
+        codebook_version: str | None = None,
+        limit: int | None = None,
+        offset: int = 0,
     ) -> list[Annotation]:
         stmt = (
             select(Annotation)
             .join(TextUnit, TextUnit.id == Annotation.text_unit_id)
             .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
             .where(CorpusDocument.corpus_id == corpus_id)
+            .order_by(Annotation.created_at.asc(), Annotation.id.asc())
         )
         if campaign_id is not None:
             stmt = stmt.where(Annotation.campaign_id == campaign_id)
+        if codebook_version is not None:
+            stmt = stmt.where(Annotation.codebook_version == codebook_version)
+        if offset:
+            stmt = stmt.offset(offset)
+        if limit is not None:
+            stmt = stmt.limit(limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -1537,6 +1551,33 @@ class ResearchRepository:
             return None
         return await self.update_run(locked, **fields)
 
+    async def claim_run_for_execution(
+        self,
+        run_id: str,
+        *,
+        execution_key: str | None = None,
+    ) -> AnalysisRun | None:
+        """Atomically transition a queued run to RUNNING for one worker only."""
+        conditions = [
+            AnalysisRun.id == run_id,
+            AnalysisRun.status == "queued",
+        ]
+        if execution_key is not None:
+            conditions.append(AnalysisRun.execution_key == execution_key)
+        statement = (
+            update(AnalysisRun)
+            .where(*conditions)
+            .values(
+                status="running",
+                progress_stage="running",
+                started_at=_utcnow(),
+                run_version=AnalysisRun.run_version + 1,
+            )
+            .returning(AnalysisRun)
+        )
+        result = await self.db.execute(statement)
+        return result.scalar_one_or_none()
+
     async def list_runs(
         self,
         project_id: str,
@@ -1621,7 +1662,8 @@ class ResearchRepository:
                 params = loads(blob, {}) or {}
                 if params.get("computation_identity") == computation_identity:
                     return run
-                provenance = params.get("provenance") if isinstance(params.get("provenance"), dict) else {}
+                raw_prov = params.get("provenance")
+                provenance = raw_prov if isinstance(raw_prov, dict) else {}
                 if provenance.get("computation_identity") == computation_identity:
                     return run
         return None
@@ -1741,7 +1783,7 @@ class ResearchRepository:
 
         statement = insert(ModelPrediction).values(rows)
         statement = statement.on_conflict_do_update(
-            constraint="uq_prediction_model_unit",
+            constraint="uq_prediction_set_unit",
             set_={
                 "predicted_labels_json": statement.excluded.predicted_labels_json,
                 "scores_json": statement.excluded.scores_json,
@@ -1758,7 +1800,14 @@ class ResearchRepository:
         offset: int = 0,
         order_by_uncertainty: bool = False,
     ) -> tuple[list[ModelPrediction], int]:
-        stmt = select(ModelPrediction).where(ModelPrediction.trained_model_id == trained_model_id)
+        stmt = (
+            select(ModelPrediction)
+            .join(PredictionSet, ModelPrediction.prediction_set_id == PredictionSet.id)
+            .where(
+                ModelPrediction.trained_model_id == trained_model_id,
+                PredictionSet.status == "published",
+            )
+        )
         if order_by_uncertainty:
             # uncertainty convention: 0 == certain and 1 == maximally
             # uncertain (see infrastructure/classifiers.py).
@@ -1769,8 +1818,11 @@ class ResearchRepository:
 
     async def list_predicted_unit_ids(self, trained_model_id: str) -> set[str]:
         result = await self.db.execute(
-            select(ModelPrediction.text_unit_id).where(
-                ModelPrediction.trained_model_id == trained_model_id
+            select(ModelPrediction.text_unit_id)
+            .join(PredictionSet, ModelPrediction.prediction_set_id == PredictionSet.id)
+            .where(
+                ModelPrediction.trained_model_id == trained_model_id,
+                PredictionSet.status == "published",
             )
         )
         return set(result.scalars().all())
@@ -1779,17 +1831,29 @@ class ResearchRepository:
         self,
         trained_model_id: str,
         text_unit_ids: list[str],
+        *,
+        prediction_set_id: str | None = None,
     ) -> list[ModelPrediction]:
         if not text_unit_ids:
             return []
         rows: list[ModelPrediction] = []
         for batch in iter_item_batches(text_unit_ids, _IN_CLAUSE_BATCH):
-            result = await self.db.execute(
-                select(ModelPrediction).where(
-                    ModelPrediction.trained_model_id == trained_model_id,
-                    ModelPrediction.text_unit_id.in_(list(batch)),
-                )
+            stmt = select(ModelPrediction).where(
+                ModelPrediction.trained_model_id == trained_model_id,
+                ModelPrediction.text_unit_id.in_(list(batch)),
             )
+            if prediction_set_id is not None:
+                stmt = stmt.join(
+                    PredictionSet, ModelPrediction.prediction_set_id == PredictionSet.id
+                ).where(
+                    ModelPrediction.prediction_set_id == prediction_set_id,
+                    PredictionSet.status == "published",
+                )
+            else:
+                stmt = stmt.join(
+                    PredictionSet, ModelPrediction.prediction_set_id == PredictionSet.id
+                ).where(PredictionSet.status == "published")
+            result = await self.db.execute(stmt)
             rows.extend(result.scalars().all())
         return rows
 
@@ -1801,6 +1865,21 @@ class ResearchRepository:
         self.db.add(prediction_set)
         await self.db.flush()
         return prediction_set
+
+    async def update_prediction_set(
+        self, prediction_set: PredictionSet, **fields: Any
+    ) -> PredictionSet:
+        for key, value in fields.items():
+            setattr(prediction_set, key, value)
+        await self.db.flush()
+        return prediction_set
+
+    async def discard_prediction_set(self, prediction_set: PredictionSet) -> None:
+        """Remove unpublished staged predictions after cancellation or failure."""
+        await self.db.execute(
+            delete(ModelPrediction).where(ModelPrediction.prediction_set_id == prediction_set.id)
+        )
+        await self.db.execute(delete(PredictionSet).where(PredictionSet.id == prediction_set.id))
 
     async def get_prediction_set(self, prediction_set_id: str) -> PredictionSet | None:
         result = await self.db.execute(
@@ -1817,7 +1896,10 @@ class ResearchRepository:
     ) -> tuple[list[PredictionSet], int]:
         stmt = (
             select(PredictionSet)
-            .where(PredictionSet.corpus_id == corpus_id)
+            .where(
+                PredictionSet.corpus_id == corpus_id,
+                PredictionSet.status == "published",
+            )
             .order_by(PredictionSet.created_at.desc())
         )
         return await paginate_scalars(self.db, stmt, limit=limit, offset=offset)

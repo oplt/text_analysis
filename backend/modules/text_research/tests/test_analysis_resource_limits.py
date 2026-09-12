@@ -12,11 +12,16 @@ from backend.modules.text_research.api.schemas import (
     MAX_MEASUREMENT_VALUES,
     MAX_RESULT_TOP_N,
     MAX_STATISTICAL_ROWS,
+    MAX_TOPIC_SEED_STABILITY_SEEDS,
+    MAX_TOPIC_SWEEP_VALUES,
+    ClassifierTrainRequest,
     ClusteringRequest,
     FrequencyRequest,
     MeasurementComparisonRequest,
     SimilarityRequest,
     StatisticalModelRequest,
+    TopicKSweepRequest,
+    TopicSeedStabilityRequest,
 )
 
 
@@ -85,6 +90,38 @@ class AnalysisResourceLimitTests(unittest.TestCase):
                 embeddings={"u1": [0.1, 0.2], "u2": [0.1, 0.2, 0.3]},
             )
         self.assertIn("dimensionality", str(ctx.exception))
+
+    def test_topic_sweep_ceiling_is_rejected(self) -> None:
+        with self.assertRaises(ValidationError):
+            TopicKSweepRequest(
+                unit_type="paragraph",
+                k_values=[2] * (MAX_TOPIC_SWEEP_VALUES + 1),
+            )
+
+    def test_classifier_grid_ceiling_is_rejected(self) -> None:
+        with self.assertRaises(ValidationError):
+            ClassifierTrainRequest(
+                snapshot_id="snapshot",
+                hyperparameter_param_grid={"regularization_c": list(range(300))},
+            )
+
+    def test_excessive_classifier_bootstrap_is_rejected(self) -> None:
+        with self.assertRaises(ValidationError):
+            ClassifierTrainRequest(snapshot_id="snapshot", n_bootstrap=20_001)
+
+    def test_excessive_nested_cv_is_rejected(self) -> None:
+        with self.assertRaises(ValidationError):
+            ClassifierTrainRequest(
+                snapshot_id="snapshot",
+                nested_cv_outer_splits=11,
+            )
+
+    def test_excessive_topic_seed_stability_is_rejected(self) -> None:
+        with self.assertRaises(ValidationError):
+            TopicSeedStabilityRequest(
+                unit_type="paragraph",
+                seeds=list(range(MAX_TOPIC_SEED_STABILITY_SEEDS + 1)),
+            )
 
     def test_pairwise_embedding_without_top_k_rejected(self) -> None:
         with self.assertRaises(ValidationError) as ctx:

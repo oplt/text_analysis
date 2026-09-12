@@ -1095,6 +1095,27 @@ class ModelStorageTests(unittest.TestCase):
                 model_storage._storage_configured = original_storage_configured
                 shutil.rmtree(tmp_dir, ignore_errors=True)
 
+    def test_save_artifact_uses_run_namespace(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            original_root = model_storage.ARTIFACT_ROOT
+            original_storage_configured = model_storage._storage_configured
+            model_storage.ARTIFACT_ROOT = Path(tmp_dir)
+            model_storage._storage_configured = lambda: False
+            try:
+                reference, _metadata = model_storage.save_artifact_with_metadata(
+                    {"model": "test"},
+                    category="test-models",
+                    namespace="runs/project-1/run-1",
+                )
+                self.assertTrue(
+                    Path(reference).is_relative_to(Path(tmp_dir) / "runs" / "project-1" / "run-1")
+                )
+            finally:
+                model_storage.ARTIFACT_ROOT = original_root
+                model_storage._storage_configured = original_storage_configured
+
     def test_ensure_artifact_dir_creates_nested_directories(self):
         import shutil
         import tempfile

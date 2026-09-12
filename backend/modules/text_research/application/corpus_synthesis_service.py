@@ -94,9 +94,7 @@ class CorpusSynthesisService(ResearchAccessMixin):
                     "char_end": getattr(citation, "char_end", None),
                     "source_span_ids": getattr(citation, "source_span_ids", None),
                     "parent_context_id": getattr(citation, "parent_context_id", None),
-                    "offset_coordinate_system": getattr(
-                        citation, "offset_coordinate_system", None
-                    ),
+                    "offset_coordinate_system": getattr(citation, "offset_coordinate_system", None),
                     "offset_scope": getattr(citation, "offset_scope", None),
                     "offset_scope_id": getattr(citation, "offset_scope_id", None),
                     "source_spans": getattr(citation, "source_spans", None),
@@ -133,9 +131,7 @@ class CorpusSynthesisService(ResearchAccessMixin):
     def _frozen_scope_from_run(params: dict, run: AnalysisRun) -> CorpusScopeSnapshot:
         frozen = params.get("frozen_synthesis_scope")
         if not isinstance(frozen, dict) or not isinstance(frozen.get("scope"), dict):
-            raise ValueError(
-                "historical_revision_unavailable: frozen synthesis scope is missing"
-            )
+            raise ValueError("historical_revision_unavailable: frozen synthesis scope is missing")
         scope = CorpusScopeSnapshot.from_dict(frozen["scope"])
         if scope.corpus_id != run.corpus_id or scope.project_id != run.project_id:
             raise ValueError("Frozen synthesis scope boundary mismatch")
@@ -233,8 +229,8 @@ class CorpusSynthesisService(ResearchAccessMixin):
     async def execute_synthesis(self, run_id: str) -> AnalysisRun:
         """Celery / worker entry for async corpus synthesis."""
         from backend.modules.text_research.application.run_lifecycle import (
-            RunCancelledError,
             TERMINAL_RUN_STATUSES,
+            RunCancelledError,
             complete_if_active,
             ensure_not_cancelled,
             fail_if_active,
@@ -521,9 +517,7 @@ class CorpusSynthesisService(ResearchAccessMixin):
                 )
                 claimed_chunk_ids = list(
                     dict.fromkeys(
-                        chunk_id
-                        for claim in kept_claims
-                        for chunk_id in claim.get("chunk_ids", [])
+                        chunk_id for claim in kept_claims for chunk_id in claim.get("chunk_ids", [])
                     )
                 )
                 node = {

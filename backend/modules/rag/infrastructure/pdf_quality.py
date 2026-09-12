@@ -86,10 +86,6 @@ def suppress_repeated_headers_footers(
 
     cleaned: list[str] = []
     for text in page_texts:
-        kept = [
-            line
-            for line in (text or "").splitlines()
-            if line.strip() not in repeated
-        ]
+        kept = [line for line in (text or "").splitlines() if line.strip() not in repeated]
         cleaned.append("\n".join(kept).strip())
     return cleaned

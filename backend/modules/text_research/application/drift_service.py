@@ -158,7 +158,9 @@ class DriftService(ResearchAccessMixin):
         """Aggregate ALL predictions belonging to a persisted PredictionSet (no row cap)."""
         unit_ids = list(loads(prediction_set.metadata_json, {}).get("unit_ids") or [])
         predictions = await self.repo.list_predictions_for_units(
-            prediction_set.trained_model_id, unit_ids
+            prediction_set.trained_model_id,
+            unit_ids,
+            prediction_set_id=prediction_set.id,
         )
         adjudications = await self.repo.list_adjudications_for_units(unit_ids)
         gold_by_unit: dict[str, set[str]] = {}

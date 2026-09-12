@@ -128,6 +128,15 @@ class ClassifierRoundTripTests(unittest.TestCase):
         self.assertFalse(cap.rerunnable)
         self.assertIn("snapshot_id", cap.block_reason or "")
 
+    def test_exact_reproduction_requires_frozen_identity(self) -> None:
+        cap = describe_rerun_capability(
+            "classifier_training",
+            {"snapshot_id": "snapshot-1"},
+        )
+        self.assertTrue(cap.replayable)
+        self.assertFalse(cap.exact_reproducible)
+        self.assertIn("checksum", cap.exact_reproduce_block_reason or "")
+
 
 class TopicRoundTripTests(unittest.TestCase):
     def test_normalize_includes_holdout_and_embedding(self) -> None:
@@ -185,8 +194,6 @@ class UnsupportedAndSimilarityTests(unittest.TestCase):
             AnalysisRunType.CLUSTERING.value,
             AnalysisRunType.DIMENSIONALITY_REDUCTION.value,
             AnalysisRunType.READABILITY.value,
-            AnalysisRunType.STATISTICAL_MODEL.value,
-            AnalysisRunType.MEASUREMENT_VALIDATION.value,
             AnalysisRunType.DRIFT_MONITORING.value,
         ):
             cap = describe_rerun_capability(run_type, {})
@@ -214,8 +221,30 @@ class UnsupportedAndSimilarityTests(unittest.TestCase):
         self.assertTrue(cap.rerunnable)
         self.assertIsNone(cap.block_reason)
 
+    def test_artifact_backed_measurement_is_exactly_reproducible(self) -> None:
+        cap = describe_rerun_capability(
+            AnalysisRunType.MEASUREMENT_VALIDATION.value,
+            {"input_artifact_id": "manifest:abc", "input_artifact_checksum": "abc"},
+        )
+        self.assertTrue(cap.replayable)
+        self.assertTrue(cap.exact_reproducible)
+
 
 class ExecuteRerunTests(unittest.IsolatedAsyncioTestCase):
+    async def test_exact_reproduce_rejects_replayable_run_without_frozen_inputs(self) -> None:
+        run = SimpleNamespace(
+            id="run-mutable",
+            run_type=AnalysisRunType.CLASSIFIER_TRAINING.value,
+            corpus_id="c1",
+            parameters_json=dumps(
+                {"snapshot_id": "snapshot-1", "algorithm": "logistic_regression"}
+            ),
+        )
+        with self.assertRaises(HTTPException) as ctx:
+            await execute_rerun(MagicMock(), run, user_id="u1", exact=True)
+        self.assertEqual(ctx.exception.status_code, 400)
+        self.assertIn("frozen", str(ctx.exception.detail).lower())
+
     async def test_execute_classifier_forwards_normalized_kwargs(self) -> None:
         run = SimpleNamespace(
             id="run-1",

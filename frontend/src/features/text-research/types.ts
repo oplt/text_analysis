@@ -92,10 +92,13 @@ export type AnalysisRun = {
     completed_at: string | null;
     error_message: string | null;
     created_at: string;
-    /** Whether one-click Reproduce can exactly re-execute this run. */
+    /** Backward-compatible alias for replayable. */
     rerunnable?: boolean;
-    /** Human-readable reason when ``rerunnable`` is false. */
+    /** Human-readable reason when replay is unavailable. */
     rerun_block_reason?: string | null;
+    replayable?: boolean;
+    exact_reproducible?: boolean;
+    exact_reproduce_block_reason?: string | null;
 };
 
 export type TrainedModel = {

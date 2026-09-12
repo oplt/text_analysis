@@ -24,6 +24,16 @@ MAX_MEASUREMENT_VALUES = 100_000
 MAX_EMBEDDING_ITEMS = 10_000
 MAX_EMBEDDING_DIMS = 4_096
 MAX_EMBEDDING_TOTAL_FLOATS = 5_000_000
+MAX_CLASSIFIER_BOOTSTRAPS = 20_000
+MAX_HYPERPARAMETER_GRID_COMBINATIONS = 256
+MAX_NESTED_CV_SPLITS = 10
+MAX_TOPIC_COUNT = 200
+MAX_TOPIC_ITERATIONS = 1_000
+MAX_TOPIC_SWEEP_VALUES = 50
+MAX_TOPIC_SEED_STABILITY_SEEDS = 50
+MAX_ROBUSTNESS_SEEDS = 100
+MAX_ROBUSTNESS_CLASS_WEIGHTS = 32
+MAX_ROBUSTNESS_GROUPS = 100
 
 
 class ResearchCorpusCreate(BaseModel):
@@ -697,7 +707,15 @@ class DictionaryAnalysisRequest(AnalysisRequest):
     case_sensitive: bool = False
     rate_per: float = Field(default=1000.0, gt=0)
     group_by: str | None = None
-    run_async: bool = True
+    run_async: bool = False
+
+    @model_validator(mode="after")
+    def validate_dictionary_source(self) -> DictionaryAnalysisRequest:
+        if not self.dictionary_id and not self.dictionary_terms and not self.hierarchy:
+            raise ValueError(
+                "dictionary_id, dictionary_terms, or hierarchy required (user-defined only)"
+            )
+        return self
 
 
 class KeynessRequest(BaseModel):
@@ -795,17 +813,24 @@ class SimilarityRequest(AnalysisRequest):
         default=None,
         description="Required when mode=query and method=embedding_cosine.",
     )
+    embedding_artifact_id: str | None = Field(
+        default=None,
+        description=(
+            "Managed embedding artifact for queued embedding_cosine analysis. "
+            "The artifact is validated against this corpus and selected units."
+        ),
+    )
     run_async: bool = False
 
     @field_validator("embeddings")
     @classmethod
-    def _bound_embeddings(cls, value: dict[str, list[float]] | None) -> dict[str, list[float]] | None:
+    def _bound_embeddings(
+        cls, value: dict[str, list[float]] | None
+    ) -> dict[str, list[float]] | None:
         if value is None:
             return value
         if len(value) > MAX_EMBEDDING_ITEMS:
-            raise ValueError(
-                f"embeddings may contain at most {MAX_EMBEDDING_ITEMS} unit vectors"
-            )
+            raise ValueError(f"embeddings may contain at most {MAX_EMBEDDING_ITEMS} unit vectors")
         dims: int | None = None
         total = 0
         for unit_id, vector in value.items():
@@ -826,6 +851,16 @@ class SimilarityRequest(AnalysisRequest):
                 )
         return value
 
+    @model_validator(mode="after")
+    def _embedding_source_is_unambiguous(self) -> SimilarityRequest:
+        if self.embeddings is not None and self.embedding_artifact_id is not None:
+            raise ValueError("Provide either embeddings or embedding_artifact_id, not both")
+        if self.method == "embedding_cosine" and not (
+            self.embeddings is not None or self.embedding_artifact_id
+        ):
+            raise ValueError("embedding_cosine requires embeddings or embedding_artifact_id")
+        return self
+
     @field_validator("query_embedding")
     @classmethod
     def _bound_query_embedding(cls, value: list[float] | None) -> list[float] | None:
@@ -837,15 +872,16 @@ class SimilarityRequest(AnalysisRequest):
 
     @model_validator(mode="after")
     def _embedding_cross_field(self) -> SimilarityRequest:
+        if self.method == "embedding_cosine" and self.embeddings and self.run_async:
+            raise ValueError(
+                "raw embedding_cosine vectors cannot run asynchronously; "
+                "use a managed embedding artifact or submit inline"
+            )
         if self.method == "embedding_cosine" and self.mode == "pairwise" and not self.top_k:
             raise ValueError(
                 "pairwise embedding_cosine requires top_k (dense all-pairs export is not allowed)"
             )
-        if (
-            self.query_embedding is not None
-            and self.embeddings
-            and self.embeddings.values()
-        ):
+        if self.query_embedding is not None and self.embeddings and self.embeddings.values():
             sample = next(iter(self.embeddings.values()))
             if len(self.query_embedding) != len(sample):
                 raise ValueError("query_embedding dimensionality must match embeddings vectors")
@@ -959,8 +995,8 @@ class ClassifierTrainRequest(BaseModel):
         default="holdout",
         description="holdout | nested_grouped_cv",
     )
-    nested_cv_outer_splits: int = Field(default=5, ge=2)
-    nested_cv_inner_splits: int = Field(default=3, ge=2)
+    nested_cv_outer_splits: int = Field(default=5, ge=2, le=MAX_NESTED_CV_SPLITS)
+    nested_cv_inner_splits: int = Field(default=3, ge=2, le=MAX_NESTED_CV_SPLITS)
     embedding_provider: str = Field(
         default="hashing",
         description="Used when algorithm is embedding_logistic or embedding_svm.",
@@ -978,6 +1014,21 @@ class ClassifierTrainRequest(BaseModel):
     threshold_utility_fn: float = -1.0
     name: str | None = None
     run_async: bool = True
+
+    @model_validator(mode="after")
+    def _bound_training_workload(self) -> ClassifierTrainRequest:
+        if self.n_bootstrap > MAX_CLASSIFIER_BOOTSTRAPS:
+            raise ValueError(f"n_bootstrap may not exceed {MAX_CLASSIFIER_BOOTSTRAPS}")
+        if self.hyperparameter_param_grid:
+            combinations = 1
+            for values in self.hyperparameter_param_grid.values():
+                combinations *= len(values)
+            if combinations > MAX_HYPERPARAMETER_GRID_COMBINATIONS:
+                raise ValueError(
+                    "hyperparameter_param_grid exceeds "
+                    f"{MAX_HYPERPARAMETER_GRID_COMBINATIONS} combinations"
+                )
+        return self
 
 
 class ClassifierPredictRequest(BaseModel):
@@ -1105,9 +1156,9 @@ class DriftMonitoringRequest(BaseModel):
 class TopicTrainRequest(CorpusFilters):
     unit_type: str
     algorithm: str = "lda"
-    n_topics: int = 5
+    n_topics: int = Field(default=5, ge=2, le=MAX_TOPIC_COUNT)
     preprocessing_profile_id: str | None = None
-    max_iterations: int = 25
+    max_iterations: int = Field(default=25, ge=1, le=MAX_TOPIC_ITERATIONS)
     random_seed: int = 42
     embedding_provider: str | None = Field(
         default=None,
@@ -1146,9 +1197,14 @@ class TopicLabelRequest(BaseModel):
 class TopicKSweepRequest(CorpusFilters):
     unit_type: str
     algorithm: str = "lda"
-    k_values: list[int] = Field(..., min_length=1, description="n_topics values to compare.")
+    k_values: list[int] = Field(
+        ...,
+        min_length=1,
+        max_length=MAX_TOPIC_SWEEP_VALUES,
+        description="n_topics values to compare.",
+    )
     preprocessing_profile_id: str | None = None
-    max_iterations: int = 25
+    max_iterations: int = Field(default=25, ge=1, le=MAX_TOPIC_ITERATIONS)
     random_seed: int = 42
     holdout_fraction: float | None = Field(
         default=None,
@@ -1162,23 +1218,37 @@ class TopicKSweepRequest(CorpusFilters):
     )
     run_async: bool = True
 
+    @field_validator("k_values")
+    @classmethod
+    def _bound_k_values(cls, values: list[int]) -> list[int]:
+        if any(value < 2 or value > MAX_TOPIC_COUNT for value in values):
+            raise ValueError(f"k_values must each be between 2 and {MAX_TOPIC_COUNT}")
+        return values
+
 
 class TopicSeedStabilityRequest(CorpusFilters):
     unit_type: str
     algorithm: str = "lda"
-    n_topics: int = 5
-    seeds: list[int] = Field(..., min_length=2, description="At least 2 seeds to compare.")
+    n_topics: int = Field(default=5, ge=2, le=MAX_TOPIC_COUNT)
+    seeds: list[int] = Field(
+        ...,
+        min_length=2,
+        max_length=MAX_TOPIC_SEED_STABILITY_SEEDS,
+        description="At least 2 seeds to compare.",
+    )
     preprocessing_profile_id: str | None = None
-    max_iterations: int = 25
+    max_iterations: int = Field(default=25, ge=1, le=MAX_TOPIC_ITERATIONS)
     run_async: bool = True
 
 
 class RobustnessRequest(BaseModel):
     snapshot_id: str
     algorithm: str = "logistic_regression"
-    seeds: list[int] | None = None
-    cv_folds: int = 5
-    class_weights: list[str | None] | None = None
+    seeds: list[int] | None = Field(default=None, max_length=MAX_ROBUSTNESS_SEEDS)
+    cv_folds: int = Field(default=5, ge=2, le=MAX_NESTED_CV_SPLITS)
+    class_weights: list[str | None] | None = Field(
+        default=None, max_length=MAX_ROBUSTNESS_CLASS_WEIGHTS
+    )
     test_size: float = 0.25
     group_field: str = Field(
         default="organization",
@@ -1188,7 +1258,10 @@ class RobustnessRequest(BaseModel):
         ),
     )
     max_groups: int | None = Field(
-        default=25, description="Cap on distinct group values swept by leave-one-group-out."
+        default=25,
+        ge=1,
+        le=MAX_ROBUSTNESS_GROUPS,
+        description="Cap on distinct group values swept by leave-one-group-out.",
     )
     temporal_field: str = Field(
         default="publication_year",
@@ -1317,6 +1390,20 @@ class AnalysisRunResponse(BaseModel):
     created_at: datetime
     rerunnable: bool = False
     rerun_block_reason: str | None = None
+    replayable: bool = False
+    exact_reproducible: bool = False
+    exact_reproduce_block_reason: str | None = None
+
+
+class RunResultsPageResponse(BaseModel):
+    artifact_id: str | None = None
+    checksum: str | None = None
+    key: str | None = None
+    items: list[Any] | None = None
+    data: Any = None
+    total: int | None = None
+    limit: int
+    offset: int
 
 
 class DemoSeedRequest(BaseModel):

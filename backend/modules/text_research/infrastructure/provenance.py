@@ -229,6 +229,7 @@ def _scientific_fields_from_spec(
     selection = feature.get("selection")
     model = spec_obj.model.model_dump(mode="json") if spec_obj.model else None
     validation = spec_obj.validation.model_dump(mode="json") if spec_obj.validation else None
+    analysis_parameters = dict(spec_obj.analysis.parameters or {})
     return {
         "corpus_snapshot_id": spec_obj.corpus.snapshot_id,
         "unit_type": spec_obj.corpus.unit_type,
@@ -239,6 +240,8 @@ def _scientific_fields_from_spec(
         "hyperparameters": model.get("hyperparameters") if model else None,
         "validation_strategy": validation,
         "random_seed": spec_obj.random_seed,
+        "embedding_identity": analysis_parameters.get("embedding_identity")
+        or (model or {}).get("hyperparameters", {}).get("embedding_identity"),
     }
 
 
@@ -270,6 +273,7 @@ def build_run_provenance(
     model_artifact_checksum: str | None = None,
     input_artifact_checksums: list[str] | None = None,
     output_artifact_checksums: list[str] | None = None,
+    embedding_identity: dict[str, Any] | None = None,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Assemble the canonical provenance block for a run or artifact manifest."""
@@ -382,6 +386,7 @@ def build_run_provenance(
         "parent_artifact_checksums": parents,
         "input_artifact_checksums": list(input_artifact_checksums or parents),
         "output_artifact_checksums": list(output_artifact_checksums or []),
+        "embedding_identity": embedding_identity or from_spec.get("embedding_identity"),
         "random_seeds": {
             "analysis": resolved_seed,
             "validation": (
@@ -428,6 +433,7 @@ def attach_provenance(
     model_artifact_checksum: str | None = None,
     input_artifact_checksums: list[str] | None = None,
     output_artifact_checksums: list[str] | None = None,
+    embedding_identity: dict[str, Any] | None = None,
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return parameters with a full ``provenance`` block and identity fields."""
@@ -470,6 +476,7 @@ def attach_provenance(
         model_artifact_checksum=model_artifact_checksum,
         input_artifact_checksums=input_artifact_checksums,
         output_artifact_checksums=output_artifact_checksums,
+        embedding_identity=embedding_identity or payload.get("embedding_identity"),
         extra=extra,
     )
     payload["provenance"] = provenance

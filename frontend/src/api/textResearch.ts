@@ -27,6 +27,17 @@ import type {
 
 const BASE = "/research";
 
+export type AnalysisCapabilities = {
+    operations: Record<string, { async: boolean }>;
+    run_types: Record<string, { async: boolean }>;
+};
+
+export async function getAnalysisCapabilities(
+    signal?: AbortSignal
+): Promise<AnalysisCapabilities> {
+    return apiFetch(`${BASE}/analysis-capabilities`, { signal });
+}
+
 export async function runIngestionQa(corpusId: string): Promise<AnalysisRun> {
     return apiFetch(`${BASE}/corpora/${corpusId}/ingestion-qa`, { method: "POST" });
 }
@@ -488,12 +499,13 @@ export async function assignCorpusAnnotationTasks(
 
 export async function listAnnotationCampaigns(
     projectId: string,
-    corpusId?: string
+    corpusId?: string,
+    signal?: AbortSignal
 ): Promise<AnnotationCampaign[]> {
     const search = new URLSearchParams();
     if (corpusId) search.set("corpus_id", corpusId);
     const qs = search.size ? `?${search}` : "";
-    return apiFetch(`${BASE}/projects/${projectId}/annotation-campaigns${qs}`);
+    return apiFetch(`${BASE}/projects/${projectId}/annotation-campaigns${qs}`, { signal });
 }
 
 export async function createAnnotationCampaign(
@@ -548,14 +560,18 @@ export async function getAnnotationProgress(corpusId: string): Promise<Annotatio
     return apiFetch(`${BASE}/corpora/${corpusId}/annotations/progress`);
 }
 
-export async function listUnitAnnotations(textUnitId: string): Promise<Annotation[]> {
-    return apiFetch(`${BASE}/text-units/${textUnitId}/annotations`);
+export async function listUnitAnnotations(
+    textUnitId: string,
+    signal?: AbortSignal
+): Promise<Annotation[]> {
+    return apiFetch(`${BASE}/text-units/${textUnitId}/annotations`, { signal });
 }
 
 export async function listAnnotationsForUnits(
     corpusId: string,
     textUnitIds: string[],
-    campaignId?: string
+    campaignId?: string,
+    signal?: AbortSignal
 ): Promise<Annotation[]> {
     if (!textUnitIds.length) return [];
     const search = new URLSearchParams();
@@ -563,7 +579,7 @@ export async function listAnnotationsForUnits(
         search.append("text_unit_ids", id);
     }
     if (campaignId) search.set("campaign_id", campaignId);
-    return apiFetch(`${BASE}/corpora/${encodeURIComponent(corpusId)}/annotations?${search}`);
+    return apiFetch(`${BASE}/corpora/${encodeURIComponent(corpusId)}/annotations?${search}`, { signal });
 }
 
 export async function getTextUnitContext(
@@ -802,9 +818,17 @@ export async function runDictionaryAnalysis(
     payload: AnalysisBasePayload & {
         dictionary_id?: string;
         dictionary_terms?: string[];
+        hierarchy?: Record<string, unknown>;
         group_by?: string;
     }
 ): Promise<AnalysisRun> {
+    if (
+        !payload.dictionary_id &&
+        !payload.dictionary_terms?.length &&
+        !Object.keys(payload.hierarchy ?? {}).length
+    ) {
+        throw new Error("dictionary_id, dictionary_terms, or hierarchy is required.");
+    }
     return apiFetch(`${BASE}/corpora/${corpusId}/analysis/dictionary`, {
         method: "POST",
         body: JSON.stringify(payload),
@@ -1157,19 +1181,22 @@ export async function cloneClassifierConfig(modelId: string): Promise<Record<str
 
 export async function listModelPredictions(
     modelId: string,
-    options: { limit?: number; offset?: number } = {}
+    options: { limit?: number; offset?: number } = {},
+    signal?: AbortSignal
 ): Promise<unknown[]> {
     const search = new URLSearchParams();
     search.set("limit", String(options.limit ?? 100));
     search.set("offset", String(options.offset ?? 0));
     return apiFetch(
-        `${BASE}/classifiers/${encodeURIComponent(modelId)}/predictions?${search}`
+        `${BASE}/classifiers/${encodeURIComponent(modelId)}/predictions?${search}`,
+        { signal }
     );
 }
 
 export async function listPredictionSets(
     corpusId: string,
-    options: { limit?: number; offset?: number } = {}
+    options: { limit?: number; offset?: number } = {},
+    signal?: AbortSignal
 ): Promise<
     Array<{
         id: string;
@@ -1187,7 +1214,7 @@ export async function listPredictionSets(
     const search = new URLSearchParams();
     search.set("limit", String(options.limit ?? 50));
     search.set("offset", String(options.offset ?? 0));
-    return apiFetch(`${BASE}/corpora/${encodeURIComponent(corpusId)}/prediction-sets?${search}`);
+    return apiFetch(`${BASE}/corpora/${encodeURIComponent(corpusId)}/prediction-sets?${search}`, { signal });
 }
 
 export async function getPredictionSet(predictionSetId: string): Promise<{
@@ -1246,7 +1273,8 @@ export async function listPredictionSetPredictions(
         maxUncertainty?: number;
         reviewStatus?: string;
         humanDisagreement?: boolean;
-    } = {}
+    } = {},
+    signal?: AbortSignal
 ): Promise<PredictionSetPredictionPage> {
     const query = new URLSearchParams({
         limit: String(options.limit ?? 100),
@@ -1257,7 +1285,10 @@ export async function listPredictionSetPredictions(
     if (options.maxUncertainty != null) query.set("max_uncertainty", String(options.maxUncertainty));
     if (options.reviewStatus) query.set("review_status", options.reviewStatus);
     if (options.humanDisagreement) query.set("human_disagreement", "true");
-    return apiFetch(`${BASE}/prediction-sets/${encodeURIComponent(predictionSetId)}/predictions?${query}`);
+    return apiFetch(
+        `${BASE}/prediction-sets/${encodeURIComponent(predictionSetId)}/predictions?${query}`,
+        { signal }
+    );
 }
 
 export async function compareClassifierDrift(
@@ -1553,6 +1584,13 @@ export async function getRun(runId: string, signal?: AbortSignal): Promise<Analy
     return apiFetch(`${BASE}/runs/${runId}`, { signal });
 }
 
+export async function getRunResultArtifact(
+    runId: string,
+    signal?: AbortSignal
+): Promise<Record<string, unknown>> {
+    return apiFetch(`${BASE}/runs/${runId}/results-artifact`, { signal });
+}
+
 export type ClonedRunParameters = {
     run_type: string;
     corpus_id: string | null;
@@ -1589,10 +1627,39 @@ export async function getRunProvenance(
     return apiFetch(`${BASE}/runs/${runId}/provenance`, { signal });
 }
 
-export async function rerunRun(runId: string, run_async = true): Promise<AnalysisRun> {
-    return apiFetch(`${BASE}/runs/${runId}/rerun?run_async=${run_async}`, {
+export async function rerunRun(
+    runId: string, run_async = true, exact = false
+): Promise<AnalysisRun> {
+    return apiFetch(`${BASE}/runs/${runId}/rerun?run_async=${run_async}&exact=${exact}`, {
         method: "POST",
     });
+}
+
+export type RunResultsPage = {
+    artifact_id: string | null;
+    checksum: string | null;
+    key: string | null;
+    items: unknown[] | null;
+    data: unknown;
+    total: number | null;
+    limit: number;
+    offset: number;
+};
+
+export async function getRunResults(
+    runId: string,
+    options: { key?: string; limit?: number; offset?: number } = {}
+): Promise<RunResultsPage> {
+    const query = new URLSearchParams({
+        limit: String(options.limit ?? 100),
+        offset: String(options.offset ?? 0),
+    });
+    if (options.key) query.set("key", options.key);
+    return apiFetch(`${BASE}/runs/${encodeURIComponent(runId)}/results?${query}`);
+}
+
+export function runResultsDownloadUrl(runId: string): string {
+    return researchExportUrl(`${BASE}/runs/${encodeURIComponent(runId)}/results/download`);
 }
 
 export async function cancelRun(runId: string): Promise<AnalysisRun> {

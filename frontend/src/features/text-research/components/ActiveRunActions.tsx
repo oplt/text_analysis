@@ -24,7 +24,6 @@ type ActiveRunActionsProps = {
 export function ActiveRunActions({
     run,
     projectId,
-    corpusId,
     size = "small",
 }: ActiveRunActionsProps) {
     const { showToast } = useSnackbar();

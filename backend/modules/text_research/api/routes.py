@@ -10,7 +10,7 @@ import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from fastapi.responses import PlainTextResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps.auth import get_current_user
@@ -29,7 +29,6 @@ from backend.modules.text_research.api.memo_routes import router as memo_router
 from backend.modules.text_research.api.schemas import (
     ActiveLearningAssignRequest,
     AdjudicationSaveRequest,
-    AnalysisRequest,
     AnalysisRunResponse,
     AnnotationAssignRequest,
     AnnotationCampaignAssignRequest,
@@ -50,7 +49,6 @@ from backend.modules.text_research.api.schemas import (
     CleaningProfileCreate,
     CleaningProfileResponse,
     CleaningProfileUpdate,
-    ClusteringRequest,
     CodebookCreate,
     CodebookResponse,
     ComparativeAnalysisRequest,
@@ -60,7 +58,6 @@ from backend.modules.text_research.api.schemas import (
     ContextualImportResponse,
     ContextualLinkRequest,
     ContextualObservationPage,
-    CooccurrenceRequest,
     CorpusAnnotationAssignRequest,
     CorpusAnnotationAssignResponse,
     CorpusDocumentCreate,
@@ -70,24 +67,15 @@ from backend.modules.text_research.api.schemas import (
     DatasetPreviewRequest,
     DatasetPreviewResponse,
     DemoSeedRequest,
-    DfmRequest,
-    DictionaryAnalysisRequest,
     DictionaryCreate,
     DictionaryResponse,
     DictionaryUpdate,
-    DimensionalityReductionRequest,
     DriftMonitoringRequest,
-    DuplicateDetectionRequest,
     ExportManifestResponse,
-    FrequencyRequest,
-    KeynessRequest,
-    KwicRequest,
-    MeasurementComparisonRequest,
     MetadataImportResponse,
     ModelLifecycleEventResponse,
     ModelLifecycleUpdateRequest,
     ModelPredictionItemResponse,
-    NgramRequest,
     PredictionSetDetailResponse,
     PredictionSetPredictionRowResponse,
     PredictionSetPredictionsPageResponse,
@@ -98,16 +86,14 @@ from backend.modules.text_research.api.schemas import (
     PreprocessingProfileResponse,
     PreprocessingProfileUpdate,
     QuantedaScriptResponse,
-    ReadabilityRequest,
     ReliabilityRequest,
     ResearchCorpusCreate,
     ResearchCorpusResponse,
     ResearchCorpusUpdate,
     RobustnessRequest,
+    RunResultsPageResponse,
     SegmentRequest,
-    SimilarityRequest,
     SourceTextResponse,
-    StatisticalModelRequest,
     TextUnitContextResponse,
     TopicKSweepRequest,
     TopicLabelRequest,
@@ -137,9 +123,6 @@ from backend.modules.text_research.application.dictionary_service import Diction
 from backend.modules.text_research.application.drift_service import DriftService
 from backend.modules.text_research.application.export_service import ExportService
 from backend.modules.text_research.application.ingestion_qa_service import IngestionQaService
-from backend.modules.text_research.application.measurement_validation_service import (
-    MeasurementValidationService,
-)
 from backend.modules.text_research.application.model_lifecycle_service import ModelLifecycleService
 from backend.modules.text_research.application.prediction_service import PredictionService
 from backend.modules.text_research.application.prediction_set_service import PredictionSetService
@@ -150,9 +133,6 @@ from backend.modules.text_research.application.reliability_service import Reliab
 from backend.modules.text_research.application.robustness_service import RobustnessService
 from backend.modules.text_research.application.run_service import RunService
 from backend.modules.text_research.application.segmentation_service import SegmentationService
-from backend.modules.text_research.application.statistical_modeling_service import (
-    StatisticalModelingService,
-)
 from backend.modules.text_research.application.topic_model_service import TopicModelService
 from backend.modules.text_research.domain.models import (
     AnalysisRun,
@@ -167,6 +147,7 @@ from backend.modules.text_research.domain.models import (
     TrainingDatasetSnapshot,
     loads,
 )
+from backend.modules.text_research.infrastructure.artifact_store import ArtifactStore
 
 router = APIRouter()
 router.include_router(corpora_router)
@@ -209,9 +190,7 @@ def _run_response(run: AnalysisRun) -> AnalysisRunResponse:
     from backend.modules.text_research.application.run_adapters import capability_for_run
 
     parameters = _loads(run.parameters_json)
-    capability = capability_for_run(
-        run, parameters if isinstance(parameters, dict) else {}
-    )
+    capability = capability_for_run(run, parameters if isinstance(parameters, dict) else {})
     return AnalysisRunResponse(
         id=run.id,
         project_id=run.project_id,
@@ -233,16 +212,43 @@ def _run_response(run: AnalysisRun) -> AnalysisRunResponse:
         created_at=run.created_at,
         rerunnable=capability.rerunnable,
         rerun_block_reason=capability.block_reason,
+        replayable=capability.replayable,
+        exact_reproducible=capability.exact_reproducible,
+        exact_reproduce_block_reason=capability.exact_reproduce_block_reason,
     )
 
 
 # TASK-022: quantitative analysis endpoints live on quantitative_router.
-from backend.modules.text_research.api import quantitative_routes as _quantitative_routes
+from backend.modules.text_research.api import (  # noqa: E402
+    quantitative_routes as _quantitative_routes,
+)
 
 _quantitative_routes.bind_run_response(_run_response)
 router.include_router(_quantitative_routes.router)
 # Compatibility re-export for tests and callers that still import from routes.
 _analysis_filters = _quantitative_routes._analysis_filters
+
+
+@router.get("/analysis-capabilities")
+async def analysis_capabilities(
+    current_user: User = Depends(get_current_user),
+) -> dict[str, dict[str, dict[str, bool]]]:
+    """Report async support from the versioned run-adapter registry."""
+    from backend.modules.text_research.application.run_adapters import (
+        ANALYSIS_OPERATION_RUN_TYPES,
+        RUN_ADAPTERS,
+    )
+
+    run_types = {
+        run_type: {"async": adapter.supports_async} for run_type, adapter in RUN_ADAPTERS.items()
+    }
+    return {
+        "operations": {
+            operation: {"async": run_types[run_type]["async"]}
+            for operation, run_type in ANALYSIS_OPERATION_RUN_TYPES.items()
+        },
+        "run_types": run_types,
+    }
 
 
 _TERMINAL_RUN_STATUSES = {"completed", "failed", "cancelled"}
@@ -1436,7 +1442,6 @@ async def list_campaign_adjudications(
 # ------------------------------------------------------------------
 
 
-
 # ------------------------------------------------------------------
 # Dictionaries
 # ------------------------------------------------------------------
@@ -2245,49 +2250,6 @@ async def run_robustness_sweep(
     return _run_response(run)
 
 
-@router.post("/corpora/{corpus_id}/analysis/statistical-model", response_model=AnalysisRunResponse)
-async def statistical_model(
-    corpus_id: str,
-    body: StatisticalModelRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await StatisticalModelingService(db).fit(
-        corpus_id,
-        user_id=current_user.id,
-        model=body.model,
-        dependent_var=body.dependent_var,
-        independent_vars=body.independent_vars,
-        rows=body.rows,
-        add_intercept=body.add_intercept,
-    )
-    return _run_response(run)
-
-
-@router.post(
-    "/corpora/{corpus_id}/analysis/measurement-comparison",
-    response_model=AnalysisRunResponse,
-)
-async def measurement_comparison(
-    corpus_id: str,
-    body: MeasurementComparisonRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    run = await MeasurementValidationService(db).compare(
-        corpus_id,
-        user_id=current_user.id,
-        source_a=body.source_a,
-        values_a=body.values_a,
-        source_b=body.source_b,
-        values_b=body.values_b,
-        ids=body.ids,
-        value_kind=body.value_kind,
-        subgroup=body.subgroup,
-    )
-    return _run_response(run)
-
-
 @router.post("/corpora/{corpus_id}/comparative/prevalence", response_model=AnalysisRunResponse)
 async def comparative_prevalence(
     corpus_id: str,
@@ -2370,6 +2332,29 @@ async def get_run(
 ):
     run = await RunService(db).get_run(run_id, user_id=current_user.id)
     return _run_response(run)
+
+
+@router.get("/runs/{run_id}/results-artifact")
+async def get_run_results_artifact(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return the full result payload when this authorized run was artifactized."""
+    run = await RunService(db).get_run(run_id, user_id=current_user.id)
+    results = _loads(run.results_json, {})
+    metrics = _loads(run.metrics_json, {})
+    artifact_id = (results.get("results_artifact_id") if isinstance(results, dict) else None) or (
+        metrics.get("results_artifact_id") if isinstance(metrics, dict) else None
+    )
+    if not artifact_id:
+        raise HTTPException(status_code=404, detail="Run results were not artifactized.")
+    from backend.modules.text_research.infrastructure.artifact_store import ArtifactStore
+
+    try:
+        return ArtifactStore().load(str(artifact_id))
+    except (KeyError, FileNotFoundError) as exc:
+        raise HTTPException(status_code=404, detail="Run result artifact is unavailable.") from exc
 
 
 @router.get("/runs/{run_id}/events")
@@ -2544,15 +2529,81 @@ async def get_run_provenance(
     return await RunService(db).get_provenance(run_id, user_id=current_user.id)
 
 
+@router.get("/runs/{run_id}/results", response_model=RunResultsPageResponse)
+async def get_run_results(
+    run_id: str,
+    key: str | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=1_000),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Read a paged result array after authorizing through the owning run."""
+    run = await RunService(db).get_run(run_id, user_id=current_user.id)
+    inline = _loads(run.results_json, {}) or {}
+    artifact_id = inline.get("results_artifact_id") if isinstance(inline, dict) else None
+    payload: Any = inline
+    descriptor = None
+    if artifact_id:
+        descriptor = ArtifactStore().get(artifact_id)
+        if descriptor is None:
+            raise HTTPException(status_code=404, detail="Result artifact is unavailable.")
+        payload = ArtifactStore().load(artifact_id)
+
+    if key is not None:
+        if not isinstance(payload, dict) or key not in payload:
+            raise HTTPException(status_code=404, detail="Result key was not found.")
+        payload = payload[key]
+    if isinstance(payload, list):
+        return RunResultsPageResponse(
+            artifact_id=artifact_id,
+            checksum=descriptor.checksum if descriptor else None,
+            key=key,
+            items=payload[offset : offset + limit],
+            total=len(payload),
+            limit=limit,
+            offset=offset,
+        )
+    return RunResultsPageResponse(
+        artifact_id=artifact_id,
+        checksum=descriptor.checksum if descriptor else None,
+        key=key,
+        data=payload,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get("/runs/{run_id}/results/download")
+async def download_run_results(
+    run_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Download the complete managed result payload after run-level authorization."""
+    run = await RunService(db).get_run(run_id, user_id=current_user.id)
+    inline = _loads(run.results_json, {}) or {}
+    artifact_id = inline.get("results_artifact_id") if isinstance(inline, dict) else None
+    payload = ArtifactStore().load(artifact_id) if artifact_id else inline
+    return StreamingResponse(
+        iter([json.dumps(payload, default=str)]),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{run_id}-results.json"'},
+    )
+
+
 @router.post("/runs/{run_id}/rerun", response_model=AnalysisRunResponse, status_code=202)
 async def rerun(
     run_id: str,
     run_async: bool = True,
+    exact: bool = False,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """One-click reproducible re-execution of a prior analysis run."""
-    run = await RunService(db).rerun(run_id, user_id=current_user.id, run_async=run_async)
+    run = await RunService(db).rerun(
+        run_id, user_id=current_user.id, run_async=run_async, exact=exact
+    )
     return _run_response(run)
 
 
@@ -2648,25 +2699,36 @@ async def export_units_csv(
     )
 
 
-@router.get("/corpora/{corpus_id}/export/annotations.csv", response_class=PlainTextResponse)
+@router.get("/corpora/{corpus_id}/export/annotations.csv")
 async def export_annotations_csv(
     corpus_id: str,
     codebook_id: str = Query(...),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await ExportService(db).export_annotations_csv(
-        corpus_id, user_id=current_user.id, codebook_id=codebook_id
+    return StreamingResponse(
+        ExportService(db).iter_annotations_csv(
+            corpus_id, user_id=current_user.id, codebook_id=codebook_id
+        ),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{corpus_id}-annotations.csv"'},
     )
 
 
-@router.get("/classifiers/{model_id}/export/predictions.csv", response_class=PlainTextResponse)
+@router.get("/classifiers/{model_id}/export/predictions.csv")
 async def export_predictions_csv(
     model_id: str,
+    max_rows: int | None = Query(default=None, ge=1),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await ExportService(db).export_predictions_csv(model_id, user_id=current_user.id)
+    return StreamingResponse(
+        ExportService(db).iter_predictions_csv(
+            model_id, user_id=current_user.id, max_rows=max_rows
+        ),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{model_id}-predictions.csv"'},
+    )
 
 
 # ------------------------------------------------------------------

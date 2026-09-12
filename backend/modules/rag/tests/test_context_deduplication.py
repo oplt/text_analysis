@@ -73,9 +73,7 @@ class ContextDeduplicationTests(unittest.TestCase):
             _chunk("b1", "doc-b", 0.9, ["b"], "b1"),
             _chunk("a2", "doc-a", 0.85, ["c"], "a2"),
         ]
-        ordered = order_context_chunks(
-            chunks, policy=ContextOrderingPolicy.GROUPED_BY_DOCUMENT
-        )
+        ordered = order_context_chunks(chunks, policy=ContextOrderingPolicy.GROUPED_BY_DOCUMENT)
         self.assertEqual([chunk.chunk_id for chunk in ordered], ["a1", "a2", "b1"])
 
     def test_chronology_when_metadata_uses_page_order(self):

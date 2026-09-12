@@ -83,6 +83,10 @@ def build_quantitative_spec(
     if config_hash is None and config_dict is not None:
         config_hash = preprocessing_config_fingerprint(config_dict)
 
+    from backend.modules.text_research.application.analysis_identity import (
+        normalize_analysis_parameters,
+    )
+
     return build_spec_from_request(
         analysis_type,
         corpus_id,
@@ -91,7 +95,7 @@ def build_quantitative_spec(
         preprocessing_profile_id=preprocessing_profile_id,
         cleaning_profile_id=cleaning_profile_id,
         preprocessing_config_hash=config_hash,
-        analysis_parameters=analysis_parameters,
+        analysis_parameters=normalize_analysis_parameters(analysis_type, analysis_parameters or {}),
         random_seed=random_seed,
         snapshot_id=snapshot_id,
         **kwargs,

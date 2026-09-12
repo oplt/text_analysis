@@ -97,12 +97,8 @@ class DictionaryPrecedenceTests(unittest.IsolatedAsyncioTestCase):
                 side_effect=fake_match,
             ),
             patch(
-                "backend.modules.text_research.application.quantitative_analysis_service._tokenized_from_prepared",
-                return_value=[["alpha", "beta", "gamma"]],
-            ),
-            patch(
                 "backend.modules.text_research.application.quantitative_analysis_service.asyncio.to_thread",
-                new=AsyncMock(side_effect=lambda fn, *a, **k: fn()),
+                new=AsyncMock(side_effect=lambda fn, *a, **k: fn(*a, **k)),
             ),
         ):
             await service.dictionary(
@@ -121,7 +117,7 @@ class DictionaryPrecedenceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(captured["results"]["dictionary"]["dictionary_id"], "dict-1")
 
     def test_schema_documents_override_semantics(self) -> None:
-        req = DictionaryAnalysisRequest(
+        DictionaryAnalysisRequest(
             unit_type="paragraph",
             dictionary_id="dict-1",
             dictionary_terms=["custom_a", "custom_b"],

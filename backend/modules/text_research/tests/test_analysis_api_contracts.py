@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+from backend.modules.text_research.api.quantitative_routes import router as quantitative_router
+from backend.modules.text_research.api.routes import router as research_router
 from backend.modules.text_research.api.schemas import (
     MeasurementComparisonRequest,
     StatisticalModelRequest,
 )
-from backend.modules.text_research.api.quantitative_routes import router as quantitative_router
-from backend.modules.text_research.api.routes import router as research_router
 
 
 def _paths(router) -> set[str]:

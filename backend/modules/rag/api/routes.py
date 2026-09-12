@@ -255,9 +255,7 @@ async def retrieve_chunks(
                 source_span_ids=(chunk.metadata or {}).get("source_span_ids"),
                 char_start=(chunk.metadata or {}).get("char_start"),
                 char_end=(chunk.metadata or {}).get("char_end"),
-                offset_coordinate_system=(chunk.metadata or {}).get(
-                    "offset_coordinate_system"
-                ),
+                offset_coordinate_system=(chunk.metadata or {}).get("offset_coordinate_system"),
                 offset_scope=(chunk.metadata or {}).get("offset_scope"),
                 offset_scope_id=(chunk.metadata or {}).get("offset_scope_id"),
                 source_spans=(chunk.metadata or {}).get("source_spans"),

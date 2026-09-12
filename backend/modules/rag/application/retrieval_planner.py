@@ -66,9 +66,7 @@ def plan_retrieval(
     rerank_cap = max(0, int(getattr(config, "rerank_max_depth", 40)))
     rerank_enabled = bool(getattr(config, "rerank_enabled", False))
     rerank_method = (
-        "unicode_heuristic"
-        if bool(getattr(config, "rerank_heuristic_enabled", False))
-        else "noop"
+        "unicode_heuristic" if bool(getattr(config, "rerank_heuristic_enabled", False)) else "noop"
     )
 
     diversify = resolved_intent in {

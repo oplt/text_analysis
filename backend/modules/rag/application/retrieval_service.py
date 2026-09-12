@@ -54,11 +54,7 @@ def _coerce_branch_result(
     """Normalize gather outcomes, including unexpected exceptions."""
     if isinstance(result, Exception):
         return [], False, type(result).__name__
-    if (
-        isinstance(result, tuple)
-        and len(result) == 3
-        and isinstance(result[1], bool)
-    ):
+    if isinstance(result, tuple) and len(result) == 3 and isinstance(result[1], bool):
         chunks, ok, err = result
         return list(chunks or []), bool(ok), err
     return [], False, "invalid_branch_result"
@@ -213,9 +209,7 @@ class RetrievalService:
     ) -> RetrievalOutcome:
         trace_context = RagTraceContext()
         if not self.config.enabled:
-            return RetrievalOutcome(
-                chunks=[], no_matches=True, request_id=trace_context.request_id
-            )
+            return RetrievalOutcome(chunks=[], no_matches=True, request_id=trace_context.request_id)
 
         document_ids, owner_scoped = _parse_scope(filters)
         index_revision_ids = (filters or {}).get("index_revision_ids")
@@ -293,14 +287,10 @@ class RetrievalService:
             "reranker": f"{self.ranker.name}:{self.ranker.version}",
             "parent_context_enabled": exclude_parents,
             "retrieval_fingerprint": (
-                self.config.retrieval.fingerprint()
-                if hasattr(self.config, "retrieval")
-                else None
+                self.config.retrieval.fingerprint() if hasattr(self.config, "retrieval") else None
             ),
             "reranking_fingerprint": (
-                self.config.reranking.fingerprint()
-                if hasattr(self.config, "reranking")
-                else None
+                self.config.reranking.fingerprint() if hasattr(self.config, "reranking") else None
             ),
         }
         cache_variant = (
@@ -440,9 +430,7 @@ class RetrievalService:
                     lexical_queries_seen.add(lexical_query)
                     run_lexical_flags.append(True)
 
-            variant_concurrency = max(
-                1, int(getattr(self.config, "query_variant_concurrency", 3))
-            )
+            variant_concurrency = max(1, int(getattr(self.config, "query_variant_concurrency", 3)))
             variant_semaphore = asyncio.Semaphore(variant_concurrency)
             embedding_tasks: dict[str, asyncio.Task] = {}
             embedding_guard = asyncio.Lock()
@@ -611,9 +599,7 @@ class RetrievalService:
                 if rerank_result.failed:
                     degraded = True
                     degradation_reason = ";".join(
-                        reason
-                        for reason in (degradation_reason, "reranker_failed")
-                        if reason
+                        reason for reason in (degradation_reason, "reranker_failed") if reason
                     )
 
             if plan.diversify:
@@ -689,12 +675,12 @@ class RetrievalService:
                     project_id=project_id,
                     query=query,
                     top_k=plan.top_k,
-                filters=cache_filters,
-                chunks=filtered,
-                provenance=outcome.retrieval_provenance,
-                variant=cache_variant,
-                identity=cache_identity,
-                artifact_version=getattr(self.config, "retrieval_cache_artifact_version", "v2"),
+                    filters=cache_filters,
+                    chunks=filtered,
+                    provenance=outcome.retrieval_provenance,
+                    variant=cache_variant,
+                    identity=cache_identity,
+                    artifact_version=getattr(self.config, "retrieval_cache_artifact_version", "v2"),
                 )
             metrics.rag_retrieved_chunks.observe(len(filtered))
             if outcome.no_matches:

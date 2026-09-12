@@ -93,24 +93,37 @@ class RagConfig:
     @property
     def chunking(self) -> ChunkingConfig:
         return ChunkingConfig(
-            self.chunker_version, self.chunk_policy_version, self.chunk_size,
-            self.chunk_overlap, self.parent_window_size,
+            self.chunker_version,
+            self.chunk_policy_version,
+            self.chunk_size,
+            self.chunk_overlap,
+            self.parent_window_size,
         )
 
     @property
     def embedding(self) -> EmbeddingConfig:
         return EmbeddingConfig(
-            self.embedding_provider, self.embedding_model, self.embedding_model_version,
-            self.embedding_dimensions, self.embedding_preprocessing_version,
+            self.embedding_provider,
+            self.embedding_model,
+            self.embedding_model_version,
+            self.embedding_dimensions,
+            self.embedding_preprocessing_version,
         )
 
     @property
     def retrieval(self) -> RetrievalConfig:
         return RetrievalConfig(
-            self.retrieval_algorithm_version, self.index_version, self.fusion_method,
-            self.rrf_k, self.dense_candidates, self.lexical_candidates, self.top_k,
-            self.score_threshold, self.parent_context_enabled,
-            self.retrieval_branch_concurrency, self.query_variant_concurrency,
+            self.retrieval_algorithm_version,
+            self.index_version,
+            self.fusion_method,
+            self.rrf_k,
+            self.dense_candidates,
+            self.lexical_candidates,
+            self.top_k,
+            self.score_threshold,
+            self.parent_context_enabled,
+            self.retrieval_branch_concurrency,
+            self.query_variant_concurrency,
         )
 
     @property
@@ -133,7 +146,8 @@ class RagConfig:
     @property
     def synthesis(self) -> SynthesisConfig:
         return SynthesisConfig(
-            self.synthesis_passages_per_document, self.synthesis_reduce_token_budget,
+            self.synthesis_passages_per_document,
+            self.synthesis_reduce_token_budget,
             self.synthesis_batch_size,
         )
 
@@ -179,9 +193,7 @@ class RagConfig:
             pdf_header_footer_suppression=bool(
                 getattr(settings, "RAG_PDF_HEADER_FOOTER_SUPPRESSION", True)
             ),
-            text_decode_max_replacement_ratio=float(
-                settings.RAG_TEXT_DECODE_MAX_REPLACEMENT_RATIO
-            ),
+            text_decode_max_replacement_ratio=float(settings.RAG_TEXT_DECODE_MAX_REPLACEMENT_RATIO),
             unicode_normalization="NFC",
             rerank_intent_depth_overrides={
                 "fact": 0,

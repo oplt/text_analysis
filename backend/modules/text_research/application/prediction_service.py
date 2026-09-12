@@ -90,11 +90,8 @@ def freeze_prediction_selection(
 ) -> dict[str, Any]:
     """Immutable selection identity for reproducible / restartable prediction."""
     annotated_sorted = sorted(annotated_unit_ids or ())
-    annotated_hash = (
-        hashlib.sha256(",".join(annotated_sorted).encode("utf-8")).hexdigest()
-        if annotated_sorted
-        else None
-    )
+    # SHA-256 of the empty payload is a stable identity for an empty freeze.
+    annotated_hash = hashlib.sha256(",".join(annotated_sorted).encode("utf-8")).hexdigest()
     doc_ids = sorted(document_ids or ())
     payload = {
         "corpus_id": corpus_id,
@@ -148,8 +145,8 @@ class PredictionService(ResearchAccessMixin):
 
     async def execute_prediction(self, run_id: str) -> AnalysisRun:
         from backend.modules.text_research.application.run_lifecycle import (
-            RunCancelledError,
             TERMINAL_RUN_STATUSES,
+            RunCancelledError,
             complete_if_active,
             ensure_not_cancelled,
             fail_if_active,
@@ -170,6 +167,7 @@ class PredictionService(ResearchAccessMixin):
         )
         await self.db.commit()
 
+        prediction_set = None
         try:
             run = await ensure_not_cancelled(self.repo, run)
             model = await self.repo.get_model(params["model_id"])
@@ -185,8 +183,7 @@ class PredictionService(ResearchAccessMixin):
             annotated_unit_ids: set[str] | None = None
             if params.get("only_unannotated"):
                 frozen = params.get("selection_snapshot") or {}
-                prior_hash = frozen.get("annotated_unit_ids_hash")
-                if prior_hash and frozen.get("annotated_unit_ids"):
+                if "annotated_unit_ids" in frozen:
                     annotated_unit_ids = set(frozen["annotated_unit_ids"])
                 else:
                     annotated_unit_ids = await self.repo.list_annotated_text_unit_ids(
@@ -228,6 +225,17 @@ class PredictionService(ResearchAccessMixin):
             label_names = loads(model.label_ids_json, [])
             training_metrics = loads(model.metrics_json, {})
             thresholds = training_metrics.get("thresholds")
+            from backend.modules.text_research.application.prediction_set_service import (
+                PredictionSetService,
+            )
+
+            prediction_set_service = PredictionSetService(self.db)
+            prediction_set = await prediction_set_service.create_draft_from_run(
+                run=run,
+                model=model,
+                created_by=run.created_by,
+                extra_metadata={"selection_snapshot": params.get("selection_snapshot")},
+            )
 
             await self.repo.update_run(run, progress_stage="predicting")
             await self.db.commit()
@@ -246,6 +254,8 @@ class PredictionService(ResearchAccessMixin):
                     )
                     for unit, prediction in zip(batch_units, batch_predictions, strict=True)
                 ]
+                for row in rows:
+                    row["prediction_set_id"] = prediction_set.id
                 await self.repo.bulk_upsert_predictions(rows)
                 predicted_unit_ids.extend(unit.id for unit in batch_units)
                 units_predicted += len(batch_units)
@@ -275,20 +285,9 @@ class PredictionService(ResearchAccessMixin):
 
             run = await ensure_not_cancelled(self.repo, run)
             await self.repo.update_run(run, progress_stage="saving")
-            from backend.modules.text_research.application.prediction_set_service import (
-                PredictionSetService,
-            )
-
-            prediction_set = await PredictionSetService(self.db).create_from_run(
-                run=run,
-                model=model,
-                unit_ids=predicted_unit_ids,
-                created_by=run.created_by,
-                extra_metadata={"selection_snapshot": params.get("selection_snapshot")},
-            )
 
             run = await ensure_not_cancelled(self.repo, run)
-            await complete_if_active(
+            completed = await complete_if_active(
                 self.repo,
                 run,
                 progress_stage="completed",
@@ -309,10 +308,21 @@ class PredictionService(ResearchAccessMixin):
                     }
                 ),
             )
+            if completed is None:
+                await self.repo.discard_prediction_set(prediction_set)
+                await self.db.commit()
+                refreshed = await self.repo.get_run(run_id)
+                assert refreshed is not None
+                return refreshed
+            await prediction_set_service.publish(prediction_set, unit_ids=predicted_unit_ids)
             await self.db.commit()
         except RunCancelledError:
+            if prediction_set is not None:
+                await self.repo.discard_prediction_set(prediction_set)
             await self.db.commit()
         except Exception as exc:  # noqa: BLE001
+            if prediction_set is not None:
+                await self.repo.discard_prediction_set(prediction_set)
             await fail_if_active(
                 self.repo,
                 run,

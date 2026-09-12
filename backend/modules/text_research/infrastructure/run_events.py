@@ -48,9 +48,7 @@ def serialize_run(run: AnalysisRun) -> dict[str, Any]:
         return value.isoformat()
 
     parameters = loads(run.parameters_json)
-    capability = capability_for_run(
-        run, parameters if isinstance(parameters, dict) else {}
-    )
+    capability = capability_for_run(run, parameters if isinstance(parameters, dict) else {})
     return {
         "id": run.id,
         "project_id": run.project_id,

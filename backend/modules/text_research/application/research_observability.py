@@ -119,8 +119,7 @@ def log_terminal_transition(
             analysis_type=analysis_type or "unknown",
         ).observe(max(0, int(result_bytes)))
     logger.info(
-        "research_terminal run_id=%s analysis_type=%s status=%s "
-        "artifact_bytes=%s result_bytes=%s",
+        "research_terminal run_id=%s analysis_type=%s status=%s artifact_bytes=%s result_bytes=%s",
         run_id,
         analysis_type,
         status,

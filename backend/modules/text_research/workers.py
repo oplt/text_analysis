@@ -49,6 +49,12 @@ def _run_with_session(coro_factory):
     run_async_in_sync_context(_run())
 
 
+async def _claim_run_for_execution(db, run_id: str) -> bool:
+    from backend.modules.text_research.application.execution_service import ExecutionService
+
+    return await ExecutionService.claim_run_for_execution(db=db, run_id=run_id)
+
+
 def segmentation_sync(*, run_id: str, user_id: str) -> None:
     from backend.modules.text_research.application.segmentation_service import SegmentationService
 
@@ -71,6 +77,9 @@ def classifier_training_sync(*, run_id: str, user_id: str) -> None:
     )
 
     async def _execute(db):
+        if not await _claim_run_for_execution(db, run_id):
+            logger.info("Classifier training skipped; run already claimed run=%s", run_id)
+            return
         service = ClassificationService(db)
         await service.execute_training(run_id)
 
@@ -141,6 +150,9 @@ def prediction_sync(*, run_id: str, user_id: str) -> None:
     from backend.modules.text_research.application.prediction_service import PredictionService
 
     async def _execute(db):
+        if not await _claim_run_for_execution(db, run_id):
+            logger.info("Prediction skipped; run already claimed run=%s", run_id)
+            return
         await PredictionService(db).execute_prediction(run_id)
 
     _run_with_session(_execute)
@@ -152,6 +164,9 @@ def quantitative_analysis_sync(*, run_id: str, user_id: str) -> None:
     )
 
     async def _execute(db):
+        if not await _claim_run_for_execution(db, run_id):
+            logger.info("Quantitative analysis skipped; run already claimed run=%s", run_id)
+            return
         await QuantitativeAnalysisService(db).execute_quantitative(run_id)
 
     try:
@@ -194,7 +209,12 @@ def queue_segmentation(*, run_id: str, user_id: str, task_id: str | None = None)
     )
 
 
-def queue_classifier_training(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
+def queue_classifier_training(
+    *,
+    run_id: str,
+    user_id: str,
+    task_id: str | None = None,
+) -> str | None:
     from backend.workers.tasks import research_classifier_training_task
 
     return dispatch_background_sync_job(
@@ -208,7 +228,12 @@ def queue_classifier_training(*, run_id: str, user_id: str, task_id: str | None 
     )
 
 
-def queue_topic_model_training(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
+def queue_topic_model_training(
+    *,
+    run_id: str,
+    user_id: str,
+    task_id: str | None = None,
+) -> str | None:
     from backend.workers.tasks import research_topic_model_training_task
 
     return dispatch_background_sync_job(
@@ -236,7 +261,12 @@ def queue_topic_k_sweep(*, run_id: str, user_id: str, task_id: str | None = None
     )
 
 
-def queue_topic_seed_stability(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
+def queue_topic_seed_stability(
+    *,
+    run_id: str,
+    user_id: str,
+    task_id: str | None = None,
+) -> str | None:
     from backend.workers.tasks import research_topic_seed_stability_task
 
     return dispatch_background_sync_job(
@@ -278,7 +308,12 @@ def queue_prediction(*, run_id: str, user_id: str, task_id: str | None = None) -
     )
 
 
-def queue_quantitative_analysis(*, run_id: str, user_id: str, task_id: str | None = None) -> str | None:
+def queue_quantitative_analysis(
+    *,
+    run_id: str,
+    user_id: str,
+    task_id: str | None = None,
+) -> str | None:
     from backend.workers.tasks import research_quantitative_analysis_task
 
     return dispatch_background_sync_job(

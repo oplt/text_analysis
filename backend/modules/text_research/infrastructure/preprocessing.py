@@ -242,7 +242,9 @@ def describe_implementation(
             "ftfy": _pkg_version("ftfy"),
             "snowballstemmer": _pkg_version("snowballstemmer"),
             "simplemma": _pkg_version("simplemma"),
-            "spacy": (spacy_meta or {}).get("package_version") if uses_spacy else _pkg_version("spacy"),
+            "spacy": (
+                (spacy_meta or {}).get("package_version") if uses_spacy else _pkg_version("spacy")
+            ),
         },
         "stemming_available": stemming_available(lang_code),
         "lemmatization_available": lemmatization_available(lang_code),
@@ -391,9 +393,7 @@ def tokenize(text: str, config: dict[str, Any] | None = None) -> list[str]:
                 phrases = morph_normalize_phrase_parts(
                     phrases, normalize_part=lambda p: snowball_stem(p, language)
                 )
-                tokens = [
-                    t if t in negation_words else snowball_stem(t, language) for t in tokens
-                ]
+                tokens = [t if t in negation_words else snowball_stem(t, language) for t in tokens]
         tokens = merge_phrase_tokens(tokens, phrases)
     elif not cfg.get("pos_lemmatization"):
         if cfg.get("lemmatization"):

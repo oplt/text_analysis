@@ -51,10 +51,13 @@ class EmbeddingRevisionIdentityTests(unittest.IsolatedAsyncioTestCase):
     async def test_embedding_service_rejects_wrong_dimensions_before_persistence(self):
         config = replace(RagConfig.from_settings(), embedding_dimensions=3)
         service = EmbeddingService(config)
-        with patch(
-            "backend.modules.rag.application.embedding_service.embed_texts_with_cache",
-            AsyncMock(return_value=[[0.1, 0.2]]),
-        ), self.assertRaisesRegex(ValueError, "unexpected dimension"):
+        with (
+            patch(
+                "backend.modules.rag.application.embedding_service.embed_texts_with_cache",
+                AsyncMock(return_value=[[0.1, 0.2]]),
+            ),
+            self.assertRaisesRegex(ValueError, "unexpected dimension"),
+        ):
             await service.embed_texts(["evidence"])
 
     async def test_document_revision_persists_complete_embedding_identity(self):

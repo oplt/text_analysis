@@ -62,7 +62,7 @@ export default function PredictionSetsView() {
 
     const setsQuery = useQuery({
         queryKey: queryKeys.textResearch.predictionSets(ctx.selectedCorpusId),
-        queryFn: () => listPredictionSets(ctx.selectedCorpusId, { limit: 100 }),
+        queryFn: ({ signal }) => listPredictionSets(ctx.selectedCorpusId, { limit: 100 }, signal),
         enabled: Boolean(ctx.selectedCorpusId),
         staleTime: QUERY_STALE_TIMES.researchPredictionSets,
     });
@@ -95,7 +95,7 @@ export default function PredictionSetsView() {
             pageOffset,
             filters,
         ],
-        queryFn: () =>
+        queryFn: ({ signal }) =>
             listPredictionSetPredictions(selectedSetId, {
                 limit: 100,
                 offset: pageOffset,
@@ -104,7 +104,7 @@ export default function PredictionSetsView() {
                 maxUncertainty: filters.maxUncertainty ? Number(filters.maxUncertainty) : undefined,
                 reviewStatus: filters.reviewStatus || undefined,
                 humanDisagreement: filters.humanDisagreementOnly || undefined,
-            }),
+            }, signal),
         enabled: Boolean(selectedSetId),
         staleTime: QUERY_STALE_TIMES.researchPredictionSets,
     });

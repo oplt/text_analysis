@@ -44,10 +44,21 @@ def experiment_report(
 ) -> dict[str, Any]:
     """Serialize an auditable candidate result without selecting a global default."""
     required = {
-        "recall_at_5", "recall_at_10", "precision_at_k", "mrr", "ndcg_at_10",
-        "source_diversity", "duplicate_ratio", "citation_precision", "citation_recall",
-        "citation_structural_validity", "unsupported_claim_rate", "context_tokens",
-        "retrieval_p50_ms", "retrieval_p95_ms", "retrieval_p99_ms",
+        "recall_at_5",
+        "recall_at_10",
+        "precision_at_k",
+        "mrr",
+        "ndcg_at_10",
+        "source_diversity",
+        "duplicate_ratio",
+        "citation_precision",
+        "citation_recall",
+        "citation_structural_validity",
+        "unsupported_claim_rate",
+        "context_tokens",
+        "retrieval_p50_ms",
+        "retrieval_p95_ms",
+        "retrieval_p99_ms",
     }
     missing = required - set(metrics)
     if missing:

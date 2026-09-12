@@ -2415,7 +2415,7 @@ def fit_embedding_text_classifier(
 
     provider = get_embedding_provider(embedding_provider, **embedding_kwargs)
     vectorizer = _EmbeddingVectorizer(provider)
-    return _fit_classifier_and_evaluate(
+    result = _fit_classifier_and_evaluate(
         vectorizer,
         X_train_texts,
         y_train,
@@ -2441,6 +2441,12 @@ def fit_embedding_text_classifier(
         ci_confidence_level=ci_confidence_level,
         calibration_method=calibration_method,
     )
+    result["feature_config"] = {
+        "type": "embedding",
+        "provider": embedding_provider,
+    }
+    result["feature_space"] = feature_space_summary(result["vectorizer"], result["model"])
+    return result
 
 
 def nested_grouped_cv_evaluation(

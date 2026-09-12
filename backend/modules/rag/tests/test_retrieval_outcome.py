@@ -151,7 +151,9 @@ class RetrievalOutcomeTest(unittest.IsolatedAsyncioTestCase):
         )
         service.repo = MagicMock()
         service.repo.lexical_search = AsyncMock(return_value=[])
-        service.ranker = SimpleNamespace(name="none", version="0", rerank=lambda q, c, top_n: c[:top_n])
+        service.ranker = SimpleNamespace(
+            name="none", version="0", rerank=lambda q, c, top_n: c[:top_n]
+        )
 
         with (
             patch(

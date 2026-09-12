@@ -24,6 +24,7 @@ import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../../app/snackbarContext";
 import {
     assistantRetrieve,
+    getAnalysisCapabilities,
     getCorpusMetadataFacets,
     getRun,
     listDictionaries,
@@ -63,6 +64,7 @@ import { AdvancedDfmPanel } from "../components/AdvancedDfmPanel";
 import { DEFAULT_DFM_CONFIG, type AdvancedDfmConfig } from "../components/advancedDfmConfig";
 import { ScientificWarnings } from "../components/ScientificWarnings";
 import { collectScientificWarnings } from "../components/scientificWarnings";
+import { resolveAsyncRunControls } from "../analysisAsync";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { filterKwicRows, kwicRowsToCsv, toKwicSearchRows } from "../kwicTableModel";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
@@ -995,6 +997,13 @@ export default function AnalysisView() {
     const [coocMinFreq, setCoocMinFreq] = useState(1);
     const [coocMinCount, setCoocMinCount] = useState(1);
     const [metadataFilters, setMetadataFilters] = useState<Record<string, string>>({});
+    const [runAsync, setRunAsync] = useState(true);
+
+    const capabilitiesQuery = useQuery({
+        queryKey: ["text-research", "analysis-capabilities"],
+        queryFn: ({ signal }) => getAnalysisCapabilities(signal),
+        staleTime: QUERY_STALE_TIMES.researchReference,
+    });
 
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.preprocessingProfiles(ctx.projectId),
@@ -1030,6 +1039,28 @@ export default function AnalysisView() {
         ...metadataFilters,
         ...(profileId ? { preprocessing_profile_id: profileId } : {}),
     };
+    const operationByTab: Partial<Record<AnalysisTab, string>> = {
+        overview: "corpus_stats",
+        frequencies: "frequencies",
+        ngrams: "ngrams",
+        kwic: "kwic",
+        dfm: "dfm",
+        keyness: "keyness",
+        dictionaries: "dictionary",
+        cooccurrence: "cooccurrence",
+        similarity: "similarity",
+        duplicates: "duplicate_detection",
+        clustering: "clustering",
+        dimensionality: "dimensionality_reduction",
+        readability: "readability",
+    };
+    const asyncControls = resolveAsyncRunControls(
+        capabilitiesQuery.data,
+        operationByTab[tab] ?? "",
+        runAsync
+    );
+    const supportsAsync = asyncControls.supportsAsync;
+    const asyncPayload = asyncControls.payload;
 
     const onRunSuccess = (run: AnalysisRun, message: string) => {
         setRunId(run.id);
@@ -1051,6 +1082,7 @@ export default function AnalysisView() {
             runFrequencies(ctx.selectedCorpusId, {
                 ...basePayload,
                 top_n: topN,
+                ...asyncPayload,
             }),
         onSuccess: (run) => onRunSuccess(run, "Frequency analysis started."),
         onError: (error) => onRunError(error, "Failed to run frequencies."),
@@ -1062,6 +1094,7 @@ export default function AnalysisView() {
                 ...basePayload,
                 n: ngramN,
                 top_n: topN,
+                ...asyncPayload,
             }),
         onSuccess: (run) => onRunSuccess(run, "N-gram analysis started."),
         onError: (error) => onRunError(error, "Failed to run n-grams."),
@@ -1078,6 +1111,7 @@ export default function AnalysisView() {
                 ...(kwicQueryMode === "lemma"
                     ? { query_language: kwicQueryLanguage.trim() || undefined }
                     : {}),
+                ...asyncPayload,
             }),
         onSuccess: (run) => onRunSuccess(run, "KWIC search started."),
         onError: (error) => onRunError(error, "Failed to run KWIC."),
@@ -1117,6 +1151,7 @@ export default function AnalysisView() {
                     : {}),
                 force_sparse_only: dfmConfig.forceSparseOnly,
                 ...(dfmTrimPayload(dfmConfig) ? { trim: dfmTrimPayload(dfmConfig) } : {}),
+                ...asyncPayload,
             }),
         onSuccess: (run) => onRunSuccess(run, "DFM build started."),
         onError: (error) => onRunError(error, "Failed to build DFM."),
@@ -1133,6 +1168,7 @@ export default function AnalysisView() {
                 method: keynessMethod,
                 correction: keynessCorrection,
                 top_n: topN,
+                ...asyncPayload,
             }),
         onSuccess: (run) => onRunSuccess(run, "Keyness comparison started."),
         onError: (error) => onRunError(error, "Failed to run keyness."),
@@ -1148,6 +1184,7 @@ export default function AnalysisView() {
                 ...(dictionaryId ? { dictionary_id: dictionaryId } : {}),
                 ...(resolvedTerms.length ? { dictionary_terms: resolvedTerms } : {}),
                 ...(groupBy ? { group_by: groupBy } : {}),
+                ...asyncPayload,
             });
         },
         onSuccess: (run) => onRunSuccess(run, "Dictionary analysis started."),
@@ -1164,6 +1201,7 @@ export default function AnalysisView() {
                 directional: coocDirectional,
                 min_frequency: coocMinFreq,
                 min_count: coocMinCount,
+                ...asyncPayload,
             }),
         onSuccess: (run) => onRunSuccess(run, "Co-occurrence analysis started."),
         onError: (error) => onRunError(error, "Failed to run co-occurrence."),
@@ -1235,12 +1273,13 @@ export default function AnalysisView() {
         );
     }
 
+    const advancedBasePayload = { ...basePayload, ...asyncPayload };
     const advancedPanel =
-        tab === "similarity" ? <SimilarityExplorer basePayload={basePayload} />
-            : tab === "duplicates" ? <DuplicateDetectionView basePayload={basePayload} />
-            : tab === "clustering" ? <ClusterExplorer basePayload={basePayload} />
-            : tab === "dimensionality" ? <DimensionalityReductionView basePayload={basePayload} />
-            : tab === "readability" ? <ReadabilityView basePayload={basePayload} />
+        tab === "similarity" ? <SimilarityExplorer basePayload={advancedBasePayload} />
+            : tab === "duplicates" ? <DuplicateDetectionView basePayload={advancedBasePayload} />
+            : tab === "clustering" ? <ClusterExplorer basePayload={advancedBasePayload} />
+            : tab === "dimensionality" ? <DimensionalityReductionView basePayload={advancedBasePayload} />
+            : tab === "readability" ? <ReadabilityView basePayload={advancedBasePayload} />
             : null;
 
     if (advancedPanel) {
@@ -1254,6 +1293,14 @@ export default function AnalysisView() {
                             <MenuItem value="">Default / none</MenuItem>
                             {(profilesQuery.data ?? []).map((profile) => <MenuItem key={profile.id} value={profile.id}>{profile.name}</MenuItem>)}
                         </TextField>
+                        {supportsAsync ? (
+                            <FormControlLabel
+                                control={<Checkbox checked={runAsync} onChange={(event) => setRunAsync(event.target.checked)} />}
+                                label="Run async"
+                            />
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">Inline only</Typography>
+                        )}
                     </Stack>
                 </SectionCard>
                 <Suspense fallback={<AnalysisPanelFallback />}>{advancedPanel}</Suspense>
@@ -1612,6 +1659,22 @@ export default function AnalysisView() {
                             />
                         </Stack>
                     ) : null}
+
+                    {supportsAsync ? (
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={runAsync}
+                                    onChange={(event) => setRunAsync(event.target.checked)}
+                                />
+                            }
+                            label="Run async"
+                        />
+                    ) : (
+                        <Typography variant="body2" color="text.secondary">
+                            Inline only
+                        </Typography>
+                    )}
 
                     <Button
                         variant="contained"

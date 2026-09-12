@@ -60,6 +60,9 @@ class RunService(ResearchAccessMixin):
             "analysis_spec_hash": reproduce.get("analysis_spec_hash"),
             "rerunnable": capability.rerunnable,
             "rerun_block_reason": capability.block_reason,
+            "replayable": capability.replayable,
+            "exact_reproducible": capability.exact_reproducible,
+            "exact_reproduce_block_reason": capability.exact_reproduce_block_reason,
         }
 
     async def get_provenance(self, run_id: str, *, user_id: str) -> dict[str, Any]:
@@ -96,12 +99,17 @@ class RunService(ResearchAccessMixin):
             "runtime_now": runtime_environment(),
             "rerunnable": capability.rerunnable,
             "rerun_block_reason": capability.block_reason,
+            "replayable": capability.replayable,
+            "exact_reproducible": capability.exact_reproducible,
+            "exact_reproduce_block_reason": capability.exact_reproduce_block_reason,
         }
 
-    async def rerun(self, run_id: str, *, user_id: str, run_async: bool = False) -> AnalysisRun:
-        """One-click reproducible re-execution using the original run parameters."""
+    async def rerun(
+        self, run_id: str, *, user_id: str, run_async: bool = False, exact: bool = False
+    ) -> AnalysisRun:
+        """Replay a run, or require frozen inputs for exact reproduction."""
         run = await self.get_run_or_404(run_id, user_id=user_id)
-        return await execute_rerun(self.db, run, user_id=user_id, run_async=run_async)
+        return await execute_rerun(self.db, run, user_id=user_id, run_async=run_async, exact=exact)
 
     async def cancel_run(self, run_id: str, *, user_id: str) -> AnalysisRun:
         import logging

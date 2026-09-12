@@ -214,13 +214,10 @@ def _chunk_authorized(
     if require_revision and revision is None:
         # Missing revision must not be silently upgraded to "current".
         return False
-    if expected_revisions is not None:
-        if revision is None or revision not in expected_revisions:
-            return False
-    expected_for_doc = revision_by_document.get(chunk.document_id)
-    if expected_for_doc is not None and revision != expected_for_doc:
+    if expected_revisions is not None and (revision is None or revision not in expected_revisions):
         return False
-    return True
+    expected_for_doc = revision_by_document.get(chunk.document_id)
+    return not (expected_for_doc is not None and revision != expected_for_doc)
 
 
 class CitationValidationService:
@@ -243,9 +240,7 @@ class CitationValidationService:
             context=context,
             expected_index_revision_ids=expected_index_revision_ids,
         )
-        evidence_revision_hash = (
-            context.evidence_revision_hash if context is not None else None
-        )
+        evidence_revision_hash = context.evidence_revision_hash if context is not None else None
 
         raw_text = (raw_output or "").strip()
         payload = _parse_structured_payload(raw_text)
@@ -358,8 +353,7 @@ class CitationValidationService:
                         )
                         or (
                             chunk.document_id in revision_by_document
-                            and _chunk_revision_id(chunk)
-                            != revision_by_document[chunk.document_id]
+                            and _chunk_revision_id(chunk) != revision_by_document[chunk.document_id]
                         )
                     ):
                         revision_rejected = True

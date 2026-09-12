@@ -92,7 +92,7 @@ export default function DriftMonitoringView() {
 
     const predictionSetsQuery = useQuery({
         queryKey: queryKeys.textResearch.predictionSets(ctx.selectedCorpusId),
-        queryFn: () => listPredictionSets(ctx.selectedCorpusId, { limit: 100 }),
+        queryFn: ({ signal }) => listPredictionSets(ctx.selectedCorpusId, { limit: 100 }, signal),
         enabled: Boolean(ctx.selectedCorpusId),
     });
 

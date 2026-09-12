@@ -32,15 +32,39 @@ class AnalysisFiltersLanguageTests(unittest.TestCase):
 
     def test_apply_document_filters_selects_english_only(self) -> None:
         docs = [
-            SimpleNamespace(id="d1", language="en", organization=None, organization_type=None,
-                            region=None, cultural_sphere=None, publication_type=None,
-                            country=None, publication_year=None),
-            SimpleNamespace(id="d2", language="de", organization=None, organization_type=None,
-                            region=None, cultural_sphere=None, publication_type=None,
-                            country=None, publication_year=None),
-            SimpleNamespace(id="d3", language="en", organization=None, organization_type=None,
-                            region=None, cultural_sphere=None, publication_type=None,
-                            country=None, publication_year=None),
+            SimpleNamespace(
+                id="d1",
+                language="en",
+                organization=None,
+                organization_type=None,
+                region=None,
+                cultural_sphere=None,
+                publication_type=None,
+                country=None,
+                publication_year=None,
+            ),
+            SimpleNamespace(
+                id="d2",
+                language="de",
+                organization=None,
+                organization_type=None,
+                region=None,
+                cultural_sphere=None,
+                publication_type=None,
+                country=None,
+                publication_year=None,
+            ),
+            SimpleNamespace(
+                id="d3",
+                language="en",
+                organization=None,
+                organization_type=None,
+                region=None,
+                cultural_sphere=None,
+                publication_type=None,
+                country=None,
+                publication_year=None,
+            ),
         ]
         filtered = _apply_document_filters(docs, {"language": "en"})
         self.assertEqual([d.id for d in filtered], ["d1", "d3"])

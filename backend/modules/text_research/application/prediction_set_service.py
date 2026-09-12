@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from fastapi import HTTPException
+
 from backend.modules.text_research.application.access import ResearchAccessMixin
 from backend.modules.text_research.domain.enums import ResearchArtifactKind
 from backend.modules.text_research.domain.models import (
@@ -40,18 +42,64 @@ class PredictionSetService(ResearchAccessMixin):
             model_version=model.version,
             dataset_snapshot_id=model.training_dataset_snapshot_id,
             analysis_run_id=run.id,
+            status="published",
             created_by=created_by,
             metadata_json=dumps(metadata),
         )
         return await self.repo.create_prediction_set(prediction_set)
 
+    async def create_draft_from_run(
+        self,
+        *,
+        run: AnalysisRun,
+        model: TrainedModel,
+        created_by: str,
+        extra_metadata: dict[str, Any] | None = None,
+    ) -> PredictionSet:
+        metadata: dict[str, Any] = {
+            "kind": ResearchArtifactKind.PREDICTION_SET.value,
+            "unit_ids": [],
+            "unit_count": 0,
+        }
+        if extra_metadata:
+            metadata.update(extra_metadata)
+        return await self.repo.create_prediction_set(
+            PredictionSet(
+                project_id=run.project_id,
+                corpus_id=model.corpus_id,
+                trained_model_id=model.id,
+                model_version=model.version,
+                dataset_snapshot_id=model.training_dataset_snapshot_id,
+                analysis_run_id=run.id,
+                status="draft",
+                created_by=created_by,
+                metadata_json=dumps(metadata),
+            )
+        )
+
+    async def publish(self, prediction_set: PredictionSet, *, unit_ids: list[str]) -> PredictionSet:
+        metadata = loads(prediction_set.metadata_json, {})
+        metadata.update({"unit_ids": unit_ids, "unit_count": len(unit_ids)})
+        return await self.repo.update_prediction_set(
+            prediction_set,
+            status="published",
+            metadata_json=dumps(metadata),
+        )
+
+    @staticmethod
+    def _require_published(prediction_set: PredictionSet) -> None:
+        if prediction_set.status != "published":
+            raise HTTPException(status_code=404, detail="Prediction set not found")
+
     async def get(self, prediction_set_id: str, *, user_id: str) -> dict[str, Any]:
         prediction_set = await self.get_prediction_set_or_404(prediction_set_id, user_id=user_id)
+        self._require_published(prediction_set)
         metadata = loads(prediction_set.metadata_json, {})
         unit_ids = list(metadata.get("unit_ids") or [])
         predictions = await self.repo.list_predictions_for_units(
             prediction_set.trained_model_id,
             unit_ids,
+            prediction_set_id=prediction_set.id,
         )
         return {
             "prediction_set": prediction_set,
@@ -77,9 +125,12 @@ class PredictionSetService(ResearchAccessMixin):
     ) -> dict[str, Any]:
         """Server-side paging projection; prediction, human, and gold stay separate."""
         prediction_set = await self.get_prediction_set_or_404(prediction_set_id, user_id=user_id)
+        self._require_published(prediction_set)
         unit_ids = list(loads(prediction_set.metadata_json, {}).get("unit_ids") or [])
         predictions = await self.repo.list_predictions_for_units(
-            prediction_set.trained_model_id, unit_ids
+            prediction_set.trained_model_id,
+            unit_ids,
+            prediction_set_id=prediction_set.id,
         )
         annotations = await self.repo.list_annotations_for_units(unit_ids, campaign_id=campaign_id)
         adjudications = await self.repo.list_adjudications_for_units(

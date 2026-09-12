@@ -185,9 +185,77 @@ class ExportService(ResearchAccessMixin):
         return buffer.getvalue()
 
     PREDICTION_EXPORT_PAGE_SIZE = 5_000
-    PREDICTION_EXPORT_MAX_ROWS = 1_000_000
 
-    async def iter_predictions_csv(self, model_id: str, *, user_id: str):
+    ANNOTATION_EXPORT_PAGE_SIZE = 5_000
+
+    async def iter_annotations_csv(
+        self, corpus_id: str, *, user_id: str, codebook_id: str | None = None
+    ):
+        """Yield annotation CSV rows in bounded pages (header first, no full preload)."""
+        await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        codebook_version: str | None = None
+        if codebook_id:
+            codebook = await self.get_codebook_or_404(codebook_id, user_id=user_id)
+            codebook_version = codebook.version
+
+        # Emit header before any page fetch so clients see first bytes immediately.
+        yield _csv_line(
+            [
+                "text_unit_id",
+                "label_id",
+                "label_name",
+                "annotator_id",
+                "value",
+                "confidence",
+                "comment",
+                "codebook_version",
+                "created_at",
+                "updated_at",
+            ]
+        )
+
+        offset = 0
+        page_size = self.ANNOTATION_EXPORT_PAGE_SIZE
+        label_names: dict[str, str] = {}
+        while True:
+            annotations = await self.repo.list_annotations_for_corpus(
+                corpus_id,
+                codebook_version=codebook_version,
+                limit=page_size,
+                offset=offset,
+            )
+            if not annotations:
+                break
+            missing_label_ids = {
+                annotation.label_id
+                for annotation in annotations
+                if annotation.label_id not in label_names
+            }
+            if missing_label_ids:
+                for label in await self.repo.list_labels_by_ids(missing_label_ids):
+                    label_names[label.id] = label.name
+            for annotation in annotations:
+                yield _csv_line(
+                    [
+                        annotation.text_unit_id,
+                        annotation.label_id,
+                        label_names.get(annotation.label_id, annotation.label_id),
+                        annotation.annotator_id,
+                        annotation.value,
+                        annotation.confidence if annotation.confidence is not None else "",
+                        annotation.comment or "",
+                        annotation.codebook_version,
+                        annotation.created_at.isoformat() if annotation.created_at else "",
+                        annotation.updated_at.isoformat() if annotation.updated_at else "",
+                    ]
+                )
+            offset += len(annotations)
+            if len(annotations) < page_size:
+                break
+
+    async def iter_predictions_csv(
+        self, model_id: str, *, user_id: str, max_rows: int | None = None
+    ):
         """Yield prediction CSV rows in bounded pages (no million-row preload)."""
         model = await self.get_model_or_404(model_id, user_id=user_id)
         yield _csv_line(
@@ -203,8 +271,8 @@ class ExportService(ResearchAccessMixin):
         offset = 0
         emitted = 0
         page_size = self.PREDICTION_EXPORT_PAGE_SIZE
-        while emitted < self.PREDICTION_EXPORT_MAX_ROWS:
-            limit = min(page_size, self.PREDICTION_EXPORT_MAX_ROWS - emitted)
+        while max_rows is None or emitted < max_rows:
+            limit = min(page_size, max_rows - emitted) if max_rows is not None else page_size
             predictions, _total = await self.repo.list_predictions_for_model(
                 model.id, limit=limit, offset=offset
             )
@@ -226,9 +294,11 @@ class ExportService(ResearchAccessMixin):
             if len(predictions) < limit:
                 break
 
-    async def export_predictions_csv(self, model_id: str, *, user_id: str) -> str:
+    async def export_predictions_csv(
+        self, model_id: str, *, user_id: str, max_rows: int | None = None
+    ) -> str:
         buffer = io.StringIO()
-        async for line in self.iter_predictions_csv(model_id, user_id=user_id):
+        async for line in self.iter_predictions_csv(model_id, user_id=user_id, max_rows=max_rows):
             buffer.write(line)
         return buffer.getvalue()
 

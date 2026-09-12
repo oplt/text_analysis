@@ -33,9 +33,7 @@ class ConfigFingerprintTests(unittest.TestCase):
         self.assertNotEqual(
             config.generation.fingerprint(), generation_changed.generation.fingerprint()
         )
-        synthesis_changed = replace(
-            config, synthesis_batch_size=config.synthesis_batch_size + 1
-        )
+        synthesis_changed = replace(config, synthesis_batch_size=config.synthesis_batch_size + 1)
         self.assertNotEqual(
             config.synthesis.fingerprint(), synthesis_changed.synthesis.fingerprint()
         )

@@ -59,10 +59,6 @@ def _resolve_group_keys(
     return keys
 
 
-def _tokenized(prepared: PreparedCorpusArtifact) -> list[list[str]]:
-    return [list(seq) for seq in prepared.token_sequences]
-
-
 def _preprocessing_config(context: dict[str, Any]) -> dict[str, Any]:
     config = context.get("config")
     if config is None:
@@ -200,6 +196,14 @@ def _run_frequencies(context: dict[str, Any], _plan: ExecutionPlan) -> None:
     )
 
 
+def _run_corpus_stats(context: dict[str, Any], _plan: ExecutionPlan) -> None:
+    from backend.modules.text_research.application.analysis_operators import (
+        run_corpus_stats_operator,
+    )
+
+    context["results"] = run_corpus_stats_operator(context["prepared"])
+
+
 def _run_ngrams(context: dict[str, Any], _plan: ExecutionPlan) -> None:
     from backend.modules.text_research.application.analysis_operators import (
         run_ngrams_operator,
@@ -256,8 +260,10 @@ def _run_kwic(context: dict[str, Any], _plan: ExecutionPlan) -> None:
 
 
 def _run_dictionary(context: dict[str, Any], _plan: ExecutionPlan) -> None:
+    from backend.modules.text_research.application.analysis_operators import (
+        run_dictionary_operator,
+    )
     from backend.modules.text_research.infrastructure.dictionary_matcher import (
-        match_dictionary,
         parse_dictionary_payload,
     )
 
@@ -275,25 +281,17 @@ def _run_dictionary(context: dict[str, Any], _plan: ExecutionPlan) -> None:
         group_by=params.get("group_by"),
         documents_by_id=context.get("documents_by_id"),
     )
-    result = match_dictionary(
-        _tokenized(prepared),
-        dictionary_spec,
-        unit_ids=list(prepared.unit_ids),
+    context["results"] = run_dictionary_operator(
+        prepared,
+        dictionary_spec=dictionary_spec,
         case_sensitive=bool(params.get("case_sensitive", False)),
         rate_per=float(params.get("rate_per", 1000.0)),
+        group_keys=group_keys,
     )
-    if group_keys is not None:
-        grouped: dict[str, dict[str, float | int]] = {}
-        for group, row in zip(group_keys, result["per_unit"], strict=True):
-            bucket = grouped.setdefault(group, {"hits": 0, "units": 0})
-            bucket["hits"] = int(bucket["hits"]) + int(row["hits"])
-            bucket["units"] = int(bucket["units"]) + 1
-        result["by_group"] = grouped
-    context["results"] = result
 
 
 def _run_keyness(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.infrastructure.keyness import keyness_report
+    from backend.modules.text_research.application.analysis_operators import run_keyness_operator
 
     prepared_a: PreparedCorpusArtifact = context.get("prepared_a") or context["prepared"]
     prepared_b: PreparedCorpusArtifact | None = context.get("prepared_b")
@@ -310,9 +308,9 @@ def _run_keyness(context: dict[str, Any], _plan: ExecutionPlan) -> None:
         context["prepared_b"] = prepared_b
 
     params = context["spec"].analysis.parameters
-    report = keyness_report(
-        _tokenized(prepared_a),
-        _tokenized(prepared_b),
+    context["results"] = run_keyness_operator(
+        prepared_a,
+        prepared_b,
         method=str(params.get("method", "log_likelihood")),
         top_n=int(params.get("top_n", 50)),
         min_frequency=int(params.get("min_frequency", 1)),
@@ -321,17 +319,18 @@ def _run_keyness(context: dict[str, Any], _plan: ExecutionPlan) -> None:
         group_b_label=params.get("group_b_label"),
         group_field=params.get("group_field"),
     )
-    context["results"] = report
 
 
 def _run_cooccurrence(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.infrastructure.collocation import collocation_report
+    from backend.modules.text_research.application.analysis_operators import (
+        run_cooccurrence_operator,
+    )
 
     prepared: PreparedCorpusArtifact = context["prepared"]
     params = context["spec"].analysis.parameters
-    report = collocation_report(
-        _tokenized(prepared),
-        window=int(params.get("window_size", 5)),
+    context["results"] = run_cooccurrence_operator(
+        prepared,
+        window_size=int(params.get("window_size", 5)),
         top_n=int(params.get("top_n", 50)),
         association_method=str(params.get("association_method", "pmi")),
         directional=bool(params.get("directional", False)),
@@ -339,11 +338,10 @@ def _run_cooccurrence(context: dict[str, Any], _plan: ExecutionPlan) -> None:
         min_count=int(params.get("min_count", 1)),
         include_network=bool(params.get("include_network", True)),
     )
-    context["results"] = report
 
 
 def _run_similarity(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.infrastructure import similarity as sim
+    from backend.modules.text_research.application.analysis_operators import run_similarity_operator
 
     prepared: PreparedCorpusArtifact = context["prepared"]
     params = context["spec"].analysis.parameters
@@ -353,93 +351,68 @@ def _run_similarity(context: dict[str, Any], _plan: ExecutionPlan) -> None:
         documents_by_id=context.get("documents_by_id"),
     )
 
-    method = sim.normalize_similarity_method(str(params.get("method", "tfidf_cosine")))
-    mode = sim.normalize_similarity_mode(str(params.get("mode", "pairwise")))
-    tokenized = _tokenized(prepared)
-    ids = list(prepared.unit_ids)
-    if method == "embedding_cosine":
-        embeddings = params.get("embeddings")
-        if not embeddings:
-            raise ValueError("embedding_cosine similarity requires explicit embeddings")
-        embed_vectors = [embeddings[item_id] for item_id in ids]
-        if mode == "pairwise":
-            report = sim.pairwise_similarity(
-                ids,
-                method=method,
-                embeddings=embed_vectors,
-                top_k=params.get("top_k"),
-                min_score=params.get("min_score"),
-            )
-        elif mode == "group_centroid":
-            if not group_keys:
-                raise ValueError("group_centroid requires group_keys")
-            report = sim.group_centroid_similarity(
-                ids,
-                group_keys,
-                method=method,
-                embeddings=embed_vectors,
-                target=str(params.get("centroid_target", "between_groups")),
-                top_k=params.get("top_k"),
-                min_score=params.get("min_score"),
-            )
-        else:
-            raise ValueError("query mode with embeddings requires query_embedding")
-    elif mode == "pairwise":
-        report = sim.pairwise_similarity(
-            ids,
-            method=method,
-            tokenized=tokenized,
-            top_k=params.get("top_k"),
-            min_score=params.get("min_score"),
-        )
-    elif mode == "query":
-        query_text = params.get("query_text")
-        if not query_text:
-            raise ValueError("query mode requires query_text")
-        from backend.modules.text_research.infrastructure.preprocessing import tokenize
-
-        query_tokens = tokenize(query_text, prepared.preprocessing_profile)
-        report = sim.query_similarity(
-            params.get("query_id") or "query",
-            ids,
-            method=method,
-            query_tokens=query_tokens,
-            tokenized=tokenized,
-            top_k=params.get("top_k"),
-            min_score=params.get("min_score"),
-        )
-    else:
-        if not group_keys:
-            raise ValueError("group_centroid requires group_keys")
-        report = sim.group_centroid_similarity(
-            ids,
-            group_keys,
-            method=method,
-            tokenized=tokenized,
-            target=str(params.get("centroid_target", "between_groups")),
-            top_k=params.get("top_k"),
-            min_score=params.get("min_score"),
-        )
-    context["results"] = report
+    context["results"] = run_similarity_operator(
+        prepared,
+        method=str(params.get("method", "tfidf_cosine")),
+        mode=str(params.get("mode", "pairwise")),
+        group_keys=group_keys,
+        top_k=params.get("top_k"),
+        min_score=params.get("min_score"),
+        centroid_target=str(params.get("centroid_target", "between_groups")),
+        query_text=params.get("query_text"),
+        query_id=params.get("query_id") or "query",
+        embeddings=params.get("embeddings"),
+        query_embedding=params.get("query_embedding"),
+    )
 
 
 def _run_clustering(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.infrastructure.clustering import run_clustering
+    from backend.modules.text_research.application.analysis_operators import run_clustering_operator
 
     prepared: PreparedCorpusArtifact = context["prepared"]
     params = context["spec"].analysis.parameters
-    result = run_clustering(
-        list(prepared.texts_joined),
-        list(prepared.unit_ids),
+    result = run_clustering_operator(
+        prepared,
         n_clusters=int(params.get("n_clusters", 5)),
         algorithm=str(params.get("algorithm", "kmeans")),
-        config=prepared.preprocessing_profile,
         use_svd=bool(params.get("use_svd", False)),
         svd_components=int(params.get("n_svd_components", params.get("svd_components", 50))),
         random_seed=int(params.get("random_seed", context["spec"].random_seed)),
         top_n_terms=int(params.get("top_terms", 10)),
     )
     context["results"] = {k: v for k, v in result.items() if k != "tfidf_matrix"}
+
+
+def _run_dimensionality_reduction(context: dict[str, Any], _plan: ExecutionPlan) -> None:
+    from backend.modules.text_research.application.analysis_operators import (
+        run_dimensionality_reduction_operator,
+    )
+
+    params = context["spec"].analysis.parameters
+    context["results"] = run_dimensionality_reduction_operator(
+        context["prepared"],
+        method=str(params.get("method", "svd")),
+        n_components=int(params.get("n_components", 2)),
+        random_seed=int(params.get("random_seed", context["spec"].random_seed)),
+    )
+
+
+def _run_duplicate_detection(context: dict[str, Any], _plan: ExecutionPlan) -> None:
+    from backend.modules.text_research.application.analysis_operators import (
+        run_duplicate_detection_operator,
+    )
+
+    params = context["spec"].analysis.parameters
+    context["results"] = run_duplicate_detection_operator(
+        context["prepared"],
+        methods=params.get("methods"),
+        lexical_threshold=float(params.get("lexical_threshold", 0.85)),
+        char_ngram_size=int(params.get("char_ngram_size", 5)),
+        minhash_num_perm=int(params.get("minhash_num_perm", 64)),
+        minhash_shingle_size=int(params.get("minhash_shingle_size", 3)),
+        minhash_threshold=float(params.get("minhash_threshold", 0.8)),
+        max_pairs=params.get("max_pairs", 1000),
+    )
 
 
 def _run_readability(context: dict[str, Any], _plan: ExecutionPlan) -> None:
@@ -548,6 +521,7 @@ def _stage_build_manifest(context: dict[str, Any], plan: ExecutionPlan) -> None:
 
 ANALYSIS_HANDLERS: dict[str, StageHandler] = {
     "frequencies": _run_frequencies,
+    "corpus_stats": _run_corpus_stats,
     "ngrams": _run_ngrams,
     "dfm": _run_dfm,
     "kwic": _run_kwic,
@@ -556,6 +530,8 @@ ANALYSIS_HANDLERS: dict[str, StageHandler] = {
     "cooccurrence": _run_cooccurrence,
     "similarity": _run_similarity,
     "clustering": _run_clustering,
+    "dimensionality_reduction": _run_dimensionality_reduction,
+    "duplicate_detection": _run_duplicate_detection,
     "readability": _run_readability,
     "statistical_model": _run_statistical_model,
 }

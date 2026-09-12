@@ -134,9 +134,7 @@ async def get_cached_retrieval(
             chunk.index_revision_id not in expected for chunk in chunks
         ):
             return None
-    return CachedRetrieval(
-        chunks=chunks, provenance=provenance, artifact_version=artifact_version
-    )
+    return CachedRetrieval(chunks=chunks, provenance=provenance, artifact_version=artifact_version)
 
 
 async def set_cached_retrieval(

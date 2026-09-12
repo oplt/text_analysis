@@ -27,7 +27,7 @@ class NonPdfParserTests(unittest.TestCase):
 
     def test_text_nfc_normalization_provenance(self):
         # cafe + combining acute accent should normalize to composed form
-        docs = _parse_text("cafe\u0301".encode("utf-8"))
+        docs = _parse_text("cafe\u0301".encode())
         self.assertEqual(len(docs), 1)
         self.assertEqual(docs[0].content, "caf\u00e9")
         self.assertEqual(docs[0].metadata["unicode_normalization"], "NFC")

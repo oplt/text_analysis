@@ -184,10 +184,6 @@ class LargeJobEnqueueTests(unittest.IsolatedAsyncioTestCase):
                     }
                 ),
             ),
-            patch(
-                "backend.modules.text_research.application.quantitative_analysis_service._tokenized_from_prepared",
-                return_value=[["hi"]],
-            ),
         ):
             result = await service.frequencies(
                 "c1",

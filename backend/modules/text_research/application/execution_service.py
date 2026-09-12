@@ -119,3 +119,21 @@ class ExecutionService:
         if run.celery_task_id:
             return
         await ExecutionService.submit(db=db, run=run, operation=operation, user_id=user_id)
+
+    @staticmethod
+    async def claim_run_for_execution(*, db: AsyncSession, run_id: str) -> bool:
+        """Claim a queued run before a worker performs expensive computation."""
+        from backend.modules.text_research.infrastructure.repositories import ResearchRepository
+
+        repo = ResearchRepository(db)
+        queued = await repo.get_run(run_id)
+        if queued is None or queued.status != AnalysisRunStatus.QUEUED.value:
+            return False
+        claimed = await repo.claim_run_for_execution(
+            run_id,
+            execution_key=queued.execution_key,
+        )
+        if claimed is None:
+            return False
+        await db.commit()
+        return True

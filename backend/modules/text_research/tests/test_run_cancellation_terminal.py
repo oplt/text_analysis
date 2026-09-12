@@ -50,9 +50,7 @@ class RunLifecycleGuardsTests(unittest.IsolatedAsyncioTestCase):
         run = SimpleNamespace(id="run-1")
         repo = MagicMock()
         repo.get_run = AsyncMock(
-            return_value=SimpleNamespace(
-                id="run-1", status=AnalysisRunStatus.CANCELLED.value
-            )
+            return_value=SimpleNamespace(id="run-1", status=AnalysisRunStatus.CANCELLED.value)
         )
         with self.assertRaises(RunCancelledError):
             await ensure_not_cancelled(repo, run)
@@ -136,9 +134,7 @@ class CancelQueuedCeleryRevokeTests(unittest.IsolatedAsyncioTestCase):
             result = await service.cancel_run("run-1", user_id="user-1")
 
         self.assertEqual(result.status, AnalysisRunStatus.CANCELLED.value)
-        celery_app.control.revoke.assert_called_once_with(
-            "celery-task-1", terminate=False
-        )
+        celery_app.control.revoke.assert_called_once_with("celery-task-1", terminate=False)
 
     async def test_cancel_uses_guarded_transition(self) -> None:
         run = SimpleNamespace(
@@ -152,9 +148,7 @@ class CancelQueuedCeleryRevokeTests(unittest.IsolatedAsyncioTestCase):
         service.repo = MagicMock()
         service.repo.update_run_if_active = AsyncMock(return_value=None)
         service.repo.get_run = AsyncMock(
-            return_value=SimpleNamespace(
-                id="run-2", status=AnalysisRunStatus.COMPLETED.value
-            )
+            return_value=SimpleNamespace(id="run-2", status=AnalysisRunStatus.COMPLETED.value)
         )
         service.db = MagicMock()
         service.db.commit = AsyncMock()
@@ -295,6 +289,7 @@ class PredictionCancelAfterBatchTests(unittest.IsolatedAsyncioTestCase):
 
         service.repo.iter_text_units_for_corpus = _iter_units
         service.repo.bulk_upsert_predictions = AsyncMock()
+        service.repo.discard_prediction_set = AsyncMock()
 
         checkpoint_calls = {"n": 0}
 
@@ -315,9 +310,7 @@ class PredictionCancelAfterBatchTests(unittest.IsolatedAsyncioTestCase):
             ),
             patch(
                 "backend.modules.text_research.application.prediction_service.predict_with_uncertainty",
-                return_value=[
-                    {"prediction": 1, "probability": 0.9, "uncertainty": 0.1}
-                ],
+                return_value=[{"prediction": 1, "probability": 0.9, "uncertainty": 0.1}],
             ),
             patch(
                 "backend.modules.text_research.application.prediction_service.resolve_batch_size",
@@ -339,12 +332,18 @@ class PredictionCancelAfterBatchTests(unittest.IsolatedAsyncioTestCase):
                 "backend.modules.text_research.application.prediction_set_service.PredictionSetService"
             ) as prediction_set_cls,
         ):
+            prediction_set_cls.return_value.create_draft_from_run = AsyncMock(
+                return_value=SimpleNamespace(id="draft-set")
+            )
             prediction_set_cls.return_value.create_from_run = AsyncMock()
+            prediction_set_cls.return_value.publish = AsyncMock()
             result = await service.execute_prediction("pred-run")
 
         self.assertEqual(result.status, AnalysisRunStatus.CANCELLED.value)
         self.assertEqual(service.repo.bulk_upsert_predictions.await_count, 1)
+        service.repo.discard_prediction_set.assert_awaited_once()
         prediction_set_cls.return_value.create_from_run.assert_not_awaited()
+        prediction_set_cls.return_value.publish.assert_not_awaited()
 
 
 if __name__ == "__main__":

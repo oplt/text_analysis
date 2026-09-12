@@ -1,25 +1,26 @@
-"""Quantitative analysis routes (TASK-022).
+"""Quantitative, statistical-model, and measurement-validation routes (TASK-022).
 
 Included from ``routes.py`` without changing public URLs.
 
-Follow-up: move statistical-model / measurement-comparison here; split
-``schemas.py`` / ``quantitative_analysis_service.py`` / frontend AnalysisView
-along the same domain boundary.
+The request schemas live in ``schemas_quantitative.py``; ``schemas.py``
+re-exports them for backwards-compatible imports. Service and frontend splits
+remain follow-up work because their orchestration boundaries are still shared.
 """
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.deps.auth import get_current_user
 from backend.api.deps.db import get_db
 from backend.modules.identity_access.models import User
-from backend.modules.text_research.api.schemas import (
+from backend.modules.text_research.api.schemas import AnalysisRunResponse
+from backend.modules.text_research.api.schemas_quantitative import (
     AnalysisRequest,
-    AnalysisRunResponse,
     ClusteringRequest,
     CooccurrenceRequest,
     DfmRequest,
@@ -29,12 +30,20 @@ from backend.modules.text_research.api.schemas import (
     FrequencyRequest,
     KeynessRequest,
     KwicRequest,
+    MeasurementComparisonRequest,
     NgramRequest,
     ReadabilityRequest,
     SimilarityRequest,
+    StatisticalModelRequest,
+)
+from backend.modules.text_research.application.measurement_validation_service import (
+    MeasurementValidationService,
 )
 from backend.modules.text_research.application.quantitative_analysis_service import (
     QuantitativeAnalysisService,
+)
+from backend.modules.text_research.application.statistical_modeling_service import (
+    StatisticalModelingService,
 )
 from backend.modules.text_research.domain.models import AnalysisRun
 
@@ -109,6 +118,14 @@ def _analysis_filters(body: AnalysisRequest) -> dict[str, Any]:
     return {k: v for k, v in body.model_dump().items() if k not in excluded and v is not None}
 
 
+def _reject_unsupported_async(operation: str, run_async: bool) -> None:
+    if run_async:
+        raise HTTPException(
+            status_code=422,
+            detail=f"{operation} does not support asynchronous execution.",
+        )
+
+
 @router.post("/corpora/{corpus_id}/analysis/corpus-stats", response_model=AnalysisRunResponse)
 async def corpus_stats(
     corpus_id: str,
@@ -116,6 +133,7 @@ async def corpus_stats(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _reject_unsupported_async("corpus_stats", body.run_async)
     run = await QuantitativeAnalysisService(db).corpus_stats(
         corpus_id,
         user_id=current_user.id,
@@ -200,6 +218,7 @@ async def kwic(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _reject_unsupported_async("kwic", body.run_async)
     run = await QuantitativeAnalysisService(db).kwic(
         corpus_id,
         user_id=current_user.id,
@@ -224,11 +243,7 @@ async def dictionary_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if not body.dictionary_id and not body.dictionary_terms and not body.hierarchy:
-        raise HTTPException(
-            status_code=400,
-            detail="dictionary_id, dictionary_terms, or hierarchy required (user-defined only)",
-        )
+    _reject_unsupported_async("dictionary", body.run_async)
     run = await QuantitativeAnalysisService(db).dictionary(
         corpus_id,
         user_id=current_user.id,
@@ -320,6 +335,7 @@ async def similarity(
         query_unit_id=body.query_unit_id,
         embeddings=body.embeddings,
         query_embedding=body.query_embedding,
+        embedding_artifact_id=body.embedding_artifact_id,
         preprocessing_profile_id=body.preprocessing_profile_id,
         run_async=body.run_async,
         **_analysis_filters(body),
@@ -411,6 +427,7 @@ async def readability(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _reject_unsupported_async("readability", body.run_async)
     run = await QuantitativeAnalysisService(db).readability(
         corpus_id,
         user_id=current_user.id,
@@ -419,3 +436,45 @@ async def readability(
     )
     return _respond(run)
 
+
+@router.post("/corpora/{corpus_id}/analysis/statistical-model", response_model=AnalysisRunResponse)
+async def statistical_model(
+    corpus_id: str,
+    body: StatisticalModelRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await StatisticalModelingService(db).fit(
+        corpus_id,
+        user_id=current_user.id,
+        model=body.model,
+        dependent_var=body.dependent_var,
+        independent_vars=body.independent_vars,
+        rows=body.rows,
+        add_intercept=body.add_intercept,
+    )
+    return _respond(run)
+
+
+@router.post(
+    "/corpora/{corpus_id}/analysis/measurement-comparison",
+    response_model=AnalysisRunResponse,
+)
+async def measurement_comparison(
+    corpus_id: str,
+    body: MeasurementComparisonRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    run = await MeasurementValidationService(db).compare(
+        corpus_id,
+        user_id=current_user.id,
+        source_a=body.source_a,
+        values_a=body.values_a,
+        source_b=body.source_b,
+        values_b=body.values_b,
+        ids=body.ids,
+        value_kind=body.value_kind,
+        subgroup=body.subgroup,
+    )
+    return _respond(run)

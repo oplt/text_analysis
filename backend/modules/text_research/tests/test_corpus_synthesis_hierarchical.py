@@ -398,7 +398,10 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
         result = await service._synthesize_sync(
             user=SimpleNamespace(id="u1"), query="q", scope=scope, allow_list=["d1"]
         )
-        self.assertEqual(result["claims"], [{"text": "escaped", "chunk_ids": ["allowed"], "citation_numbers": [1]}])
+        self.assertEqual(
+            result["claims"],
+            [{"text": "escaped", "chunk_ids": ["allowed"], "citation_numbers": [1]}],
+        )
         self.assertEqual(
             result["synthesis_provenance"]["rejected_claim_escapes"][0]["escaped_chunk_ids"],
             ["not-in-map"],

@@ -454,16 +454,12 @@ class CorpusScopeService(ResearchAccessMixin):
         revisions_by_document = {
             binding.rag_document_id: binding.index_revision_id for binding in bindings
         }
-        if (
-            set(revisions_by_document) != set(scope.rag_document_ids)
-            or any(not revision_id for revision_id in revisions_by_document.values())
+        if set(revisions_by_document) != set(scope.rag_document_ids) or any(
+            not revision_id for revision_id in revisions_by_document.values()
         ):
             raise HTTPException(
                 status_code=409,
-                detail=(
-                    "historical_revision_unavailable: "
-                    "fixed scope has no exact revisions"
-                ),
+                detail=("historical_revision_unavailable: fixed scope has no exact revisions"),
             )
 
         revision_ids = [
@@ -476,10 +472,7 @@ class CorpusScopeService(ResearchAccessMixin):
         if set(available) != set(revision_ids):
             raise HTTPException(
                 status_code=409,
-                detail=(
-                    "historical_revision_unavailable: "
-                    "frozen revision is not retrievable"
-                ),
+                detail=("historical_revision_unavailable: frozen revision is not retrievable"),
             )
 
         chunks = await self.rag_repo.list_evidence_revision_chunks(
@@ -510,10 +503,7 @@ class CorpusScopeService(ResearchAccessMixin):
         if actual_hash != scope.evidence_revision_hash:
             raise HTTPException(
                 status_code=409,
-                detail=(
-                    "historical_revision_unavailable: "
-                    "frozen evidence hash no longer matches"
-                ),
+                detail=("historical_revision_unavailable: frozen evidence hash no longer matches"),
             )
         return revision_ids
 

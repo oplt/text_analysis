@@ -125,9 +125,12 @@ def test_legacy_payload_and_wrong_revision_are_safe_cache_misses() -> None:
                 }
             ),
         ):
-            assert await get_cached_retrieval(
-                user_id="user-1", project_id=None, query="q", top_k=5, filters=None
-            ) is None
+            assert (
+                await get_cached_retrieval(
+                    user_id="user-1", project_id=None, query="q", top_k=5, filters=None
+                )
+                is None
+            )
 
         with patch(
             "backend.lib.retrieval_cache.cache_get_json",
@@ -139,25 +142,36 @@ def test_legacy_payload_and_wrong_revision_are_safe_cache_misses() -> None:
                 }
             ),
         ):
-            assert await get_cached_retrieval(
-                user_id="user-1",
-                project_id=None,
-                query="q",
-                top_k=5,
-                filters=None,
-                expected_revision_ids=["new"],
-            ) is None
+            assert (
+                await get_cached_retrieval(
+                    user_id="user-1",
+                    project_id=None,
+                    query="q",
+                    top_k=5,
+                    filters=None,
+                    expected_revision_ids=["new"],
+                )
+                is None
+            )
 
     asyncio.run(_run())
 
 
 def test_cache_identity_changes_for_plan_and_evidence_revision() -> None:
     base = retrieval_cache_key(
-        user_id="user-1", project_id=None, query="q", top_k=5, filters=None,
+        user_id="user-1",
+        project_id=None,
+        query="q",
+        top_k=5,
+        filters=None,
         identity={"planner": {"dense_candidates": 40}, "evidence_revision_hash": "one"},
     )
     changed = retrieval_cache_key(
-        user_id="user-1", project_id=None, query="q", top_k=5, filters=None,
+        user_id="user-1",
+        project_id=None,
+        query="q",
+        top_k=5,
+        filters=None,
         identity={"planner": {"dense_candidates": 20}, "evidence_revision_hash": "two"},
     )
     assert base != changed

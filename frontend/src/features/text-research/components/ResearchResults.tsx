@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
     Box,
     Button,
@@ -16,7 +17,11 @@ import {
     Typography,
 } from "@mui/material";
 import { Download as DownloadIcon, InfoOutlined as InfoIcon } from "@mui/icons-material";
-import { researchExportUrl } from "../../../api/textResearch";
+import {
+    getRunResults,
+    researchExportUrl,
+    runResultsDownloadUrl,
+} from "../../../api/textResearch";
 import type { AnalysisRun } from "../types";
 import { ActiveRunActions } from "./ActiveRunActions";
 import { JsonBlock, RunStatusChip } from "./ResearchShared";
@@ -167,6 +172,87 @@ export function ResearchExportActions({ runId }: { runId: string }) {
     return <Button size="small" startIcon={<DownloadIcon />} href={researchExportUrl(`/research/runs/${runId}/export.json`)} target="_blank" rel="noopener">Export JSON</Button>;
 }
 
+function resultCollectionKey(results: Record<string, unknown> | null): string | undefined {
+    if (!results) return undefined;
+    return Object.keys(results).find((key) => key.endsWith("_total"))?.replace(/_total$/, "");
+}
+
+export function FullResultsActions({ run }: { run: AnalysisRun }) {
+    const [open, setOpen] = useState(false);
+    const [page, setPage] = useState(0);
+    const results = run.results;
+    const artifactized =
+        typeof results?.results_artifact_id === "string" ||
+        typeof run.metrics?.results_artifact_id === "string";
+    const collectionKey = resultCollectionKey(results);
+    const inlineLarge = Object.values(results ?? {}).some(
+        (value) => Array.isArray(value) && value.length > 100
+    );
+    const resultsQuery = useQuery({
+        queryKey: ["text-research", "run-results", run.id, collectionKey, page],
+        queryFn: () =>
+            getRunResults(run.id, {
+                key: collectionKey,
+                limit: 100,
+                offset: page * 100,
+            }),
+        enabled: open,
+    });
+
+    if (!artifactized && !inlineLarge) return null;
+    const resultPage = resultsQuery.data;
+    const pageCount = resultPage?.total ? Math.ceil(resultPage.total / 100) : 1;
+    return (
+        <Stack spacing={1}>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Button size="small" variant="outlined" onClick={() => setOpen(true)}>
+                    View full results
+                </Button>
+                <Button
+                    size="small"
+                    startIcon={<DownloadIcon />}
+                    href={runResultsDownloadUrl(run.id)}
+                    target="_blank"
+                    rel="noopener"
+                >
+                    Download full results
+                </Button>
+            </Stack>
+            {open ? (
+                resultsQuery.isLoading ? (
+                    <Typography variant="body2" color="text.secondary">Loading full results…</Typography>
+                ) : resultsQuery.isError ? (
+                    <Typography variant="body2" color="error">Full results could not be loaded.</Typography>
+                ) : (
+                    <Stack spacing={1}>
+                        <ResultsInspector
+                            title={collectionKey ? `${collectionKey} (full results)` : "full results"}
+                            data={resultPage?.items ?? resultPage?.data}
+                        />
+                        {resultPage?.total != null && pageCount > 1 ? (
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <Button size="small" disabled={page === 0} onClick={() => setPage(page - 1)}>
+                                    Previous
+                                </Button>
+                                <Typography variant="caption">
+                                    Page {page + 1} of {pageCount}
+                                </Typography>
+                                <Button
+                                    size="small"
+                                    disabled={page >= pageCount - 1}
+                                    onClick={() => setPage(page + 1)}
+                                >
+                                    Next
+                                </Button>
+                            </Stack>
+                        ) : null}
+                    </Stack>
+                )
+            ) : null}
+        </Stack>
+    );
+}
+
 export function ResearchResultPanel({
     run,
     title,
@@ -198,6 +284,7 @@ export function ResearchResultPanel({
             </Stack>
             {metricItems?.length ? <MetricCards items={metricItems} /> : null}
             {children}
+            <FullResultsActions run={run} />
             <ResultsInspector title="raw JSON" data={{ metrics: run.metrics, results: run.results }} />
         </Stack>
     );

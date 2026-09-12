@@ -78,8 +78,8 @@ class SegmentationService(ResearchAccessMixin):
         Called by the background worker using its own DB session.
         """
         from backend.modules.text_research.application.run_lifecycle import (
-            RunCancelledError,
             TERMINAL_RUN_STATUSES,
+            RunCancelledError,
             complete_if_active,
             ensure_not_cancelled,
             fail_if_active,

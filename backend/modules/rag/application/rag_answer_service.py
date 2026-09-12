@@ -14,7 +14,7 @@ from backend.modules.rag.application.rag_context_builder import RagContextBuilde
 from backend.modules.rag.application.retrieval_service import RetrievalService
 from backend.modules.rag.domain.citation_validation_context import CitationValidationContext
 from backend.modules.rag.domain.enums import RetrievalIntent
-from backend.modules.rag.domain.models import RagAnswer, RetrievedChunk, RetrievalOutcome
+from backend.modules.rag.domain.models import RagAnswer, RetrievalOutcome, RetrievedChunk
 from backend.modules.rag.infrastructure import metrics
 from backend.modules.rag.infrastructure.rag_config import RagConfig
 from backend.modules.rag.infrastructure.repositories import RagRepository
@@ -59,6 +59,7 @@ def _build_citation_validation_context(
         allowed_document_ids=document_ids,
         retrieval_trace_id=outcome.retrieval_trace_id,
     )
+
 
 NO_CONTEXT_ANSWER = (
     "I could not find relevant document context for your question in the indexed documents."
@@ -181,9 +182,7 @@ class RagAnswerService:
         bounded_chunks = self.context_builder.trim_chunks_to_token_budget(
             outcome.chunks,
             max_tokens=self.config.max_context_tokens,
-            overlap_dedupe_threshold=getattr(
-                self.config, "context_overlap_dedupe_threshold", 0.8
-            ),
+            overlap_dedupe_threshold=getattr(self.config, "context_overlap_dedupe_threshold", 0.8),
             ordering_policy=getattr(self.config, "context_ordering_policy", "relevance"),
         )
 

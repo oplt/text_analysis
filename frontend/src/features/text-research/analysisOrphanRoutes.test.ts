@@ -13,8 +13,12 @@ vi.mock("../../api/client", async () => {
 import {
     cancelRun,
     compareMeasurements,
+    getAnalysisCapabilities,
     fitStatisticalModel,
+    getRun,
+    getRunResultArtifact,
     listRuns,
+    runDictionaryAnalysis,
 } from "../../api/textResearch";
 
 describe("analysis API helper contracts (TASK-023)", () => {
@@ -58,6 +62,46 @@ describe("analysis API helper contracts (TASK-023)", () => {
         const [path, init] = fetchMock.mock.calls[0];
         expect(String(path)).toContain("/runs/run-42/cancel");
         expect(init?.method).toBe("POST");
+    });
+
+    it("rejects a dictionary analysis with no source before fetching", async () => {
+        await expect(
+            runDictionaryAnalysis("corpus-1", { unit_type: "paragraph" })
+        ).rejects.toThrow("dictionary_id, dictionary_terms, or hierarchy is required");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("preserves run rerun capability fields from the API", async () => {
+        fetchMock.mockResolvedValue({
+            id: "run-1",
+            status: "completed",
+            rerunnable: false,
+            rerun_block_reason: "Input artifact unavailable.",
+        });
+        const run = await getRun("run-1");
+        expect(run.rerunnable).toBe(false);
+        expect(run.rerun_block_reason).toBe("Input artifact unavailable.");
+    });
+
+    it("gets artifactized run results with an AbortSignal", async () => {
+        const controller = new AbortController();
+        await getRunResultArtifact("run-1", controller.signal);
+        const [path, init] = fetchMock.mock.calls[0];
+        expect(String(path)).toContain("/runs/run-1/results-artifact");
+        expect(init?.signal).toBe(controller.signal);
+    });
+
+    it("gets analysis capabilities from the shared research endpoint", async () => {
+        const controller = new AbortController();
+        fetchMock.mockResolvedValue({
+            operations: { frequencies: { async: true }, kwic: { async: false } },
+            run_types: {},
+        });
+        const capabilities = await getAnalysisCapabilities(controller.signal);
+        const [path, init] = fetchMock.mock.calls[0];
+        expect(path).toBe("/research/analysis-capabilities");
+        expect(init?.signal).toBe(controller.signal);
+        expect(capabilities.operations.kwic.async).toBe(false);
     });
 
     it("lists runs with limit/offset query params and AbortSignal", async () => {

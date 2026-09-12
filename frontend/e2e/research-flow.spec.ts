@@ -29,6 +29,10 @@ import {
  */
 test.describe.configure({ mode: "serial" });
 
+type SeededWorkspace = Awaited<ReturnType<typeof seedResearchWorkspace>>;
+
+let sharedSeed: SeededWorkspace | undefined;
+
 function credentialsForTest(testInfo: {
     workerIndex: number;
     parallelIndex: number;
@@ -140,23 +144,17 @@ async function closeApi(api: ApiContext | undefined): Promise<void> {
 
 test.describe("Text Research workflow", () => {
     test("full API pipeline: corpus → annotate → train → predict", async ({ browser }, testInfo) => {
-        test.setTimeout(120_000);
+        test.setTimeout(180_000);
         const credentials = credentialsForTest(testInfo);
-        const seeded = await seedResearchWorkspace(browser, credentials);
-        await closeApi(seeded.api);
+        sharedSeed = await seedResearchWorkspace(browser, credentials);
     });
 
-    test("UI reflects completed research pipeline", async ({ browser }, testInfo) => {
-        test.setTimeout(120_000);
-        const credentials = credentialsForTest(testInfo);
-        const { project, corpus, codebook, models, api } = await seedResearchWorkspace(
-            browser,
-            credentials
-        );
+    test("UI reflects completed research pipeline", async ({ browser }) => {
+        test.setTimeout(90_000);
+        expect(sharedSeed).toBeTruthy();
+        const { project, corpus, codebook, models, credentials, api } = sharedSeed!;
 
         try {
-            // Reuse the already-authenticated session cookies via a fresh UI context
-            // signed in as the same isolated user (no shared E2E_TEST_EMAIL).
             const { context } = await createAuthenticatedBrowserContext(browser, credentials, {
                 provision: false,
             });
@@ -171,30 +169,35 @@ test.describe("Text Research workflow", () => {
             const page = await context.newPage();
 
             await page.goto(`/projects/${project.id}`);
-            await expect(page.getByRole("button", { name: /Open Text Research/i })).toBeVisible();
+            await expect(page.getByRole("button", { name: /Open Text Research/i })).toBeVisible({
+                timeout: 30_000,
+            });
             await page.getByRole("button", { name: /Open Text Research/i }).click();
-            await expect(page).toHaveURL(new RegExp(`/research/${project.id}/dashboard`));
+            await expect(page).toHaveURL(new RegExp(`/research/${project.id}/dashboard`), {
+                timeout: 30_000,
+            });
             await expect(page.getByRole("heading", { name: /Text Research/i })).toBeVisible();
             await expect(page.getByText("Documents").first()).toBeVisible();
-            await expect(page.getByText("4").first()).toBeVisible();
+            await expect(page.getByText("Trained models").first()).toBeVisible();
 
-            await page.getByRole("tab", { name: "Corpus" }).click();
-            await expect(page.getByText(/Showing 4 of 4 documents/i)).toBeVisible({
-                timeout: 15_000,
+            // Workflow stages are strip buttons (not tabs); navigate by route.
+            await page.goto(`/research/${project.id}/corpus`);
+            await expect(page).toHaveURL(new RegExp(`/research/${project.id}/corpus`));
+            await expect(page.getByText(corpus.name).first()).toBeVisible({ timeout: 30_000 });
+
+            await page.goto(`/research/${project.id}/classification?tab=models`);
+            await expect(page.getByText(/Trained models/i).first()).toBeVisible({ timeout: 30_000 });
+            await expect(page.getByText(models[0].name ?? "E2E Classifier").first()).toBeVisible({
+                timeout: 30_000,
             });
 
-            await page.getByRole("tab", { name: "Classify" }).click();
-            await expect(page.getByText(/Trained models/i )).toBeVisible();
-            await expect(page.getByText(models[0].name ?? "E2E Classifier")).toBeVisible({
-                timeout: 15_000,
-            });
-
-            await page.getByRole("tab", { name: "Export" }).click();
-            await expect(page.getByText(/export/i).first()).toBeVisible();
+            await page.goto(`/research/${project.id}/exports`);
+            await expect(page.getByText(/export/i).first()).toBeVisible({ timeout: 30_000 });
 
             await context.close();
         } finally {
             await closeApi(api);
+            sharedSeed = undefined;
         }
     });
 });

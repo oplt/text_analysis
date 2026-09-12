@@ -23,6 +23,7 @@ describe("EvidenceProvenance", () => {
                     unavailable_count: 1,
                     unavailable_corpus_document_ids: ["missing"],
                     unavailable_reasons: {},
+                    documents: [],
                     document_bindings: [],
                     warnings: [],
                     scope_mode: "fixed",

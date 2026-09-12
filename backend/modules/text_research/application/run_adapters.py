@@ -23,11 +23,25 @@ ADAPTER_VERSION = "1"
 
 @dataclass(frozen=True)
 class RerunCapability:
-    """Whether a persisted run can be reproduced exactly."""
+    """Replay and exact-reproduction capability for a persisted run.
 
-    rerunnable: bool
-    block_reason: str | None = None
+    ``rerunnable`` / ``block_reason`` are retained as compatibility aliases
+    for replay capability.  A replay re-invokes the normalized operation; an
+    exact reproduction additionally requires frozen scientific inputs.
+    """
+
+    replayable: bool
+    exact_reproducible: bool = False
+    exact_reproduce_block_reason: str | None = None
     adapter_version: str = ADAPTER_VERSION
+
+    @property
+    def rerunnable(self) -> bool:
+        return self.replayable
+
+    @property
+    def block_reason(self) -> str | None:
+        return None if self.replayable else self.exact_reproduce_block_reason
 
 
 class NonRerunnableError(ValueError):
@@ -52,14 +66,12 @@ def _filters(params: dict[str, Any]) -> dict[str, Any]:
     if raw is None:
         return {}
     if not isinstance(raw, dict):
-        raise NonRerunnableError(
-            "Cannot reproduce run: persisted 'filters' must be an object."
-        )
+        raise NonRerunnableError("Cannot reproduce run: persisted 'filters' must be an object.")
     return dict(raw)
 
 
 def _pick(params: dict[str, Any], key: str, default: Any) -> Any:
-    return default if key not in params else params[key]
+    return params.get(key, default)
 
 
 class RunAdapter(ABC):
@@ -67,17 +79,24 @@ class RunAdapter(ABC):
 
     run_type: str
     version: str = ADAPTER_VERSION
+    supports_async: bool = True
 
     def capability(self, params: dict[str, Any] | None) -> RerunCapability:
         try:
             self.normalize(params or {})
         except NonRerunnableError as exc:
             return RerunCapability(
-                rerunnable=False,
-                block_reason=exc.reason,
+                replayable=False,
+                exact_reproduce_block_reason=exc.reason,
                 adapter_version=self.version,
             )
-        return RerunCapability(rerunnable=True, adapter_version=self.version)
+        exact_reason = _exact_reproduction_block_reason(params or {})
+        return RerunCapability(
+            replayable=True,
+            exact_reproducible=exact_reason is None,
+            exact_reproduce_block_reason=exact_reason,
+            adapter_version=self.version,
+        )
 
     @abstractmethod
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -92,8 +111,7 @@ class RunAdapter(ABC):
         user_id: str,
         run_async: bool,
         normalized: dict[str, Any],
-    ) -> AnalysisRun:
-        ...
+    ) -> AnalysisRun: ...
 
 
 class UnsupportedRunAdapter(RunAdapter):
@@ -116,6 +134,39 @@ class UnsupportedRunAdapter(RunAdapter):
         normalized: dict[str, Any],
     ) -> AnalysisRun:
         raise HTTPException(status_code=400, detail=self._reason)
+
+
+def _exact_reproduction_block_reason(params: dict[str, Any]) -> str | None:
+    """Return why a normalized replay cannot claim exact reproduction.
+
+    A managed request-input artifact is a frozen input by itself.  Corpus
+    operations instead need a persisted analysis specification plus a corpus
+    or pipeline checksum.  Older records deliberately remain replayable but
+    are never presented as exact.
+    """
+    input_artifact_id = params.get("input_artifact_id")
+    input_checksum = params.get("input_artifact_checksum")
+    if input_artifact_id or input_checksum:
+        if input_artifact_id and input_checksum:
+            return None
+        return "Exact reproduce requires both the managed input artifact ID and checksum."
+
+    provenance = params.get("provenance")
+    if not isinstance(provenance, dict):
+        provenance = {}
+    spec_hash = provenance.get("analysis_spec_hash") or params.get("analysis_spec_hash")
+    checksum = (
+        provenance.get("corpus_snapshot_hash")
+        or provenance.get("corpus_checksum")
+        or provenance.get("pipeline_checksum")
+        or params.get("corpus_checksum")
+        or params.get("pipeline_checksum")
+    )
+    if not spec_hash:
+        return "Exact reproduce requires a frozen analysis specification checksum."
+    if not checksum:
+        return "Exact reproduce requires a frozen corpus or pipeline checksum."
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -346,6 +397,7 @@ class ReliabilityAdapter(RunAdapter):
 
 class CorpusStatsAdapter(RunAdapter):
     run_type = AnalysisRunType.CORPUS_STATS.value
+    supports_async = False
 
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -405,7 +457,7 @@ class FrequencyAnalysisAdapter(RunAdapter):
 
         filters = dict(normalized.pop("filters") or {})
         return await QuantitativeAnalysisService(db).frequencies(
-            run.corpus_id, user_id=user_id, **normalized, **filters
+            run.corpus_id, user_id=user_id, run_async=run_async, **normalized, **filters
         )
 
 
@@ -438,7 +490,7 @@ class NgramAnalysisAdapter(RunAdapter):
 
         filters = dict(normalized.pop("filters") or {})
         return await QuantitativeAnalysisService(db).ngrams(
-            run.corpus_id, user_id=user_id, **normalized, **filters
+            run.corpus_id, user_id=user_id, run_async=run_async, **normalized, **filters
         )
 
 
@@ -473,12 +525,13 @@ class DfmAdapter(RunAdapter):
 
         filters = dict(normalized.pop("filters") or {})
         return await QuantitativeAnalysisService(db).dfm(
-            run.corpus_id, user_id=user_id, **normalized, **filters
+            run.corpus_id, user_id=user_id, run_async=run_async, **normalized, **filters
         )
 
 
 class KwicAdapter(RunAdapter):
     run_type = AnalysisRunType.KWIC.value
+    supports_async = False
 
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -515,6 +568,7 @@ class KwicAdapter(RunAdapter):
 
 class DictionaryAnalysisAdapter(RunAdapter):
     run_type = AnalysisRunType.DICTIONARY_ANALYSIS.value
+    supports_async = False
 
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
         return {
@@ -580,7 +634,7 @@ class KeynessAdapter(RunAdapter):
         )
 
         return await QuantitativeAnalysisService(db).keyness(
-            run.corpus_id, user_id=user_id, **normalized
+            run.corpus_id, user_id=user_id, run_async=run_async, **normalized
         )
 
 
@@ -616,12 +670,12 @@ class CooccurrenceAdapter(RunAdapter):
 
         filters = dict(normalized.pop("filters") or {})
         return await QuantitativeAnalysisService(db).cooccurrence(
-            run.corpus_id, user_id=user_id, **normalized, **filters
+            run.corpus_id, user_id=user_id, run_async=run_async, **normalized, **filters
         )
 
 
 class SimilarityAdapter(RunAdapter):
-    """Lexical similarity is rerunnable; raw-vector embedding_cosine is not."""
+    """Reproduce lexical or managed-artifact embedding similarity."""
 
     run_type = AnalysisRunType.SIMILARITY.value
 
@@ -638,12 +692,7 @@ class SimilarityAdapter(RunAdapter):
             params.get("embedding_artifact_id") or params.get("embeddings_artifact_path")
         )
         uses_raw_vectors = canonical == "embedding_cosine" or bool(params.get("has_embeddings"))
-        if uses_raw_vectors:
-            if has_artifact:
-                raise NonRerunnableError(
-                    "Raw-vector embedding_cosine similarity cannot be reproduced yet: "
-                    "embedding artifact loading for rerun is not implemented."
-                )
+        if uses_raw_vectors and not has_artifact:
             raise NonRerunnableError(
                 "Raw-vector embedding_cosine similarity cannot be reproduced: "
                 "original embeddings were not persisted as managed artifacts. "
@@ -661,6 +710,7 @@ class SimilarityAdapter(RunAdapter):
             "centroid_target": _pick(params, "centroid_target", "between_groups"),
             "query_text": params.get("query_text"),
             "query_unit_id": params.get("query_unit_id"),
+            "embedding_artifact_id": params.get("embedding_artifact_id"),
             "preprocessing_profile_id": params.get("preprocessing_profile_id"),
             "filters": _filters(params),
         }
@@ -680,7 +730,7 @@ class SimilarityAdapter(RunAdapter):
 
         filters = dict(normalized.pop("filters") or {})
         return await QuantitativeAnalysisService(db).similarity(
-            run.corpus_id, user_id=user_id, **normalized, **filters
+            run.corpus_id, user_id=user_id, run_async=run_async, **normalized, **filters
         )
 
 
@@ -716,7 +766,7 @@ class DuplicateDetectionAdapter(RunAdapter):
 
         filters = dict(normalized.pop("filters") or {})
         return await QuantitativeAnalysisService(db).duplicate_detection(
-            run.corpus_id, user_id=user_id, **normalized, **filters
+            run.corpus_id, user_id=user_id, run_async=run_async, **normalized, **filters
         )
 
 
@@ -745,9 +795,7 @@ class ClassifierPredictionAdapter(RunAdapter):
         )
 
         model_id = normalized.pop("model_id")
-        return await PredictionService(db).predict(
-            model_id, user_id=user_id, **normalized
-        )
+        return await PredictionService(db).predict(model_id, user_id=user_id, **normalized)
 
 
 class ComparativeAnalysisAdapter(RunAdapter):
@@ -783,6 +831,62 @@ class ComparativeAnalysisAdapter(RunAdapter):
         )
 
 
+class StatisticalModelAdapter(RunAdapter):
+    run_type = AnalysisRunType.STATISTICAL_MODEL.value
+
+    def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "model": _pick(params, "model", "ols"),
+            "dependent_var": _require(params, "dependent_var", run_type=self.run_type),
+            "independent_vars": _require(params, "independent_vars", run_type=self.run_type),
+            "add_intercept": _pick(params, "add_intercept", True),
+            "input_artifact_id": _require(params, "input_artifact_id", run_type=self.run_type),
+        }
+
+    async def execute(
+        self,
+        db: AsyncSession,
+        run: AnalysisRun,
+        *,
+        user_id: str,
+        run_async: bool,
+        normalized: dict[str, Any],
+    ) -> AnalysisRun:
+        from backend.modules.text_research.application.statistical_modeling_service import (
+            StatisticalModelingService,
+        )
+
+        return await StatisticalModelingService(db).fit_from_artifact(
+            run.corpus_id, user_id=user_id, **normalized
+        )
+
+
+class MeasurementValidationAdapter(RunAdapter):
+    run_type = AnalysisRunType.MEASUREMENT_VALIDATION.value
+
+    def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "input_artifact_id": _require(params, "input_artifact_id", run_type=self.run_type),
+        }
+
+    async def execute(
+        self,
+        db: AsyncSession,
+        run: AnalysisRun,
+        *,
+        user_id: str,
+        run_async: bool,
+        normalized: dict[str, Any],
+    ) -> AnalysisRun:
+        from backend.modules.text_research.application.measurement_validation_service import (
+            MeasurementValidationService,
+        )
+
+        return await MeasurementValidationService(db).compare_from_artifact(
+            run.corpus_id, user_id=user_id, **normalized
+        )
+
+
 # ---------------------------------------------------------------------------
 # Explicitly unsupported types
 # ---------------------------------------------------------------------------
@@ -800,29 +904,17 @@ _UNSUPPORTED: dict[str, str] = {
         "Readability runs are not rerunnable: exact reproduction is not registered "
         "until all inputs are covered by a versioned adapter."
     ),
-    AnalysisRunType.STATISTICAL_MODEL.value: (
-        "Statistical-model runs are not rerunnable: request rows are not persisted "
-        "in a form that guarantees exact reproduction."
-    ),
-    AnalysisRunType.MEASUREMENT_VALIDATION.value: (
-        "Measurement-validation runs are not rerunnable: input arrays are not "
-        "persisted for exact reproduction."
-    ),
     AnalysisRunType.DRIFT_MONITORING.value: (
         "Drift-monitoring runs are not rerunnable from the Runs UI."
     ),
     AnalysisRunType.PREPROCESSING.value: (
         "Preprocessing runs are not rerunnable from the Runs UI."
     ),
-    AnalysisRunType.EXPORT.value: (
-        "Export runs are not rerunnable from the Runs UI."
-    ),
+    AnalysisRunType.EXPORT.value: ("Export runs are not rerunnable from the Runs UI."),
     AnalysisRunType.CORPUS_SYNTHESIS.value: (
         "Corpus-synthesis runs are not rerunnable from the Runs UI."
     ),
-    AnalysisRunType.INGESTION_QA.value: (
-        "Ingestion-QA runs are not rerunnable from the Runs UI."
-    ),
+    AnalysisRunType.INGESTION_QA.value: ("Ingestion-QA runs are not rerunnable from the Runs UI."),
     AnalysisRunType.DOCUMENT_CLEANING.value: (
         "Document-cleaning runs are not rerunnable from the Runs UI."
     ),
@@ -848,6 +940,8 @@ def _build_registry() -> dict[str, RunAdapter]:
         DuplicateDetectionAdapter(),
         ClassifierPredictionAdapter(),
         ComparativeAnalysisAdapter(),
+        StatisticalModelAdapter(),
+        MeasurementValidationAdapter(),
     ]
     registry: dict[str, RunAdapter] = {adapter.run_type: adapter for adapter in adapters}
     for run_type, reason in _UNSUPPORTED.items():
@@ -856,6 +950,29 @@ def _build_registry() -> dict[str, RunAdapter]:
 
 
 RUN_ADAPTERS: dict[str, RunAdapter] = _build_registry()
+
+# Public API operation names deliberately live beside the rerun registry so
+# route/UI capability reporting cannot drift from adapter support.
+ANALYSIS_OPERATION_RUN_TYPES: dict[str, str] = {
+    "corpus_stats": AnalysisRunType.CORPUS_STATS.value,
+    "frequencies": AnalysisRunType.FREQUENCY_ANALYSIS.value,
+    "ngrams": AnalysisRunType.NGRAM_ANALYSIS.value,
+    "dfm": AnalysisRunType.DFM.value,
+    "kwic": AnalysisRunType.KWIC.value,
+    "dictionary": AnalysisRunType.DICTIONARY_ANALYSIS.value,
+    "keyness": AnalysisRunType.KEYNESS.value,
+    "cooccurrence": AnalysisRunType.COOCCURRENCE.value,
+    "similarity": AnalysisRunType.SIMILARITY.value,
+    "duplicate_detection": AnalysisRunType.DUPLICATE_DETECTION.value,
+    "clustering": AnalysisRunType.CLUSTERING.value,
+    "dimensionality_reduction": AnalysisRunType.DIMENSIONALITY_REDUCTION.value,
+    "readability": AnalysisRunType.READABILITY.value,
+    "classifier_training": AnalysisRunType.CLASSIFIER_TRAINING.value,
+    "topic_train": AnalysisRunType.TOPIC_MODEL.value,
+    "topic_k_sweep": AnalysisRunType.TOPIC_MODEL.value,
+    "topic_seed_stability": AnalysisRunType.TOPIC_MODEL.value,
+    "robustness": AnalysisRunType.ROBUSTNESS.value,
+}
 
 
 class _HasParams(Protocol):
@@ -870,14 +987,17 @@ def describe_rerun_capability(
     adapter = RUN_ADAPTERS.get(run_type)
     if adapter is None:
         return RerunCapability(
-            rerunnable=False,
-            block_reason=f"Rerun is not supported for run_type '{run_type}'.",
+            replayable=False,
+            exact_reproduce_block_reason=f"Rerun is not supported for run_type '{run_type}'.",
             adapter_version=ADAPTER_VERSION,
         )
     return adapter.capability(params)
 
 
-def capability_for_run(run: AnalysisRun | _HasParams, params: dict[str, Any] | None = None) -> RerunCapability:
+def capability_for_run(
+    run: AnalysisRun | _HasParams,
+    params: dict[str, Any] | None = None,
+) -> RerunCapability:
     if params is None:
         from backend.modules.text_research.domain.models import loads
 
@@ -891,6 +1011,7 @@ async def execute_rerun(
     *,
     user_id: str,
     run_async: bool = False,
+    exact: bool = False,
     params: dict[str, Any] | None = None,
 ) -> AnalysisRun:
     """Validate via the registry and re-execute, or raise HTTP 400 with reason."""
@@ -908,6 +1029,19 @@ async def execute_rerun(
         normalized = adapter.normalize(params)
     except NonRerunnableError as exc:
         raise HTTPException(status_code=400, detail=exc.reason) from exc
+    if run_async and not adapter.supports_async:
+        raise HTTPException(
+            status_code=422,
+            detail=f"{run.run_type} does not support asynchronous execution.",
+        )
+    if exact:
+        capability = adapter.capability(params)
+        if not capability.exact_reproducible:
+            raise HTTPException(
+                status_code=400,
+                detail=capability.exact_reproduce_block_reason
+                or "Exact reproduce is not available for this run.",
+            )
     return await adapter.execute(
         db,
         run,

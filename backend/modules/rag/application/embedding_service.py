@@ -25,9 +25,7 @@ class EmbeddingService:
             embed_fn=self._adapter.embed_texts,
             dimensions=getattr(self.config, "embedding_dimensions", None),
             model_version=getattr(self.config, "embedding_model_version", None),
-            preprocessing_version=getattr(
-                self.config, "embedding_preprocessing_version", None
-            ),
+            preprocessing_version=getattr(self.config, "embedding_preprocessing_version", None),
         )
         expected = getattr(self.config, "embedding_dimensions", None)
         invalid = (
