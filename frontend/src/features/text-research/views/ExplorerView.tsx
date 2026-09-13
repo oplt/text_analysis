@@ -25,7 +25,7 @@ import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { MatrixHeatmap, ResultsInspector, ScientificLineChart } from "../components/ResearchCharts";
 import { ResearchResultsTable } from "../components/ResearchResults";
-import { RunStatusChip } from "../components/ResearchShared";
+import { RunStatusChip } from "../../../components/ui/RunStatusChip";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";

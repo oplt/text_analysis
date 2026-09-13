@@ -40,13 +40,22 @@ import {
     predictClassifier,
     updateModelLifecycle,
 } from "../../../api/textResearch";
+import { DisabledWithReason } from "../../../components/ui/DisabledWithReason";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { HelpFieldLabel, HelpTooltip } from "../../../components/ui/HelpTooltip";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
+import {
+    driftCompareDisabledReason,
+    modelLifecycleDisabledReason,
+    predictModelDisabledReason,
+} from "../actionDisabledReasons";
 import { ResultsInspector } from "../components/ResearchCharts";
+import { ProvenanceDrawer } from "../components/ProvenanceDrawer";
+import { ProvenancePanel } from "../components/ProvenancePanel";
 import { ResearchResultsTable } from "../components/ResearchResults";
 import { parseDriftReport, predictionSetOptionLabel } from "../driftDiagnostics";
 import { useResearchContext } from "../hooks/useResearchContext";
@@ -125,7 +134,7 @@ export default function ModelRegistryView() {
 
     const modelQuery = useQuery({
         queryKey: queryKeys.textResearch.model(selectedModelIdSafe ?? ""),
-        queryFn: () => getClassifier(selectedModelIdSafe!),
+        queryFn: ({ signal }) => getClassifier(selectedModelIdSafe!, signal),
         enabled: Boolean(selectedModelIdSafe),
         staleTime: QUERY_STALE_TIMES.researchModelLifecycle,
     });
@@ -134,7 +143,7 @@ export default function ModelRegistryView() {
 
     const coefficientsQuery = useQuery({
         queryKey: queryKeys.textResearch.coefficients(selectedModelIdSafe ?? ""),
-        queryFn: () => getClassifierCoefficients(selectedModelIdSafe!),
+        queryFn: ({ signal }) => getClassifierCoefficients(selectedModelIdSafe!, signal),
         enabled: Boolean(selectedModelIdSafe),
         staleTime: QUERY_STALE_TIMES.researchModelMetrics,
     });
@@ -155,7 +164,7 @@ export default function ModelRegistryView() {
 
     const lifecycleEventsQuery = useQuery({
         queryKey: queryKeys.textResearch.modelLifecycleEvents(selectedModelIdSafe ?? ""),
-        queryFn: () => listModelLifecycleEvents(selectedModelIdSafe!),
+        queryFn: ({ signal }) => listModelLifecycleEvents(selectedModelIdSafe!, signal),
         enabled: Boolean(selectedModelIdSafe),
         staleTime: QUERY_STALE_TIMES.researchModelLifecycle,
     });
@@ -314,7 +323,7 @@ export default function ModelRegistryView() {
                     <TextField
                         select
                         size="small"
-                        label="Lifecycle"
+                        label={<HelpFieldLabel termId="model_lifecycle">Lifecycle</HelpFieldLabel>}
                         value={lifecycleFilter}
                         onChange={(e) => setLifecycleFilter(e.target.value)}
                         sx={{ minWidth: 180 }}
@@ -488,57 +497,81 @@ export default function ModelRegistryView() {
                             </Stack>
 
                             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                                <Button
-                                    size="small"
-                                    variant="contained"
-                                    startIcon={<PromoteIcon />}
-                                    disabled={
-                                        lifecycleMutation.isPending ||
-                                        selectedModel.lifecycle_status === "production"
-                                    }
-                                    onClick={() =>
-                                        lifecycleMutation.mutate({
-                                            status: "production",
-                                            notes: "Promoted to production from Model Registry",
-                                            deprecate_others: true,
-                                        })
-                                    }
+                                <DisabledWithReason
+                                    reason={modelLifecycleDisabledReason({
+                                        action: "production",
+                                        currentStatus: selectedModel.lifecycle_status,
+                                        pending: lifecycleMutation.isPending,
+                                    })}
                                 >
-                                    Promote to production
-                                </Button>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    disabled={
-                                        lifecycleMutation.isPending ||
-                                        selectedModel.lifecycle_status === "deprecated"
-                                    }
-                                    onClick={() =>
-                                        lifecycleMutation.mutate({
-                                            status: "deprecated",
-                                            notes: "Deprecated from Model Registry",
-                                        })
-                                    }
+                                    <Button
+                                        size="small"
+                                        variant="contained"
+                                        startIcon={<PromoteIcon />}
+                                        disabled={
+                                            lifecycleMutation.isPending ||
+                                            selectedModel.lifecycle_status === "production"
+                                        }
+                                        onClick={() =>
+                                            lifecycleMutation.mutate({
+                                                status: "production",
+                                                notes: "Promoted to production from Model Registry",
+                                                deprecate_others: true,
+                                            })
+                                        }
+                                    >
+                                        Promote to production
+                                    </Button>
+                                </DisabledWithReason>
+                                <DisabledWithReason
+                                    reason={modelLifecycleDisabledReason({
+                                        action: "deprecated",
+                                        currentStatus: selectedModel.lifecycle_status,
+                                        pending: lifecycleMutation.isPending,
+                                    })}
                                 >
-                                    Deprecate
-                                </Button>
-                                <Button
-                                    size="small"
-                                    variant="outlined"
-                                    startIcon={<ArchiveIcon />}
-                                    disabled={
-                                        lifecycleMutation.isPending ||
-                                        selectedModel.lifecycle_status === "archived"
-                                    }
-                                    onClick={() =>
-                                        lifecycleMutation.mutate({
-                                            status: "archived",
-                                            notes: "Archived from Model Registry",
-                                        })
-                                    }
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        disabled={
+                                            lifecycleMutation.isPending ||
+                                            selectedModel.lifecycle_status === "deprecated"
+                                        }
+                                        onClick={() =>
+                                            lifecycleMutation.mutate({
+                                                status: "deprecated",
+                                                notes: "Deprecated from Model Registry",
+                                            })
+                                        }
+                                    >
+                                        Deprecate
+                                    </Button>
+                                </DisabledWithReason>
+                                <DisabledWithReason
+                                    reason={modelLifecycleDisabledReason({
+                                        action: "archived",
+                                        currentStatus: selectedModel.lifecycle_status,
+                                        pending: lifecycleMutation.isPending,
+                                    })}
                                 >
-                                    Archive
-                                </Button>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        startIcon={<ArchiveIcon />}
+                                        disabled={
+                                            lifecycleMutation.isPending ||
+                                            selectedModel.lifecycle_status === "archived"
+                                        }
+                                        onClick={() =>
+                                            lifecycleMutation.mutate({
+                                                status: "archived",
+                                                notes: "Archived from Model Registry",
+                                            })
+                                        }
+                                    >
+                                        Archive
+                                    </Button>
+                                </DisabledWithReason>
                                 <Button
                                     size="small"
                                     variant="outlined"
@@ -619,15 +652,22 @@ export default function ModelRegistryView() {
                                             )
                                         )}
                                     </TextField>
-                                    <Button
-                                        size="small"
-                                        variant="contained"
-                                        startIcon={<PredictIcon />}
-                                        disabled={predictMutation.isPending}
-                                        onClick={() => predictMutation.mutate()}
+                                    <DisabledWithReason
+                                        reason={predictModelDisabledReason({
+                                            modelId: selectedModel.id,
+                                            pending: predictMutation.isPending,
+                                        })}
                                     >
-                                        Predict
-                                    </Button>
+                                        <Button
+                                            size="small"
+                                            variant="contained"
+                                            startIcon={<PredictIcon />}
+                                            disabled={predictMutation.isPending}
+                                            onClick={() => predictMutation.mutate()}
+                                        >
+                                            Predict
+                                        </Button>
+                                    </DisabledWithReason>
                                 </Stack>
                             </Box>
 
@@ -679,19 +719,27 @@ export default function ModelRegistryView() {
                                             </MenuItem>
                                         ))}
                                     </TextField>
-                                    <Button
-                                        size="small"
-                                        variant="outlined"
-                                        startIcon={<DriftIcon />}
-                                        disabled={
-                                            !baselinePredictionSetId ||
-                                            !currentPredictionSetId ||
-                                            driftMutation.isPending
-                                        }
-                                        onClick={() => driftMutation.mutate()}
+                                    <DisabledWithReason
+                                        reason={driftCompareDisabledReason({
+                                            baselineId: baselinePredictionSetId,
+                                            currentId: currentPredictionSetId,
+                                            pending: driftMutation.isPending,
+                                        })}
                                     >
-                                        Compare sets
-                                    </Button>
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            startIcon={<DriftIcon />}
+                                            disabled={
+                                                !baselinePredictionSetId ||
+                                                !currentPredictionSetId ||
+                                                driftMutation.isPending
+                                            }
+                                            onClick={() => driftMutation.mutate()}
+                                        >
+                                            Compare sets
+                                        </Button>
+                                    </DisabledWithReason>
                                     <Button
                                         size="small"
                                         variant="text"
@@ -743,7 +791,11 @@ export default function ModelRegistryView() {
                             </Box>
 
                             <Stack spacing={0.5}>
-                                <Typography variant="subtitle2">Lifecycle</Typography>
+                                <Typography variant="subtitle2" component="div">
+                                    <HelpTooltip termId="model_lifecycle" variant="label">
+                                        Lifecycle
+                                    </HelpTooltip>
+                                </Typography>
                                 <Typography variant="body2">
                                     Status: {lifecycleDisplayLabel(selectedModel.lifecycle_status)}
                                 </Typography>
@@ -989,19 +1041,73 @@ export default function ModelRegistryView() {
                             </Box>
 
                             <Box>
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Provenance
-                                </Typography>
+                                <Stack
+                                    direction="row"
+                                    spacing={1}
+                                    alignItems="center"
+                                    sx={{ mb: 1 }}
+                                >
+                                    <Typography variant="subtitle2">Provenance</Typography>
+                                    {selectedModel.analysis_run_id ? (
+                                        <ProvenanceDrawer
+                                            run={{
+                                                id: selectedModel.analysis_run_id,
+                                                run_type: "classification_train",
+                                                status: selectedModel.lifecycle_status ?? "completed",
+                                                corpus_id: selectedModel.corpus_id,
+                                                parameters: {
+                                                    dataset_snapshot_id:
+                                                        selectedModel.training_dataset_snapshot_id,
+                                                    trained_model_id: selectedModel.id,
+                                                },
+                                                random_seed: null,
+                                                artifact_path: null,
+                                                created_by: selectedModel.created_by,
+                                                created_at: selectedModel.created_at,
+                                                started_at: null,
+                                                completed_at: null,
+                                                evidence_revision_hash: null,
+                                            }}
+                                            detail={provenanceQuery.data}
+                                            fetchDetail={false}
+                                        />
+                                    ) : null}
+                                </Stack>
                                 <QueryBoundary
                                     isLoading={provenanceQuery.isLoading}
                                     isError={provenanceQuery.isError}
                                     error={provenanceQuery.error}
                                     onRetry={() => void provenanceQuery.refetch()}
                                 >
-                                    {provenanceQuery.data ? (
-                                        <ResultsInspector
-                                            title="run provenance"
-                                            data={provenanceQuery.data}
+                                    {provenanceQuery.data || selectedModel.analysis_run_id ? (
+                                        <ProvenancePanel
+                                            run={
+                                                selectedModel.analysis_run_id
+                                                    ? {
+                                                          id: selectedModel.analysis_run_id,
+                                                          run_type: "classification_train",
+                                                          status:
+                                                              selectedModel.lifecycle_status ??
+                                                              "completed",
+                                                          corpus_id: selectedModel.corpus_id,
+                                                          parameters: {
+                                                              dataset_snapshot_id:
+                                                                  selectedModel.training_dataset_snapshot_id,
+                                                              trained_model_id: selectedModel.id,
+                                                          },
+                                                          random_seed: null,
+                                                          artifact_path: null,
+                                                          created_by: selectedModel.created_by,
+                                                          created_at: selectedModel.created_at,
+                                                          started_at: null,
+                                                          completed_at: null,
+                                                          evidence_revision_hash: null,
+                                                      }
+                                                    : null
+                                            }
+                                            detail={provenanceQuery.data}
+                                            compact
+                                            showRaw
                                         />
                                     ) : (
                                         <Typography variant="body2" color="text.secondary">

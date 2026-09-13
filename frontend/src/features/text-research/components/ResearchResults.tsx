@@ -1,22 +1,14 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-    Box,
+    Alert,
     Button,
-    Drawer,
-    IconButton,
     Stack,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
     ToggleButton,
     ToggleButtonGroup,
-    Tooltip,
     Typography,
 } from "@mui/material";
-import { Download as DownloadIcon, InfoOutlined as InfoIcon } from "@mui/icons-material";
+import { Download as DownloadIcon } from "@mui/icons-material";
 import {
     getRunResults,
     researchExportUrl,
@@ -24,8 +16,12 @@ import {
 } from "../../../api/textResearch";
 import type { AnalysisRun } from "../types";
 import { ActiveRunActions } from "./ActiveRunActions";
-import { JsonBlock, RunStatusChip } from "./ResearchShared";
 import { MetricCards, ResultsInspector } from "./ResearchCharts";
+import { DataTable } from "../../../components/ui/DataTable";
+import { RunStatusPanel } from "../../../components/ui/RunStatusPanel";
+import { isActiveRunStatus } from "../runPolling";
+import { ProvenanceDrawer } from "./ProvenanceDrawer";
+import { ProvenancePanel } from "./ProvenancePanel";
 
 export type ResearchResultsColumn<Row> = {
     id: string;
@@ -67,104 +63,65 @@ export function ResearchResultsTable<Row extends { id?: string | number }>({
     emptyMessage?: string;
     pageSize?: number;
 }) {
-    const [sort, setSort] = useState<{ id: string; direction: "asc" | "desc" } | null>(null);
-    const [page, setPage] = useState(0);
-    const sortedRows = useMemo(() => {
-        if (!sort) return rows;
-        const column = columns.find((item) => item.id === sort.id);
-        if (!column) return rows;
-        return [...rows].sort((a, b) => {
-            const left = column.value(a);
-            const right = column.value(b);
-            const comparison = typeof left === "number" && typeof right === "number"
-                ? left - right
-                : String(left ?? "").localeCompare(String(right ?? ""), undefined, { numeric: true });
-            return sort.direction === "asc" ? comparison : -comparison;
-        });
-    }, [columns, rows, sort]);
-    const pageCount = Math.max(1, Math.ceil(sortedRows.length / pageSize));
-    const currentPage = Math.min(page, pageCount - 1);
-    const visibleRows = sortedRows.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+    const tableColumns = useMemo(
+        () =>
+            columns.map((column) => ({
+                id: column.id,
+                label: column.label,
+                align: column.align,
+                sortable: true,
+                truncate: true as const,
+                getSortValue: (row: Row) => column.value(row),
+                render: (row: Row) => {
+                    const value = column.value(row);
+                    return value == null || value === "" ? "—" : String(value);
+                },
+            })),
+        [columns]
+    );
 
-    function toggleSort(id: string) {
-        setPage(0);
-        setSort((current) =>
-            current?.id === id
-                ? { id, direction: current.direction === "asc" ? "desc" : "asc" }
-                : { id, direction: "asc" }
-        );
-    }
-
-    if (!rows.length) return <Typography color="text.secondary">{emptyMessage}</Typography>;
     return (
-        <Stack spacing={1}>
-            <Box sx={{ overflowX: "auto" }}>
-                <Table size="small" aria-label="Analysis result table">
-                    <TableHead>
-                        <TableRow>
-                            {columns.map((column) => (
-                                <TableCell key={column.id} align={column.align} sortDirection={sort?.id === column.id ? sort.direction : false}>
-                                    <Button size="small" color="inherit" onClick={() => toggleSort(column.id)}>
-                                        {column.label}{sort?.id === column.id ? (sort.direction === "asc" ? " ↑" : " ↓") : ""}
-                                    </Button>
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {visibleRows.map((row, index) => (
-                            <TableRow key={row.id ?? `${currentPage}-${index}`} hover>
-                                {columns.map((column) => {
-                                    const value = column.value(row);
-                                    return <TableCell key={column.id} align={column.align}>{value == null || value === "" ? "—" : String(value)}</TableCell>;
-                                })}
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </Box>
-            {pageCount > 1 ? (
-                <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
-                    <Button size="small" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>Previous</Button>
-                    <Typography variant="caption">Page {currentPage + 1} of {pageCount}</Typography>
-                    <Button size="small" disabled={currentPage >= pageCount - 1} onClick={() => setPage(currentPage + 1)}>Next</Button>
-                </Stack>
-            ) : null}
-        </Stack>
+        <DataTable
+            ariaLabel="Analysis result table"
+            columns={tableColumns}
+            rows={rows}
+            getRowId={(row, index) => String(row.id ?? `row-${index}`)}
+            density="compact"
+            stickyHeader
+            stickyFirstColumn
+            clientSort
+            pageSize={pageSize}
+            emptyDescription={emptyMessage}
+            showDensityToggle={rows.length > 20}
+        />
+    );
+}
+
+export function MethodsAndProvenanceContent({
+    run,
+    compact = false,
+}: {
+    run: AnalysisRun;
+    compact?: boolean;
+}) {
+    return (
+        <ProvenancePanel
+            run={run}
+            compact={compact}
+            showRaw={!compact}
+            actions={!compact ? <ResearchExportActions runId={run.id} /> : null}
+        />
     );
 }
 
 export function MethodsAndProvenanceDrawer({ run }: { run: AnalysisRun }) {
-    const [open, setOpen] = useState(false);
-    const parameters = run.parameters ?? {};
-    const section = (title: string, keys: string[]) => {
-        const values = keys
-            .filter((key) => parameters[key] != null)
-            .map((key) => `${key.replace(/_/g, " ")}: ${typeof parameters[key] === "object" ? JSON.stringify(parameters[key]) : String(parameters[key])}`);
-        return values.length ? <Box><Typography variant="subtitle2">{title}</Typography>{values.map((value) => <Typography key={value} variant="body2" color="text.secondary">{value}</Typography>)}</Box> : null;
-    };
     return (
-        <>
-            <Tooltip title="Methods and provenance"><IconButton aria-label="Methods and provenance" onClick={() => setOpen(true)}><InfoIcon /></IconButton></Tooltip>
-            <Drawer anchor="right" open={open} onClose={() => setOpen(false)}>
-                <Stack spacing={2} sx={{ width: { xs: "min(100vw, 360px)", sm: 420 }, p: 3 }}>
-                    <Typography variant="h6">Methods and provenance</Typography>
-                    {section("Data", ["corpus_id", "document_ids", "unit_type", "filters"])}
-                    {section("Preprocessing", ["preprocessing_profile_id", "preprocessing_config", "ngram_range", "min_df", "max_df"])}
-                    {section("Measurement", ["codebook_id", "codebook_version", "annotation_source", "minimum_agreement", "provenance_mode"])}
-                    {section("Model", ["algorithm", "dataset_snapshot_id", "random_seed", "test_size", "class_weight", "C", "grouped_split"])}
-                    <Box>
-                        <Typography variant="subtitle2">Reproducibility</Typography>
-                        <Typography variant="body2" color="text.secondary">AnalysisRun ID: {run.id}</Typography>
-                        <Typography variant="body2" color="text.secondary">Created: {new Date(run.created_at).toLocaleString()}</Typography>
-                        <Typography variant="body2" color="text.secondary">Completed: {run.completed_at ? new Date(run.completed_at).toLocaleString() : "—"}</Typography>
-                        <Typography variant="body2" color="text.secondary">Artifact: {run.artifact_path ?? "—"}</Typography>
-                        <ResearchExportActions runId={run.id} />
-                    </Box>
-                    <JsonBlock data={{ parameters, random_seed: run.random_seed, artifact_path: run.artifact_path }} />
-                </Stack>
-            </Drawer>
-        </>
+        <ProvenanceDrawer
+            run={run}
+            title="Methods and provenance"
+            tooltip="Methods and provenance"
+            actions={<ResearchExportActions runId={run.id} />}
+        />
     );
 }
 
@@ -270,18 +227,26 @@ export function ResearchResultPanel({
 }) {
     return (
         <Stack spacing={2}>
-            <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" spacing={1}>
-                <Box>
-                    <Typography variant="h6">{title}</Typography>
-                    <Typography variant="caption" color="text.secondary">Run {run.id} · {new Date(run.created_at).toLocaleString()}</Typography>
-                </Box>
-                <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
-                    <RunStatusChip status={run.status} />
-                    <ActiveRunActions run={run} projectId={projectId} corpusId={corpusId} />
-                    <MethodsAndProvenanceDrawer run={run} />
-                    <ResearchExportActions runId={run.id} />
-                </Stack>
-            </Stack>
+            <RunStatusPanel
+                title={title}
+                status={run.status}
+                runId={run.id}
+                stage={run.progress_stage}
+                startedAt={run.started_at}
+                completedAt={run.completed_at}
+                createdAt={run.created_at}
+                errorMessage={run.error_message}
+                actions={
+                    <>
+                        <ActiveRunActions run={run} projectId={projectId} corpusId={corpusId} />
+                        <MethodsAndProvenanceDrawer run={run} />
+                        <ResearchExportActions runId={run.id} />
+                    </>
+                }
+            />
+            {isActiveRunStatus(run.status) ? (
+                <Alert severity="info">Analysis in progress…</Alert>
+            ) : null}
             {metricItems?.length ? <MetricCards items={metricItems} /> : null}
             {children}
             <FullResultsActions run={run} />

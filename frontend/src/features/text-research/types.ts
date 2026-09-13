@@ -86,6 +86,8 @@ export type AnalysisRun = {
     metrics: Record<string, unknown> | null;
     results: Record<string, unknown> | null;
     artifact_path: string | null;
+    /** Explicit managed bulk-result artifact (not model/vectorizer paths). */
+    results_artifact_id?: string | null;
     random_seed: number | null;
     created_by: string;
     started_at: string | null;
@@ -332,6 +334,8 @@ export type DashboardSummary = {
     corpus: { id: string; name: string };
     document_count: number;
     text_unit_counts: Record<string, number>;
+    language_counts?: Record<string, number>;
+    metadata_completeness?: Record<string, number>;
     codebook_count: number;
     training_dataset_snapshot_count: number;
     trained_model_count: number;
@@ -339,6 +343,8 @@ export type DashboardSummary = {
         id: string;
         name: string | null;
         version: number;
+        lifecycle_status?: string;
+        macro_f1?: number | null;
         metrics: Record<string, unknown>;
     } | null;
     analysis_run_counts_by_type: Record<string, number>;
@@ -347,6 +353,13 @@ export type DashboardSummary = {
         run_id: string;
         metrics: Record<string, unknown>;
     } | null;
+    recent_runs?: Array<{
+        id: string;
+        run_type: string;
+        status: string;
+        created_at: string | null;
+        completed_at?: string | null;
+    }>;
     annotation_task_count: number;
     annotation_completed_count: number;
     annotation_completion_rate: number;

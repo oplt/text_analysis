@@ -101,7 +101,7 @@ const AgentView = lazy(() =>
 );
 
 /** Deep-link aliases for Analysis-grouped tools (avoid extra top-level nav items). */
-function AnalysisSubRedirect({ tab }: { tab: "statistical" | "measurement" }) {
+export function AnalysisSubRedirect({ tab }: { tab: "statistical" | "measurement" }) {
     const { projectId } = useParams();
     return <Navigate to={`/research/${projectId}/analysis?tab=${tab}`} replace />;
 }

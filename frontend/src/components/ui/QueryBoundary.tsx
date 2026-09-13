@@ -71,22 +71,36 @@ export function QueryBoundary({
 }: QueryBoundaryProps) {
     if (isLoading) {
         if (loadingFallback) {
-            return <>{loadingFallback}</>;
-        }
-        if (variant === "page") {
             return (
-                <Box sx={{ display: "grid", placeItems: "center", minHeight: "40vh" }}>
-                    <CircularProgress />
+                <Box role="status" aria-busy="true" aria-live="polite">
+                    {loadingFallback}
                 </Box>
             );
         }
-        return <Skeleton variant="rounded" height={120} sx={{ borderRadius: 4 }} />;
+        if (variant === "page") {
+            return (
+                <Box
+                    role="status"
+                    aria-busy="true"
+                    aria-live="polite"
+                    sx={{ display: "grid", placeItems: "center", minHeight: "40vh" }}
+                >
+                    <CircularProgress aria-label="Loading" />
+                </Box>
+            );
+        }
+        return (
+            <Box role="status" aria-busy="true" aria-live="polite">
+                <Skeleton variant="rounded" height={120} sx={{ borderRadius: 4 }} />
+            </Box>
+        );
     }
 
     if (isError) {
         return (
             <Alert
                 severity={severity}
+                role="alert"
                 action={
                     onRetry ? (
                         <Button color="inherit" size="small" onClick={onRetry}>
@@ -107,8 +121,15 @@ export function QueryBoundary({
         );
     }
 
-    if (isEmpty && emptyFallback) {
-        return <>{emptyFallback}</>;
+    if (isEmpty) {
+        if (emptyFallback) {
+            return <>{emptyFallback}</>;
+        }
+        return (
+            <Alert severity="info">
+                Nothing to show yet. Check filters or complete the previous step, then retry.
+            </Alert>
+        );
     }
 
     return <>{children}</>;

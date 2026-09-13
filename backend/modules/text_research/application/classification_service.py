@@ -95,6 +95,7 @@ class ClassificationService(ResearchAccessMixin):
         algorithm: str = "logistic_regression",
         task_type: str | None = None,
         preprocessing_profile_id: str | None = None,
+        preprocessing_config: dict[str, Any] | None = None,
         vectorizer: str = "tfidf",
         use_word_ngrams: bool = True,
         ngram_min: int = 1,
@@ -135,6 +136,8 @@ class ClassificationService(ResearchAccessMixin):
         nested_cv_outer_splits: int = 5,
         nested_cv_inner_splits: int = 3,
         embedding_provider: str = "hashing",
+        embedding_model_name: str | None = None,
+        embedding_model_revision: str | None = None,
         threshold_objective: str = "f1",
         threshold_utility_tp: float = 1.0,
         threshold_utility_tn: float = 1.0,
@@ -145,7 +148,11 @@ class ClassificationService(ResearchAccessMixin):
     ) -> AnalysisRun:
         snapshot = await self.get_snapshot_or_404(snapshot_id, user_id=user_id)
         corpus = await self.get_corpus_or_404(snapshot.corpus_id, user_id=user_id)
-        resolved_embedding_identity = embedding_identity(embedding_provider)
+        resolved_embedding_identity = embedding_identity(
+            embedding_provider,
+            model_name=embedding_model_name,
+            model_revision=embedding_model_revision,
+        )
 
         params = {
             "snapshot_id": snapshot_id,
@@ -154,6 +161,7 @@ class ClassificationService(ResearchAccessMixin):
             # label shape at training time" — never silently forced.
             "task_type": task_type,
             "preprocessing_profile_id": preprocessing_profile_id,
+            "preprocessing_config": preprocessing_config,
             "vectorizer": vectorizer,
             "use_word_ngrams": use_word_ngrams,
             "ngram_min": ngram_min,
@@ -187,6 +195,8 @@ class ClassificationService(ResearchAccessMixin):
             "nested_cv_outer_splits": nested_cv_outer_splits,
             "nested_cv_inner_splits": nested_cv_inner_splits,
             "embedding_provider": embedding_provider,
+            "embedding_model_name": embedding_model_name,
+            "embedding_model_revision": embedding_model_revision,
             "embedding_identity": resolved_embedding_identity,
             "threshold_objective": threshold_objective,
             "threshold_utility_tp": threshold_utility_tp,
@@ -244,6 +254,9 @@ class ClassificationService(ResearchAccessMixin):
                 "use_char_ngrams": use_char_ngrams,
                 "char_ngram_range": (char_ngram_min, char_ngram_max),
                 "val_size": val_size,
+                "validation_strategy": validation_strategy,
+                "nested_cv_outer_splits": nested_cv_outer_splits,
+                "nested_cv_inner_splits": nested_cv_inner_splits,
                 "tune_hyperparameters": tune_hyperparameters,
                 "hyperparameter_search_type": hyperparameter_search_type,
                 "hyperparameter_param_grid": hyperparameter_param_grid,
@@ -260,6 +273,10 @@ class ClassificationService(ResearchAccessMixin):
                 "n_bootstrap": n_bootstrap,
                 "ci_confidence_level": ci_confidence_level,
                 "calibration_method": calibration_method,
+                "embedding_provider": embedding_provider,
+                "embedding_model_name": embedding_model_name,
+                "embedding_model_revision": embedding_model_revision,
+                "embedding_identity": resolved_embedding_identity,
             },
             random_seed=random_seed,
         )
@@ -332,7 +349,10 @@ class ClassificationService(ResearchAccessMixin):
             y = [unit_labels.get(u.id, []) for u in ordered_units]
 
             config: dict = PreprocessingConfig().to_dict()
-            if params.get("preprocessing_profile_id"):
+            frozen_prep = params.get("preprocessing_config")
+            if isinstance(frozen_prep, dict) and frozen_prep:
+                config = PreprocessingConfig.from_dict(frozen_prep).to_dict()
+            elif params.get("preprocessing_profile_id"):
                 profile = await self.repo.get_preprocessing_profile(
                     params["preprocessing_profile_id"]
                 )
@@ -493,6 +513,9 @@ class ClassificationService(ResearchAccessMixin):
                 params, label_names=label_names, task_type=task_type, split=split
             )
             if feature_family == "embedding":
+                embedding_fit_kwargs: dict[str, Any] = {}
+                if params.get("embedding_model_name"):
+                    embedding_fit_kwargs["model_name"] = params["embedding_model_name"]
                 fit_result = classifiers.fit_embedding_text_classifier(
                     split["X_train"],
                     split["y_train"],
@@ -501,6 +524,7 @@ class ClassificationService(ResearchAccessMixin):
                     task_type,
                     algorithm=params["algorithm"],
                     embedding_provider=params.get("embedding_provider", "hashing"),
+                    **embedding_fit_kwargs,
                     **fit_kwargs,
                 )
             else:
@@ -555,20 +579,38 @@ class ClassificationService(ResearchAccessMixin):
             await self.repo.update_run(run, progress_stage="saving")
             await self.db.commit()
             run = await ensure_not_cancelled(self.repo, run)
-            model_artifact_path, model_artifact_metadata = (
-                model_storage.save_artifact_with_metadata(
-                    fit_result["model"],
-                    category="research_classifiers",
-                    namespace=run.artifact_namespace,
-                )
+            run.artifact_namespace = (
+                run.artifact_namespace
+                or model_storage.default_artifact_namespace(run.project_id, run.id)
             )
-            vectorizer_artifact_path, vectorizer_artifact_metadata = (
-                model_storage.save_artifact_with_metadata(
+            staged_model_path, staged_model_metadata = model_storage.stage_artifact_with_metadata(
+                fit_result["model"],
+                category="research_classifiers",
+                artifact_namespace=run.artifact_namespace,
+            )
+            staged_vectorizer_path, staged_vectorizer_metadata = (
+                model_storage.stage_artifact_with_metadata(
                     fit_result["vectorizer"],
                     category="research_vectorizers",
-                    namespace=run.artifact_namespace,
+                    artifact_namespace=run.artifact_namespace,
                 )
             )
+            run = await ensure_not_cancelled(self.repo, run)
+            model_artifact_path, model_artifact_metadata = model_storage.promote_staged_artifact(
+                staged_model_path,
+                category="research_classifiers",
+                artifact_namespace=run.artifact_namespace,
+                metadata=staged_model_metadata,
+            )
+            vectorizer_artifact_path, vectorizer_artifact_metadata = (
+                model_storage.promote_staged_artifact(
+                    staged_vectorizer_path,
+                    category="research_vectorizers",
+                    artifact_namespace=run.artifact_namespace,
+                    metadata=staged_vectorizer_metadata,
+                )
+            )
+            model_storage.cleanup_run_tmp(run.artifact_namespace)
 
             version = await self.repo.next_model_version(run.corpus_id)
             trained_model = await self.repo.create_model(
@@ -620,7 +662,10 @@ class ClassificationService(ResearchAccessMixin):
                 metrics_json=dumps(fit_result["metrics"]),
                 parameters_json=dumps(
                     merge_completion_provenance(
-                        params,
+                        {
+                            **params,
+                            "preprocessing_config": config,
+                        },
                         corpus_snapshot_id=snapshot.id,
                         corpus_snapshot_hash=prepared.corpus_checksum,
                         corpus_checksum=prepared.corpus_checksum,
@@ -647,6 +692,7 @@ class ClassificationService(ResearchAccessMixin):
                         validation_strategy=params.get("split_strategy")
                         or "grouped_by_source_document",
                         campaign_id=snapshot.annotation_campaign_id,
+                        preprocessing_config=config,
                         extra={
                             "training_snapshot_campaign_hash": (
                                 snapshot.annotation_campaign_snapshot_hash
@@ -699,8 +745,16 @@ class ClassificationService(ResearchAccessMixin):
             )
             await self.db.commit()
         except RunCancelledError:
+            model_storage.cleanup_run_namespace(
+                getattr(run, "artifact_namespace", None),
+                include_published=True,
+            )
             await self.db.commit()
         except Exception as exc:  # noqa: BLE001
+            model_storage.cleanup_run_namespace(
+                getattr(run, "artifact_namespace", None),
+                include_published=True,
+            )
             await fail_if_active(
                 self.repo,
                 run,

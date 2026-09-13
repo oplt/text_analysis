@@ -1,10 +1,10 @@
-"""Quantitative, statistical-model, and measurement-validation routes (TASK-022).
+"""Quantitative, statistical-model, and measurement-validation routes (LATEST-017).
 
 Included from ``routes.py`` without changing public URLs.
 
-The request schemas live in ``schemas_quantitative.py``; ``schemas.py``
-re-exports them for backwards-compatible imports. Service and frontend splits
-remain follow-up work because their orchestration boundaries are still shared.
+Request schemas: ``schemas_quantitative`` (re-exports from ``schemas.py``).
+Domain service math: ``QuantitativeAnalysisService`` facade over lexical /
+matrix / similarity / exploratory mixins.
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ from backend.modules.text_research.api.schemas_quantitative import (
     DimensionalityReductionRequest,
     DuplicateDetectionRequest,
     FrequencyRequest,
+    InlineAnalysisRequest,
     KeynessRequest,
     KwicRequest,
     MeasurementComparisonRequest,
@@ -119,21 +120,29 @@ def _analysis_filters(body: AnalysisRequest) -> dict[str, Any]:
 
 
 def _reject_unsupported_async(operation: str, run_async: bool) -> None:
-    if run_async:
+    """Enforce the operation async registry: never silently ignore run_async=true."""
+    from backend.modules.text_research.application.run_adapters import operation_supports_async
+
+    if run_async and not operation_supports_async(operation):
         raise HTTPException(
             status_code=422,
             detail=f"{operation} does not support asynchronous execution.",
         )
 
 
+def _enforce_async_contract(operation: str, body: Any) -> None:
+    run_async = bool(getattr(body, "run_async", False))
+    _reject_unsupported_async(operation, run_async)
+
+
 @router.post("/corpora/{corpus_id}/analysis/corpus-stats", response_model=AnalysisRunResponse)
 async def corpus_stats(
     corpus_id: str,
-    body: AnalysisRequest,
+    body: InlineAnalysisRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    _reject_unsupported_async("corpus_stats", body.run_async)
+    _enforce_async_contract("corpus_stats", body)
     run = await QuantitativeAnalysisService(db).corpus_stats(
         corpus_id,
         user_id=current_user.id,
@@ -151,6 +160,7 @@ async def frequencies(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _enforce_async_contract("frequencies", body)
     run = await QuantitativeAnalysisService(db).frequencies(
         corpus_id,
         user_id=current_user.id,
@@ -172,6 +182,7 @@ async def ngrams(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _enforce_async_contract("ngrams", body)
     run = await QuantitativeAnalysisService(db).ngrams(
         corpus_id,
         user_id=current_user.id,
@@ -194,6 +205,7 @@ async def dfm(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _enforce_async_contract("dfm", body)
     run = await QuantitativeAnalysisService(db).dfm(
         corpus_id,
         user_id=current_user.id,
@@ -218,7 +230,7 @@ async def kwic(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    _reject_unsupported_async("kwic", body.run_async)
+    _enforce_async_contract("kwic", body)
     run = await QuantitativeAnalysisService(db).kwic(
         corpus_id,
         user_id=current_user.id,
@@ -243,7 +255,7 @@ async def dictionary_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    _reject_unsupported_async("dictionary", body.run_async)
+    _enforce_async_contract("dictionary", body)
     run = await QuantitativeAnalysisService(db).dictionary(
         corpus_id,
         user_id=current_user.id,
@@ -257,7 +269,6 @@ async def dictionary_analysis(
         rate_per=body.rate_per,
         group_by=body.group_by,
         preprocessing_profile_id=body.preprocessing_profile_id,
-        run_async=body.run_async,
         **_analysis_filters(body),
     )
     return _respond(run)
@@ -270,6 +281,7 @@ async def keyness(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _enforce_async_contract("keyness", body)
     run = await QuantitativeAnalysisService(db).keyness(
         corpus_id,
         user_id=current_user.id,
@@ -294,6 +306,7 @@ async def cooccurrence(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _enforce_async_contract("cooccurrence", body)
     run = await QuantitativeAnalysisService(db).cooccurrence(
         corpus_id,
         user_id=current_user.id,
@@ -319,6 +332,7 @@ async def similarity(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _enforce_async_contract("similarity", body)
     """Document-to-document / unit-to-unit / query-to-document / group-centroid
     similarity (cosine-on-TFIDF, Jaccard, or caller-supplied embeddings)."""
     run = await QuantitativeAnalysisService(db).similarity(
@@ -352,6 +366,7 @@ async def duplicate_detection(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _enforce_async_contract("duplicate_detection", body)
     """Exact / normalized checksum, lexical near-dup, and optional MinHash
     duplicate detection — the same engine ingestion QA uses, run explicitly."""
     run = await QuantitativeAnalysisService(db).duplicate_detection(
@@ -379,6 +394,7 @@ async def clustering(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _enforce_async_contract("clustering", body)
     run = await QuantitativeAnalysisService(db).clustering(
         corpus_id,
         user_id=current_user.id,
@@ -406,6 +422,7 @@ async def dimensionality_reduction(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    _enforce_async_contract("dimensionality_reduction", body)
     run = await QuantitativeAnalysisService(db).dimensionality_reduction(
         corpus_id,
         user_id=current_user.id,
@@ -427,7 +444,7 @@ async def readability(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    _reject_unsupported_async("readability", body.run_async)
+    _enforce_async_contract("readability", body)
     run = await QuantitativeAnalysisService(db).readability(
         corpus_id,
         user_id=current_user.id,

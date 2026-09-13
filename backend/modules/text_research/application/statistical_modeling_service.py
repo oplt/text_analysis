@@ -12,6 +12,11 @@ from backend.modules.text_research.application.analysis_executor import (
     attach_run_identity,
     build_spec_from_request,
 )
+from backend.modules.text_research.application.input_dataset_artifacts import (
+    build_statistical_input_payload,
+    statistical_input_metadata,
+    store_input_dataset,
+)
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import AnalysisRun, dumps
 from backend.modules.text_research.infrastructure.artifact_store import ArtifactStore
@@ -52,18 +57,14 @@ class StatisticalModelingService(ResearchAccessMixin):
                     status_code=400,
                     detail=f"row {i} missing fields: {missing}",
                 )
-        input_artifact = ArtifactStore().put(
-            "manifest",
-            {
-                "model": model,
-                "dependent_var": dependent_var,
-                "independent_vars": independent_vars,
-                "rows": rows,
-                "add_intercept": add_intercept,
-            },
-            metadata={"kind": "statistical_model_input", "n_rows": len(rows)},
-            payload_format="json",
+        payload = build_statistical_input_payload(
+            model=model,
+            dependent_var=dependent_var,
+            independent_vars=independent_vars,
+            rows=rows,
+            add_intercept=add_intercept,
         )
+        input_artifact = store_input_dataset(payload, metadata=statistical_input_metadata(payload))
         return await self._fit(
             corpus_id,
             user_id=user_id,
@@ -81,12 +82,9 @@ class StatisticalModelingService(ResearchAccessMixin):
         corpus_id: str | None,
         *,
         user_id: str,
-        model: str,
-        dependent_var: str,
-        independent_vars: list[str],
-        add_intercept: bool,
         input_artifact_id: str,
     ) -> AnalysisRun:
+        """Rerun using the immutable input artifact (config + rows)."""
         if corpus_id is None:
             raise HTTPException(status_code=400, detail="Statistical run has no corpus.")
         descriptor = ArtifactStore().get(input_artifact_id)
@@ -98,13 +96,22 @@ class StatisticalModelingService(ResearchAccessMixin):
         payload = ArtifactStore().load(input_artifact_id)
         if not isinstance(payload, dict) or not isinstance(payload.get("rows"), list):
             raise HTTPException(status_code=400, detail="Statistical input artifact is invalid.")
+        model = str(payload.get("model") or "ols")
+        dependent_var = str(payload.get("dependent_var") or "")
+        independent_vars = [str(name) for name in (payload.get("independent_vars") or [])]
+        add_intercept = bool(payload.get("add_intercept", True))
+        if not dependent_var or not independent_vars:
+            raise HTTPException(
+                status_code=400,
+                detail="Statistical input artifact is missing model variables.",
+            )
         return await self._fit(
             corpus_id,
             user_id=user_id,
             model=model,
             dependent_var=dependent_var,
             independent_vars=independent_vars,
-            rows=payload["rows"],
+            rows=list(payload["rows"]),
             add_intercept=add_intercept,
             input_artifact_id=input_artifact_id,
             input_artifact_checksum=descriptor.checksum,
@@ -141,6 +148,7 @@ class StatisticalModelingService(ResearchAccessMixin):
             "independent_vars": independent_vars,
             "add_intercept": add_intercept,
             "n_rows": len(rows),
+            "variable_names": [dependent_var, *independent_vars],
             "input_artifact_id": input_artifact_id,
             "input_artifact_checksum": input_artifact_checksum,
         }

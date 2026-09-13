@@ -326,3 +326,40 @@ class QuantitativeWrapperTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SimilarityServiceGroupingTests(unittest.IsolatedAsyncioTestCase):
+    async def test_group_centroid_request_resolves_groups_before_enqueue(self):
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock
+
+        from backend.modules.text_research.application.similarity_analysis_service import (
+            SimilarityAnalysisMixin,
+        )
+
+        service = SimilarityAnalysisMixin()
+        service._select = AsyncMock(
+            return_value=(
+                SimpleNamespace(id="corpus"),
+                [
+                    SimpleNamespace(id="u1", text="research"),
+                    SimpleNamespace(id="u2", text="evidence"),
+                ],
+                [SimpleNamespace(language="en"), SimpleNamespace(language="tr")],
+            )
+        )
+        queued_run = SimpleNamespace(id="queued")
+        service._enqueue_quantitative = AsyncMock(return_value=queued_run)
+        result = await service.similarity(
+            "corpus",
+            user_id="user",
+            unit_type="document",
+            mode="group_centroid",
+            group_by="language",
+            run_async=True,
+        )
+        self.assertIs(result, queued_run)
+        service._enqueue_quantitative.assert_awaited_once()
+        self.assertEqual(
+            service._enqueue_quantitative.call_args.kwargs["parameters"]["group_by"], "language"
+        )

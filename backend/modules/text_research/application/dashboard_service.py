@@ -13,6 +13,21 @@ from backend.modules.text_research.domain.enums import AnalysisRunStatus, Analys
 from backend.modules.text_research.domain.models import loads
 
 
+def _pick_macro_f1(metrics: dict[str, Any]) -> float | None:
+    for key in ("macro_f1", "macro_F1", "f1_macro", "mean_f1"):
+        value = metrics.get(key)
+        if isinstance(value, (int, float)) and float("-inf") < float(value) < float("inf"):
+            return float(value)
+    classification = metrics.get("classification_report")
+    if isinstance(classification, dict):
+        macro = classification.get("macro avg") or classification.get("macro_avg")
+        if isinstance(macro, dict):
+            f1 = macro.get("f1-score") or macro.get("f1")
+            if isinstance(f1, (int, float)):
+                return float(f1)
+    return None
+
+
 class DashboardService(ResearchAccessMixin):
     async def summary(self, corpus_id: str, *, user_id: str) -> dict[str, Any]:
         corpus = await self.get_corpus_or_404(corpus_id, user_id=user_id)
@@ -41,14 +56,22 @@ class DashboardService(ResearchAccessMixin):
             status=AnalysisRunStatus.COMPLETED.value,
         )
         latest_model = await self.repo.get_latest_model(corpus.project_id, corpus_id=corpus_id)
+        language_counts = await self.repo.language_counts(corpus_id)
+        metadata_coverage = await self.repo.document_metadata_coverage(corpus_id)
+        recent_runs, _ = await self.repo.list_runs(
+            corpus.project_id, corpus_id=corpus_id, limit=8, offset=0
+        )
 
         annotation_task_count = int(task_counts.get("total", 0))
         completed_tasks = int(task_counts.get("completed", 0))
+        model_metrics = loads(latest_model.metrics_json, {}) if latest_model else {}
 
         return {
             "corpus": {"id": corpus.id, "name": corpus.name},
             "document_count": document_count,
             "text_unit_counts": unit_counts,
+            "language_counts": language_counts,
+            "metadata_completeness": metadata_coverage,
             "codebook_count": codebook_count,
             "training_dataset_snapshot_count": snapshot_count,
             "trained_model_count": trained_model_count,
@@ -57,7 +80,9 @@ class DashboardService(ResearchAccessMixin):
                     "id": latest_model.id,
                     "name": latest_model.name,
                     "version": latest_model.version,
-                    "metrics": loads(latest_model.metrics_json, {}),
+                    "lifecycle_status": latest_model.lifecycle_status,
+                    "macro_f1": _pick_macro_f1(model_metrics if isinstance(model_metrics, dict) else {}),
+                    "metrics": model_metrics if isinstance(model_metrics, dict) else {},
                 }
                 if latest_model
                 else None
@@ -72,6 +97,16 @@ class DashboardService(ResearchAccessMixin):
                 if latest_reliability_run
                 else None
             ),
+            "recent_runs": [
+                {
+                    "id": run.id,
+                    "run_type": run.run_type,
+                    "status": run.status,
+                    "created_at": run.created_at.isoformat() if run.created_at else None,
+                    "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+                }
+                for run in recent_runs
+            ],
             "annotation_task_count": annotation_task_count,
             "annotation_completed_count": completed_tasks,
             "annotation_completion_rate": (

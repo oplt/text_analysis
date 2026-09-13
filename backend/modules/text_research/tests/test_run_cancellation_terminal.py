@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -341,9 +342,116 @@ class PredictionCancelAfterBatchTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result.status, AnalysisRunStatus.CANCELLED.value)
         self.assertEqual(service.repo.bulk_upsert_predictions.await_count, 1)
+        self.assertGreaterEqual(service.db.commit.await_count, 2)
         service.repo.discard_prediction_set.assert_awaited_once()
         prediction_set_cls.return_value.create_from_run.assert_not_awaited()
         prediction_set_cls.return_value.publish.assert_not_awaited()
+
+    async def test_fail_after_first_batch_discards_draft_and_never_publishes(self) -> None:
+        run = SimpleNamespace(
+            id="pred-run-fail",
+            status=AnalysisRunStatus.QUEUED.value,
+            parameters_json=dumps(
+                {
+                    "model_id": "model-1",
+                    "unit_type": "paragraph",
+                    "only_unannotated": False,
+                    "filters": {},
+                }
+            ),
+            corpus_id="corpus-1",
+            created_by="user-1",
+            project_id="project-1",
+        )
+        model = SimpleNamespace(
+            id="model-1",
+            corpus_id="corpus-1",
+            task_type="binary",
+            vectorizer_artifact_path="vec.joblib",
+            model_artifact_path="model.joblib",
+            label_ids_json=dumps(["neg", "pos"]),
+            metrics_json=dumps({}),
+            training_dataset_snapshot_id="snap-1",
+        )
+        units = [
+            SimpleNamespace(id="u1", text="one", corpus_document_id="d1"),
+            SimpleNamespace(id="u2", text="two", corpus_document_id="d1"),
+        ]
+        service = PredictionService(MagicMock())
+        service.repo = MagicMock()
+        service.db = MagicMock()
+        service.db.commit = AsyncMock()
+        service.repo.get_run = AsyncMock(return_value=run)
+        service.repo.update_run = AsyncMock(return_value=run)
+        service.repo.update_run_if_active = AsyncMock(return_value=run)
+        service.repo.get_model = AsyncMock(return_value=model)
+        service.repo.list_documents = AsyncMock(return_value=[])
+        service.repo.count_text_units_for_corpus = AsyncMock(return_value=2)
+
+        async def _iter_units(*_args, **_kwargs):
+            for unit in units:
+                yield [unit]
+
+        service.repo.iter_text_units_for_corpus = _iter_units
+        service.repo.bulk_upsert_predictions = AsyncMock()
+        service.repo.discard_prediction_set = AsyncMock()
+
+        calls = {"n": 0}
+
+        async def _checkpoint(_repo, current):
+            calls["n"] += 1
+            if calls["n"] >= 4:
+                raise RuntimeError("boom after first batch")
+            return current
+
+        with (
+            patch(
+                "backend.modules.text_research.application.prediction_service.model_storage.load_artifact",
+                return_value=object(),
+            ),
+            patch(
+                "backend.modules.text_research.application.prediction_service.predict_with_uncertainty",
+                return_value=[{"prediction": 1, "probability": 0.9, "uncertainty": 0.1}],
+            ),
+            patch(
+                "backend.modules.text_research.application.prediction_service.resolve_batch_size",
+                return_value=1,
+            ),
+            patch(
+                "backend.modules.text_research.application.prediction_service.should_use_out_of_core",
+                return_value=True,
+            ),
+            patch(
+                "backend.modules.text_research.application.run_lifecycle.ensure_not_cancelled",
+                new=AsyncMock(side_effect=_checkpoint),
+            ),
+            patch(
+                "backend.modules.text_research.application.run_lifecycle.fail_if_active",
+                new=AsyncMock(return_value=run),
+            ),
+            patch(
+                "backend.modules.text_research.application.prediction_set_service.PredictionSetService"
+            ) as prediction_set_cls,
+        ):
+            draft = SimpleNamespace(id="draft-fail", status="draft")
+            prediction_set_cls.return_value.create_draft_from_run = AsyncMock(return_value=draft)
+            prediction_set_cls.return_value.publish = AsyncMock()
+            with self.assertRaises(RuntimeError):
+                await service.execute_prediction("pred-run-fail")
+
+        self.assertEqual(service.repo.bulk_upsert_predictions.await_count, 1)
+        service.repo.discard_prediction_set.assert_awaited_once_with(draft)
+        prediction_set_cls.return_value.publish.assert_not_awaited()
+
+    async def test_published_list_queries_exclude_draft_status(self) -> None:
+        from backend.modules.text_research.infrastructure import repositories as repo_mod
+
+        source = inspect.getsource(repo_mod.ResearchRepository.list_predictions_for_model)
+        self.assertIn('PredictionSet.status == "published"', source)
+        source_ids = inspect.getsource(repo_mod.ResearchRepository.list_predicted_unit_ids)
+        self.assertIn('PredictionSet.status == "published"', source_ids)
+        source_sets = inspect.getsource(repo_mod.ResearchRepository.list_prediction_sets_for_corpus)
+        self.assertIn('PredictionSet.status == "published"', source_sets)
 
 
 if __name__ == "__main__":

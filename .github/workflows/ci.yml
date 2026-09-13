@@ -140,10 +140,15 @@ jobs:
           cache-dependency-glob: backend/uv.lock
       - name: Install backend (frozen lock)
         working-directory: backend
-        run: uv sync --frozen --extra dev --extra pdf
+        run: uv sync --frozen --extra dev --extra pdf-ocr
+      - name: Install native OCR runtime
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-eng tesseract-ocr-deu tesseract-ocr-fra tesseract-ocr-tur
       - name: Pytest RAG (+ failure matrix + shared pool/cache smoke)
         run: |
           backend/.venv/bin/pytest \
+            -p pytest_asyncio.plugin \
             backend/modules/rag/tests \
             backend/tests/test_cache.py \
             backend/tests/test_pool_observability.py \
@@ -257,6 +262,27 @@ jobs:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 backend/.venv/bin/pytest \
             -p pytest_asyncio.plugin \
             backend/tests/integration/test_rag_pgvector_revision_acl.py -q --tb=short
+      - name: RAG live ANN scale smoke (10k chunks)
+        env:
+          RAG_INTEGRATION_DATABASE_URL: postgresql+asyncpg://text_analysis:text_analysis@localhost:5432/text_analysis
+        run: |
+          backend/.venv/bin/python -m backend.modules.rag.eval.live_benchmark \
+            --scale small --output var/benchmarks/rag-live-small.json
+      - name: RAG fixture ingestion and retrieval (live pgvector)
+        env:
+          RAG_EVAL_REPORT_PATH: var/benchmarks/rag-end-to-end.json
+          RAG_INTEGRATION_DATABASE_URL: postgresql+asyncpg://text_analysis:text_analysis@localhost:5432/text_analysis
+        run: |
+          backend/.venv/bin/pytest -p pytest_asyncio.plugin \
+            backend/tests/integration/test_rag_end_to_end_eval.py -q -s
+
+      - name: Upload measured RAG reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rag-measurements-${{ needs.identity.outputs.short_sha }}
+          path: var/benchmarks/rag-*.json
+          if-no-files-found: warn
 
   frontend:
     name: Frontend lint, tests, TypeScript build
@@ -391,6 +417,9 @@ jobs:
       - name: Playwright research workflow
         working-directory: frontend
         run: npx playwright test e2e/research-flow.spec.ts --project=chromium --workers=1
+      - name: Playwright UX redesign regression
+        working-directory: frontend
+        run: npx playwright test e2e/ux-redesign.spec.ts --project=chromium --workers=1
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4

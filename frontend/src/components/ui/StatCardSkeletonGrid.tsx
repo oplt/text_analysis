@@ -1,22 +1,18 @@
-import { Box, Skeleton } from "@mui/material";
+import { Skeleton } from "@mui/material";
+import { MetricGrid } from "./MetricGrid";
 
-export function StatCardSkeletonGrid() {
+export function StatCardSkeletonGrid({ count = 4 }: { count?: number }) {
+    const columns = count >= 4 ? 4 : count === 3 ? 3 : 2;
     return (
-        <Box
-            sx={{
-                display: "grid",
-                gap: 2,
-                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            }}
-        >
-            {Array.from({ length: 4 }).map((_, index) => (
+        <MetricGrid columns={columns}>
+            {Array.from({ length: count }).map((_, index) => (
                 <Skeleton
                     key={index}
                     variant="rounded"
                     height={120}
-                    sx={{ borderRadius: 3 }}
+                    sx={{ borderRadius: 3, width: "100%" }}
                 />
             ))}
-        </Box>
+        </MetricGrid>
     );
 }

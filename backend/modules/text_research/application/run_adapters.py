@@ -15,10 +15,58 @@ from typing import Any, Protocol
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.modules.text_research.application.analysis_identity import (
+    quantitative_execution_snapshot,
+)
 from backend.modules.text_research.domain.enums import AnalysisRunType
 from backend.modules.text_research.domain.models import AnalysisRun
 
 ADAPTER_VERSION = "1"
+
+# Canonical per-operation execution contract (LATEST-011). Routes, schemas,
+# capabilities UI, and adapters must agree: ``run_async=true`` either queues or
+# returns HTTP 422 — never silently ignored.
+OPERATION_EXECUTION: dict[str, dict[str, Any]] = {
+    "corpus_stats": {"async_supported": False, "default_execution_mode": "inline"},
+    "frequencies": {"async_supported": True, "default_execution_mode": "auto"},
+    "ngrams": {"async_supported": True, "default_execution_mode": "auto"},
+    "dfm": {"async_supported": True, "default_execution_mode": "auto"},
+    "kwic": {"async_supported": False, "default_execution_mode": "inline"},
+    "dictionary": {"async_supported": False, "default_execution_mode": "inline"},
+    "keyness": {"async_supported": True, "default_execution_mode": "auto"},
+    "cooccurrence": {"async_supported": True, "default_execution_mode": "auto"},
+    "similarity": {"async_supported": True, "default_execution_mode": "auto"},
+    "duplicate_detection": {"async_supported": True, "default_execution_mode": "auto"},
+    "clustering": {"async_supported": True, "default_execution_mode": "auto"},
+    "dimensionality_reduction": {"async_supported": True, "default_execution_mode": "auto"},
+    "readability": {"async_supported": False, "default_execution_mode": "inline"},
+    "classifier_training": {"async_supported": True, "default_execution_mode": "async"},
+    "topic_train": {"async_supported": True, "default_execution_mode": "async"},
+    "topic_k_sweep": {"async_supported": True, "default_execution_mode": "async"},
+    "topic_seed_stability": {"async_supported": True, "default_execution_mode": "async"},
+    "robustness": {"async_supported": True, "default_execution_mode": "async"},
+}
+
+
+def operation_supports_async(operation: str) -> bool:
+    capability = OPERATION_EXECUTION.get(operation)
+    return bool(capability and capability.get("async_supported"))
+
+
+def operation_default_execution_mode(operation: str) -> str:
+    capability = OPERATION_EXECUTION.get(operation) or {}
+    return str(capability.get("default_execution_mode") or "inline")
+
+
+def describe_operation_execution_capabilities() -> dict[str, dict[str, Any]]:
+    """Public capability payload for ``GET /analysis-capabilities``."""
+    return {
+        operation: {
+            "async": bool(meta.get("async_supported")),
+            "default_execution_mode": str(meta.get("default_execution_mode") or "inline"),
+        }
+        for operation, meta in OPERATION_EXECUTION.items()
+    }
 
 
 @dataclass(frozen=True)
@@ -74,6 +122,20 @@ def _pick(params: dict[str, Any], key: str, default: Any) -> Any:
     return params.get(key, default)
 
 
+def _quant_snapshot(operation: str, params: dict[str, Any], *, run_type: str) -> dict[str, Any]:
+    """Normalize quantitative replay kwargs from the shared defaults registry."""
+    _require(params, "unit_type", run_type=run_type)
+    if operation == "keyness":
+        _require(params, "filters_a", run_type=run_type)
+        _require(params, "filters_b", run_type=run_type)
+    snapshot = quantitative_execution_snapshot(operation, params)
+    if operation == "keyness":
+        snapshot.pop("filters", None)
+    else:
+        snapshot.setdefault("filters", _filters(params))
+    return snapshot
+
+
 class RunAdapter(ABC):
     """Normalize persisted params and re-invoke the originating service."""
 
@@ -117,9 +179,10 @@ class RunAdapter(ABC):
 class UnsupportedRunAdapter(RunAdapter):
     """Explicit non-rerunnable registration with a stable reason."""
 
-    def __init__(self, run_type: str, reason: str) -> None:
+    def __init__(self, run_type: str, reason: str, *, supports_async: bool = False) -> None:
         self.run_type = run_type
         self._reason = reason
+        self.supports_async = supports_async
 
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
         raise NonRerunnableError(self._reason)
@@ -136,13 +199,88 @@ class UnsupportedRunAdapter(RunAdapter):
         raise HTTPException(status_code=400, detail=self._reason)
 
 
+def _nested_dict(value: Any) -> dict[str, Any] | None:
+    return value if isinstance(value, dict) else None
+
+
+def _extract_frozen_preprocessing(params: dict[str, Any]) -> dict[str, Any] | None:
+    """Resolved preprocessing config frozen at original execution time."""
+    provenance = _nested_dict(params.get("provenance")) or {}
+    profile = _nested_dict(params.get("preprocessing_profile")) or _nested_dict(
+        provenance.get("preprocessing_profile")
+    )
+    candidates = (
+        params.get("preprocessing_config"),
+        provenance.get("preprocessing_config"),
+        (profile or {}).get("config") if profile else None,
+    )
+    for candidate in candidates:
+        if isinstance(candidate, dict) and candidate:
+            return dict(candidate)
+    return None
+
+
+def _analysis_parameters_from_run(params: dict[str, Any]) -> dict[str, Any]:
+    for root in (params, _nested_dict(params.get("provenance")) or {}):
+        spec = _nested_dict(root.get("analysis_specification"))
+        if not spec:
+            continue
+        analysis = _nested_dict(spec.get("analysis"))
+        if analysis and isinstance(analysis.get("parameters"), dict):
+            return dict(analysis["parameters"])
+    return {}
+
+
+def _extract_frozen_dictionary_spec(params: dict[str, Any]) -> dict[str, Any] | None:
+    analysis_params = _analysis_parameters_from_run(params)
+    terms = analysis_params.get("terms")
+    if isinstance(terms, dict) and terms:
+        return dict(terms)
+    return None
+
+
+def _dictionary_content_checksum(params: dict[str, Any]) -> str | None:
+    analysis_params = _analysis_parameters_from_run(params)
+    for source in (params, analysis_params):
+        checksum = source.get("dictionary_content_checksum")
+        if isinstance(checksum, str) and checksum.strip():
+            return checksum.strip()
+    return None
+
+
+def pin_exact_reproduction_inputs(
+    params: dict[str, Any],
+    normalized: dict[str, Any],
+) -> dict[str, Any]:
+    """Inject frozen scientific inputs so exact reproduce ignores live mutables.
+
+    Replay keeps ``normalized`` as-is (profile IDs resolve to current state).
+    Exact reproduce pins the resolved preprocessing config and, when present,
+    the frozen dictionary content that produced the original checksum.
+    """
+    pinned = dict(normalized)
+    frozen_prep = _extract_frozen_preprocessing(params)
+    if frozen_prep is not None:
+        pinned["preprocessing_config"] = frozen_prep
+
+    if pinned.get("dictionary_id"):
+        frozen_dictionary = _extract_frozen_dictionary_spec(params)
+        if frozen_dictionary is not None:
+            pinned["dictionary_id"] = None
+            pinned["dictionary_terms"] = None
+            pinned["hierarchy"] = None
+            pinned["frozen_dictionary_spec"] = frozen_dictionary
+    return pinned
+
+
 def _exact_reproduction_block_reason(params: dict[str, Any]) -> str | None:
     """Return why a normalized replay cannot claim exact reproduction.
 
     A managed request-input artifact is a frozen input by itself.  Corpus
     operations instead need a persisted analysis specification plus a corpus
-    or pipeline checksum.  Older records deliberately remain replayable but
-    are never presented as exact.
+    or pipeline checksum, and the frozen resolved preprocessing config (not
+    merely a mutable profile ID).  Older records deliberately remain
+    replayable but are never presented as exact.
     """
     input_artifact_id = params.get("input_artifact_id")
     input_checksum = params.get("input_artifact_checksum")
@@ -151,9 +289,7 @@ def _exact_reproduction_block_reason(params: dict[str, Any]) -> str | None:
             return None
         return "Exact reproduce requires both the managed input artifact ID and checksum."
 
-    provenance = params.get("provenance")
-    if not isinstance(provenance, dict):
-        provenance = {}
+    provenance = _nested_dict(params.get("provenance")) or {}
     spec_hash = provenance.get("analysis_spec_hash") or params.get("analysis_spec_hash")
     checksum = (
         provenance.get("corpus_snapshot_hash")
@@ -166,6 +302,15 @@ def _exact_reproduction_block_reason(params: dict[str, Any]) -> str | None:
         return "Exact reproduce requires a frozen analysis specification checksum."
     if not checksum:
         return "Exact reproduce requires a frozen corpus or pipeline checksum."
+    if _extract_frozen_preprocessing(params) is None:
+        return (
+            "Exact reproduce requires a frozen resolved preprocessing config, "
+            "not only a mutable profile ID."
+        )
+    if params.get("dictionary_id") and _dictionary_content_checksum(params) is None:
+        return "Exact reproduce requires a frozen dictionary content checksum."
+    if params.get("dictionary_id") and _extract_frozen_dictionary_spec(params) is None:
+        return "Exact reproduce requires frozen dictionary content from the original run."
     return None
 
 
@@ -217,6 +362,8 @@ class ClassifierTrainingAdapter(RunAdapter):
             "nested_cv_outer_splits": _pick(params, "nested_cv_outer_splits", 5),
             "nested_cv_inner_splits": _pick(params, "nested_cv_inner_splits", 3),
             "embedding_provider": _pick(params, "embedding_provider", "hashing"),
+            "embedding_model_name": params.get("embedding_model_name"),
+            "embedding_model_revision": params.get("embedding_model_revision"),
             "threshold_objective": _pick(params, "threshold_objective", "f1"),
             "threshold_utility_tp": _pick(params, "threshold_utility_tp", 1.0),
             "threshold_utility_tn": _pick(params, "threshold_utility_tn", 1.0),
@@ -433,14 +580,7 @@ class FrequencyAnalysisAdapter(RunAdapter):
     run_type = AnalysisRunType.FREQUENCY_ANALYSIS.value
 
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "unit_type": _require(params, "unit_type", run_type=self.run_type),
-            "preprocessing_profile_id": params.get("preprocessing_profile_id"),
-            "top_n": _pick(params, "top_n", 50),
-            "rate_per": _pick(params, "rate_per", 1000),
-            "group_by": params.get("group_by"),
-            "filters": _filters(params),
-        }
+        return _quant_snapshot("frequencies", params, run_type=self.run_type)
 
     async def execute(
         self,
@@ -465,15 +605,7 @@ class NgramAnalysisAdapter(RunAdapter):
     run_type = AnalysisRunType.NGRAM_ANALYSIS.value
 
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "unit_type": _require(params, "unit_type", run_type=self.run_type),
-            "n": _pick(params, "n", 2),
-            "preprocessing_profile_id": params.get("preprocessing_profile_id"),
-            "top_n": _pick(params, "top_n", 50),
-            "rate_per": _pick(params, "rate_per", 1000),
-            "skip": _pick(params, "skip", 0),
-            "filters": _filters(params),
-        }
+        return _quant_snapshot("ngrams", params, run_type=self.run_type)
 
     async def execute(
         self,
@@ -498,17 +630,7 @@ class DfmAdapter(RunAdapter):
     run_type = AnalysisRunType.DFM.value
 
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "unit_type": _require(params, "unit_type", run_type=self.run_type),
-            "weighting": _pick(params, "weighting", "count"),
-            "k1": params.get("k1"),
-            "b": params.get("b"),
-            "smooth_idf": params.get("smooth_idf"),
-            "preprocessing_profile_id": params.get("preprocessing_profile_id"),
-            "force_sparse_only": _pick(params, "force_sparse_only", False),
-            "trim": params.get("trim"),
-            "filters": _filters(params),
-        }
+        return _quant_snapshot("dfm", params, run_type=self.run_type)
 
     async def execute(
         self,
@@ -608,17 +730,7 @@ class KeynessAdapter(RunAdapter):
     run_type = AnalysisRunType.KEYNESS.value
 
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "unit_type": _require(params, "unit_type", run_type=self.run_type),
-            "filters_a": _require(params, "filters_a", run_type=self.run_type),
-            "filters_b": _require(params, "filters_b", run_type=self.run_type),
-            "group_field": params.get("group_field"),
-            "method": _pick(params, "method", "log_likelihood"),
-            "correction": _pick(params, "correction", "bh"),
-            "min_frequency": _pick(params, "min_frequency", 1),
-            "preprocessing_profile_id": params.get("preprocessing_profile_id"),
-            "top_n": _pick(params, "top_n", 50),
-        }
+        return _quant_snapshot("keyness", params, run_type=self.run_type)
 
     async def execute(
         self,
@@ -642,18 +754,7 @@ class CooccurrenceAdapter(RunAdapter):
     run_type = AnalysisRunType.COOCCURRENCE.value
 
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "unit_type": _require(params, "unit_type", run_type=self.run_type),
-            "window_size": _pick(params, "window_size", 5),
-            "top_n": _pick(params, "top_n", 50),
-            "association_method": _pick(params, "association_method", "pmi"),
-            "directional": _pick(params, "directional", False),
-            "min_frequency": _pick(params, "min_frequency", 1),
-            "min_count": _pick(params, "min_count", 1),
-            "include_network": _pick(params, "include_network", True),
-            "preprocessing_profile_id": params.get("preprocessing_profile_id"),
-            "filters": _filters(params),
-        }
+        return _quant_snapshot("cooccurrence", params, run_type=self.run_type)
 
     async def execute(
         self,
@@ -682,16 +783,18 @@ class SimilarityAdapter(RunAdapter):
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
         from backend.modules.text_research.infrastructure import similarity as sim_mod
 
-        method = _pick(params, "method", "tfidf_cosine")
+        snapshot = _quant_snapshot("similarity", params, run_type=self.run_type)
         try:
-            canonical = sim_mod.normalize_similarity_method(method)
+            snapshot["method"] = sim_mod.normalize_similarity_method(snapshot["method"])
         except ValueError as exc:
             raise NonRerunnableError(str(exc)) from exc
 
         has_artifact = bool(
-            params.get("embedding_artifact_id") or params.get("embeddings_artifact_path")
+            snapshot.get("embedding_artifact_id") or params.get("embeddings_artifact_path")
         )
-        uses_raw_vectors = canonical == "embedding_cosine" or bool(params.get("has_embeddings"))
+        uses_raw_vectors = snapshot["method"] == "embedding_cosine" or bool(
+            params.get("has_embeddings")
+        )
         if uses_raw_vectors and not has_artifact:
             raise NonRerunnableError(
                 "Raw-vector embedding_cosine similarity cannot be reproduced: "
@@ -699,21 +802,7 @@ class SimilarityAdapter(RunAdapter):
                 "Re-submit the analysis with the same vectors, or store them as "
                 "an embedding artifact first."
             )
-
-        return {
-            "unit_type": _require(params, "unit_type", run_type=self.run_type),
-            "method": canonical,
-            "mode": _pick(params, "mode", "pairwise"),
-            "top_k": _pick(params, "top_k", 20),
-            "min_score": params.get("min_score"),
-            "group_by": params.get("group_by"),
-            "centroid_target": _pick(params, "centroid_target", "between_groups"),
-            "query_text": params.get("query_text"),
-            "query_unit_id": params.get("query_unit_id"),
-            "embedding_artifact_id": params.get("embedding_artifact_id"),
-            "preprocessing_profile_id": params.get("preprocessing_profile_id"),
-            "filters": _filters(params),
-        }
+        return snapshot
 
     async def execute(
         self,
@@ -738,18 +827,7 @@ class DuplicateDetectionAdapter(RunAdapter):
     run_type = AnalysisRunType.DUPLICATE_DETECTION.value
 
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "unit_type": _require(params, "unit_type", run_type=self.run_type),
-            "methods": params.get("methods"),
-            "lexical_threshold": _pick(params, "lexical_threshold", 0.85),
-            "char_ngram_size": _pick(params, "char_ngram_size", 5),
-            "use_minhash": _pick(params, "use_minhash", False),
-            "minhash_num_perm": _pick(params, "minhash_num_perm", 64),
-            "minhash_shingle_size": _pick(params, "minhash_shingle_size", 3),
-            "minhash_threshold": _pick(params, "minhash_threshold", 0.8),
-            "max_pairs": _pick(params, "max_pairs", 1000),
-            "filters": _filters(params),
-        }
+        return _quant_snapshot("duplicate_detection", params, run_type=self.run_type)
 
     async def execute(
         self,
@@ -836,10 +914,6 @@ class StatisticalModelAdapter(RunAdapter):
 
     def normalize(self, params: dict[str, Any]) -> dict[str, Any]:
         return {
-            "model": _pick(params, "model", "ols"),
-            "dependent_var": _require(params, "dependent_var", run_type=self.run_type),
-            "independent_vars": _require(params, "independent_vars", run_type=self.run_type),
-            "add_intercept": _pick(params, "add_intercept", True),
             "input_artifact_id": _require(params, "input_artifact_id", run_type=self.run_type),
         }
 
@@ -944,8 +1018,21 @@ def _build_registry() -> dict[str, RunAdapter]:
         MeasurementValidationAdapter(),
     ]
     registry: dict[str, RunAdapter] = {adapter.run_type: adapter for adapter in adapters}
+    # Async support for unsupported-rerun types still follows the operation
+    # execution registry so capability reporting stays consistent.
+    run_type_async = {
+        AnalysisRunType.CLUSTERING.value: operation_supports_async("clustering"),
+        AnalysisRunType.DIMENSIONALITY_REDUCTION.value: operation_supports_async(
+            "dimensionality_reduction"
+        ),
+        AnalysisRunType.READABILITY.value: operation_supports_async("readability"),
+    }
     for run_type, reason in _UNSUPPORTED.items():
-        registry[run_type] = UnsupportedRunAdapter(run_type, reason)
+        registry[run_type] = UnsupportedRunAdapter(
+            run_type,
+            reason,
+            supports_async=run_type_async.get(run_type, False),
+        )
     return registry
 
 
@@ -1042,6 +1129,7 @@ async def execute_rerun(
                 detail=capability.exact_reproduce_block_reason
                 or "Exact reproduce is not available for this run.",
             )
+        normalized = pin_exact_reproduction_inputs(params, normalized)
     return await adapter.execute(
         db,
         run,

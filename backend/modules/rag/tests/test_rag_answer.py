@@ -90,6 +90,7 @@ class RagAnswerTest(unittest.IsolatedAsyncioTestCase):
         )
         service.repo = MagicMock()
         service.repo.create_query_record = AsyncMock()
+        service.repo.record_context_selection = AsyncMock()
         db.commit = AsyncMock()
 
         result = await service.answer(
@@ -101,6 +102,11 @@ class RagAnswerTest(unittest.IsolatedAsyncioTestCase):
         service.retrieval.retrieve.assert_awaited_once()
         service.memory.recall_for_prompt.assert_awaited_once()
         service.generation.run_rag_answer.assert_awaited_once()
+        service.repo.record_context_selection.assert_awaited_once()
+        self.assertEqual(
+            service.repo.record_context_selection.await_args.args[0],
+            "trace-1",
+        )
         self.assertEqual(result.retrieval_trace_id, "trace-1")
         self.assertEqual(result.citation_validation_status, "valid")
 

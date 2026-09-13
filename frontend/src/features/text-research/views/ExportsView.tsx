@@ -25,10 +25,13 @@ import {
 import { PageTabs } from "../../../components/ui/PageTabs";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { AdvancedSettings } from "../../../components/ui/AdvancedSettings";
+import { JsonBlock } from "../../../components/ui/JsonBlock";
+import { KeyValueList } from "../../../components/ui/KeyValueList";
+import { recordToKeyValueItems } from "../../../components/ui/jsonDisplay";
 import { queryKeys } from "../../../config/queryKeys";
 import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
-import { JsonBlock } from "../components/ResearchShared";
 import { useResearchContext } from "../hooks/useResearchContext";
 
 const EXPORT_TABS = ["data", "models", "analysis", "reproducibility"] as const;
@@ -69,7 +72,7 @@ export default function ExportsView() {
 
     const scriptQuery = useQuery({
         queryKey: ["text-research", "quanteda-script", ctx.selectedCorpusId],
-        queryFn: () => getQuantedaScript(ctx.selectedCorpusId),
+        queryFn: ({ signal }) => getQuantedaScript(ctx.selectedCorpusId, signal),
         enabled: Boolean(ctx.selectedCorpusId) && tab === "reproducibility",
     });
 
@@ -139,7 +142,23 @@ export default function ExportsView() {
                             onRetry={() => void manifestQuery.refetch()}
                         >
                             {manifestQuery.data ? (
-                                <JsonBlock data={manifestQuery.data.manifest} />
+                                <Stack spacing={1}>
+                                    {recordToKeyValueItems(manifestQuery.data.manifest).length ? (
+                                        <KeyValueList
+                                            dense
+                                            items={recordToKeyValueItems(
+                                                manifestQuery.data.manifest
+                                            )}
+                                        />
+                                    ) : (
+                                        <Typography variant="body2" color="text.secondary">
+                                            Manifest ready — open Raw for the full payload.
+                                        </Typography>
+                                    )}
+                                    <AdvancedSettings title="Raw manifest JSON">
+                                        <JsonBlock data={manifestQuery.data.manifest} />
+                                    </AdvancedSettings>
+                                </Stack>
                             ) : null}
                         </QueryBoundary>
 

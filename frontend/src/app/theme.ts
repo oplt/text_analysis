@@ -40,9 +40,18 @@ function buildTheme(mode: PaletteMode) {
             text: {
                 primary: isDark ? colors.white : colors.carbonDark,
                 secondary: isDark ? alpha(colors.white, 0.72) : colors.graphite,
-                disabled: colors.silverFog,
+                disabled: isDark ? alpha(colors.white, 0.38) : colors.silverFog,
             },
             divider: isDark ? alpha(colors.white, 0.12) : colors.cloudGray,
+            action: {
+                active: isDark ? alpha(colors.white, 0.56) : colors.pewter,
+                hover: isDark ? alpha(colors.white, 0.08) : alpha(colors.carbonDark, 0.04),
+                selected: isDark ? alpha(colors.electricBlue, 0.24) : alpha(colors.electricBlue, 0.12),
+                disabled: isDark ? alpha(colors.white, 0.3) : alpha(colors.carbonDark, 0.26),
+                disabledBackground: isDark
+                    ? alpha(colors.white, 0.12)
+                    : alpha(colors.carbonDark, 0.08),
+            },
         },
         shape: {
             borderRadius: radii.button,
@@ -133,7 +142,6 @@ function buildTheme(mode: PaletteMode) {
                 fontSize: "0.875rem",
                 lineHeight: 1.43,
                 fontWeight: 400,
-                color: colors.pewter,
             },
         },
         transitions: {
@@ -156,6 +164,8 @@ function buildTheme(mode: PaletteMode) {
     });
 
     const electricBlueHover = isDark ? "#4D78E8" : "#355FCC";
+    const focusRingOuter = isDark ? theme.palette.background.paper : colors.white;
+    const focusVisibleShadow = `0 0 0 2px ${focusRingOuter}, 0 0 0 4px ${colors.electricBlue}`;
 
     return createTheme(theme, {
         components: {
@@ -169,6 +179,7 @@ function buildTheme(mode: PaletteMode) {
                         "--tesla-pewter": colors.pewter,
                         "--tesla-light-ash": colors.lightAsh,
                         "--tesla-cloud-gray": colors.cloudGray,
+                        "--tesla-focus-ring-outer": focusRingOuter,
                     },
                     "*, *::before, *::after": {
                         boxSizing: "border-box",
@@ -193,11 +204,26 @@ function buildTheme(mode: PaletteMode) {
                         backgroundColor: alpha(colors.electricBlue, 0.22),
                     },
                     a: {
-                        color: colors.pewter,
+                        color: isDark ? alpha(colors.white, 0.78) : colors.pewter,
                         textDecoration: "none",
                         transition: `box-shadow ${motion.durationMs}ms ${motion.easing}, color ${motion.durationMs}ms`,
                         "&:hover": {
                             textDecoration: "underline",
+                        },
+                        "&:focus-visible": {
+                            outline: `2px solid ${colors.electricBlue}`,
+                            outlineOffset: 2,
+                        },
+                    },
+                    "@media (prefers-reduced-motion: reduce)": {
+                        html: {
+                            scrollBehavior: "auto",
+                        },
+                        "*, *::before, *::after": {
+                            animationDuration: "0.01ms !important",
+                            animationIterationCount: "1 !important",
+                            transitionDuration: "0.01ms !important",
+                            scrollBehavior: "auto !important",
                         },
                     },
                 },
@@ -251,7 +277,7 @@ function buildTheme(mode: PaletteMode) {
                         boxShadow: "rgba(0,0,0,0) 0px 0px 0px 2px inset",
                         transition,
                         "&:focus-visible": {
-                            boxShadow: `rgba(0,0,0,0) 0px 0px 0px 2px inset, 0 0 0 2px ${alpha(colors.electricBlue, 0.45)}`,
+                            boxShadow: focusVisibleShadow,
                         },
                     },
                     contained: {
@@ -278,12 +304,15 @@ function buildTheme(mode: PaletteMode) {
                         },
                     },
                     text: {
-                        color: colors.pewter,
+                        color: theme.palette.text.secondary,
                         minHeight: 32,
                         padding: "4px 16px",
                         "&:hover": {
                             backgroundColor: isDark ? alpha(colors.white, 0.06) : colors.lightAsh,
                             textDecoration: "underline",
+                        },
+                        "&.Mui-disabled": {
+                            color: theme.palette.text.disabled,
                         },
                     },
                     sizeSmall: {
@@ -304,18 +333,9 @@ function buildTheme(mode: PaletteMode) {
                         "&:hover": {
                             backgroundColor: isDark ? alpha(colors.white, 0.08) : colors.lightAsh,
                         },
-                    },
-                },
-            },
-            MuiChip: {
-                styleOverrides: {
-                    root: {
-                        borderRadius: radii.button,
-                        fontWeight: 500,
-                        fontSize: "0.875rem",
-                    },
-                    outlined: {
-                        borderColor: colors.paleSilver,
+                        "&:focus-visible": {
+                            boxShadow: focusVisibleShadow,
+                        },
                     },
                 },
             },
@@ -326,20 +346,20 @@ function buildTheme(mode: PaletteMode) {
                         backgroundColor: "transparent",
                         transition,
                         "&:hover .MuiOutlinedInput-notchedOutline": {
-                            borderColor: colors.paleSilver,
+                            borderColor: isDark ? alpha(colors.white, 0.32) : colors.paleSilver,
                         },
                         "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                            borderColor: colors.carbonDark,
-                            borderWidth: 1,
+                            borderColor: colors.electricBlue,
+                            borderWidth: 2,
                         },
                     },
                     notchedOutline: {
-                        borderColor: colors.cloudGray,
+                        borderColor: isDark ? alpha(colors.white, 0.16) : colors.cloudGray,
                     },
                     input: {
                         paddingBlock: 12,
                         "&::placeholder": {
-                            color: colors.silverFog,
+                            color: isDark ? alpha(colors.white, 0.45) : colors.silverFog,
                             opacity: 1,
                         },
                     },
@@ -358,6 +378,80 @@ function buildTheme(mode: PaletteMode) {
                     root: {
                         borderRadius: radii.button,
                         boxShadow: "none",
+                        border: `1px solid ${theme.palette.divider}`,
+                    },
+                },
+            },
+            MuiDialog: {
+                styleOverrides: {
+                    paper: {
+                        backgroundImage: "none",
+                        backgroundColor: theme.palette.background.paper,
+                        border: `1px solid ${theme.palette.divider}`,
+                        boxShadow: isDark
+                            ? `0 12px 40px ${alpha(colors.carbonDark, 0.65)}`
+                            : `0 12px 40px ${alpha(colors.carbonDark, 0.12)}`,
+                    },
+                },
+            },
+            MuiChip: {
+                styleOverrides: {
+                    root: {
+                        borderRadius: radii.button,
+                        fontWeight: 500,
+                        fontSize: "0.875rem",
+                        "&:focus-visible": {
+                            boxShadow: focusVisibleShadow,
+                        },
+                        "&.Mui-disabled": {
+                            opacity: 1,
+                            color: theme.palette.text.disabled,
+                            borderColor: theme.palette.divider,
+                        },
+                    },
+                    outlined: {
+                        borderColor: isDark ? alpha(colors.white, 0.24) : colors.paleSilver,
+                    },
+                    filled: {
+                        "&.MuiChip-colorDefault": {
+                            backgroundColor: isDark
+                                ? alpha(colors.white, 0.08)
+                                : colors.lightAsh,
+                            color: theme.palette.text.primary,
+                        },
+                    },
+                },
+            },
+            MuiTooltip: {
+                defaultProps: {
+                    enterDelay: 400,
+                    enterTouchDelay: 700,
+                    describeChild: true,
+                },
+                styleOverrides: {
+                    tooltip: {
+                        borderRadius: radii.button,
+                        backgroundColor: isDark
+                            ? alpha(colors.carbonDark, 0.96)
+                            : colors.carbonDark,
+                        color: colors.white,
+                        fontSize: "0.875rem",
+                        boxShadow: "none",
+                        border: isDark ? `1px solid ${alpha(colors.white, 0.12)}` : "none",
+                    },
+                },
+            },
+            MuiTableCell: {
+                styleOverrides: {
+                    head: {
+                        fontWeight: 500,
+                        color: theme.palette.text.secondary,
+                        backgroundColor: isDark
+                            ? alpha(colors.white, 0.04)
+                            : colors.lightAsh,
+                    },
+                    body: {
+                        borderColor: theme.palette.divider,
                     },
                 },
             },
@@ -395,6 +489,9 @@ function buildTheme(mode: PaletteMode) {
                         "&:hover": {
                             backgroundColor: isDark ? alpha(colors.white, 0.06) : colors.lightAsh,
                         },
+                        "&:focus-visible": {
+                            boxShadow: focusVisibleShadow,
+                        },
                     },
                 },
             },
@@ -426,26 +523,18 @@ function buildTheme(mode: PaletteMode) {
                         "&.Mui-selected": {
                             color: theme.palette.text.primary,
                         },
+                        "&:focus-visible": {
+                            boxShadow: focusVisibleShadow,
+                        },
                     },
                 },
             },
-            MuiTableCell: {
+            MuiAccordionSummary: {
                 styleOverrides: {
-                    head: {
-                        fontWeight: 500,
-                        color: theme.palette.text.secondary,
-                        backgroundColor: isDark ? alpha(colors.white, 0.04) : colors.lightAsh,
-                    },
-                },
-            },
-            MuiTooltip: {
-                styleOverrides: {
-                    tooltip: {
-                        borderRadius: radii.button,
-                        backgroundColor: colors.carbonDark,
-                        color: colors.white,
-                        fontSize: "0.875rem",
-                        boxShadow: "none",
+                    root: {
+                        "&:focus-visible": {
+                            boxShadow: focusVisibleShadow,
+                        },
                     },
                 },
             },
@@ -461,6 +550,11 @@ function buildTheme(mode: PaletteMode) {
                     animation: "wave",
                 },
                 styleOverrides: {
+                    root: {
+                        "@media (prefers-reduced-motion: reduce)": {
+                            animation: "none",
+                        },
+                    },
                     rounded: {
                         borderRadius: radii.button,
                     },
@@ -469,13 +563,17 @@ function buildTheme(mode: PaletteMode) {
             MuiLink: {
                 styleOverrides: {
                     root: {
-                        color: colors.pewter,
+                        color: isDark ? alpha(colors.white, 0.78) : colors.pewter,
                         fontSize: "0.875rem",
                         fontWeight: 400,
                         textDecoration: "none",
                         transition: `box-shadow ${motion.durationMs}ms ${motion.easing}, color ${motion.durationMs}ms`,
                         "&:hover": {
                             textDecoration: "underline",
+                        },
+                        "&:focus-visible": {
+                            outline: `2px solid ${colors.electricBlue}`,
+                            outlineOffset: 2,
                         },
                     },
                 },

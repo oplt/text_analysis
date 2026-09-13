@@ -7,8 +7,8 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import type { Notification } from "../../api/notifications";
-import { colors } from "../../app/designTokens";
 import { formatDateTime, humanizeKey } from "../../utils/formatters";
+import { surfaceMuted, surfaceSelected } from "../ui/themeSurfaces";
 
 type NotificationListItemProps = {
     notification: Notification;
@@ -41,13 +41,8 @@ export function NotificationListItem({
                         ? "transparent"
                         : alpha(theme.palette.background.paper, 0.68)
                     : isCompact
-                        ? theme.palette.mode === "dark"
-                            ? "action.selected"
-                            : colors.lightAsh
-                        : alpha(
-                              theme.palette.primary.main,
-                              theme.palette.mode === "dark" ? 0.16 : 0.06
-                          ),
+                        ? surfaceMuted(theme)
+                        : surfaceSelected(theme),
             })}
         >
             <Stack spacing={isCompact ? 0 : 1.25}>

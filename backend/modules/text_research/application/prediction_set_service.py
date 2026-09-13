@@ -56,10 +56,17 @@ class PredictionSetService(ResearchAccessMixin):
         created_by: str,
         extra_metadata: dict[str, Any] | None = None,
     ) -> PredictionSet:
+        """Create a draft set after clearing any prior draft for this run.
+
+        Staged rows stay invisible to list/active-learning APIs until
+        :meth:`publish` flips status to ``published``.
+        """
+        await self.repo.discard_draft_prediction_sets_for_run(run.id)
         metadata: dict[str, Any] = {
             "kind": ResearchArtifactKind.PREDICTION_SET.value,
             "unit_ids": [],
             "unit_count": 0,
+            "staging": True,
         }
         if extra_metadata:
             metadata.update(extra_metadata)
@@ -78,8 +85,21 @@ class PredictionSetService(ResearchAccessMixin):
         )
 
     async def publish(self, prediction_set: PredictionSet, *, unit_ids: list[str]) -> PredictionSet:
+        if prediction_set.status == "published":
+            return prediction_set
+        if prediction_set.status != "draft":
+            raise HTTPException(
+                status_code=409,
+                detail=f"Cannot publish prediction set in status {prediction_set.status!r}",
+            )
         metadata = loads(prediction_set.metadata_json, {})
-        metadata.update({"unit_ids": unit_ids, "unit_count": len(unit_ids)})
+        metadata.update(
+            {
+                "unit_ids": unit_ids,
+                "unit_count": len(unit_ids),
+                "staging": False,
+            }
+        )
         return await self.repo.update_prediction_set(
             prediction_set,
             status="published",

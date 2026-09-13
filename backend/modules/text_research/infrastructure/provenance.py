@@ -6,7 +6,9 @@ git SHA, application/Python versions, lockfile checksum, docker digest, corpus
 snapshot id/hash, campaign/codebook identity, unit type + filters, preprocessing
 profile id/config/hash, feature + selection config, seeds, algorithm/hyperparams,
 validation strategy + partition hashes, model and artifact checksums, library
-versions, and run lifecycle timestamps (surfaced via get_provenance).
+versions, external embedding/model provider identity (model name, revision,
+dimension, package/impl versions, artifact checksum), and run lifecycle
+timestamps (surfaced via get_provenance).
 """
 
 from __future__ import annotations

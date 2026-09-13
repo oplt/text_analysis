@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import unittest
-from time import perf_counter
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -50,17 +49,55 @@ def _service_config(**overrides) -> SimpleNamespace:
 
 
 class RetrievalConcurrencyTests(unittest.IsolatedAsyncioTestCase):
+    async def test_branch_limit_is_operational(self):
+        for limit in (1, 2):
+            service = RetrievalService(MagicMock())
+            service.config = _service_config(retrieval_branch_concurrency=limit)
+            active = peak = 0
+
+            async def branch(*args, **kwargs):
+                nonlocal active, peak
+                active += 1
+                peak = max(active, peak)
+                await asyncio.sleep(0.01)
+                active -= 1
+                return [], True, None
+
+            service._dense_branch = branch
+            service._lexical_branch = branch
+            service.embeddings = SimpleNamespace(embed_texts=AsyncMock(return_value=[[1.0, 0.0]]))
+            with (
+                patch(
+                    "backend.modules.rag.application.retrieval_service.get_cached_retrieval",
+                    AsyncMock(return_value=None),
+                ),
+                patch(
+                    "backend.modules.rag.application.retrieval_service.set_cached_retrieval",
+                    AsyncMock(),
+                ),
+            ):
+                await service.retrieve("query", user_id="user", project_id=None)
+            self.assertEqual(peak, limit)
+
     async def test_dense_and_lexical_branches_overlap(self):
         service = RetrievalService(MagicMock())
         service.config = _service_config()
         service.embeddings = SimpleNamespace(embed_texts=AsyncMock(return_value=[[1.0, 0.0]]))
 
+        dense_started = asyncio.Event()
+        lexical_started = asyncio.Event()
+        release = asyncio.Event()
+
         async def delayed_dense(*args, **kwargs):
-            await asyncio.sleep(0.05)
+            dense_started.set()
+            await lexical_started.wait()
+            await release.wait()
             return []
 
         async def delayed_lexical(*args, **kwargs):
-            await asyncio.sleep(0.05)
+            lexical_started.set()
+            await dense_started.wait()
+            await release.wait()
             return []
 
         service.vector_store = SimpleNamespace(similarity_search=delayed_dense)
@@ -75,9 +112,15 @@ class RetrievalConcurrencyTests(unittest.IsolatedAsyncioTestCase):
                 AsyncMock(),
             ),
         ):
-            started = perf_counter()
-            await service.retrieve("query", user_id="user", project_id=None)
-        self.assertLess(perf_counter() - started, 0.09)
+            task = asyncio.create_task(service.retrieve("query", user_id="user", project_id=None))
+            await asyncio.wait_for(
+                asyncio.gather(dense_started.wait(), lexical_started.wait()),
+                timeout=1.0,
+            )
+            # Both branches must be in-flight concurrently before either finishes.
+            self.assertTrue(dense_started.is_set() and lexical_started.is_set())
+            release.set()
+            await task
 
     async def test_branch_failure_still_degraded_with_evidence(self):
         service = RetrievalService(MagicMock())

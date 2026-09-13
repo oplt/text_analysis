@@ -71,9 +71,15 @@ class ExecutionService:
             )
             return
 
+        from backend.modules.text_research.infrastructure.model_storage import (
+            default_artifact_namespace,
+        )
+
         if not run.execution_key:
             run.execution_key = ExecutionService._compute_execution_key(run)
-        run.artifact_namespace = run.artifact_namespace or f"runs/{run.project_id}/{run.id}"
+        run.artifact_namespace = run.artifact_namespace or default_artifact_namespace(
+            run.project_id, run.id
+        )
         if run.status not in {
             AnalysisRunStatus.QUEUED.value,
             AnalysisRunStatus.RUNNING.value,
@@ -121,19 +127,48 @@ class ExecutionService:
         await ExecutionService.submit(db=db, run=run, operation=operation, user_id=user_id)
 
     @staticmethod
-    async def claim_run_for_execution(*, db: AsyncSession, run_id: str) -> bool:
-        """Claim a queued run before a worker performs expensive computation."""
+    async def claim_run_for_execution(
+        *,
+        db: AsyncSession,
+        run_id: str,
+        execution_key: str | None = None,
+        worker_id: str | None = None,
+    ) -> bool:
+        """Atomically claim a queued run before expensive computation.
+
+        Returns True only when this caller transitioned QUEUED → RUNNING.
+        A False result means another worker already claimed or finished the run;
+        callers must exit without duplicate side effects.
+        """
         from backend.modules.text_research.infrastructure.repositories import ResearchRepository
 
         repo = ResearchRepository(db)
-        queued = await repo.get_run(run_id)
-        if queued is None or queued.status != AnalysisRunStatus.QUEUED.value:
-            return False
+        # Prefer the durable execution_key when the caller did not supply one so
+        # republished deliveries still match the committed identity.
+        key = execution_key
+        if key is None:
+            existing = await repo.get_run(run_id)
+            if existing is None:
+                return False
+            key = existing.execution_key
         claimed = await repo.claim_run_for_execution(
             run_id,
-            execution_key=queued.execution_key,
+            execution_key=key,
+            worker_id=worker_id,
         )
         if claimed is None:
+            logger.info(
+                "execution claim lost run=%s worker=%s key=%s",
+                run_id,
+                worker_id,
+                key,
+            )
             return False
         await db.commit()
+        logger.info(
+            "execution claimed run=%s worker=%s key=%s",
+            run_id,
+            worker_id,
+            key,
+        )
         return True

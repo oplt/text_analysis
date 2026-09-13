@@ -40,7 +40,7 @@ export function ResearchMemosPanel({ onOpenCitation }: Props) {
     const queryClient = useQueryClient();
     const memosQuery = useQuery({
         queryKey: [...queryKeys.textResearch.memos(projectId, corpusId), includeArchived],
-        queryFn: () => listResearchMemos(projectId, corpusId, includeArchived),
+        queryFn: ({ signal }) => listResearchMemos(projectId, corpusId, includeArchived, signal),
         enabled: Boolean(projectId),
     });
     const invalidateMemos = () =>
@@ -69,7 +69,9 @@ export function ResearchMemosPanel({ onOpenCitation }: Props) {
     return (
         <Accordion disableGutters sx={{ mb: 2 }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Typography variant="subtitle1">Research memos ({memos.length})</Typography>
+                <Typography variant="subtitle2" color="text.secondary">
+                    Research memos ({memos.length})
+                </Typography>
             </AccordionSummary>
             <AccordionDetails>
                 <Stack spacing={1}>

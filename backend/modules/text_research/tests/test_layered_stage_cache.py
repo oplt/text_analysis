@@ -59,6 +59,11 @@ class LayeredStageCacheTests(unittest.TestCase):
         stage_cache.invalidate()
         stage_cache.reset_redis_client_for_tests()
         self.fake_redis = FakeRedis()
+        # These tests exercise local L3; developer MinIO configuration must not
+        # make a deleted local payload recoverable from an external object store.
+        self.enterContext(
+            patch.object(stage_cache, "_object_storage_configured", return_value=False)
+        )
 
     def tearDown(self) -> None:
         stage_cache.invalidate()

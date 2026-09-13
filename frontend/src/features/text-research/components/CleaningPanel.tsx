@@ -20,17 +20,24 @@ import {
     applyCleaning,
     createCleaningProfile,
     deleteCleaningProfile,
+    getRun,
     listCleaningProfiles,
     previewCleaning,
     updateCleaningProfile,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { AdvancedSettings } from "../../../components/ui/AdvancedSettings";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
+import { RunStatusPanel } from "../../../components/ui/RunStatusPanel";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
+import { researchRunStaleTime } from "../../../config/queryTiming";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { useSnackbar } from "../../../app/snackbarContext";
+import { ActiveRunActions } from "./ActiveRunActions";
 import { useResearchContext } from "../hooks/useResearchContext";
+import { useRunEvents } from "../hooks/useRunEvents";
+import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 import type { CleaningPreview, CleaningProfile } from "../types";
 
 const DEFAULT_CONFIG: Record<string, unknown> = {
@@ -114,18 +121,29 @@ export function CleaningRunPanel({ profileId }: { profileId: string | null }) {
     const ctx = useResearchContext();
     const { showToast } = useSnackbar();
     const client = useQueryClient();
+    const [runId, setRunId] = useState<string | null>(null);
     const applyMutation = useMutation({
         mutationFn: () => applyCleaning(ctx.selectedCorpusId, { cleaning_profile_id: profileId! }),
         onSuccess: (run) => {
+            setRunId(run.id);
             void Promise.all([
                 client.invalidateQueries({ queryKey: queryKeys.textResearch.dashboard(ctx.selectedCorpusId) }),
                 client.invalidateQueries({ queryKey: ["text-research", "corpus", ctx.selectedCorpusId, "documents"] }),
                 client.invalidateQueries({ queryKey: queryKeys.textResearch.run(run.id) }),
             ]);
-            showToast({ message: "Cleaning completed. Raw extracts were preserved.", severity: "success" });
+            showToast({ message: "Cleaning queued. Raw extracts were preserved.", severity: "success" });
         },
         onError: (error) => showToast({ message: getQueryErrorMessage(error, "Cleaning failed."), severity: "error" }),
     });
+    const sseConnected = useRunEvents(runId, ctx.projectId);
+    const runQuery = useQuery({
+        queryKey: queryKeys.textResearch.run(runId ?? ""),
+        queryFn: () => getRun(runId!),
+        enabled: Boolean(runId),
+        refetchInterval: (query) => activeRunRefetchInterval(query, sseConnected),
+        staleTime: (query) => researchRunStaleTime(query.state.data?.status),
+    });
+
     return (
         <SectionCard title="Apply cleaning" description="Rebuild canonical text for every document. Raw extracts are never overwritten.">
             <Stack spacing={1.5}>
@@ -138,9 +156,34 @@ export function CleaningRunPanel({ profileId }: { profileId: string | null }) {
                     disabled={!profileId || !ctx.selectedCorpusId || applyMutation.isPending}
                     sx={{ alignSelf: "flex-start" }}
                 >
-                    {applyMutation.isPending ? "Applying profile…" : "Apply to corpus"}
+                    {applyMutation.isPending ? "Starting…" : "Apply to corpus"}
                 </Button>
                 {!ctx.selectedCorpusId ? <Alert severity="info">Select a corpus before applying this profile.</Alert> : null}
+                {runId && runQuery.data ? (
+                    <RunStatusPanel
+                        dense
+                        title="Cleaning"
+                        status={runQuery.data.status}
+                        runId={runQuery.data.id}
+                        stage={runQuery.data.progress_stage}
+                        startedAt={runQuery.data.started_at}
+                        completedAt={runQuery.data.completed_at}
+                        createdAt={runQuery.data.created_at}
+                        errorMessage={runQuery.data.error_message}
+                        onRetry={() => applyMutation.mutate()}
+                        retryLabel="Retry cleaning"
+                        retryDisabled={!profileId || !ctx.selectedCorpusId || applyMutation.isPending}
+                        actions={
+                            isActiveRunStatus(runQuery.data.status) ? (
+                                <ActiveRunActions
+                                    run={runQuery.data}
+                                    projectId={ctx.projectId}
+                                    corpusId={ctx.selectedCorpusId}
+                                />
+                            ) : null
+                        }
+                    />
+                ) : null}
             </Stack>
         </SectionCard>
     );
@@ -213,7 +256,20 @@ function CleaningProfileFields({
             <Stack direction={{ xs: "column", sm: "row" }} flexWrap="wrap" useFlexGap>
                 {TOGGLES.map(([key, label]) => <FormControlLabel key={key} control={<Checkbox checked={Boolean(config[key])} onChange={(event) => setConfig({ ...config, [key]: event.target.checked })} />} label={label} />)}
             </Stack>
-            <TextField label="Custom replacement rules (JSON array)" value={rulesText} onChange={(event) => setRulesText(event.target.value)} multiline minRows={3} helperText='Each rule uses {"pattern":"…","replacement":"…","count":0}.' />
+            <AdvancedSettings
+                title="Custom replacement rules"
+                description='JSON array of {"pattern","replacement","count"} rules.'
+            >
+                <TextField
+                    label="Rules JSON"
+                    value={rulesText}
+                    onChange={(event) => setRulesText(event.target.value)}
+                    multiline
+                    minRows={3}
+                    fullWidth
+                    helperText='Each rule uses {"pattern":"…","replacement":"…","count":0}.'
+                />
+            </AdvancedSettings>
         </>
     );
 }
@@ -225,7 +281,7 @@ export function CleaningProfileEditor({ onProfileChange }: { onProfileChange: (p
     const [profileId, setProfileId] = useState("");
     const profilesQuery = useQuery({
         queryKey: queryKeys.textResearch.cleaningProfiles(ctx.projectId),
-        queryFn: () => listCleaningProfiles(ctx.projectId),
+        queryFn: ({ signal }) => listCleaningProfiles(ctx.projectId, signal),
         enabled: Boolean(ctx.projectId),
     });
     const profiles = useMemo(() => profilesQuery.data ?? [], [profilesQuery.data]);

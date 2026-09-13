@@ -155,7 +155,7 @@ class LargeJobEnqueueTests(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "backend.modules.text_research.application.quantitative_analysis_service._prepare_with_identity",
+                "backend.modules.text_research.application.lexical_analysis_service._prepare_with_identity",
                 new=AsyncMock(
                     return_value=(
                         SimpleNamespace(
@@ -170,7 +170,7 @@ class LargeJobEnqueueTests(unittest.IsolatedAsyncioTestCase):
                 ),
             ),
             patch(
-                "backend.modules.text_research.application.quantitative_analysis_service.run_cpu_bound",
+                "backend.modules.text_research.application.lexical_analysis_service.run_cpu_bound",
                 new=AsyncMock(
                     return_value={
                         "frequencies": [],
@@ -221,15 +221,15 @@ class LargeJobEnqueueTests(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "backend.modules.text_research.application.quantitative_analysis_service.estimate_workload",
+                "backend.modules.text_research.application.lexical_analysis_service.estimate_workload",
                 return_value=estimate_workload(analysis_type="frequencies", n_units=50_000),
             ),
             patch(
-                "backend.modules.text_research.application.quantitative_analysis_service.should_enqueue_cpu_job",
+                "backend.modules.text_research.application.lexical_analysis_service.should_enqueue_cpu_job",
                 return_value=True,
             ),
             patch(
-                "backend.modules.text_research.application.quantitative_analysis_service.execute_or_enqueue",
+                "backend.modules.text_research.application.lexical_analysis_service.execute_or_enqueue",
                 side_effect=execute_or_enqueue,
             ),
         ):

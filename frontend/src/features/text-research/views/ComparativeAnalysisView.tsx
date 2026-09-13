@@ -23,11 +23,14 @@ import {
     runComparativePrevalence,
 } from "../../../api/textResearch";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
+import { DisabledWithReason } from "../../../components/ui/DisabledWithReason";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { MetricCards, RankedBarChart, ResultsInspector } from "../components/ResearchCharts";
-import { RunStatusChip } from "../components/ResearchShared";
+import { RunStatusChip } from "../../../components/ui/RunStatusChip";
+import { ScrollRegion } from "../../../components/ui/ScrollRegion";
+import { comparativeRunDisabledReason } from "../actionDisabledReasons";
 import { useResearchContext } from "../hooks/useResearchContext";
 import type { AnalysisRun, UnitType } from "../types";
 
@@ -282,18 +285,26 @@ export default function ComparativeAnalysisView() {
                     </Stack>
 
                     <Stack direction="row" spacing={1}>
-                        <Button
-                            variant="contained"
-                            startIcon={<RunIcon />}
-                            disabled={
-                                mutation.isPending ||
-                                !ctx.selectedCorpusId ||
-                                !ctx.selectedCodebookId
-                            }
-                            onClick={() => mutation.mutate()}
+                        <DisabledWithReason
+                            reason={comparativeRunDisabledReason({
+                                corpusId: ctx.selectedCorpusId,
+                                codebookId: ctx.selectedCodebookId,
+                                pending: mutation.isPending,
+                            })}
                         >
-                            Run comparative prevalence
-                        </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<RunIcon />}
+                                disabled={
+                                    mutation.isPending ||
+                                    !ctx.selectedCorpusId ||
+                                    !ctx.selectedCodebookId
+                                }
+                                onClick={() => mutation.mutate()}
+                            >
+                                Run comparative prevalence
+                            </Button>
+                        </DisabledWithReason>
                         {rows.length ? (
                             <Button variant="outlined" onClick={exportCsv}>
                                 Export table CSV
@@ -350,7 +361,7 @@ export default function ComparativeAnalysisView() {
                                 </Box>
                             ) : null}
 
-                            <Box sx={{ overflowX: "auto" }}>
+                            <ScrollRegion>
                                 <Table size="small">
                                     <TableHead>
                                         <TableRow>
@@ -379,7 +390,7 @@ export default function ComparativeAnalysisView() {
                                         ))}
                                     </TableBody>
                                 </Table>
-                            </Box>
+                            </ScrollRegion>
 
                             <Alert severity="info">
                                 Small denominators yield unstable prevalence estimates. Inspect

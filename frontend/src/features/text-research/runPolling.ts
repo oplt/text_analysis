@@ -1,5 +1,7 @@
+import { isActiveCanonicalStatus } from "../../components/ui/runStatusModel";
+
 export function isActiveRunStatus(status?: string | null): boolean {
-    return status === "queued" || status === "running" || status === "pending";
+    return isActiveCanonicalStatus(status);
 }
 
 /** Poll only active jobs while a live SSE connection is unavailable. */

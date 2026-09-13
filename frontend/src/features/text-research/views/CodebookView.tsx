@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
     Alert,
-    Box,
     Button,
     Checkbox,
     Chip,
@@ -18,6 +20,7 @@ import {
     AcUnit as FreezeIcon,
     Add as AddIcon,
     ContentCopy as VersionIcon,
+    ExpandMore as ExpandIcon,
     Lock as LockedIcon,
     MenuBook as CodebookIcon,
 } from "@mui/icons-material";
@@ -30,8 +33,10 @@ import {
     freezeCodebook,
     updateLabel,
 } from "../../../api/textResearch";
+import { ContextInspector } from "../../../components/ui/ContextInspector";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { WorkspaceSplit } from "../../../components/ui/WorkspaceSplit";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { useResearchContext } from "../hooks/useResearchContext";
@@ -434,7 +439,7 @@ export default function CodebookView() {
             {selected ? (
                 <SectionCard
                     title="Labels"
-                    description="Edit definition, inclusion/exclusion criteria, and examples for the selected codebook version."
+                    description="Expand a row for definition and criteria, or edit the selected label in the inspector."
                     action={
                         <Button
                             startIcon={<AddIcon />}
@@ -445,61 +450,141 @@ export default function CodebookView() {
                         </Button>
                     }
                 >
-                    <Box
-                        sx={{
-                            display: "grid",
-                            gap: 2,
-                            gridTemplateColumns: { xs: "1fr", md: "220px 1fr" },
-                        }}
-                    >
-                        <Stack spacing={1}>
-                            {ctx.labels.map((label) => (
-                                <Button
-                                    key={label.id}
-                                    size="small"
-                                    variant={
-                                        !creatingLabel && label.id === effectiveLabelId
-                                            ? "contained"
-                                            : "outlined"
-                                    }
-                                    onClick={() => {
-                                        setCreatingLabel(false);
-                                        setSelectedLabelId(label.id);
-                                    }}
-                                    sx={{ justifyContent: "flex-start" }}
-                                >
-                                    {label.name}
-                                    {label.is_placeholder ? " · demo" : ""}
-                                </Button>
-                            ))}
-                            {!ctx.labels.length ? (
-                                <Typography variant="body2" color="text.secondary">
-                                    No labels yet.
-                                </Typography>
-                            ) : null}
-                        </Stack>
-
-                        <Stack spacing={1.5}>
-                            {creatingLabel || selectedLabel ? (
-                                <LabelDraftForm
-                                    key={creatingLabel ? "creating" : effectiveLabelId ?? "none"}
-                                    sourceLabel={creatingLabel ? null : selectedLabel}
-                                    creating={creatingLabel}
-                                    frozen={frozen}
-                                    savePending={saveLabelMutation.isPending}
-                                    onSave={(draft) => saveLabelMutation.mutate(draft)}
-                                    onCancelCreate={() => {
-                                        setCreatingLabel(false);
-                                        if (ctx.labels[0]) {
-                                            setSelectedLabelId(ctx.labels[0].id);
-                                        }
-                                    }}
-                                />
-                            ) : (
-                                <Typography color="text.secondary">Select a label to edit.</Typography>
-                            )}
-                        </Stack>
-                    </Box>
+                    <WorkspaceSplit
+                        ratio="8-4"
+                        sideFrom="md"
+                        main={
+                            <Stack spacing={1}>
+                                {!ctx.labels.length && !creatingLabel ? (
+                                    <Typography variant="body2" color="text.secondary">
+                                        No labels yet. Add structured labels with inclusion/exclusion
+                                        criteria and examples.
+                                    </Typography>
+                                ) : null}
+                                {ctx.labels.map((label) => {
+                                    const expanded =
+                                        !creatingLabel && label.id === effectiveLabelId;
+                                    return (
+                                        <Accordion
+                                            key={label.id}
+                                            disableGutters
+                                            elevation={0}
+                                            expanded={expanded}
+                                            onChange={(_, next) => {
+                                                if (next) {
+                                                    setCreatingLabel(false);
+                                                    setSelectedLabelId(label.id);
+                                                }
+                                            }}
+                                            sx={{
+                                                border: 1,
+                                                borderColor: expanded ? "primary.main" : "divider",
+                                                borderRadius: 1,
+                                                "&:before": { display: "none" },
+                                            }}
+                                        >
+                                            <AccordionSummary
+                                                expandIcon={<ExpandIcon />}
+                                                sx={{ minHeight: 48, px: 1.5 }}
+                                            >
+                                                <Stack spacing={0.25} sx={{ pr: 1, minWidth: 0 }}>
+                                                    <Stack
+                                                        direction="row"
+                                                        spacing={1}
+                                                        alignItems="center"
+                                                    >
+                                                        <Typography
+                                                            variant="subtitle2"
+                                                            noWrap
+                                                        >
+                                                            {label.name}
+                                                        </Typography>
+                                                        {label.is_placeholder ? (
+                                                            <Chip size="small" label="demo" />
+                                                        ) : null}
+                                                    </Stack>
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                        noWrap
+                                                    >
+                                                        {label.description || "No definition yet"}
+                                                    </Typography>
+                                                </Stack>
+                                            </AccordionSummary>
+                                            <AccordionDetails sx={{ px: 1.5, pt: 0, pb: 1.5 }}>
+                                                <Stack spacing={0.75}>
+                                                    <Typography variant="caption" display="block">
+                                                        <strong>Include:</strong>{" "}
+                                                        {label.inclusion_criteria || "—"}
+                                                    </Typography>
+                                                    <Typography variant="caption" display="block">
+                                                        <strong>Exclude:</strong>{" "}
+                                                        {label.exclusion_criteria || "—"}
+                                                    </Typography>
+                                                    <Typography variant="caption" display="block">
+                                                        <strong>Positive:</strong>{" "}
+                                                        {(label.positive_examples ?? []).join(" · ") ||
+                                                            "—"}
+                                                    </Typography>
+                                                    <Typography variant="caption" display="block">
+                                                        <strong>Negative:</strong>{" "}
+                                                        {(label.negative_examples ?? []).join(" · ") ||
+                                                            "—"}
+                                                    </Typography>
+                                                    <Button
+                                                        size="small"
+                                                        variant="outlined"
+                                                        onClick={() => {
+                                                            setCreatingLabel(false);
+                                                            setSelectedLabelId(label.id);
+                                                        }}
+                                                    >
+                                                        Edit in inspector
+                                                    </Button>
+                                                </Stack>
+                                            </AccordionDetails>
+                                        </Accordion>
+                                    );
+                                })}
+                            </Stack>
+                        }
+                        side={
+                            <ContextInspector
+                                title={creatingLabel ? "New label" : selectedLabel?.name ?? "Label"}
+                                description="Name, definition, inclusion/exclusion, and examples."
+                                sticky
+                                sx={{ width: "100%", maxWidth: "none", minWidth: 0 }}
+                            >
+                                {creatingLabel || selectedLabel ? (
+                                    <Stack spacing={1.5}>
+                                        <LabelDraftForm
+                                            key={
+                                                creatingLabel
+                                                    ? "creating"
+                                                    : effectiveLabelId ?? "none"
+                                            }
+                                            sourceLabel={creatingLabel ? null : selectedLabel}
+                                            creating={creatingLabel}
+                                            frozen={frozen}
+                                            savePending={saveLabelMutation.isPending}
+                                            onSave={(draft) => saveLabelMutation.mutate(draft)}
+                                            onCancelCreate={() => {
+                                                setCreatingLabel(false);
+                                                if (ctx.labels[0]) {
+                                                    setSelectedLabelId(ctx.labels[0].id);
+                                                }
+                                            }}
+                                        />
+                                    </Stack>
+                                ) : (
+                                    <Typography variant="body2" color="text.secondary">
+                                        Select a label row to edit its structured fields.
+                                    </Typography>
+                                )}
+                            </ContextInspector>
+                        }
+                    />
                 </SectionCard>
             ) : null}
 

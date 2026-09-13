@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import unittest
+from contextlib import asynccontextmanager
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 from backend.modules.rag.domain.enums import RetrievalIntent
 from backend.modules.rag.domain.models import (
@@ -198,11 +200,19 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
         )
 
         retrieve_calls: list[dict] = []
+        active = peak = 0
+        completed = []
 
         async def fake_retrieve(query, **kwargs):
+            nonlocal active, peak
             retrieve_calls.append({"query": query, **kwargs})
             filters = kwargs.get("filters") or {}
             doc_ids = filters.get("document_ids") or []
+            active += 1
+            peak = max(peak, active)
+            await asyncio.sleep(0.02 if doc_ids == ["d1"] else 0.001)
+            active -= 1
+            completed.extend(doc_ids)
             if doc_ids == ["d1"]:
                 return RetrievalOutcome(
                     chunks=[chunk_a],
@@ -294,12 +304,45 @@ class HierarchicalSynthesisTests(unittest.IsolatedAsyncioTestCase):
             ],
             to_dict=lambda: {"corpus_id": "c1", "indexed_count": 3},
         )
-        result = await service._synthesize_sync(
-            user=SimpleNamespace(id="u1"),
-            query="Compare positions",
-            scope=scope,
-            allow_list=["d1", "d2", "d3"],
-        )
+        sessions = []
+
+        @asynccontextmanager
+        async def session_factory():
+            session = SimpleNamespace(commit=AsyncMock())
+            sessions.append(session)
+            yield session
+
+        class WorkerRetrieval:
+            def __init__(self, db, config):
+                self.db = db
+
+            async def retrieve(self, query, **kwargs):
+                self_test.assertIn(self.db, sessions)
+                return await fake_retrieve(query, **kwargs)
+
+        self_test = self
+        service.retrieval = WorkerRetrieval(service.db, service.rag_config)
+        with (
+            patch(
+                "backend.modules.text_research.application.corpus_synthesis_service.SessionLocal",
+                session_factory,
+            ),
+            patch(
+                "backend.modules.text_research.application.corpus_synthesis_service.RetrievalService",
+                WorkerRetrieval,
+            ),
+        ):
+            result = await service._synthesize_sync(
+                user=SimpleNamespace(id="u1"),
+                query="Compare positions",
+                scope=scope,
+                allow_list=["d1", "d2", "d3"],
+            )
+        self.assertEqual(len({id(session) for session in sessions}), 3)
+        self.assertEqual(peak, 2)
+        self.assertEqual(completed, ["d2", "d1", "d3"])
+        for session in sessions:
+            session.commit.assert_awaited_once()
         self.assertFalse(result["truncated"])
         self.assertEqual(result["documents_total"], 3)
         self.assertEqual(result["documents_considered"], 3)

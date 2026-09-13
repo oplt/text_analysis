@@ -12,6 +12,11 @@ from backend.modules.text_research.application.analysis_executor import (
     attach_run_identity,
     build_spec_from_request,
 )
+from backend.modules.text_research.application.input_dataset_artifacts import (
+    build_measurement_input_payload,
+    measurement_input_metadata,
+    store_input_dataset,
+)
 from backend.modules.text_research.domain.enums import AnalysisRunStatus, AnalysisRunType
 from backend.modules.text_research.domain.models import AnalysisRun, dumps
 from backend.modules.text_research.infrastructure.artifact_store import ArtifactStore
@@ -41,20 +46,16 @@ class MeasurementValidationService(ResearchAccessMixin):
         await self.get_corpus_or_404(corpus_id, user_id=user_id)
         if not source_a or not source_b:
             raise HTTPException(status_code=400, detail="source_a and source_b are required")
-        input_artifact = ArtifactStore().put(
-            "manifest",
-            {
-                "source_a": source_a,
-                "values_a": values_a,
-                "source_b": source_b,
-                "values_b": values_b,
-                "ids": ids,
-                "value_kind": value_kind,
-                "subgroup": subgroup,
-            },
-            metadata={"kind": "measurement_comparison_input", "n_input": len(values_a)},
-            payload_format="json",
+        payload = build_measurement_input_payload(
+            source_a=source_a,
+            values_a=values_a,
+            source_b=source_b,
+            values_b=values_b,
+            ids=ids,
+            value_kind=value_kind,
+            subgroup=subgroup,
         )
+        input_artifact = store_input_dataset(payload, metadata=measurement_input_metadata(payload))
         return await self._compare(
             corpus_id,
             user_id=user_id,
@@ -131,6 +132,7 @@ class MeasurementValidationService(ResearchAccessMixin):
             "source_b": source_b,
             "value_kind": value_kind,
             "n_input": len(values_a),
+            "source_labels": [source_a, source_b],
             "input_artifact_id": input_artifact_id,
             "input_artifact_checksum": input_artifact_checksum,
         }

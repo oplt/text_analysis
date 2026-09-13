@@ -12,16 +12,17 @@ import {
     VerifiedUser as VerifiedUserIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { colors } from "../app/designTokens";
 import { listProjects } from "../api/projects";
 import { queryKeys } from "../config/queryKeys";
 import { DashboardCalendar } from "../components/dashboard/DashboardCalendar";
 import { NotificationListItem } from "../components/notifications/NotificationListItem";
 import { PageShell } from "../components/ui/PageShell";
+import { MetricGrid } from "../components/ui/MetricGrid";
 import { QueryBoundary } from "../components/ui/QueryBoundary";
 import { SectionCard } from "../components/ui/SectionCard";
 import { StatCard } from "../components/ui/StatCard";
 import { EmptyState } from "../components/ui/EmptyState";
+import { surfaceRaised } from "../components/ui/themeSurfaces";
 import { useAuth } from "../hooks/useAuth";
 import { useNotifications } from "../hooks/useNotifications";
 import { usePlatformMetadata } from "../hooks/usePlatformMetadata";
@@ -85,13 +86,7 @@ export default function DashboardPage() {
 
             </Stack>
 
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                }}
-            >
+            <MetricGrid>
                 <StatCard
                     label={coreDomainPlural}
                     value={projects?.length ?? 0}
@@ -121,7 +116,7 @@ export default function DashboardPage() {
                     icon={<SecurityIcon />}
                     color={user?.mfa_enabled ? "success" : "secondary"}
                 />
-            </Box>
+            </MetricGrid>
 
             <Box sx={{ display: "grid", gap: 2 }}>
                 <Box
@@ -179,10 +174,9 @@ export default function DashboardPage() {
                                         sx={(theme) => ({
                                             p: 2,
                                             borderRadius: 1,
-                                            backgroundColor:
-                                                theme.palette.mode === "dark"
-                                                    ? theme.palette.background.paper
-                                                    : colors.white,
+                                            backgroundColor: surfaceRaised(theme),
+                                            border: 1,
+                                            borderColor: "divider",
                                             cursor: "pointer",
                                         })}
                                         onClick={() => navigate(`/projects/${project.id}`)}
@@ -216,10 +210,9 @@ export default function DashboardPage() {
                                         p: 1.5,
                                         borderRadius: 1,
                                         flex: 1,
-                                        backgroundColor:
-                                            theme.palette.mode === "dark"
-                                                ? theme.palette.background.paper
-                                                : colors.white,
+                                        backgroundColor: surfaceRaised(theme),
+                                        border: 1,
+                                        borderColor: "divider",
                                     })}
                                 >
                                     <Stack

@@ -383,6 +383,191 @@ OPERATOR_REGISTRY: dict[str, Callable[..., dict[str, Any]]] = {
     "dimensionality_reduction": run_dimensionality_reduction_operator,
 }
 
+# Ticket / StageRunner alias — prefer this name at call sites.
+OPERATORS = OPERATOR_REGISTRY
+
 
 def list_registered_operators() -> list[str]:
     return sorted(OPERATOR_REGISTRY)
+
+
+def build_operator_kwargs(
+    analysis_type: str,
+    params: dict[str, Any] | None = None,
+    *,
+    group_keys: list[str] | None = None,
+    unit_metadata: list[dict[str, Any]] | None = None,
+    dictionary_spec: Any = None,
+    random_seed: int = 42,
+    feature_extraction_type: str | None = None,
+) -> dict[str, Any]:
+    """Map normalized analysis parameters onto operator keyword arguments.
+
+    Shared by QuantitativeAnalysisService and StageRunner so both surfaces
+    construct the same call into :data:`OPERATORS`.
+
+    Quantitative ops are migrated through domain Config models first so this
+    builder does not own business defaults.
+    """
+    from backend.modules.text_research.domain.quantitative_configs import (
+        CONFIG_BY_OPERATION,
+        migrate_quantitative_parameters,
+    )
+
+    params = dict(params or {})
+    if analysis_type in CONFIG_BY_OPERATION:
+        params = migrate_quantitative_parameters(analysis_type, params)
+    if analysis_type == "corpus_stats":
+        kwargs: dict[str, Any] = {}
+        if "mattr_window" in params:
+            kwargs["mattr_window"] = int(params["mattr_window"])
+        if "msttr_window" in params:
+            kwargs["msttr_window"] = int(params["msttr_window"])
+        return kwargs
+    if analysis_type == "frequencies":
+        return {
+            "top_n": int(params["top_n"]),
+            "rate_per": float(params["rate_per"]),
+            "group_keys": group_keys,
+        }
+    if analysis_type == "ngrams":
+        return {
+            "n": int(params["n"]),
+            "top_n": int(params["top_n"]),
+            "rate_per": float(params["rate_per"]),
+            "skip": int(params["skip"]),
+        }
+    if analysis_type == "dfm":
+        build_kwargs: dict[str, Any] = {
+            "weighting": str(params.get("weighting") or feature_extraction_type or "count"),
+        }
+        for key in ("k1", "b", "smooth_idf", "force_sparse_only", "trim"):
+            if key in params and params[key] is not None:
+                build_kwargs[key] = params[key]
+        return build_kwargs
+    if analysis_type == "kwic":
+        return {
+            "keyword": str(params.get("keyword", "")),
+            "window_size": int(params.get("window_size", 5)),
+            "case_sensitive": bool(params.get("case_sensitive", False)),
+            "query_mode": str(params.get("query_mode", "auto")),
+            "language": params.get("query_language") or params.get("language"),
+            "token_attribute": params.get("token_attribute"),
+            "max_matches": params.get("max_matches"),
+            "unit_metadata": unit_metadata,
+        }
+    if analysis_type == "readability":
+        return {}
+    if analysis_type == "dictionary":
+        if dictionary_spec is None:
+            raise ValueError("dictionary requires dictionary_spec")
+        return {
+            "dictionary_spec": dictionary_spec,
+            "case_sensitive": bool(params.get("case_sensitive", False)),
+            "rate_per": float(params.get("rate_per", 1000.0)),
+            "group_keys": group_keys,
+            "dictionary_metadata": params.get("dictionary_metadata"),
+            "unit_ids": params.get("unit_ids"),
+            "metadata": params.get("metadata"),
+        }
+    if analysis_type == "keyness":
+        return {
+            "method": str(params["method"]),
+            "top_n": int(params["top_n"]),
+            "min_frequency": int(params["min_frequency"]),
+            "correction": params["correction"],
+            "group_a_label": params.get("group_a_label"),
+            "group_b_label": params.get("group_b_label"),
+            "group_field": params.get("group_field"),
+        }
+    if analysis_type == "cooccurrence":
+        return {
+            "window_size": int(params["window_size"]),
+            "top_n": int(params["top_n"]),
+            "association_method": str(params["association_method"]),
+            "directional": bool(params["directional"]),
+            "min_frequency": int(params["min_frequency"]),
+            "min_count": int(params["min_count"]),
+            "include_network": bool(params["include_network"]),
+        }
+    if analysis_type == "similarity":
+        return {
+            "method": str(params["method"]),
+            "mode": str(params["mode"]),
+            "group_keys": group_keys,
+            "top_k": params.get("top_k"),
+            "min_score": params.get("min_score"),
+            "centroid_target": str(params["centroid_target"]),
+            "query_text": params.get("query_text"),
+            "query_id": params.get("query_id") or params.get("query_unit_id") or "query",
+            "embeddings": params.get("embeddings"),
+            "query_embedding": params.get("query_embedding"),
+            "exclude_unit_id": params.get("exclude_unit_id"),
+        }
+    if analysis_type == "clustering":
+        return {
+            "n_clusters": int(params["n_clusters"]),
+            "algorithm": str(params["algorithm"]),
+            "use_svd": bool(params["use_svd"]),
+            "svd_components": int(params["n_svd_components"]),
+            "random_seed": int(params["random_seed"]),
+            "top_n_terms": int(params["top_terms"]),
+        }
+    if analysis_type == "dimensionality_reduction":
+        return {
+            "method": str(params["method"]),
+            "n_components": int(params["n_components"]),
+            "random_seed": int(params["random_seed"]),
+        }
+    if analysis_type == "duplicate_detection":
+        return {
+            "methods": params.get("methods"),
+            "lexical_threshold": float(params["lexical_threshold"]),
+            "char_ngram_size": int(params["char_ngram_size"]),
+            "minhash_num_perm": int(params["minhash_num_perm"]),
+            "minhash_shingle_size": int(params["minhash_shingle_size"]),
+            "minhash_threshold": float(params["minhash_threshold"]),
+            "max_pairs": params.get("max_pairs"),
+        }
+    raise KeyError(f"No operator kwargs builder for {analysis_type!r}")
+
+
+def invoke_operator(
+    analysis_type: str,
+    prepared: PreparedCorpusArtifact,
+    params: dict[str, Any] | None = None,
+    *,
+    prepared_b: PreparedCorpusArtifact | None = None,
+    group_keys: list[str] | None = None,
+    unit_metadata: list[dict[str, Any]] | None = None,
+    dictionary_spec: Any = None,
+    random_seed: int = 42,
+    feature_extraction_type: str | None = None,
+) -> dict[str, Any]:
+    """Run ``OPERATORS[analysis_type](prepared, **normalized_kwargs)``.
+
+    This is the single deterministic analysis entry used by both the FastAPI
+    quantitative service and headless StageRunner.
+    """
+    operator = OPERATORS.get(analysis_type)
+    if operator is None:
+        raise KeyError(f"No operator registered for {analysis_type!r}")
+
+    kwargs = build_operator_kwargs(
+        analysis_type,
+        params,
+        group_keys=group_keys,
+        unit_metadata=unit_metadata,
+        dictionary_spec=dictionary_spec,
+        random_seed=random_seed,
+        feature_extraction_type=feature_extraction_type,
+    )
+    if analysis_type == "keyness":
+        if prepared_b is None:
+            raise ValueError("keyness requires prepared_b")
+        return operator(prepared, prepared_b, **kwargs)
+
+    result = operator(prepared, **kwargs)
+    if analysis_type == "clustering":
+        return {key: value for key, value in result.items() if key != "tfidf_matrix"}
+    return result

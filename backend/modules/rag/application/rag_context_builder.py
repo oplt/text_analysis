@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from backend.lib.vectors import estimate_tokens
 from backend.modules.rag.application.citation_service import CitationService
 from backend.modules.rag.application.context_selection import (
@@ -59,9 +61,9 @@ class RagContextBuilder:
                 removed_chunk_ids=[],
                 selected_chunk_ids=[],
                 ordering_policy=ContextOrderingPolicy(ordering_policy),
-                budget_removed_chunk_ids=[],
+                budget_removed_chunk_ids=[chunk.chunk_id for chunk in chunks],
             )
-        budget = max(0, max_tokens - reserved_tokens)
+        budget = max(0, max_tokens - max(0, reserved_tokens))
         if budget <= 0:
             return ContextSelection(
                 chunks=[],
@@ -78,20 +80,40 @@ class RagContextBuilder:
         )
         packed: list[RetrievedChunk] = []
         budget_removed: list[str] = []
-        used = 0
+        builder = RagContextBuilder()
+
+        def token_count(items: list[RetrievedChunk]) -> int:
+            return estimate_tokens(builder.build_document_context_block(items))
+
         for chunk in selection.chunks:
-            chunk_tokens = estimate_tokens(chunk.context_content or chunk.content) + 48
-            if packed and used + chunk_tokens > budget:
-                budget_removed.append(chunk.chunk_id)
-                continue
-            if not packed and chunk_tokens > budget:
-                packed.append(chunk)
-                budget_removed.extend(
-                    item.chunk_id for item in selection.chunks if item.chunk_id != chunk.chunk_id
+            if token_count([*packed, chunk]) > budget:
+                content = (
+                    chunk.context_content if chunk.context_content is not None else chunk.content
                 )
-                break
+                low, high = 0, len(content)
+                excerpt = None
+                while low <= high:
+                    length = (low + high) // 2
+                    candidate = replace(
+                        chunk,
+                        context_content=content[:length],
+                        metadata={
+                            **chunk.metadata,
+                            "context_truncated": True,
+                            "original_context_tokens": estimate_tokens(content),
+                            "included_context_tokens": estimate_tokens(content[:length]),
+                        },
+                    )
+                    if token_count([*packed, candidate]) <= budget:
+                        excerpt = candidate if length else None
+                        low = length + 1
+                    else:
+                        high = length - 1
+                if excerpt is None:
+                    budget_removed.append(chunk.chunk_id)
+                    continue
+                chunk = excerpt
             packed.append(chunk)
-            used += chunk_tokens
         if ContextOrderingPolicy(ordering_policy) == ContextOrderingPolicy.RELEVANCE:
             packed = sorted(packed, key=lambda item: item.score, reverse=True)
         return ContextSelection(
@@ -100,6 +122,7 @@ class RagContextBuilder:
             selected_chunk_ids=[chunk.chunk_id for chunk in packed],
             ordering_policy=selection.ordering_policy,
             budget_removed_chunk_ids=budget_removed,
+            context_token_count=token_count(packed),
         )
 
     def build_document_context_block(self, chunks: list[RetrievedChunk]) -> str:
@@ -109,7 +132,9 @@ class RagContextBuilder:
         lines = [RAG_CONTEXT_HEADER, RAG_UNTRUSTED_CONTEXT_RULE, ""]
         for index, chunk in enumerate(chunks, start=1):
             page = chunk.page_number if chunk.page_number is not None else chunk.chunk_index
-            context_content = chunk.context_content or chunk.content
+            context_content = (
+                chunk.context_content if chunk.context_content is not None else chunk.content
+            )
             lines.extend(
                 [
                     f"[Source {index}]",
@@ -126,6 +151,7 @@ class RagContextBuilder:
                     *(
                         [f"citation_content: {chunk.citation_content or chunk.content}"]
                         if chunk.context_content is not None
+                        and not chunk.metadata.get("context_truncated")
                         else []
                     ),
                     "",

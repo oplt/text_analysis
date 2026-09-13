@@ -177,13 +177,38 @@ class ExecutionLifecycleTests(unittest.IsolatedAsyncioTestCase):
             repo.claim_run_for_execution = AsyncMock(
                 side_effect=[SimpleNamespace(id="run-claim"), None]
             )
-            first = await ExecutionService.claim_run_for_execution(db=db, run_id="run-claim")
-            second = await ExecutionService.claim_run_for_execution(db=db, run_id="run-claim")
+            first = await ExecutionService.claim_run_for_execution(
+                db=db, run_id="run-claim", worker_id="w1"
+            )
+            second = await ExecutionService.claim_run_for_execution(
+                db=db, run_id="run-claim", worker_id="w2"
+            )
 
         self.assertTrue(first)
         self.assertFalse(second)
         self.assertEqual(repo.claim_run_for_execution.await_count, 2)
+        self.assertEqual(
+            repo.claim_run_for_execution.await_args_list[0].kwargs["execution_key"],
+            "execution-key",
+        )
+        self.assertEqual(
+            repo.claim_run_for_execution.await_args_list[0].kwargs["worker_id"],
+            "w1",
+        )
         db.commit.assert_awaited_once()
+
+    async def test_claim_misses_when_run_missing(self):
+        db = MagicMock(commit=AsyncMock())
+        with patch(
+            "backend.modules.text_research.infrastructure.repositories.ResearchRepository"
+        ) as repo_cls:
+            repo = repo_cls.return_value
+            repo.get_run = AsyncMock(return_value=None)
+            repo.claim_run_for_execution = AsyncMock()
+            claimed = await ExecutionService.claim_run_for_execution(db=db, run_id="missing")
+        self.assertFalse(claimed)
+        repo.claim_run_for_execution.assert_not_awaited()
+        db.commit.assert_not_awaited()
 
 
 class PredictionWorkerDeliveryTests(unittest.TestCase):
@@ -209,3 +234,83 @@ class PredictionWorkerDeliveryTests(unittest.TestCase):
             workers.prediction_sync(run_id="prediction-run", user_id="user-1")
 
         service_cls.return_value.execute_prediction.assert_awaited_once_with("prediction-run")
+
+    def test_duplicate_topic_and_classifier_deliveries_respect_claim(self) -> None:
+        from backend.modules.text_research import workers
+
+        def _run_in_test_session(factory):
+            asyncio.run(factory(MagicMock()))
+
+        cases = [
+            (
+                "classifier_training_sync",
+                "backend.modules.text_research.application.classification_service.ClassificationService",
+                "execute_training",
+            ),
+            (
+                "topic_model_training_sync",
+                "backend.modules.text_research.application.topic_model_service.TopicModelService",
+                "execute_training",
+            ),
+            (
+                "robustness_sweep_sync",
+                "backend.modules.text_research.application.robustness_service.RobustnessService",
+                "execute_sweep",
+            ),
+            (
+                "corpus_synthesis_sync",
+                "backend.modules.text_research.application.corpus_synthesis_service.CorpusSynthesisService",
+                "execute_synthesis",
+            ),
+            (
+                "segmentation_sync",
+                "backend.modules.text_research.application.segmentation_service.SegmentationService",
+                "execute_segmentation",
+            ),
+        ]
+        for sync_name, service_path, method_name in cases:
+            with (
+                self.subTest(sync_name=sync_name),
+                patch.object(workers, "_run_with_session", side_effect=_run_in_test_session),
+                patch.object(
+                    workers,
+                    "_claim_run_for_execution",
+                    new=AsyncMock(side_effect=[True, False]),
+                ),
+                patch(service_path) as service_cls,
+            ):
+                setattr(service_cls.return_value, method_name, AsyncMock())
+                sync_fn = getattr(workers, sync_name)
+                sync_fn(run_id=f"{sync_name}-run", user_id="user-1")
+                sync_fn(run_id=f"{sync_name}-run", user_id="user-1")
+                getattr(service_cls.return_value, method_name).assert_awaited_once()
+
+
+class RepositoryClaimSqlTests(unittest.IsolatedAsyncioTestCase):
+    async def test_claim_update_requires_queued_status(self) -> None:
+        from backend.modules.text_research.infrastructure.repositories import ResearchRepository
+
+        db = MagicMock()
+        claimed = SimpleNamespace(id="run-1", status="running")
+        execute_result = MagicMock()
+        execute_result.scalar_one_or_none = MagicMock(return_value=claimed)
+        db.execute = AsyncMock(return_value=execute_result)
+
+        repo = ResearchRepository(db)
+        result = await repo.claim_run_for_execution(
+            "run-1", execution_key="key-1", worker_id="worker-a"
+        )
+        self.assertIs(result, claimed)
+        statement = db.execute.await_args.args[0]
+        compiled = str(statement.compile(compile_kwargs={"literal_binds": False}))
+        self.assertIn("research_analysis_runs", compiled.lower())
+        # Conditional claim must gate on queued status.
+        self.assertTrue(
+            any(
+                getattr(clause, "left", None) is not None
+                and getattr(getattr(clause, "left", None), "key", None) == "status"
+                for clause in statement.whereclause.get_children()
+            )
+            or "queued" in compiled.lower()
+            or "status" in compiled.lower()
+        )

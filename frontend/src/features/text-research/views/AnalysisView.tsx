@@ -40,9 +40,13 @@ import {
     runNgrams,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { DisabledWithReason } from "../../../components/ui/DisabledWithReason";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { ContextInspector } from "../../../components/ui/ContextInspector";
+import { WorkspaceSplit } from "../../../components/ui/WorkspaceSplit";
 import { AskAboutThisButton } from "../components/assistant/AskAboutThisButton";
+import { analysisRunDisabledReason } from "../actionDisabledReasons";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { PageTabs } from "../../../components/ui/PageTabs";
 import { useDebounce } from "../../../hooks/useDebounce";
@@ -58,12 +62,18 @@ import {
     ResultsInspector,
     type RankedItem,
 } from "../components/ResearchCharts";
-import { ChartTableToggle, ResearchResultPanel, ResearchResultsTable } from "../components/ResearchResults";
+import { AnalysisChartFrame } from "../components/AnalysisChartFrame";
+import {
+    ChartTableToggle,
+    MethodsAndProvenanceContent,
+    ResearchResultPanel,
+    ResearchResultsTable,
+} from "../components/ResearchResults";
+import { analysisMethodMeta } from "../analysisMethodMeta";
 import { MetadataFilterBar } from "../components/MetadataFilterBar";
 import { AdvancedDfmPanel } from "../components/AdvancedDfmPanel";
 import { DEFAULT_DFM_CONFIG, type AdvancedDfmConfig } from "../components/advancedDfmConfig";
-import { ScientificWarnings } from "../components/ScientificWarnings";
-import { collectScientificWarnings } from "../components/scientificWarnings";
+import { ScientificWarnings, collectScientificWarnings } from "../components/ScientificWarnings";
 import { resolveAsyncRunControls } from "../analysisAsync";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { filterKwicRows, kwicRowsToCsv, toKwicSearchRows } from "../kwicTableModel";
@@ -128,7 +138,7 @@ const ANALYSIS_TAB_VALUES = [
 ] as const satisfies readonly AnalysisTab[];
 
 const TABS: Array<{ value: AnalysisTab; label: string }> = [
-    { value: "overview", label: "Overview" },
+    { value: "overview", label: "Corpus overview" },
     { value: "frequencies", label: "Frequencies" },
     { value: "ngrams", label: "N-grams" },
     { value: "kwic", label: "KWIC" },
@@ -144,6 +154,67 @@ const TABS: Array<{ value: AnalysisTab; label: string }> = [
     { value: "statistical", label: "Statistical model" },
     { value: "measurement", label: "Measurement" },
 ];
+
+type AnalysisGroup =
+    | "overview"
+    | "frequencies"
+    | "associations"
+    | "statistical"
+    | "measurement"
+    | "advanced";
+
+const ANALYSIS_GROUP_TABS: Array<{ value: AnalysisGroup; label: string }> = [
+    { value: "overview", label: "Corpus overview" },
+    { value: "frequencies", label: "Frequencies" },
+    { value: "associations", label: "Associations" },
+    { value: "statistical", label: "Statistical models" },
+    { value: "measurement", label: "Measurement" },
+    { value: "advanced", label: "Advanced" },
+];
+
+const FREQUENCY_METHOD_TABS: Array<{ value: AnalysisTab; label: string }> = [
+    { value: "frequencies", label: "Term frequencies" },
+    { value: "ngrams", label: "N-grams" },
+    { value: "kwic", label: "KWIC" },
+    { value: "dfm", label: "DFM" },
+    { value: "keyness", label: "Keyness" },
+];
+
+const ASSOCIATION_METHOD_TABS: Array<{ value: AnalysisTab; label: string }> = [
+    { value: "dictionaries", label: "Dictionaries" },
+    { value: "cooccurrence", label: "Co-occurrence" },
+    { value: "similarity", label: "Similarity" },
+];
+
+const ADVANCED_METHOD_TABS: Array<{ value: AnalysisTab; label: string }> = [
+    { value: "duplicates", label: "Duplicates" },
+    { value: "clustering", label: "Clustering" },
+    { value: "dimensionality", label: "Dimensions" },
+    { value: "readability", label: "Readability" },
+];
+
+const GROUP_DEFAULT_TAB: Record<AnalysisGroup, AnalysisTab> = {
+    overview: "overview",
+    frequencies: "frequencies",
+    associations: "dictionaries",
+    statistical: "statistical",
+    measurement: "measurement",
+    advanced: "duplicates",
+};
+
+function resolveAnalysisGroup(tab: AnalysisTab): AnalysisGroup {
+    if (tab === "overview" || tab === "statistical" || tab === "measurement") return tab;
+    if (FREQUENCY_METHOD_TABS.some((entry) => entry.value === tab)) return "frequencies";
+    if (ASSOCIATION_METHOD_TABS.some((entry) => entry.value === tab)) return "associations";
+    return "advanced";
+}
+
+function methodTabsForGroup(group: AnalysisGroup): Array<{ value: AnalysisTab; label: string }> | null {
+    if (group === "frequencies") return FREQUENCY_METHOD_TABS;
+    if (group === "associations") return ASSOCIATION_METHOD_TABS;
+    if (group === "advanced") return ADVANCED_METHOD_TABS;
+    return null;
+}
 
 const GROUP_BY_OPTIONS = [
     "organization",
@@ -516,19 +587,40 @@ function KeynessResultsPanel({
                     },
                 ]}
             />
-            <DivergingBarChart
-                items={asArray(results?.keyness ?? payload).map((entry) => {
-                    const row = asRecord(entry) ?? {};
-                    const score = pickNumber(row, ["keyness_statistic", "keyness", "g2"]) ?? 0;
-                    return {
-                        label: pickString(row, ["feature", "term"]) ?? "",
-                        value:
-                            pickString(row, ["effect_direction", "direction"]) === "a"
-                                ? -score
-                                : score,
-                    };
-                })}
-            />
+            <AnalysisChartFrame
+                title={analysisMethodMeta("keyness").chart!.title}
+                subtitle={analysisMethodMeta("keyness").chart!.subtitle}
+                legend="Negative bars favor Group A; positive bars favor Group B."
+                xAxisLabel={analysisMethodMeta("keyness").chart!.xAxisLabel}
+                yAxisLabel={analysisMethodMeta("keyness").chart!.yAxisLabel}
+                methodologicalNote={analysisMethodMeta("keyness").chart!.methodologicalNote}
+                exportAction={
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => downloadCsv("keyness.csv", asArray(results?.keyness ?? payload))}
+                    >
+                        Export CSV
+                    </Button>
+                }
+            >
+                <DivergingBarChart
+                    items={asArray(results?.keyness ?? payload).map((entry) => {
+                        const row = asRecord(entry) ?? {};
+                        const score = pickNumber(row, ["keyness_statistic", "keyness", "g2"]) ?? 0;
+                        return {
+                            label: pickString(row, ["feature", "term"]) ?? "",
+                            value:
+                                pickString(row, ["effect_direction", "direction"]) === "a"
+                                    ? -score
+                                    : score,
+                        };
+                    })}
+                    seriesLabel={analysisMethodMeta("keyness").chart?.seriesLabel}
+                    xAxisLabel={analysisMethodMeta("keyness").chart?.xAxisLabel}
+                    yAxisLabel={analysisMethodMeta("keyness").chart?.yAxisLabel}
+                />
+            </AnalysisChartFrame>
             <ResearchResultsTable
                 rows={asArray(results?.keyness ?? payload).map((entry, index) => ({
                     ...(asRecord(entry) ?? {}),
@@ -656,10 +748,21 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                     ]}
                 />
                 {orgItems.length > 0 ? (
-                    <Stack spacing={1}>
-                        <Typography variant="subtitle2">Units by organization</Typography>
-                        <RankedBarChart items={orgItems} />
-                    </Stack>
+                    <AnalysisChartFrame
+                        title={analysisMethodMeta("overview").chart!.title}
+                        subtitle={analysisMethodMeta("overview").chart!.subtitle}
+                        legend={analysisMethodMeta("overview").chart!.seriesLabel}
+                        xAxisLabel={analysisMethodMeta("overview").chart!.xAxisLabel}
+                        yAxisLabel={analysisMethodMeta("overview").chart!.yAxisLabel}
+                        methodologicalNote={analysisMethodMeta("overview").chart!.methodologicalNote}
+                    >
+                        <RankedBarChart
+                            items={orgItems}
+                            seriesLabel={analysisMethodMeta("overview").chart?.seriesLabel}
+                            xAxisLabel={analysisMethodMeta("overview").chart?.xAxisLabel}
+                            yAxisLabel={analysisMethodMeta("overview").chart?.yAxisLabel}
+                        />
+                    </AnalysisChartFrame>
                 ) : null}
                 <ResultsInspector data={payload} />
             </Stack>
@@ -677,9 +780,51 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
             <Stack spacing={2}>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
                     <ChartTableToggle value={display} onChange={setDisplay} />
-                    <Button size="small" variant="outlined" onClick={() => downloadCsv("frequencies.csv", asArray(results?.frequencies ?? payload))}>Export CSV</Button>
                 </Stack>
-                {display !== "table" ? <RankedBarChart items={items} /> : null}
+                {display !== "table" ? (
+                    <AnalysisChartFrame
+                        title={analysisMethodMeta("frequencies").chart!.title}
+                        subtitle={analysisMethodMeta("frequencies").chart!.subtitle}
+                        legend={analysisMethodMeta("frequencies").chart!.seriesLabel}
+                        xAxisLabel={analysisMethodMeta("frequencies").chart!.xAxisLabel}
+                        yAxisLabel={analysisMethodMeta("frequencies").chart!.yAxisLabel}
+                        methodologicalNote={
+                            analysisMethodMeta("frequencies").chart!.methodologicalNote
+                        }
+                        exportAction={
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() =>
+                                    downloadCsv(
+                                        "frequencies.csv",
+                                        asArray(results?.frequencies ?? payload)
+                                    )
+                                }
+                            >
+                                Export CSV
+                            </Button>
+                        }
+                    >
+                        <RankedBarChart
+                            items={items}
+                            seriesLabel={analysisMethodMeta("frequencies").chart?.seriesLabel}
+                            xAxisLabel={analysisMethodMeta("frequencies").chart?.xAxisLabel}
+                            yAxisLabel={analysisMethodMeta("frequencies").chart?.yAxisLabel}
+                        />
+                    </AnalysisChartFrame>
+                ) : (
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() =>
+                            downloadCsv("frequencies.csv", asArray(results?.frequencies ?? payload))
+                        }
+                        sx={{ alignSelf: "flex-start" }}
+                    >
+                        Export CSV
+                    </Button>
+                )}
                 {display !== "chart" ? <ResearchResultsTable
                     rows={asArray(results?.frequencies ?? payload).map((entry, index) => ({
                         ...(asRecord(entry) ?? {}),
@@ -709,9 +854,44 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
             <Stack spacing={2}>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
                     <ChartTableToggle value={display} onChange={setDisplay} />
-                    <Button size="small" variant="outlined" onClick={() => downloadCsv("ngrams.csv", asArray(results?.ngrams ?? payload))}>Export CSV</Button>
                 </Stack>
-                {display !== "table" ? <RankedBarChart items={items} /> : null}
+                {display !== "table" ? (
+                    <AnalysisChartFrame
+                        title={analysisMethodMeta("ngrams").chart!.title}
+                        subtitle={analysisMethodMeta("ngrams").chart!.subtitle}
+                        legend={analysisMethodMeta("ngrams").chart!.seriesLabel}
+                        xAxisLabel={analysisMethodMeta("ngrams").chart!.xAxisLabel}
+                        yAxisLabel={analysisMethodMeta("ngrams").chart!.yAxisLabel}
+                        methodologicalNote={analysisMethodMeta("ngrams").chart!.methodologicalNote}
+                        exportAction={
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() =>
+                                    downloadCsv("ngrams.csv", asArray(results?.ngrams ?? payload))
+                                }
+                            >
+                                Export CSV
+                            </Button>
+                        }
+                    >
+                        <RankedBarChart
+                            items={items}
+                            seriesLabel={analysisMethodMeta("ngrams").chart?.seriesLabel}
+                            xAxisLabel={analysisMethodMeta("ngrams").chart?.xAxisLabel}
+                            yAxisLabel={analysisMethodMeta("ngrams").chart?.yAxisLabel}
+                        />
+                    </AnalysisChartFrame>
+                ) : (
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => downloadCsv("ngrams.csv", asArray(results?.ngrams ?? payload))}
+                        sx={{ alignSelf: "flex-start" }}
+                    >
+                        Export CSV
+                    </Button>
+                )}
                 {display !== "chart" ? <ResearchResultsTable
                     rows={asArray(results?.ngrams ?? payload).map((entry, index) => ({ ...(asRecord(entry) ?? {}), id: index, rank: index + 1 }))}
                     columns={[
@@ -850,10 +1030,23 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                     ]}
                 />
                 {groupItems.length > 0 ? (
-                    <Stack spacing={1}>
-                        <Typography variant="subtitle2">Hits by group</Typography>
-                        <RankedBarChart items={groupItems} />
-                    </Stack>
+                    <AnalysisChartFrame
+                        title={analysisMethodMeta("dictionaries").chart!.title}
+                        subtitle={analysisMethodMeta("dictionaries").chart!.subtitle}
+                        legend={analysisMethodMeta("dictionaries").chart!.seriesLabel}
+                        xAxisLabel={analysisMethodMeta("dictionaries").chart!.xAxisLabel}
+                        yAxisLabel={analysisMethodMeta("dictionaries").chart!.yAxisLabel}
+                        methodologicalNote={
+                            analysisMethodMeta("dictionaries").chart!.methodologicalNote
+                        }
+                    >
+                        <RankedBarChart
+                            items={groupItems}
+                            seriesLabel={analysisMethodMeta("dictionaries").chart?.seriesLabel}
+                            xAxisLabel={analysisMethodMeta("dictionaries").chart?.xAxisLabel}
+                            yAxisLabel={analysisMethodMeta("dictionaries").chart?.yAxisLabel}
+                        />
+                    </AnalysisChartFrame>
                 ) : null}
                 <ResearchResultsTable
                     rows={((Object.entries(byGroup ?? {}).length
@@ -930,7 +1123,25 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                 <Button size="small" variant={networkLimit === 50 ? "contained" : "outlined"} onClick={() => setNetworkLimit(50)}>Top 50</Button>
                 <TextField size="small" type="number" label="Minimum edge count" value={minimumEdgeStrength} onChange={(event) => setMinimumEdgeStrength(Math.max(1, Number(event.target.value) || 1))} sx={{ width: 180 }} />
             </Stack>
-            <CooccurrenceNetwork edges={networkEdges} />
+            <AnalysisChartFrame
+                title={analysisMethodMeta("cooccurrence").chart!.title}
+                subtitle={analysisMethodMeta("cooccurrence").chart!.subtitle}
+                legend="Edge thickness ∝ co-occurrence count · hover nodes/edges for details"
+                methodologicalNote={analysisMethodMeta("cooccurrence").chart!.methodologicalNote}
+                exportAction={
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() =>
+                            downloadCsv("cooccurrence.csv", asArray(results?.cooccurrence ?? payload))
+                        }
+                    >
+                        Export CSV
+                    </Button>
+                }
+            >
+                <CooccurrenceNetwork edges={networkEdges} />
+            </AnalysisChartFrame>
             <ResearchResultsTable
                 rows={asArray(results?.cooccurrence ?? payload).map((entry, index) => ({ ...(asRecord(entry) ?? {}), id: index }))}
                 columns={[
@@ -945,6 +1156,56 @@ function AnalysisResults({ tab, run }: { tab: AnalysisTab; run: AnalysisRun }) {
                 ]}
             />
             <ResultsInspector data={payload} />
+        </Stack>
+    );
+}
+
+function AnalysisLabShell({
+    tabs,
+    methodId,
+    run,
+    configuration,
+    results,
+}: {
+    tabs: React.ReactNode;
+    methodId: AnalysisTab;
+    run?: AnalysisRun | null;
+    configuration: React.ReactNode;
+    results?: React.ReactNode;
+}) {
+    const meta = analysisMethodMeta(methodId);
+    return (
+        <Stack spacing={2}>
+            {tabs}
+            <WorkspaceSplit
+                ratio="8-4"
+                sideFrom="lg"
+                main={
+                    <Stack spacing={2}>
+                        {configuration}
+                        {results}
+                    </Stack>
+                }
+                side={
+                    <ContextInspector
+                        title="Method & provenance"
+                        description={meta.label}
+                        width={{ lg: 320 }}
+                    >
+                        <Typography variant="body2" color="text.secondary">
+                            {meta.methodNote}
+                        </Typography>
+                        {run ? (
+                            <MethodsAndProvenanceContent run={run} compact />
+                        ) : (
+                            <Typography variant="body2" color="text.secondary">
+                                Run an analysis to attach reproducibility details (parameters,
+                                seed, artifact) here.
+                            </Typography>
+                        )}
+                    </ContextInspector>
+                }
+            />
         </Stack>
     );
 }
@@ -1244,32 +1505,70 @@ export default function AnalysisView() {
     })();
 
     const runLabel = TABS.find((entry) => entry.value === tab)?.label ?? "analysis";
+    const analysisGroup = resolveAnalysisGroup(tab);
+    const methodTabs = methodTabsForGroup(analysisGroup);
+    const analysisTabs = (
+        <>
+            <PageTabs
+                value={analysisGroup}
+                onChange={(group) => setTab(GROUP_DEFAULT_TAB[group])}
+                tabs={ANALYSIS_GROUP_TABS}
+                ariaLabel="Analysis workspace"
+            />
+            {methodTabs ? (
+                <PageTabs
+                    value={tab}
+                    onChange={setTab}
+                    tabs={methodTabs}
+                    ariaLabel="Analysis method"
+                />
+            ) : null}
+        </>
+    );
 
     if (!ctx.selectedCorpusId) {
         return (
-            <SectionCard title="Quantitative analysis" description="Run corpus statistics and lexical analyses.">
-                <EmptyState
-                    icon={<AnalysisIcon fontSize="large" />}
-                    title="Select a corpus"
-                    description="Choose a corpus in the context bar, then run overview stats, frequencies, KWIC, and related tools."
-                />
-            </SectionCard>
+            <AnalysisLabShell
+                tabs={analysisTabs}
+                methodId={tab}
+                configuration={
+                    <SectionCard
+                        title="Quantitative analysis"
+                        description="A research laboratory for corpus overview, frequencies, associations, models, and measurement."
+                    >
+                        <EmptyState
+                            icon={<AnalysisIcon fontSize="large" />}
+                            title="Select a corpus"
+                            description="Choose a corpus in the context bar, then configure a method and inspect results beside method notes and provenance."
+                        />
+                    </SectionCard>
+                }
+            />
         );
     }
 
     if (tab === "statistical" || tab === "measurement") {
         return (
-            <Stack spacing={2}>
-                <PageTabs value={tab} onChange={setTab} tabs={TABS} ariaLabel="Analysis methods" />
-                <Alert severity="info">
-                    Statistical modeling and measurement comparison live under Analysis. APIs:{" "}
-                    <code>POST …/analysis/statistical-model</code> and{" "}
-                    <code>POST …/analysis/measurement-comparison</code>.
-                </Alert>
-                <Suspense fallback={<AnalysisPanelFallback />}>
-                    {tab === "statistical" ? <StatisticalModelView /> : <MeasurementComparisonView />}
-                </Suspense>
-            </Stack>
+            <AnalysisLabShell
+                tabs={analysisTabs}
+                methodId={tab}
+                configuration={
+                    <Alert severity="info">
+                        {analysisMethodMeta(tab).configurationHint} APIs:{" "}
+                        <code>POST …/analysis/statistical-model</code> and{" "}
+                        <code>POST …/analysis/measurement-comparison</code>.
+                    </Alert>
+                }
+                results={
+                    <Suspense fallback={<AnalysisPanelFallback />}>
+                        {tab === "statistical" ? (
+                            <StatisticalModelView />
+                        ) : (
+                            <MeasurementComparisonView />
+                        )}
+                    </Suspense>
+                }
+            />
         );
     }
 
@@ -1284,42 +1583,69 @@ export default function AnalysisView() {
 
     if (advancedPanel) {
         return (
-            <Stack spacing={2}>
-                <PageTabs value={tab} onChange={setTab} tabs={TABS} ariaLabel="Analysis methods" />
-                <SectionCard title="Analysis selection" description="Apply the same corpus selection and preprocessing profile to this analysis.">
-                    <Stack spacing={1.5}>
-                        <MetadataFilterBar corpusId={ctx.selectedCorpusId} value={metadataFilters} onChange={setMetadataFilters} />
-                        <TextField select size="small" label="Preprocessing profile" value={profileId} onChange={(event) => setProfileId(event.target.value)} sx={{ maxWidth: 300 }}>
-                            <MenuItem value="">Default / none</MenuItem>
-                            {(profilesQuery.data ?? []).map((profile) => <MenuItem key={profile.id} value={profile.id}>{profile.name}</MenuItem>)}
-                        </TextField>
-                        {supportsAsync ? (
-                            <FormControlLabel
-                                control={<Checkbox checked={runAsync} onChange={(event) => setRunAsync(event.target.checked)} />}
-                                label="Run async"
+            <AnalysisLabShell
+                tabs={analysisTabs}
+                methodId={tab}
+                configuration={
+                    <SectionCard
+                        title="Configuration"
+                        description={analysisMethodMeta(tab).configurationHint}
+                    >
+                        <Stack spacing={1.5}>
+                            <MetadataFilterBar
+                                corpusId={ctx.selectedCorpusId}
+                                value={metadataFilters}
+                                onChange={setMetadataFilters}
                             />
-                        ) : (
-                            <Typography variant="body2" color="text.secondary">Inline only</Typography>
-                        )}
-                    </Stack>
-                </SectionCard>
-                <Suspense fallback={<AnalysisPanelFallback />}>{advancedPanel}</Suspense>
-            </Stack>
+                            <TextField
+                                select
+                                size="small"
+                                label="Preprocessing profile"
+                                value={profileId}
+                                onChange={(event) => setProfileId(event.target.value)}
+                                sx={{ maxWidth: 300 }}
+                            >
+                                <MenuItem value="">Default / none</MenuItem>
+                                {(profilesQuery.data ?? []).map((profile) => (
+                                    <MenuItem key={profile.id} value={profile.id}>
+                                        {profile.name}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                            {supportsAsync ? (
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={runAsync}
+                                            onChange={(event) => setRunAsync(event.target.checked)}
+                                        />
+                                    }
+                                    label="Run async"
+                                />
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    Inline only
+                                </Typography>
+                            )}
+                        </Stack>
+                    </SectionCard>
+                }
+                results={
+                    <Suspense fallback={<AnalysisPanelFallback />}>{advancedPanel}</Suspense>
+                }
+            />
         );
     }
 
     return (
-        <Stack spacing={2}>
-            <PageTabs
-                value={tab}
-                onChange={setTab}
-                tabs={TABS}
-                ariaLabel="Analysis methods"
-            />
-
+        <AnalysisLabShell
+            tabs={analysisTabs}
+            methodId={tab}
+            run={runQuery.data}
+            configuration={
             <SectionCard
-                title="Quantitative analysis"
-                description="Expose corpus statistics, frequencies, n-grams, KWIC, DFM, keyness, dictionaries, and co-occurrence with charts and inspectable raw results."
+                title="Configuration"
+                description={analysisMethodMeta(tab).configurationHint}
             >
                 <Stack spacing={2}>
                     <MetadataFilterBar corpusId={ctx.selectedCorpusId} value={metadataFilters} onChange={setMetadataFilters} />
@@ -1676,18 +2002,35 @@ export default function AnalysisView() {
                         </Typography>
                     )}
 
-                    <Button
-                        variant="contained"
-                        startIcon={<RunIcon />}
-                        onClick={() => activeMutation?.mutate()}
-                        disabled={!canRun}
-                        sx={{ alignSelf: "flex-start" }}
+                    <DisabledWithReason
+                        reason={analysisRunDisabledReason({
+                            corpusId: ctx.selectedCorpusId,
+                            pending: activeMutation?.isPending,
+                            tab,
+                            kwicKeyword,
+                            kwicSearchMode,
+                            kwicQueryMode,
+                            kwicQueryLanguage,
+                            keynessA,
+                            keynessB,
+                            hasDictionaryInput,
+                        })}
                     >
-                        Run {runLabel}
-                    </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={<RunIcon />}
+                            onClick={() => activeMutation?.mutate()}
+                            disabled={!canRun}
+                            sx={{ alignSelf: "flex-start" }}
+                        >
+                            Run {runLabel}
+                        </Button>
+                    </DisabledWithReason>
                 </Stack>
             </SectionCard>
-
+            }
+            results={
+            <>
             {tab === "kwic" && kwicSearchMode !== "lexical" && semanticHits.length > 0 ? (
                 <SectionCard
                     title="Corpus-scoped passages"
@@ -1740,7 +2083,7 @@ export default function AnalysisView() {
             ) : null}
 
             {runId ? (
-                <SectionCard title="Analysis output">
+                <SectionCard title="Results" description="Charts and tables include methodological context — export when reporting.">
                     <QueryBoundary
                         isLoading={runQuery.isLoading && !runQuery.data}
                         isError={runQuery.isError}
@@ -1759,7 +2102,15 @@ export default function AnalysisView() {
                         ) : null}
                     </QueryBoundary>
                 </SectionCard>
-            ) : null}
-        </Stack>
+            ) : (
+                <SectionCard title="Results" description="Run a method to populate the laboratory results pane.">
+                    <Typography variant="body2" color="text.secondary">
+                        Configure filters and parameters above, then run {runLabel.toLowerCase()}.
+                    </Typography>
+                </SectionCard>
+            )}
+            </>
+            }
+        />
     );
 }

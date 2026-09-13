@@ -7,6 +7,10 @@ from typing import Any, Literal
 
 from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
 
+from backend.modules.text_research.domain.quantitative_configs import (
+    DuplicateDetectionConfig,
+)
+
 # Conservative server-side resource ceilings (TASK-010). Frontend HTML min/max
 # are not protection — oversized requests must fail with 422 before work starts.
 MAX_RESULT_TOP_N = 10_000
@@ -25,15 +29,34 @@ MAX_EMBEDDING_ITEMS = 10_000
 MAX_EMBEDDING_DIMS = 4_096
 MAX_EMBEDDING_TOTAL_FLOATS = 5_000_000
 MAX_CLASSIFIER_BOOTSTRAPS = 20_000
+MAX_BOOTSTRAP_SAMPLES = MAX_CLASSIFIER_BOOTSTRAPS
 MAX_HYPERPARAMETER_GRID_COMBINATIONS = 256
+MAX_HYPERPARAM_CANDIDATES = MAX_HYPERPARAMETER_GRID_COMBINATIONS
+MAX_HYPERPARAMETER_N_ITER = 128
 MAX_NESTED_CV_SPLITS = 10
+MAX_CV_SPLITS = MAX_NESTED_CV_SPLITS
+MAX_MODEL_FEATURES = 250_000
+MAX_NGRAM_ORDER = 5
+MAX_CHAR_NGRAM_ORDER = 12
+MAX_FEATURE_SELECTION_PERCENTILE = 100.0
+MAX_CLASSIFIER_TRAINING_FITS = 5_000
 MAX_TOPIC_COUNT = 200
 MAX_TOPIC_ITERATIONS = 1_000
+
+_DD_DEFAULTS = DuplicateDetectionConfig()
 MAX_TOPIC_SWEEP_VALUES = 50
 MAX_TOPIC_SEED_STABILITY_SEEDS = 50
+MAX_TOPIC_SEEDS = MAX_TOPIC_SEED_STABILITY_SEEDS
+MAX_TOPIC_HOLDOUT_UNITS = 100_000
+MAX_TOPIC_GROUP_BY_FIELDS = 16
 MAX_ROBUSTNESS_SEEDS = 100
 MAX_ROBUSTNESS_CLASS_WEIGHTS = 32
 MAX_ROBUSTNESS_GROUPS = 100
+MAX_ROBUSTNESS_TRANSFER_VALUES = 200
+# Additive sections in execute_sweep; keep below the theoretical max of the
+# per-field ceilings (≈347) so combined aggressive settings still 422.
+MAX_ROBUSTNESS_FITS = 250
+MIN_TRAIN_FRACTION = 0.05
 
 
 class ResearchCorpusCreate(BaseModel):
@@ -526,6 +549,7 @@ class TrainingDatasetSnapshotResponse(BaseModel):
 
 
 class CorpusFilters(BaseModel):
+    document_ids: list[str] | None = None
     organization: str | None = None
     organization_type: str | None = None
     publication_year: int | None = Field(
@@ -545,12 +569,25 @@ class CorpusFilters(BaseModel):
 
 
 class AnalysisRequest(CorpusFilters):
+    """Shared corpus-scoped analysis fields without an async scheduling flag."""
+
     unit_type: str
     preprocessing_profile_id: str | None = None
+
+
+class InlineAnalysisRequest(AnalysisRequest):
+    """Inline-only operations. ``run_async=true`` is rejected at the route layer."""
+
     run_async: bool = False
 
 
-class FrequencyRequest(AnalysisRequest):
+class AsyncCapableAnalysisRequest(AnalysisRequest):
+    """Operations that may queue via Celery when ``run_async`` is true."""
+
+    run_async: bool = False
+
+
+class FrequencyRequest(AsyncCapableAnalysisRequest):
     top_n: int = Field(default=50, ge=1, le=MAX_RESULT_TOP_N)
     rate_per: float = Field(
         default=1000,
@@ -563,7 +600,7 @@ class FrequencyRequest(AnalysisRequest):
     )
 
 
-class NgramRequest(AnalysisRequest):
+class NgramRequest(AsyncCapableAnalysisRequest):
     n: int = Field(default=2, ge=1, le=10, description="N-gram order (1=unigram … 10 max).")
     top_n: int = Field(default=50, ge=1, le=MAX_RESULT_TOP_N)
     rate_per: float = Field(
@@ -601,7 +638,7 @@ class DfmTrimConfig(BaseModel):
     )
 
 
-class DfmRequest(AnalysisRequest):
+class DfmRequest(AsyncCapableAnalysisRequest):
     weighting: str = Field(
         default="count",
         description="count | binary | tf | tfidf | sublinear_tf | log_count | bm25",
@@ -629,7 +666,7 @@ class DfmRequest(AnalysisRequest):
     run_async: bool = True
 
 
-class KwicRequest(AnalysisRequest):
+class KwicRequest(InlineAnalysisRequest):
     """KWIC request.
 
     ``language`` (from ``CorpusFilters``) is the corpus metadata filter only.
@@ -685,7 +722,7 @@ class KwicRequest(AnalysisRequest):
         )
 
 
-class DictionaryAnalysisRequest(AnalysisRequest):
+class DictionaryAnalysisRequest(InlineAnalysisRequest):
     dictionary_id: str | None = None
     dictionary_terms: list[str] | None = Field(
         default=None,
@@ -744,7 +781,7 @@ class KeynessRequest(BaseModel):
     run_async: bool = True
 
 
-class CooccurrenceRequest(AnalysisRequest):
+class CooccurrenceRequest(AsyncCapableAnalysisRequest):
     window_size: int = Field(default=5, ge=1, le=MAX_COOCCURRENCE_WINDOW)
     top_n: int = Field(default=50, ge=1, le=MAX_RESULT_TOP_N)
     association_method: str = Field(
@@ -772,7 +809,7 @@ class CooccurrenceRequest(AnalysisRequest):
     run_async: bool = True
 
 
-class SimilarityRequest(AnalysisRequest):
+class SimilarityRequest(AsyncCapableAnalysisRequest):
     method: str = Field(
         default="tfidf_cosine",
         description="tfidf_cosine | jaccard | embedding_cosine",
@@ -874,8 +911,7 @@ class SimilarityRequest(AnalysisRequest):
     def _embedding_cross_field(self) -> SimilarityRequest:
         if self.method == "embedding_cosine" and self.embeddings and self.run_async:
             raise ValueError(
-                "raw embedding_cosine vectors cannot run asynchronously; "
-                "use a managed embedding artifact or submit inline"
+                "Raw embedding vectors cannot be queued; persist/use a managed embedding artifact."
             )
         if self.method == "embedding_cosine" and self.mode == "pairwise" and not self.top_k:
             raise ValueError(
@@ -888,26 +924,27 @@ class SimilarityRequest(AnalysisRequest):
         return self
 
 
-class DuplicateDetectionRequest(AnalysisRequest):
+class DuplicateDetectionRequest(AsyncCapableAnalysisRequest):
     methods: list[str] | None = Field(
         default=None,
         description=(
             "Any of exact | normalized | lexical | minhash (default: exact, normalized, lexical)."
         ),
     )
-    lexical_threshold: float = Field(default=0.85, ge=0, le=1)
-    char_ngram_size: int = Field(default=5, ge=1, le=32)
+    lexical_threshold: float = Field(default=_DD_DEFAULTS.lexical_threshold, ge=0, le=1)
+    char_ngram_size: int = Field(default=_DD_DEFAULTS.char_ngram_size, ge=1, le=32)
     use_minhash: bool = Field(
-        default=False, description="Convenience flag to add 'minhash' to methods."
+        default=_DD_DEFAULTS.use_minhash,
+        description="Convenience flag to add 'minhash' to methods.",
     )
-    minhash_num_perm: int = Field(default=64, ge=1, le=MAX_MINHASH_PERM)
-    minhash_shingle_size: int = Field(default=3, ge=1, le=32)
-    minhash_threshold: float = Field(default=0.8, ge=0, le=1)
-    max_pairs: int | None = Field(default=1000, ge=1, le=MAX_PAIRWISE_PAIRS)
+    minhash_num_perm: int = Field(default=_DD_DEFAULTS.minhash_num_perm, ge=1, le=MAX_MINHASH_PERM)
+    minhash_shingle_size: int = Field(default=_DD_DEFAULTS.minhash_shingle_size, ge=1, le=32)
+    minhash_threshold: float = Field(default=_DD_DEFAULTS.minhash_threshold, ge=0, le=1)
+    max_pairs: int | None = Field(default=_DD_DEFAULTS.max_pairs, ge=1, le=MAX_PAIRWISE_PAIRS)
     run_async: bool = False
 
 
-class ClusteringRequest(AnalysisRequest):
+class ClusteringRequest(AsyncCapableAnalysisRequest):
     n_clusters: int = Field(default=5, ge=2, le=MAX_CLUSTERS)
     algorithm: str = Field(default="kmeans", description="kmeans | minibatch_kmeans")
     use_svd: bool = False
@@ -923,15 +960,15 @@ class ClusteringRequest(AnalysisRequest):
         return self
 
 
-class DimensionalityReductionRequest(AnalysisRequest):
+class DimensionalityReductionRequest(AsyncCapableAnalysisRequest):
     method: str = Field(default="svd", description="svd | pca")
     n_components: int = Field(default=2, ge=2, le=3)
     random_seed: int = 42
     run_async: bool = False
 
 
-class ReadabilityRequest(AnalysisRequest):
-    run_async: bool = False
+class ReadabilityRequest(InlineAnalysisRequest):
+    pass
 
 
 class ClassifierTrainRequest(BaseModel):
@@ -948,29 +985,31 @@ class ClassifierTrainRequest(BaseModel):
     # below (min_df/max_df/max_features apply to both feature families).
     vectorizer: str = "tfidf"
     use_word_ngrams: bool = True
-    ngram_min: int = 1
-    ngram_max: int = 1
+    ngram_min: int = Field(default=1, ge=1, le=MAX_NGRAM_ORDER)
+    ngram_max: int = Field(default=1, ge=1, le=MAX_NGRAM_ORDER)
     use_char_ngrams: bool = False
-    char_ngram_min: int = 3
-    char_ngram_max: int = 5
+    char_ngram_min: int = Field(default=3, ge=1, le=MAX_CHAR_NGRAM_ORDER)
+    char_ngram_max: int = Field(default=5, ge=1, le=MAX_CHAR_NGRAM_ORDER)
     min_df: float | int = 1
     max_df: float | int = 1.0
-    max_features: int | None = None
+    max_features: int | None = Field(default=None, ge=1, le=MAX_MODEL_FEATURES)
     # Supervised feature selection (Phase 4): applied after DF pruning,
     # fit on TRAIN labels only — never on validation/test.
     feature_selection_method: str = "none"  # none | chi2 | mutual_info | l1
     feature_selection_k: int | str = "all"
-    feature_selection_percentile: float | None = None
+    feature_selection_percentile: float | None = Field(
+        default=None, gt=0, le=MAX_FEATURE_SELECTION_PERCENTILE
+    )
     class_weight: str | None = None
-    regularization_c: float = 1.0
+    regularization_c: float = Field(default=1.0, gt=0)
     # Naive Bayes (multinomial/complement) smoothing parameter (§31/§32).
-    nb_alpha: float = 1.0
+    nb_alpha: float = Field(default=1.0, gt=0)
     # Only used when algorithm == "sgd_classifier".
     sgd_loss: str = "log_loss"
-    test_size: float = 0.2
+    test_size: float = Field(default=0.2, gt=0, lt=1)
     # Fraction of the remaining (non-test) groups held out for validation
     # (§30). Set to 0 to disable the validation partition.
-    val_size: float = 0.2
+    val_size: float = Field(default=0.2, ge=0, lt=1)
     random_seed: int = 42
     # §31 hyperparameter tuning: small grid/random search over C/alpha/
     # max_features, scored on VALIDATION only (or GroupKFold on train+val
@@ -978,15 +1017,15 @@ class ClassifierTrainRequest(BaseModel):
     tune_hyperparameters: bool = False
     hyperparameter_search_type: str = "grid"  # "grid" | "random"
     hyperparameter_param_grid: dict[str, list[Any]] | None = None
-    hyperparameter_n_iter: int = 10
+    hyperparameter_n_iter: int = Field(default=10, ge=1, le=MAX_HYPERPARAMETER_N_ITER)
     hyperparameter_scoring: str = "f1_macro"
     # §33 per-class/per-label threshold tuning, fit on VALIDATION only and
     # applied when scoring TEST and when predicting. Automatically skipped
     # (with a persisted note) when there is no validation partition.
     tune_thresholds: bool = True
     # §35 group-level bootstrap confidence intervals on TEST predictions.
-    n_bootstrap: int = 200
-    ci_confidence_level: float = 0.95
+    n_bootstrap: int = Field(default=200, ge=0, le=MAX_BOOTSTRAP_SAMPLES)
+    ci_confidence_level: float = Field(default=0.95, gt=0, lt=1)
     # §36 calibration: diagnostics (ECE/reliability curve) are always
     # computed on TEST when probabilities are available; this selects the
     # method for the *optional* VAL-fit recalibration step.
@@ -995,11 +1034,19 @@ class ClassifierTrainRequest(BaseModel):
         default="holdout",
         description="holdout | nested_grouped_cv",
     )
-    nested_cv_outer_splits: int = Field(default=5, ge=2, le=MAX_NESTED_CV_SPLITS)
-    nested_cv_inner_splits: int = Field(default=3, ge=2, le=MAX_NESTED_CV_SPLITS)
+    nested_cv_outer_splits: int = Field(default=5, ge=2, le=MAX_CV_SPLITS)
+    nested_cv_inner_splits: int = Field(default=3, ge=2, le=MAX_CV_SPLITS)
     embedding_provider: str = Field(
         default="hashing",
         description="Used when algorithm is embedding_logistic or embedding_svm.",
+    )
+    embedding_model_name: str | None = Field(
+        default=None,
+        description="Optional embedding model id (sentence-transformers name, etc.).",
+    )
+    embedding_model_revision: str | None = Field(
+        default=None,
+        description="Optional immutable model revision/version (e.g. HuggingFace revision).",
     )
     threshold_objective: str = Field(
         default="f1",
@@ -1015,19 +1062,87 @@ class ClassifierTrainRequest(BaseModel):
     name: str | None = None
     run_async: bool = True
 
+    @staticmethod
+    def _grid_candidate_count(param_grid: dict[str, list[Any]] | None) -> int:
+        if not param_grid:
+            return 1
+        combinations = 1
+        for values in param_grid.values():
+            if not isinstance(values, list) or not values:
+                raise ValueError("hyperparameter_param_grid values must be non-empty lists")
+            combinations *= len(values)
+        return combinations
+
     @model_validator(mode="after")
     def _bound_training_workload(self) -> ClassifierTrainRequest:
-        if self.n_bootstrap > MAX_CLASSIFIER_BOOTSTRAPS:
-            raise ValueError(f"n_bootstrap may not exceed {MAX_CLASSIFIER_BOOTSTRAPS}")
-        if self.hyperparameter_param_grid:
-            combinations = 1
-            for values in self.hyperparameter_param_grid.values():
-                combinations *= len(values)
-            if combinations > MAX_HYPERPARAMETER_GRID_COMBINATIONS:
-                raise ValueError(
-                    "hyperparameter_param_grid exceeds "
-                    f"{MAX_HYPERPARAMETER_GRID_COMBINATIONS} combinations"
-                )
+        if self.ngram_min > self.ngram_max:
+            raise ValueError("ngram_min must be <= ngram_max")
+        if self.char_ngram_min > self.char_ngram_max:
+            raise ValueError("char_ngram_min must be <= char_ngram_max")
+
+        def _df_ok(name: str, value: float | int) -> None:
+            if isinstance(value, bool):
+                raise ValueError(f"{name} must be an int or float proportion")
+            if isinstance(value, int):
+                if value < 1:
+                    raise ValueError(f"{name} integer document-frequency must be >= 1")
+                return
+            if value <= 0 or value > 1.0:
+                raise ValueError(f"{name} proportion must be in (0, 1]")
+
+        _df_ok("min_df", self.min_df)
+        _df_ok("max_df", self.max_df)
+        if (
+            isinstance(self.min_df, float)
+            and isinstance(self.max_df, float)
+            and self.min_df > self.max_df
+        ):
+            raise ValueError("min_df must be <= max_df")
+        if (
+            isinstance(self.min_df, int)
+            and isinstance(self.max_df, int)
+            and self.min_df > self.max_df
+        ):
+            raise ValueError("min_df must be <= max_df")
+
+        if isinstance(self.feature_selection_k, str):
+            if self.feature_selection_k != "all":
+                raise ValueError("feature_selection_k must be 'all' or a positive integer")
+        elif isinstance(self.feature_selection_k, int):
+            if self.feature_selection_k < 1 or self.feature_selection_k > MAX_MODEL_FEATURES:
+                raise ValueError(f"feature_selection_k must be between 1 and {MAX_MODEL_FEATURES}")
+        else:
+            raise ValueError("feature_selection_k must be 'all' or a positive integer")
+
+        train_fraction = (1.0 - self.test_size) * (1.0 - self.val_size)
+        if train_fraction < MIN_TRAIN_FRACTION:
+            raise ValueError(
+                "test_size and val_size leave less than "
+                f"{MIN_TRAIN_FRACTION:.0%} of groups for training"
+            )
+
+        grid_candidates = self._grid_candidate_count(self.hyperparameter_param_grid)
+        if grid_candidates > MAX_HYPERPARAM_CANDIDATES:
+            raise ValueError(
+                f"hyperparameter_param_grid exceeds {MAX_HYPERPARAM_CANDIDATES} combinations"
+            )
+        search_candidates = (
+            min(self.hyperparameter_n_iter, grid_candidates)
+            if self.hyperparameter_search_type == "random" and self.tune_hyperparameters
+            else (grid_candidates if self.tune_hyperparameters else 1)
+        )
+        if self.validation_strategy == "nested_grouped_cv":
+            estimated_fits = (
+                self.nested_cv_outer_splits * self.nested_cv_inner_splits * search_candidates
+            )
+        else:
+            estimated_fits = search_candidates
+        if estimated_fits > MAX_CLASSIFIER_TRAINING_FITS:
+            raise ValueError(
+                "Estimated training fits "
+                f"({estimated_fits}) exceed budget {MAX_CLASSIFIER_TRAINING_FITS}; "
+                "reduce nested CV splits or hyperparameter search size"
+            )
         return self
 
 
@@ -1180,10 +1295,12 @@ class TopicTrainRequest(CorpusFilters):
     )
     holdout_unit_ids: list[str] | None = Field(
         default=None,
+        max_length=MAX_TOPIC_HOLDOUT_UNITS,
         description="Optional explicit holdout unit ids (overrides holdout_fraction when set).",
     )
     group_by: list[str] | None = Field(
         default=None,
+        max_length=MAX_TOPIC_GROUP_BY_FIELDS,
         description="Optional document metadata fields for dominant-topic breakdowns.",
     )
     run_async: bool = True
@@ -1214,6 +1331,7 @@ class TopicKSweepRequest(CorpusFilters):
     )
     holdout_unit_ids: list[str] | None = Field(
         default=None,
+        max_length=MAX_TOPIC_HOLDOUT_UNITS,
         description="Optional explicit holdout unit ids (overrides holdout_fraction when set).",
     )
     run_async: bool = True
@@ -1233,7 +1351,7 @@ class TopicSeedStabilityRequest(CorpusFilters):
     seeds: list[int] = Field(
         ...,
         min_length=2,
-        max_length=MAX_TOPIC_SEED_STABILITY_SEEDS,
+        max_length=MAX_TOPIC_SEEDS,
         description="At least 2 seeds to compare.",
     )
     preprocessing_profile_id: str | None = None
@@ -1245,11 +1363,11 @@ class RobustnessRequest(BaseModel):
     snapshot_id: str
     algorithm: str = "logistic_regression"
     seeds: list[int] | None = Field(default=None, max_length=MAX_ROBUSTNESS_SEEDS)
-    cv_folds: int = Field(default=5, ge=2, le=MAX_NESTED_CV_SPLITS)
+    cv_folds: int = Field(default=5, ge=2, le=MAX_CV_SPLITS)
     class_weights: list[str | None] | None = Field(
         default=None, max_length=MAX_ROBUSTNESS_CLASS_WEIGHTS
     )
-    test_size: float = 0.25
+    test_size: float = Field(default=0.25, gt=0, lt=1)
     group_field: str = Field(
         default="organization",
         description=(
@@ -1275,12 +1393,39 @@ class RobustnessRequest(BaseModel):
         description="Optional metadata field for a generic transfer test (train on A, test on B).",
     )
     transfer_train_values: list[str] | None = Field(
-        default=None, description="Values of transfer_field that define the train filter (A)."
+        default=None,
+        max_length=MAX_ROBUSTNESS_TRANSFER_VALUES,
+        description="Values of transfer_field that define the train filter (A).",
     )
     transfer_test_values: list[str] | None = Field(
-        default=None, description="Values of transfer_field that define the test filter (B)."
+        default=None,
+        max_length=MAX_ROBUSTNESS_TRANSFER_VALUES,
+        description="Values of transfer_field that define the test filter (B).",
     )
     run_async: bool = True
+
+    @model_validator(mode="after")
+    def _bound_robustness_workload(self) -> RobustnessRequest:
+        n_seeds = len(self.seeds) if self.seeds is not None else 5
+        n_weights = len(self.class_weights) if self.class_weights is not None else 2
+        logo = int(self.max_groups or 0)
+        prep_variants = 3
+        temporal = 1 + (logo if self.temporal_windows else 0)
+        transfer = 1 if self.transfer_field else 0
+        # Conservative upper bound matching execute_sweep sections (additive).
+        estimated_fits = (
+            n_seeds + self.cv_folds + prep_variants + n_weights + logo + temporal + transfer
+        )
+        if estimated_fits > MAX_ROBUSTNESS_FITS:
+            raise ValueError(
+                f"Estimated robustness fits ({estimated_fits}) exceed budget "
+                f"{MAX_ROBUSTNESS_FITS}; reduce seeds, class_weights, cv_folds, or max_groups"
+            )
+        if self.transfer_field and not (self.transfer_train_values and self.transfer_test_values):
+            raise ValueError(
+                "transfer_field requires non-empty transfer_train_values and transfer_test_values"
+            )
+        return self
 
 
 class ComparativeAnalysisRequest(CorpusFilters):
@@ -1382,6 +1527,7 @@ class AnalysisRunResponse(BaseModel):
     metrics: dict[str, Any] | None = None
     results: dict[str, Any] | None = None
     artifact_path: str | None
+    results_artifact_id: str | None = None
     random_seed: int | None
     created_by: str
     started_at: datetime | None
@@ -1398,12 +1544,18 @@ class AnalysisRunResponse(BaseModel):
 class RunResultsPageResponse(BaseModel):
     artifact_id: str | None = None
     checksum: str | None = None
+    media_type: str | None = None
+    schema_version: int | None = None
+    byte_size: int | None = None
+    preview_rows: int | None = None
     key: str | None = None
     items: list[Any] | None = None
     data: Any = None
     total: int | None = None
+    row_count: int | None = None
     limit: int
     offset: int
+    artifactized: bool = False
 
 
 class DemoSeedRequest(BaseModel):

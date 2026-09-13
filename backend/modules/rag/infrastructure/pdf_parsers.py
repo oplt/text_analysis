@@ -6,6 +6,7 @@ import hashlib
 import io
 import json
 import logging
+import shutil
 from typing import Protocol
 
 from backend.core.config import settings
@@ -37,7 +38,7 @@ def _stable_block_id(*, page_number: int, block_index: int, text: str, bbox) -> 
 def _extract_ocr_text(page, fitz) -> tuple[str, dict]:
     """OCR a text-poor page only when explicitly enabled and dependencies exist."""
     if not settings.RAG_PDF_OCR_ENABLED:
-        return "", {"ocr_enabled": False, "ocr_ran": False}
+        return "", {"ocr_enabled": False, "ocr_ran": False, "ocr_status": "ocr_disabled"}
     try:
         import pytesseract
         from PIL import Image
@@ -47,15 +48,33 @@ def _extract_ocr_text(page, fitz) -> tuple[str, dict]:
             "ocr_available": False,
             "ocr_ran": False,
             "ocr_unavailable_reason": "pytesseract_or_pillow_not_installed",
+            "ocr_status": "ocr_python_dependency_missing",
+        }
+    if shutil.which(pytesseract.pytesseract.tesseract_cmd) is None:
+        return "", {
+            "ocr_enabled": True,
+            "ocr_available": False,
+            "ocr_ran": False,
+            "ocr_status": "ocr_binary_missing",
+            "ocr_unavailable_reason": "ocr_binary_missing",
         }
     try:
+        if "eng" not in pytesseract.get_languages(config=""):
+            return "", {
+                "ocr_enabled": True,
+                "ocr_available": False,
+                "ocr_ran": False,
+                "ocr_status": "ocr_language_missing",
+                "ocr_unavailable_reason": "eng",
+            }
         pixmap = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
         image = Image.open(io.BytesIO(pixmap.tobytes("png")))
-        text = pytesseract.image_to_string(image).strip()
+        text = pytesseract.image_to_string(image, lang="eng", timeout=60).strip()
         return text, {
             "ocr_enabled": True,
             "ocr_available": True,
-            "ocr_ran": bool(text),
+            "ocr_ran": True,
+            "ocr_status": "ocr_success" if text else "ocr_execution_failed",
             "ocr_engine": "tesseract",
             "ocr_engine_version": str(pytesseract.get_tesseract_version()),
             "ocr_transformed_extract": bool(text),
@@ -67,6 +86,7 @@ def _extract_ocr_text(page, fitz) -> tuple[str, dict]:
             "ocr_available": True,
             "ocr_ran": False,
             "ocr_unavailable_reason": type(exc).__name__,
+            "ocr_status": "ocr_execution_failed",
         }
 
 
@@ -220,6 +240,7 @@ class EnhancedPdfParser:
                 if not text:
                     # Fall back to plain text extraction for the page.
                     text = (page.get_text("text") or "").strip().replace("-\n", "")
+                raw_text_hash = hashlib.sha256(text.encode()).hexdigest()
                 ocr_decision = decide_ocr(
                     text,
                     ocr_enabled=settings.RAG_PDF_OCR_ENABLED,
@@ -230,7 +251,16 @@ class EnhancedPdfParser:
                 ocr_text, ocr_metadata = (
                     _extract_ocr_text(page, fitz)
                     if ocr_decision.should_ocr
-                    else ("", {"ocr_enabled": settings.RAG_PDF_OCR_ENABLED, "ocr_ran": False})
+                    else (
+                        "",
+                        {
+                            "ocr_enabled": settings.RAG_PDF_OCR_ENABLED,
+                            "ocr_ran": False,
+                            "ocr_status": "ocr_not_needed"
+                            if settings.RAG_PDF_OCR_ENABLED
+                            else "ocr_disabled",
+                        },
+                    )
                 )
                 if ocr_text:
                     text = ocr_text
@@ -239,6 +269,10 @@ class EnhancedPdfParser:
                     {
                         "index": index,
                         "text": text,
+                        "raw_text_hash": raw_text_hash,
+                        "ocr_text_hash": hashlib.sha256(ocr_text.encode()).hexdigest()
+                        if ocr_text
+                        else None,
                         "text_blocks": text_blocks,
                         "tables": tables,
                         "table_extraction_available": hasattr(page, "find_tables"),
@@ -258,6 +292,15 @@ class EnhancedPdfParser:
             index = payload["index"]
             text = cleaned
             text_blocks = payload["text_blocks"]
+            transformed = bool(payload["ocr_text_hash"]) or cleaned != payload["text"]
+            normalized_hash = hashlib.sha256(text.encode()).hexdigest()
+            transforms = ["pymupdf-extraction"]
+            if payload["ocr_text_hash"]:
+                transforms.append("tesseract-ocr")
+            if cleaned != payload["text"]:
+                transforms.append("header-footer-suppression")
+            if transformed:
+                text_blocks = []
             tables = payload["tables"]
             quality = payload["quality"]
             ocr_decision = payload["ocr_decision"]
@@ -276,7 +319,9 @@ class EnhancedPdfParser:
                             "format": "pdf",
                             "page_number": index,
                             "source_span_ids": [
-                                f"pdf-page-{index}",
+                                f"transformed:{normalized_hash}:{index}"
+                                if transformed
+                                else f"pdf-page-{index}",
                                 *(block["block_id"] for block in text_blocks),
                             ],
                             "parser": self.name,
@@ -302,6 +347,13 @@ class EnhancedPdfParser:
                             **ocr_metadata,
                             "reading_order": "pymupdf_blocks",
                             "blocks": text_blocks,
+                            "transformation_chain": {
+                                "raw_text_hash": payload["raw_text_hash"],
+                                "ocr_text_hash": payload["ocr_text_hash"],
+                                "normalized_text_hash": normalized_hash,
+                                "transforms": transforms,
+                            },
+                            "original_layout_coordinates_available": not transformed,
                         },
                         page_number=index,
                     )

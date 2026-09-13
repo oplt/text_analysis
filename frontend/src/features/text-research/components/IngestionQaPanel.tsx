@@ -53,7 +53,7 @@ export function IngestionQaPanel() {
 
     const findingsQuery = useQuery({
         queryKey: ["text-research", "ingestion-qa", runId, selectedDocumentId],
-        queryFn: () => getDocumentIngestionQa(selectedDocumentId!, runId ?? undefined),
+        queryFn: ({ signal }) => getDocumentIngestionQa(selectedDocumentId!, runId ?? undefined, signal),
         enabled: Boolean(runId && selectedDocumentId),
     });
 

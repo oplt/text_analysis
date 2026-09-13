@@ -116,6 +116,18 @@ class SentenceTransformerEmbeddingProvider:
 
 _PROVIDER_NAMES = frozenset({"hashing", "sentence_transformers", "unavailable"})
 
+# Bump when the identity dict shape or derivation rules change.
+EMBEDDING_PROVIDER_IMPLEMENTATION_VERSION = "text_research.embeddings/1"
+
+# Well-known sentence-transformer output dims (avoid loading the model just for identity).
+_KNOWN_SENTENCE_TRANSFORMER_DIMS: dict[str, int] = {
+    "all-MiniLM-L6-v2": 384,
+    "all-MiniLM-L12-v2": 384,
+    "all-mpnet-base-v2": 768,
+    "paraphrase-MiniLM-L6-v2": 384,
+    "multi-qa-MiniLM-L6-cos-v1": 384,
+}
+
 
 def get_embedding_provider(name: str = "hashing", **kwargs: Any) -> EmbeddingProvider:
     """Resolve an embedding provider by name (default: lexical-hash baseline)."""
@@ -135,36 +147,94 @@ def get_default_embedding_provider() -> EmbeddingProvider:
     return get_embedding_provider("hashing")
 
 
+def _package_version(distribution: str) -> str | None:
+    try:
+        return metadata.version(distribution)
+    except metadata.PackageNotFoundError:
+        return None
+
+
 def embedding_identity(
-    provider_name: str = "hashing", *, model_name: str | None = None
+    provider_name: str = "hashing",
+    *,
+    model_name: str | None = None,
+    model_revision: str | None = None,
+    n_features: int | None = None,
+    dimension: int | None = None,
+    artifact_checksum: str | None = None,
 ) -> dict[str, Any]:
-    """Stable provider/model identity suitable for analysis specification hashes."""
+    """Stable external model/provider identity for scientific provenance + hashes.
+
+    Fields (LATEST-021):
+    - ``provider`` / ``model_name`` / ``model_revision``
+    - ``dimension`` (embedding width)
+    - ``provider_implementation_version`` (this helper's contract version)
+    - ``local_package_version`` (sklearn / sentence-transformers / …)
+    - ``artifact_checksum`` when embeddings were persisted
+    - ``checksum`` fingerprint of the identity payload (not the vectors)
+
+    Legacy alias: ``revision`` mirrors ``local_package_version`` for older readers.
+    """
     resolved_model = model_name
-    dimension: int | None = None
-    revision: str | None = None
+    resolved_dimension = dimension
+    local_package_version: str | None = None
+
     if provider_name == "hashing":
         resolved_model = resolved_model or "sklearn.feature_hasher"
-        dimension = 256
-        try:
-            revision = metadata.version("scikit-learn")
-        except metadata.PackageNotFoundError:
-            revision = None
+        resolved_dimension = (
+            int(n_features)
+            if n_features is not None
+            else (int(dimension) if dimension is not None else 256)
+        )
+        local_package_version = _package_version("scikit-learn")
     elif provider_name == "sentence_transformers":
         resolved_model = resolved_model or "all-MiniLM-L6-v2"
-        try:
-            revision = metadata.version("sentence-transformers")
-        except metadata.PackageNotFoundError:
-            revision = None
-    identity = {
+        if resolved_dimension is None:
+            resolved_dimension = _KNOWN_SENTENCE_TRANSFORMER_DIMS.get(resolved_model)
+        local_package_version = _package_version("sentence-transformers")
+    elif provider_name == "unavailable":
+        resolved_model = resolved_model or "unavailable"
+    else:
+        resolved_model = resolved_model or provider_name
+
+    identity: dict[str, Any] = {
         "provider": provider_name,
         "model_name": resolved_model,
-        "revision": revision,
-        "dimension": dimension,
+        "model_revision": model_revision,
+        "dimension": resolved_dimension,
+        "provider_implementation_version": EMBEDDING_PROVIDER_IMPLEMENTATION_VERSION,
+        "local_package_version": local_package_version,
+        "artifact_checksum": artifact_checksum,
+        # Back-compat alias used by earlier callers/tests.
+        "revision": local_package_version,
+    }
+    fingerprint_payload = {
+        key: value
+        for key, value in identity.items()
+        if key not in {"checksum", "revision"} and value is not None
     }
     identity["checksum"] = hashlib.sha256(
-        json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        json.dumps(fingerprint_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
     return identity
+
+
+def embedding_identity_from_artifact_metadata(
+    metadata: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Rebuild identity from managed embedding artifact metadata when present."""
+    if not metadata:
+        return None
+    provider = metadata.get("provider")
+    if not provider:
+        return None
+    return embedding_identity(
+        str(provider),
+        model_name=metadata.get("model") or metadata.get("model_name"),
+        model_revision=metadata.get("model_revision"),
+        dimension=metadata.get("dim") or metadata.get("dimension"),
+        artifact_checksum=metadata.get("content_checksum") or metadata.get("artifact_checksum"),
+    )
 
 
 def embedding_unit_ids_checksum(unit_ids: list[str]) -> str:
@@ -180,6 +250,7 @@ def create_managed_embedding_artifact(
     embeddings: dict[str, list[float]],
     provider: str,
     model: str | None = None,
+    model_revision: str | None = None,
     store: ArtifactStore | None = None,
 ) -> str:
     """Persist vectors with the ownership and shape contract required by workers."""
@@ -188,6 +259,7 @@ def create_managed_embedding_artifact(
     dimensions = {len(vector) for vector in embeddings.values()}
     if len(dimensions) != 1 or 0 in dimensions:
         raise ValueError("Managed embedding artifact vectors must have one non-zero dimension")
+    dim = dimensions.pop()
     normalized = {
         str(unit_id): [float(value) for value in vector] for unit_id, vector in embeddings.items()
     }
@@ -195,6 +267,13 @@ def create_managed_embedding_artifact(
     content_checksum = hashlib.sha256(
         json.dumps(normalized, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
+    identity = embedding_identity(
+        provider,
+        model_name=model,
+        model_revision=model_revision,
+        dimension=dim,
+        artifact_checksum=content_checksum,
+    )
     descriptor = (store or ArtifactStore()).put(
         "embeddings",
         normalized,
@@ -204,10 +283,13 @@ def create_managed_embedding_artifact(
             "corpus_id": str(corpus_id),
             "unit_ids_checksum": embedding_unit_ids_checksum(unit_ids),
             "unit_count": len(unit_ids),
-            "dim": dimensions.pop(),
+            "dim": dim,
             "provider": provider,
-            "model": model,
+            "model": model or identity.get("model_name"),
+            "model_name": model or identity.get("model_name"),
+            "model_revision": model_revision,
             "content_checksum": content_checksum,
+            "embedding_identity": identity,
         },
     )
     return descriptor.artifact_id

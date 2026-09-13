@@ -63,6 +63,8 @@ class ClassifierRoundTripTests(unittest.TestCase):
             "nested_cv_outer_splits": 4,
             "nested_cv_inner_splits": 2,
             "embedding_provider": "openai",
+            "embedding_model_name": "text-embedding-3-small",
+            "embedding_model_revision": "2024-01",
             "threshold_objective": "utility",
             "threshold_utility_tp": 2.0,
             "threshold_utility_tn": 0.5,
@@ -111,6 +113,8 @@ class ClassifierRoundTripTests(unittest.TestCase):
             "nested_cv_outer_splits",
             "nested_cv_inner_splits",
             "embedding_provider",
+            "embedding_model_name",
+            "embedding_model_revision",
             "threshold_objective",
             "threshold_utility_tp",
             "threshold_utility_tn",
@@ -369,6 +373,112 @@ class ExecuteRerunTests(unittest.IsolatedAsyncioTestCase):
         )
         cap = capability_for_run(run)
         self.assertFalse(cap.rerunnable)
+
+
+class ReplayVsExactReproduceTests(unittest.IsolatedAsyncioTestCase):
+    def _frequency_params(self, *, include_frozen_prep: bool) -> dict:
+        params = {
+            "unit_type": "document",
+            "preprocessing_profile_id": "profile-live",
+            "top_n": 25,
+            "rate_per": 1000,
+            "analysis_spec_hash": "spec-abc",
+            "corpus_checksum": "corpus-xyz",
+            "pipeline_checksum": "pipe-xyz",
+            "filters": {},
+        }
+        if include_frozen_prep:
+            params["preprocessing_config"] = {
+                "lowercase": False,
+                "language": "en",
+                "remove_stopwords": True,
+            }
+        return params
+
+    def test_checksums_alone_are_not_exact_without_frozen_preprocessing(self) -> None:
+        cap = describe_rerun_capability(
+            AnalysisRunType.FREQUENCY_ANALYSIS.value,
+            self._frequency_params(include_frozen_prep=False),
+        )
+        self.assertTrue(cap.replayable)
+        self.assertFalse(cap.exact_reproducible)
+        self.assertIn("preprocessing", (cap.exact_reproduce_block_reason or "").lower())
+
+    def test_frozen_preprocessing_enables_exact_reproduce(self) -> None:
+        cap = describe_rerun_capability(
+            AnalysisRunType.FREQUENCY_ANALYSIS.value,
+            self._frequency_params(include_frozen_prep=True),
+        )
+        self.assertTrue(cap.replayable)
+        self.assertTrue(cap.exact_reproducible)
+
+    async def test_replay_does_not_pin_frozen_preprocessing(self) -> None:
+        run = SimpleNamespace(
+            id="run-replay",
+            run_type=AnalysisRunType.FREQUENCY_ANALYSIS.value,
+            corpus_id="c1",
+            parameters_json=dumps(self._frequency_params(include_frozen_prep=True)),
+        )
+        mock_frequencies = AsyncMock(return_value=SimpleNamespace(id="new-run"))
+        with patch(
+            "backend.modules.text_research.application.quantitative_analysis_service."
+            "QuantitativeAnalysisService"
+        ) as svc:
+            svc.return_value.frequencies = mock_frequencies
+            await execute_rerun(MagicMock(), run, user_id="u1", exact=False, run_async=False)
+        kwargs = mock_frequencies.await_args.kwargs
+        self.assertEqual(kwargs["preprocessing_profile_id"], "profile-live")
+        self.assertNotIn("preprocessing_config", kwargs)
+
+    async def test_exact_pins_frozen_preprocessing_config(self) -> None:
+        run = SimpleNamespace(
+            id="run-exact",
+            run_type=AnalysisRunType.FREQUENCY_ANALYSIS.value,
+            corpus_id="c1",
+            parameters_json=dumps(self._frequency_params(include_frozen_prep=True)),
+        )
+        mock_frequencies = AsyncMock(return_value=SimpleNamespace(id="new-run"))
+        with patch(
+            "backend.modules.text_research.application.quantitative_analysis_service."
+            "QuantitativeAnalysisService"
+        ) as svc:
+            svc.return_value.frequencies = mock_frequencies
+            await execute_rerun(MagicMock(), run, user_id="u1", exact=True, run_async=False)
+        kwargs = mock_frequencies.await_args.kwargs
+        self.assertEqual(kwargs["preprocessing_profile_id"], "profile-live")
+        self.assertEqual(
+            kwargs["preprocessing_config"],
+            {"lowercase": False, "language": "en", "remove_stopwords": True},
+        )
+
+    def test_pin_exact_replaces_live_dictionary_with_frozen_spec(self) -> None:
+        params = {
+            "dictionary_id": "dict-1",
+            "dictionary_content_checksum": "chk",
+            "analysis_specification": {
+                "analysis": {
+                    "parameters": {
+                        "terms": {
+                            "entries": [{"expression": "climate", "match_type": "phrase"}],
+                            "exclusions": [],
+                            "language": "en",
+                        },
+                        "dictionary_content_checksum": "chk",
+                    }
+                }
+            },
+            "preprocessing_config": {"lowercase": True},
+        }
+        normalized = {
+            "dictionary_id": "dict-1",
+            "dictionary_terms": None,
+            "hierarchy": None,
+            "preprocessing_profile_id": "p1",
+        }
+        pinned = adapters.pin_exact_reproduction_inputs(params, normalized)
+        self.assertIsNone(pinned["dictionary_id"])
+        self.assertIn("frozen_dictionary_spec", pinned)
+        self.assertEqual(pinned["preprocessing_config"]["lowercase"], True)
 
 
 class RegistryCoverageTests(unittest.TestCase):

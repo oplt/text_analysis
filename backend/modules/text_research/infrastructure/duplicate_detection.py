@@ -31,17 +31,20 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from backend.modules.text_research.domain.quantitative_configs import DuplicateDetectionConfig
 from backend.modules.text_research.infrastructure.canonical_text import sha256_text
+
+_DD = DuplicateDetectionConfig()
 
 DUPLICATE_METHODS: frozenset[str] = frozenset({"exact", "normalized", "lexical", "minhash"})
 
-DEFAULT_LEXICAL_THRESHOLD = 0.85
-DEFAULT_CHAR_NGRAM_SIZE = 5
-DEFAULT_MINHASH_NUM_PERM = 64
-DEFAULT_MINHASH_SHINGLE_SIZE = 3
-DEFAULT_MINHASH_THRESHOLD = 0.8
+DEFAULT_LEXICAL_THRESHOLD = _DD.lexical_threshold
+DEFAULT_CHAR_NGRAM_SIZE = _DD.char_ngram_size
+DEFAULT_MINHASH_NUM_PERM = _DD.minhash_num_perm
+DEFAULT_MINHASH_SHINGLE_SIZE = _DD.minhash_shingle_size
+DEFAULT_MINHASH_THRESHOLD = _DD.minhash_threshold
 DEFAULT_MINHASH_BANDS = 16
-DEFAULT_MAX_PAIRS = 1000
+DEFAULT_MAX_PAIRS = _DD.max_pairs if _DD.max_pairs is not None else 1000
 
 _WHITESPACE_RE = re.compile(r"\s+")
 

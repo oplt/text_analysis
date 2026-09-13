@@ -1,6 +1,8 @@
 import { Box, Button, Chip, FormControlLabel, MenuItem, Stack, Switch, TextField, Typography } from "@mui/material";
 import { AutoAwesome as AiIcon, PlayCircleOutline as RunIcon } from "@mui/icons-material";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { AdvancedSettings } from "../../../components/ui/AdvancedSettings";
+import { JsonBlock } from "../../../components/ui/JsonBlock";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { formatDateTime } from "../../../utils/formatters";
 import { aiRunDraftSchema, firstSchemaError, formatCostMicros, parseJsonObject } from "../studioUtils";
@@ -98,8 +100,18 @@ export function RunPlaygroundPanel({ m }: { m: AiStudioModel }) {
                                     <Chip label={run.status} size="small" color={run.status === "completed" ? "success" : "warning"} variant="outlined" />
                                 </Stack>
                                 <Typography variant="body2" color="text.secondary">
-                                    {run.output_text?.slice(0, 280) || JSON.stringify(run.output_json, null, 2).slice(0, 280) || "No output"}
+                                    {run.output_text?.trim()
+                                        ? run.output_text.slice(0, 280) +
+                                          (run.output_text.length > 280 ? "…" : "")
+                                        : run.output_json
+                                          ? "Structured JSON output available under Raw."
+                                          : "No output"}
                                 </Typography>
+                                {run.output_json && !run.output_text?.trim() ? (
+                                    <AdvancedSettings title="Raw JSON">
+                                        <JsonBlock data={run.output_json} maxHeight={240} />
+                                    </AdvancedSettings>
+                                ) : null}
                                 <Typography variant="caption" color="text.secondary">
                                     {formatDateTime(run.created_at)} • {run.total_tokens} tokens • {formatCostMicros(run.estimated_cost_micros)}
                                 </Typography>

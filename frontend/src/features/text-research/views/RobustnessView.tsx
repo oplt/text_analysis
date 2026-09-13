@@ -6,7 +6,11 @@ import {
     listDatasetSnapshots,
     runRobustnessSweep,
 } from "../../../api/textResearch";
+import { FormGrid } from "../../../components/ui/FormGrid";
+import { HelpTooltip } from "../../../components/ui/HelpTooltip";
+import { DisabledWithReason } from "../../../components/ui/DisabledWithReason";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
+import { RunStatusPanel } from "../../../components/ui/RunStatusPanel";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
@@ -17,7 +21,8 @@ import {
     SimpleLineLikeBars,
     type RankedItem,
 } from "../components/ResearchCharts";
-import { RunStatusChip } from "../components/ResearchShared";
+import { ProvenanceDrawer } from "../components/ProvenanceDrawer";
+import { robustnessSweepDisabledReason } from "../actionDisabledReasons";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
@@ -221,7 +226,11 @@ export default function RobustnessView() {
     return (
         <Stack spacing={2}>
             <SectionCard
-                title="Robustness testing"
+                title={
+                    <HelpTooltip termId="robustness" variant="label">
+                        Robustness testing
+                    </HelpTooltip>
+                }
                 description="Evaluate the frozen training dataset across repeated grouped splits, cross-validation, preprocessing, class weights, organization, and temporal holdouts."
             >
                 <QueryBoundary
@@ -230,14 +239,14 @@ export default function RobustnessView() {
                     error={snapshotsQuery.error}
                     onRetry={() => void snapshotsQuery.refetch()}
                 >
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                    <FormGrid columns="8-4">
                         <TextField
                             select
                             size="small"
                             label="Frozen dataset snapshot"
                             value={snapshotId}
                             onChange={(event) => setSnapshotId(event.target.value)}
-                            sx={{ minWidth: 300 }}
+                            fullWidth
                         >
                             <MenuItem value="">Select snapshot</MenuItem>
                             {snapshotsQuery.data?.map((snapshot) => (
@@ -252,16 +261,24 @@ export default function RobustnessView() {
                             value={groupField}
                             onChange={(event) => setGroupField(event.target.value)}
                             helperText="Any document metadata field, e.g. organization, region, country"
-                            sx={{ minWidth: 260 }}
+                            fullWidth
                         />
+                    </FormGrid>
+                    <DisabledWithReason
+                        reason={robustnessSweepDisabledReason({
+                            snapshotId,
+                            pending: sweepMutation.isPending,
+                        })}
+                    >
                         <Button
                             variant="contained"
                             onClick={() => sweepMutation.mutate()}
                             disabled={!snapshotId || sweepMutation.isPending}
+                            sx={{ mt: 1 }}
                         >
                             Run sweep
                         </Button>
-                    </Stack>
+                    </DisabledWithReason>
                 </QueryBoundary>
             </SectionCard>
 
@@ -278,13 +295,18 @@ export default function RobustnessView() {
                     >
                         {runQuery.data ? (
                             <Stack spacing={3}>
-                                <Typography variant="body2">
-                                    Run {runQuery.data.id} —{" "}
-                                    <RunStatusChip status={runQuery.data.status} />
-                                </Typography>
-                                {runQuery.data.error_message ? (
-                                    <Alert severity="error">{runQuery.data.error_message}</Alert>
-                                ) : null}
+                                <RunStatusPanel
+                                    dense
+                                    title="Robustness sweep"
+                                    status={runQuery.data.status}
+                                    runId={runQuery.data.id}
+                                    stage={runQuery.data.progress_stage}
+                                    startedAt={runQuery.data.started_at}
+                                    completedAt={runQuery.data.completed_at}
+                                    createdAt={runQuery.data.created_at}
+                                    errorMessage={runQuery.data.error_message}
+                                    actions={<ProvenanceDrawer run={runQuery.data} />}
+                                />
 
                                 {completed && results ? (
                                     <>

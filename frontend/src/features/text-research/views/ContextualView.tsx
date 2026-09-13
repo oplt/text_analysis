@@ -37,7 +37,7 @@ import { queryKeys } from "../../../config/queryKeys";
 import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { MetricCards, ResultsInspector, ScientificLineChart, ScientificScatterPlot } from "../components/ResearchCharts";
-import { NoCorpusEmptyState } from "../components/ResearchShared";
+import { NoCorpusEmptyState } from "../components/NoCorpusEmptyState";
 import { useResearchContext } from "../hooks/useResearchContext";
 
 const CONTEXTUAL_TABS = ["datasets", "link"] as const;
@@ -66,7 +66,7 @@ export default function ContextualView() {
 
     const datasetsQuery = useQuery({
         queryKey: queryKeys.textResearch.contextualDatasets(ctx.projectId),
-        queryFn: () => listContextualDatasets(ctx.projectId),
+        queryFn: ({ signal }) => listContextualDatasets(ctx.projectId, signal),
         enabled: Boolean(ctx.projectId),
     });
 
@@ -75,17 +75,21 @@ export default function ContextualView() {
 
     const detailQuery = useQuery({
         queryKey: queryKeys.textResearch.contextualDataset(activeDatasetId),
-        queryFn: () => getContextualDataset(activeDatasetId),
+        queryFn: ({ signal }) => getContextualDataset(activeDatasetId, signal),
         enabled: Boolean(activeDatasetId),
     });
 
     const observationsQuery = useQuery({
         queryKey: ["text-research", "contextual-observations", activeDatasetId, observationPage],
-        queryFn: () =>
-            listContextualObservations(activeDatasetId, {
-                limit: observationPageSize,
-                offset: observationPage * observationPageSize,
-            }),
+        queryFn: ({ signal }) =>
+            listContextualObservations(
+                activeDatasetId,
+                {
+                    limit: observationPageSize,
+                    offset: observationPage * observationPageSize,
+                },
+                signal
+            ),
         enabled: Boolean(activeDatasetId),
     });
 

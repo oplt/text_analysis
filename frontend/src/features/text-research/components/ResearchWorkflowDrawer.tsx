@@ -1,6 +1,7 @@
 import {
     Box,
     Button,
+    Divider,
     Drawer,
     IconButton,
     LinearProgress,
@@ -8,15 +9,18 @@ import {
     Typography,
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
-import {
-    StatusIcon,
-} from "../workflowDisplay";
+import { StatusIcon } from "../workflowDisplay";
 import {
     STATUS_LABEL,
     stageActionLabel,
     statusAccent,
     workflowProgress,
 } from "../workflowDisplayModel";
+import {
+    RESEARCH_NAV_GROUPS,
+    type ResearchNavItem,
+    type ResolvedResearchNav,
+} from "../researchNavigation";
 import type { WorkflowStageState } from "../workflow";
 
 type ResearchWorkflowDrawerProps = {
@@ -25,6 +29,8 @@ type ResearchWorkflowDrawerProps = {
     stages: WorkflowStageState[];
     activeStageId: string | false;
     onSelectStage: (stage: WorkflowStageState) => void;
+    onNavigateItem: (item: ResearchNavItem) => void;
+    resolved: ResolvedResearchNav | null;
     onOpenDashboard: () => void;
     dashboardSelected: boolean;
 };
@@ -35,10 +41,15 @@ export function ResearchWorkflowDrawer({
     stages,
     activeStageId,
     onSelectStage,
+    onNavigateItem,
+    resolved,
     onOpenDashboard,
     dashboardSelected,
 }: ResearchWorkflowDrawerProps) {
     const progress = workflowProgress(stages);
+    const nextStage =
+        stages.find((stage) => stage.status === "current" || stage.status === "warning") ??
+        stages.find((stage) => stage.status === "incomplete");
 
     return (
         <Drawer
@@ -47,7 +58,7 @@ export function ResearchWorkflowDrawer({
             onClose={onClose}
             PaperProps={{
                 sx: {
-                    width: { xs: "100%", sm: 360 },
+                    width: { xs: "100%", sm: 400 },
                     maxWidth: "100%",
                     p: 2,
                 },
@@ -62,20 +73,20 @@ export function ResearchWorkflowDrawer({
             >
                 <Box>
                     <Typography variant="h6" component="h2">
-                        Research workflow
+                        Research navigation
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Pipeline status for the active corpus. Stages stay clickable when ready.
+                        Grouped destinations plus pipeline progress for the active corpus.
                     </Typography>
                 </Box>
-                <IconButton aria-label="Close workflow" size="small" onClick={onClose}>
+                <IconButton aria-label="Close research navigation" size="small" onClick={onClose}>
                     <CloseIcon fontSize="small" />
                 </IconButton>
             </Stack>
 
-            <Box sx={{ mb: 2.5 }}>
+            <Box sx={{ mb: 2 }}>
                 <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.75 }}>
-                    <Typography variant="subtitle2">Project progress</Typography>
+                    <Typography variant="subtitle2">Pipeline progress</Typography>
                     <Typography variant="body2" color="text.secondary">
                         {progress.completed}/{progress.total} · {progress.percent}%
                     </Typography>
@@ -85,6 +96,20 @@ export function ResearchWorkflowDrawer({
                     value={progress.percent}
                     sx={{ height: 8, borderRadius: 1 }}
                 />
+                {nextStage ? (
+                    <Button
+                        fullWidth
+                        size="small"
+                        variant="contained"
+                        sx={{ mt: 1.25 }}
+                        onClick={() => {
+                            onSelectStage(nextStage);
+                            onClose();
+                        }}
+                    >
+                        Next: {stageActionLabel(nextStage)}
+                    </Button>
+                ) : null}
             </Box>
 
             <Button
@@ -99,6 +124,50 @@ export function ResearchWorkflowDrawer({
             >
                 Research overview
             </Button>
+
+            <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                Destinations by phase
+            </Typography>
+
+            <Stack spacing={2} sx={{ mb: 2.5 }}>
+                {RESEARCH_NAV_GROUPS.map((group) => (
+                    <Box key={group.id}>
+                        <Typography variant="subtitle2" sx={{ mb: 0.75 }}>
+                            {group.label}
+                        </Typography>
+                        <Stack spacing={0.5}>
+                            {group.items.map((item) => {
+                                const selected = resolved?.item.id === item.id;
+                                return (
+                                    <Button
+                                        key={item.id}
+                                        fullWidth
+                                        size="small"
+                                        variant={selected ? "contained" : "text"}
+                                        onClick={() => {
+                                            onNavigateItem(item);
+                                            onClose();
+                                        }}
+                                        sx={{
+                                            justifyContent: "flex-start",
+                                            textTransform: "none",
+                                            fontWeight: selected ? 700 : 500,
+                                        }}
+                                    >
+                                        {item.label}
+                                    </Button>
+                                );
+                            })}
+                        </Stack>
+                    </Box>
+                ))}
+            </Stack>
+
+            <Divider sx={{ mb: 2 }} />
+
+            <Typography variant="overline" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                Workflow stages
+            </Typography>
 
             <Stack spacing={1.25} component="ol" sx={{ m: 0, p: 0, listStyle: "none" }}>
                 {stages.map((stage, index) => {

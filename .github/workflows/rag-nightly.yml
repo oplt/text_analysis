@@ -1,0 +1,48 @@
+name: Live RAG scale benchmark
+on:
+  schedule:
+    - cron: '23 2 * * *'
+  workflow_dispatch:
+    inputs:
+      scale:
+        type: choice
+        options: [medium, large, small]
+        default: medium
+        description: '100k nightly; 1M opt-in'
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: benchmark
+          POSTGRES_PASSWORD: benchmark
+          POSTGRES_DB: benchmark
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd 'pg_isready -U benchmark' --health-interval 5s
+          --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql+asyncpg://benchmark:benchmark@localhost:5432/benchmark
+      RAG_INTEGRATION_DATABASE_URL: postgresql+asyncpg://benchmark:benchmark@localhost:5432/benchmark
+      PYTHONPATH: .
+      JWT_SECRET: nightly-only-secret-not-for-production-0123456789
+      BENCHMARK_SCALE: ${{ inputs.scale || 'medium' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen --extra dev
+        working-directory: backend
+      - run: .venv/bin/alembic upgrade head
+        working-directory: backend
+      - run: >-
+          backend/.venv/bin/python -m backend.modules.rag.eval.live_benchmark
+          --scale "$BENCHMARK_SCALE" --samples 100 --output var/benchmarks/rag-live.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rag-live-${{ github.sha }}
+          path: var/benchmarks/rag-live.json
+          if-no-files-found: warn

@@ -44,6 +44,28 @@ describe("QueryBoundary", () => {
 
         expect(screen.getByText("No records")).toBeInTheDocument();
     });
+
+    it("shows a default empty message when isEmpty and no fallback", () => {
+        render(
+            <QueryBoundary isEmpty>
+                <div>Loaded content</div>
+            </QueryBoundary>
+        );
+
+        expect(screen.getByText(/Nothing to show yet/i)).toBeInTheDocument();
+        expect(screen.queryByText("Loaded content")).not.toBeInTheDocument();
+    });
+
+    it("marks loading state as busy for assistive tech", () => {
+        const { container } = render(
+            <QueryBoundary isLoading>
+                <div>Loaded content</div>
+            </QueryBoundary>
+        );
+
+        expect(container.querySelector('[aria-busy="true"]')).toBeTruthy();
+        expect(screen.queryByText("Loaded content")).not.toBeInTheDocument();
+    });
 });
 
 describe("QueryErrorAlert", () => {

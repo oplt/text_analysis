@@ -2,15 +2,19 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 
 from fastapi import HTTPException
+from opentelemetry import trace
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.db.session import SessionLocal
 from backend.modules.identity_access.models import User
 from backend.modules.rag.application.evidence_revision import StaleEvidenceRevisionError
 from backend.modules.rag.application.rag_answer_service import RagAnswerService
 from backend.modules.rag.application.retrieval_service import RetrievalService
+from backend.modules.rag.application.trace_context import resume_trace, trace_carrier, traced
 from backend.modules.rag.domain.enums import RetrievalIntent
 from backend.modules.rag.domain.models import RetrievalOutcome, RetrievedChunk
 from backend.modules.rag.infrastructure.rag_config import RagConfig
@@ -271,12 +275,13 @@ class CorpusSynthesisService(ResearchAccessMixin):
             # This also fails closed for incomplete legacy bindings.
             await self.scope_service.frozen_revision_ids(scope)
             run = await ensure_not_cancelled(self.repo, run)
-            result = await self._synthesize_sync(
-                user=user,
-                query=query,
-                scope=scope,
-                allow_list=list(scope.rag_document_ids),
-            )
+            with resume_trace(params.get("trace_context") or {}):
+                result = await self._synthesize_sync(
+                    user=user,
+                    query=query,
+                    scope=scope,
+                    allow_list=list(scope.rag_document_ids),
+                )
             run = await ensure_not_cancelled(self.repo, run)
             await complete_if_active(
                 self.repo,
@@ -326,6 +331,7 @@ class CorpusSynthesisService(ResearchAccessMixin):
                 parameters_json=dumps(
                     {
                         "query": query,
+                        "trace_context": trace_carrier(),
                         "scope_hash": scope.scope_hash,
                         "evidence_revision_hash": evidence_revision_hash,
                         "frozen_synthesis_scope": frozen_synthesis_scope,
@@ -355,6 +361,7 @@ class CorpusSynthesisService(ResearchAccessMixin):
         assert refreshed is not None
         return refreshed
 
+    @traced("rag.synthesis")
     async def _synthesize_sync(
         self,
         *,
@@ -382,6 +389,40 @@ class CorpusSynthesisService(ResearchAccessMixin):
         batch_size = max(1, int(getattr(self.rag_config, "synthesis_batch_size", 8)))
         for batch_start in range(0, len(considered_ids), batch_size):
             document_batch = considered_ids[batch_start : batch_start + batch_size]
+
+            async def retrieve_document(document_id):
+                revision = revision_by_document.get(document_id)
+                if not revision:
+                    return None
+                kwargs = dict(
+                    user_id=user.id,
+                    project_id=scope.project_id,
+                    top_k=per_doc,
+                    filters={
+                        "document_ids": [document_id],
+                        "owner_scoped": False,
+                        "index_revision_ids": [revision],
+                    },
+                    intent=RetrievalIntent.SYNTHESIS,
+                    persist_trace=True,
+                    evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
+                )
+                # Injected retrieval ports remain supported; production workers
+                # own independent sessions, including their trace transactions.
+                if isinstance(self.retrieval, RetrievalService):
+                    async with SessionLocal() as worker_db:
+                        outcome = await RetrievalService(worker_db, self.rag_config).retrieve(
+                            query, **kwargs
+                        )
+                        await worker_db.commit()
+                        return outcome
+                return await self.retrieval.retrieve(query, **kwargs)
+
+            outcomes = await asyncio.gather(
+                *(retrieve_document(document_id) for document_id in document_batch),
+                return_exceptions=True,
+            )
+            outcomes_by_document = dict(zip(document_batch, outcomes, strict=True))
             for rag_document_id in document_batch:
                 revision_id = revision_by_document.get(rag_document_id)
                 if not revision_id:
@@ -396,20 +437,10 @@ class CorpusSynthesisService(ResearchAccessMixin):
                     )
                     continue
                 try:
-                    outcome = await self.retrieval.retrieve(
-                        query,
-                        user_id=user.id,
-                        project_id=scope.project_id,
-                        top_k=per_doc,
-                        filters={
-                            "document_ids": [rag_document_id],
-                            "owner_scoped": False,
-                            "index_revision_ids": [revision_id],
-                        },
-                        intent=RetrievalIntent.SYNTHESIS,
-                        persist_trace=True,
-                        evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
-                    )
+                    outcome = outcomes_by_document[rag_document_id]
+                    if isinstance(outcome, BaseException):
+                        raise outcome
+                    assert outcome is not None
                 except StaleEvidenceRevisionError as exc:
                     findings.append(
                         {
@@ -503,14 +534,20 @@ class CorpusSynthesisService(ResearchAccessMixin):
                     scope_hash=scope.scope_hash,
                     evidence_revision_hash=getattr(scope, "evidence_revision_hash", None),
                 )
-                batch_answer = await self.answers.answer_from_retrieval(
-                    final_reduce_query,
-                    outcome=batch_outcome,
-                    user=user,
-                    project_id=scope.project_id,
-                    document_ids=allow_list,
-                    include_memory=False,
-                )
+                with trace.get_tracer("backend.rag").start_as_current_span(
+                    "rag.synthesis.reduce",
+                    attributes={"reduction.level": level, "reduction.batch": batch_index},
+                    record_exception=False,
+                    set_status_on_exception=False,
+                ):
+                    batch_answer = await self.answers.answer_from_retrieval(
+                        final_reduce_query,
+                        outcome=batch_outcome,
+                        user=user,
+                        project_id=scope.project_id,
+                        document_ids=allow_list,
+                        include_memory=False,
+                    )
                 supporting_allow = set(batch_chunk_ids)
                 kept_claims, rejected_claims = filter_claims_to_supporting_chunks(
                     batch_answer.claims, supporting_allow

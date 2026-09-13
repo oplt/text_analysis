@@ -27,6 +27,9 @@ export function PageTabs<T extends string = string>({
                 (theme) => ({
                     borderBottom: `1px solid ${theme.palette.divider}`,
                     mb: 2,
+                    width: "100%",
+                    maxWidth: "100%",
+                    minWidth: 0,
                 }),
                 ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
             ]}
@@ -40,6 +43,8 @@ export function PageTabs<T extends string = string>({
                 aria-label={ariaLabel}
                 sx={{
                     minHeight: 40,
+                    maxWidth: "100%",
+                    "& .MuiTabs-scroller": { overflow: "auto !important" },
                     "& .MuiTab-root": {
                         minHeight: 40,
                         py: 1,
@@ -47,6 +52,7 @@ export function PageTabs<T extends string = string>({
                         fontSize: "0.8125rem",
                         fontWeight: 500,
                         textTransform: "none",
+                        flexShrink: 0,
                     },
                     "& .MuiTabs-indicator": {
                         height: 2,

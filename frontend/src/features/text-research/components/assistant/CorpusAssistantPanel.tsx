@@ -38,7 +38,7 @@ import {
     type AssistantThread,
 } from "../../../../api/textResearch";
 import { getQueryErrorMessage } from "../../../../utils/queryErrors";
-import { ResearchContextBar } from "../ResearchShared";
+import { ResearchContextBar } from "../ResearchContextBar";
 import { useResearchContext } from "../../hooks/useResearchContext";
 import { useRunEvents } from "../../hooks/useRunEvents";
 import { activeRunRefetchInterval } from "../../runPolling";
@@ -346,19 +346,19 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
 
     const scopeQuery = useQuery({
         queryKey: queryKeys.textResearch.assistantScope(corpusId),
-        queryFn: () => getAssistantScope(corpusId),
+        queryFn: ({ signal }) => getAssistantScope(corpusId, signal),
         enabled: Boolean(corpusId),
     });
 
     const threadsQuery = useQuery({
         queryKey: queryKeys.textResearch.assistantThreads(corpusId),
-        queryFn: () => listAssistantThreads(corpusId),
+        queryFn: ({ signal }) => listAssistantThreads(corpusId, signal),
         enabled: Boolean(corpusId),
     });
 
     const conversationQuery = useQuery({
         queryKey: queryKeys.textResearch.assistantConversation(threadId ?? ""),
-        queryFn: () => getAssistantConversation(threadId!),
+        queryFn: ({ signal }) => getAssistantConversation(threadId!, signal),
         enabled: Boolean(threadId),
     });
 
@@ -604,7 +604,7 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
                     <Tab value="ask" label="Ask" />
                     <Tab value="evidence" label="Evidence" />
                 </Tabs>
-                {mode === "context" ? <ResearchContextBar /> : null}
+                {mode === "context" ? <ResearchContextBar variant="summary" /> : null}
                 {mode !== "context" ? (
                     <Alert severity="info">Select a corpus to use Ask Corpus.</Alert>
                 ) : null}
@@ -656,7 +656,7 @@ export function CorpusAssistantPanel({ onOpenCitation }: Props) {
 
             {mode === "context" ? (
                 <Stack spacing={1.5}>
-                    <ResearchContextBar />
+                    <ResearchContextBar variant="summary" />
                     <ScopeEventAudit
                         events={(conversationQuery.data?.scope_events ?? []) as AssistantScopeEvent[]}
                     />

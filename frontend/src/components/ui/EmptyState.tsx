@@ -1,4 +1,5 @@
 import { Box, Stack, Typography } from "@mui/material";
+import { layoutSpacing } from "./layoutTokens";
 
 type EmptyStateProps = {
     icon: React.ReactNode;
@@ -11,8 +12,8 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
     return (
         <Box
             sx={{
-                px: 3,
-                py: 4,
+                px: layoutSpacing.cardPadding.default,
+                py: { xs: 3, md: 4 },
                 textAlign: "center",
             }}
         >
@@ -28,7 +29,9 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
                 >
                     {icon}
                 </Box>
-                <Typography variant="h6">{title}</Typography>
+                <Typography variant="h6" component="h2">
+                    {title}
+                </Typography>
                 <Typography color="text.secondary" sx={{ maxWidth: 460 }}>
                     {description}
                 </Typography>

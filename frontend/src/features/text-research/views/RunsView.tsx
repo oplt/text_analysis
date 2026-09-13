@@ -9,7 +9,6 @@ import {
     TableBody,
     TableCell,
     TableHead,
-    TablePagination,
     TableRow,
     Tooltip,
     Typography,
@@ -34,13 +33,17 @@ import {
     type ClonedRunParameters,
 } from "../../../api/textResearch";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
+import { HelpTooltip } from "../../../components/ui/HelpTooltip";
+import { DataTable } from "../../../components/ui/DataTable";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { ActiveRunActions } from "../components/ActiveRunActions";
 import { ResultsInspector } from "../components/ResearchCharts";
 import { FullResultsActions } from "../components/ResearchResults";
-import { RunStatusChip } from "../components/ResearchShared";
+import { ProvenanceDrawer } from "../components/ProvenanceDrawer";
+import { ProvenancePanel } from "../components/ProvenancePanel";
+import { RunStatusChip } from "../../../components/ui/RunStatusChip";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { reproduceActionState } from "../reproduceAction";
@@ -100,16 +103,18 @@ function ReproduceButton({
     return (
         <>
             {button}
-            {action.exact.enabled ? (
-                <Button
-                    size="small"
-                    startIcon={<RerunIcon />}
-                    disabled={pending}
-                    onClick={() => onReproduce(run.id, true)}
-                >
-                    Exact reproduce
-                </Button>
-            ) : null}
+            <Tooltip title={action.exact.reason ?? "Reproduce with frozen original inputs."}>
+                <span>
+                    <Button
+                        size="small"
+                        startIcon={<RerunIcon />}
+                        disabled={!action.exact.enabled || pending}
+                        onClick={() => onReproduce(run.id, true)}
+                    >
+                        Exact reproduce
+                    </Button>
+                </span>
+            </Tooltip>
         </>
     );
 }
@@ -174,7 +179,7 @@ export default function RunsView() {
     const compareReady = compareIds.length === 2;
     const compareQuery = useQuery({
         queryKey: ["text-research", "run-compare", compareIds[0], compareIds[1]],
-        queryFn: () => compareRuns(compareIds[0], compareIds[1]),
+        queryFn: ({ signal }) => compareRuns(compareIds[0], compareIds[1], signal),
         enabled: compareReady,
     });
 
@@ -242,7 +247,11 @@ export default function RunsView() {
     return (
         <Stack spacing={2}>
             <SectionCard
-                title="Runs & provenance"
+                title={
+                    <HelpTooltip termId="provenance" variant="label">
+                        Runs & provenance
+                    </HelpTooltip>
+                }
                 description="Inspect, reproduce, clone, cancel, and compare persisted research operations."
             >
                 <QueryBoundary
@@ -252,115 +261,137 @@ export default function RunsView() {
                     onRetry={() => void runsQuery.refetch()}
                 >
                     {runs.length ? (
-                        <>
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell padding="checkbox">Compare</TableCell>
-                                    <TableCell>Type</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell>Stage</TableCell>
-                                    <TableCell>Seed</TableCell>
-                                    <TableCell>Created</TableCell>
-                                    <TableCell align="right">Actions</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {runs.map((run) => {
-                                    const active = isActiveRunStatus(run.status);
-                                    const comparing = compareIds.includes(run.id);
-                                    return (
-                                        <TableRow
-                                            key={run.id}
-                                            selected={selectedRunId === run.id}
-                                            hover
-                                        >
-                                            <TableCell padding="checkbox">
-                                                <Checkbox
+                        <DataTable
+                            ariaLabel="Research runs"
+                            columns={[
+                                {
+                                    id: "compare",
+                                    label: "Compare",
+                                    padding: "checkbox",
+                                    hideable: false,
+                                    render: (run) => (
+                                        <Checkbox
+                                            size="small"
+                                            checked={compareIds.includes(run.id)}
+                                            onChange={() => toggleCompare(run.id)}
+                                            inputProps={{
+                                                "aria-label": `Compare run ${run.id}`,
+                                            }}
+                                        />
+                                    ),
+                                },
+                                {
+                                    id: "type",
+                                    label: "Type",
+                                    sortable: true,
+                                    sticky: "left",
+                                    getSortValue: (run) => run.run_type,
+                                    render: (run) => run.run_type,
+                                },
+                                {
+                                    id: "status",
+                                    label: "Status",
+                                    sortable: true,
+                                    getSortValue: (run) => run.status,
+                                    render: (run) => <RunStatusChip status={run.status} />,
+                                },
+                                {
+                                    id: "stage",
+                                    label: "Stage",
+                                    truncate: true,
+                                    getSortValue: (run) => run.progress_stage ?? "",
+                                    render: (run) => run.progress_stage ?? "—",
+                                },
+                                {
+                                    id: "seed",
+                                    label: "Seed",
+                                    hideable: true,
+                                    getSortValue: (run) => run.random_seed ?? "",
+                                    render: (run) => run.random_seed ?? "—",
+                                },
+                                {
+                                    id: "created",
+                                    label: "Created",
+                                    sortable: true,
+                                    getSortValue: (run) => Date.parse(run.created_at),
+                                    render: (run) =>
+                                        new Date(run.created_at).toLocaleString(),
+                                },
+                                {
+                                    id: "actions",
+                                    label: "Actions",
+                                    align: "right",
+                                    sticky: "right",
+                                    hideable: false,
+                                    render: (run) => {
+                                        const active = isActiveRunStatus(run.status);
+                                        return (
+                                            <Stack
+                                                direction="row"
+                                                spacing={0.5}
+                                                justifyContent="flex-end"
+                                                flexWrap="wrap"
+                                                useFlexGap
+                                                onClick={(event) => event.stopPropagation()}
+                                            >
+                                                <Button
                                                     size="small"
-                                                    checked={comparing}
-                                                    onChange={() => toggleCompare(run.id)}
-                                                    inputProps={{
-                                                        "aria-label": `Compare run ${run.id}`,
-                                                    }}
-                                                />
-                                            </TableCell>
-                                            <TableCell>{run.run_type}</TableCell>
-                                            <TableCell>
-                                                <RunStatusChip status={run.status} />
-                                            </TableCell>
-                                            <TableCell>
-                                                {run.progress_stage ?? "—"}
-                                            </TableCell>
-                                            <TableCell>
-                                                {run.random_seed ?? "—"}
-                                            </TableCell>
-                                            <TableCell>
-                                                {new Date(run.created_at).toLocaleString()}
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                <Stack
-                                                    direction="row"
-                                                    spacing={0.5}
-                                                    justifyContent="flex-end"
-                                                    flexWrap="wrap"
-                                                    useFlexGap
+                                                    startIcon={<InspectIcon />}
+                                                    onClick={() => setSelectedRunId(run.id)}
                                                 >
-                                                    <Button
-                                                        size="small"
-                                                        startIcon={<InspectIcon />}
-                                                        onClick={() => setSelectedRunId(run.id)}
-                                                    >
-                                                        Inspect
-                                                    </Button>
-                                                    <ReproduceButton
+                                                    Inspect
+                                                </Button>
+                                                <ReproduceButton
+                                                    run={run}
+                                                    pending={rerunMutation.isPending}
+                                                    onReproduce={(runId, exact) =>
+                                                        rerunMutation.mutate({
+                                                            runId,
+                                                            exact,
+                                                            runAsync:
+                                                                supportsAsyncRerun(run) &&
+                                                                rerunAsync,
+                                                        })
+                                                    }
+                                                />
+                                                <Button
+                                                    size="small"
+                                                    startIcon={<CloneIcon />}
+                                                    disabled={cloneMutation.isPending}
+                                                    onClick={() => cloneMutation.mutate(run.id)}
+                                                >
+                                                    Clone
+                                                </Button>
+                                                {active ? (
+                                                    <ActiveRunActions
                                                         run={run}
-                                                        pending={rerunMutation.isPending}
-                                                        onReproduce={(runId, exact) =>
-                                                            rerunMutation.mutate({
-                                                                runId,
-                                                                exact,
-                                                                runAsync: supportsAsyncRerun(run) && rerunAsync,
-                                                            })
-                                                        }
+                                                        projectId={ctx.projectId}
+                                                        corpusId={ctx.selectedCorpusId}
                                                     />
-                                                    <Button
-                                                        size="small"
-                                                        startIcon={<CloneIcon />}
-                                                        disabled={cloneMutation.isPending}
-                                                        onClick={() =>
-                                                            cloneMutation.mutate(run.id)
-                                                        }
-                                                    >
-                                                        Clone
-                                                    </Button>
-                                                    {active ? (
-                                                        <ActiveRunActions
-                                                            run={run}
-                                                            projectId={ctx.projectId}
-                                                            corpusId={ctx.selectedCorpusId}
-                                                        />
-                                                    ) : null}
-                                                </Stack>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
-                            <TablePagination
-                                component="div"
-                                count={runsTotal}
-                                page={page}
-                                onPageChange={(_, next) => setPage(next)}
-                                rowsPerPage={pageSize}
-                                onRowsPerPageChange={(event) => {
-                                    setPageSize(Number(event.target.value));
-                                    setPage(0);
-                                }}
-                                rowsPerPageOptions={RUNS_PAGE_SIZE_OPTIONS}
-                            />
-                        </>
+                                                ) : null}
+                                            </Stack>
+                                        );
+                                    },
+                                },
+                            ]}
+                            rows={runs}
+                            getRowId={(run) => run.id}
+                            density="compact"
+                            showDensityToggle
+                            showColumnVisibility
+                            stickyHeader
+                            stickyFirstColumn
+                            clientSort
+                            page={page}
+                            pageSize={pageSize}
+                            totalCount={runsTotal}
+                            onPageChange={setPage}
+                            onPageSizeChange={setPageSize}
+                            rowsPerPageOptions={RUNS_PAGE_SIZE_OPTIONS}
+                            selectedRowId={selectedRunId}
+                            onRowClick={(run) => setSelectedRunId(run.id)}
+                            emptyDescription="No persisted runs for this corpus yet."
+                        />
                     ) : (
                         <Typography color="text.secondary">
                             No persisted runs for this corpus yet.
@@ -399,6 +430,24 @@ export default function RunsView() {
                                         <RunStatusChip status={selectedRun.status} />
                                     </Typography>
                                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                        <ProvenanceDrawer
+                                            run={selectedRun}
+                                            detail={provenanceQuery.data}
+                                            fetchDetail={false}
+                                            actions={
+                                                exportPath ? (
+                                                    <Button
+                                                        size="small"
+                                                        startIcon={<DownloadIcon />}
+                                                        onClick={() =>
+                                                            window.open(exportPath, "_blank")
+                                                        }
+                                                    >
+                                                        Export JSON
+                                                    </Button>
+                                                ) : null
+                                            }
+                                        />
                                         {exportPath ? (
                                             <Button
                                                 size="small"
@@ -469,56 +518,18 @@ export default function RunsView() {
                                     </Alert>
                                 ) : (
                                     <Alert severity="info">
-                                        Replay re-executes the original normalized parameters.
-                                        Exact reproduce is available only when frozen inputs and
-                                        checksums were persisted.
+                                        Replay re-runs the same settings against the current
+                                        corpus and profiles. Exact reproduce uses frozen
+                                        preprocessing and checksums from the original experiment.
                                     </Alert>
                                 )}
 
-                                {provenanceQuery.data ? (
-                                    <ResultsInspector
-                                        title="provenance"
-                                        data={{
-                                            corpus_checksum:
-                                                provenanceQuery.data.provenance?.corpus_checksum,
-                                            pipeline_checksum:
-                                                provenanceQuery.data.provenance?.pipeline_checksum,
-                                            analysis_spec_hash:
-                                                provenanceQuery.data.reproduce?.analysis_spec_hash,
-                                            evidence_revision_hash:
-                                                provenanceQuery.data.provenance
-                                                    ?.evidence_revision_hash,
-                                            synthesis_provenance:
-                                                provenanceQuery.data.provenance
-                                                    ?.synthesis_provenance,
-                                            git_commit:
-                                                provenanceQuery.data.provenance?.git_commit,
-                                            container_image_digest:
-                                                provenanceQuery.data.provenance
-                                                    ?.container_image_digest,
-                                            package_versions:
-                                                provenanceQuery.data.provenance?.package_versions,
-                                            nlp_model: provenanceQuery.data.provenance?.nlp_model,
-                                            implementation_version:
-                                                provenanceQuery.data.provenance
-                                                    ?.implementation_version,
-                                            random_seeds:
-                                                provenanceQuery.data.provenance?.random_seeds,
-                                            parent_artifact_checksums:
-                                                provenanceQuery.data.provenance
-                                                    ?.parent_artifact_checksums,
-                                            analysis_specification:
-                                                provenanceQuery.data.reproduce
-                                                    ?.analysis_specification,
-                                            reproduce: provenanceQuery.data.reproduce,
-                                        }}
-                                    />
-                                ) : null}
-
-                                <ResultsInspector
-                                    title="parameters"
-                                    data={selectedRun.parameters ?? {}}
+                                <ProvenancePanel
+                                    run={selectedRun}
+                                    detail={provenanceQuery.data}
+                                    showRaw
                                 />
+
                                 <ResultsInspector
                                     title="metrics & results"
                                     data={{

@@ -162,13 +162,13 @@ class RunService(ResearchAccessMixin):
             )
 
         if cancelled.artifact_namespace:
-            from backend.modules.text_research.infrastructure.model_storage import ARTIFACT_ROOT
+            from backend.modules.text_research.infrastructure.model_storage import (
+                cleanup_run_namespace,
+            )
 
-            namespace = ARTIFACT_ROOT / cancelled.artifact_namespace
-            if namespace.is_dir():
-                import shutil
-
-                shutil.rmtree(namespace)
+            # Cancelled runs never successfully published reusable outputs, so
+            # wipe both tmp staging and any partially promoted artifacts.
+            cleanup_run_namespace(cancelled.artifact_namespace, include_published=True)
         await self.db.commit()
         refreshed = await self.repo.get_run(cancelled.id)
         assert refreshed is not None

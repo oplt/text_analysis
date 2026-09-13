@@ -1,4 +1,5 @@
 import { Box, Container, Stack, type Breakpoint, type SxProps, type Theme } from "@mui/material";
+import { layoutSpacing } from "./layoutTokens";
 
 export type PageWidth = "compact" | "readable" | "default" | "wide" | "full";
 
@@ -28,20 +29,23 @@ export function PageShell({
 }: PageShellProps) {
     const resolvedMaxWidth =
         maxWidth !== undefined ? maxWidth : width ? WIDTH_TO_BREAKPOINT[width] : "xl";
+    const padX = dense ? layoutSpacing.pagePaddingX.dense : layoutSpacing.pagePaddingX.default;
+    const padY = dense ? layoutSpacing.pagePaddingY.dense : layoutSpacing.pagePaddingY.default;
+    const gap = dense ? layoutSpacing.pageGap.dense : layoutSpacing.pageGap.default;
 
     return (
         <Box
             sx={[
                 {
                     position: "relative",
-                    px: { xs: 2, md: dense ? 2.5 : 3 },
-                    py: { xs: dense ? 2 : 2.5, md: dense ? 2.5 : 4 },
+                    px: padX,
+                    py: padY,
                 },
                 ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
             ]}
         >
             <Container maxWidth={resolvedMaxWidth} sx={{ px: "0 !important" }}>
-                <Stack spacing={dense ? { xs: 2, md: 2.5 } : { xs: 3, md: 4 }}>{children}</Stack>
+                <Stack spacing={gap}>{children}</Stack>
             </Container>
         </Box>
     );

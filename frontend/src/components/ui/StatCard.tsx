@@ -1,6 +1,7 @@
 import { Box, Paper, Skeleton, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { colors, fonts, radii } from "../../app/designTokens";
+import { fonts, radii } from "../../app/designTokens";
+import { surfaceCard } from "./themeSurfaces";
 
 type StatCardProps = {
     label: string;
@@ -26,8 +27,7 @@ export function StatCard({
                 borderRadius: `${radii.card}px`,
                 border: "none",
                 minHeight: "100%",
-                backgroundColor:
-                    theme.palette.mode === "dark" ? theme.palette.background.paper : colors.lightAsh,
+                backgroundColor: surfaceCard(theme),
                 boxShadow: "none",
             })}
         >
@@ -46,7 +46,7 @@ export function StatCard({
                             color: `${color}.main`,
                             backgroundColor: alpha(
                                 theme.palette[color].main,
-                                theme.palette.mode === "dark" ? 0.18 : 0.1
+                                theme.palette.mode === "dark" ? 0.22 : 0.1
                             ),
                         })}
                     >

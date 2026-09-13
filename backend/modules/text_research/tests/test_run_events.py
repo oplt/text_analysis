@@ -131,7 +131,7 @@ class RunEventStreamFallbackTests(unittest.IsolatedAsyncioTestCase):
         from types import SimpleNamespace
         from unittest.mock import patch
 
-        from backend.modules.text_research.api import routes
+        from backend.modules.text_research.api import run_routes
 
         queued = _run(status="queued")
         completed = _run(status="completed")
@@ -154,12 +154,12 @@ class RunEventStreamFallbackTests(unittest.IsolatedAsyncioTestCase):
         user = SimpleNamespace(id="user-1")
 
         with (
-            patch.object(routes, "SessionLocal", FakeSession),
-            patch.object(routes, "RunService", FakeRunService),
+            patch.object(run_routes, "SessionLocal", FakeSession),
+            patch.object(run_routes, "RunService", FakeRunService),
             patch("backend.core.config.settings.CACHE_ENABLED", False),
-            patch.object(routes, "_run_response", side_effect=lambda _run_obj: loads.pop(0)),
+            patch.object(run_routes, "_run_response", side_effect=lambda _run_obj: loads.pop(0)),
         ):
-            response = await routes.stream_run_events(run_id="run-1", current_user=user)
+            response = await run_routes.stream_run_events(run_id="run-1", current_user=user)
             chunks: list[str] = []
             async for chunk in response.body_iterator:
                 text = chunk.decode() if isinstance(chunk, bytes) else str(chunk)

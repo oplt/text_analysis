@@ -47,6 +47,20 @@ def _utcnow() -> datetime:
     return datetime.now(UTC)
 
 
+def _topic_preprocessing_config(
+    *,
+    preprocessing_config: dict[str, Any] | None = None,
+    profile_config: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Exact reproduce uses frozen config; replay uses the live profile snapshot."""
+    if isinstance(preprocessing_config, dict) and preprocessing_config:
+        return PreprocessingConfig.from_dict(preprocessing_config).to_dict()
+    config = PreprocessingConfig().to_dict()
+    if profile_config:
+        config.update(profile_config)
+    return config
+
+
 def _plan_holdout_split(
     units: list[Any],
     prepared: PreparedCorpusArtifact,
@@ -148,6 +162,7 @@ class TopicModelService(ResearchAccessMixin):
         algorithm: str = "lda",
         n_topics: int = 5,
         preprocessing_profile_id: str | None = None,
+        preprocessing_config: dict[str, Any] | None = None,
         max_iterations: int = 25,
         random_seed: int = 42,
         group_by: list[str] | None = None,
@@ -167,7 +182,9 @@ class TopicModelService(ResearchAccessMixin):
                 detail="No text units match the requested corpus/unit_type/filters",
             )
         resolved_embedding_identity = embedding_identity(
-            embedding_provider or "hashing", model_name=embedding_model_name
+            embedding_provider or "hashing",
+            model_name=embedding_model_name,
+            n_features=256,
         )
 
         params = {
@@ -175,6 +192,7 @@ class TopicModelService(ResearchAccessMixin):
             "algorithm": algorithm,
             "n_topics": n_topics,
             "preprocessing_profile_id": preprocessing_profile_id,
+            "preprocessing_config": preprocessing_config,
             "max_iterations": max_iterations,
             "random_seed": random_seed,
             "group_by": group_by,
@@ -200,6 +218,7 @@ class TopicModelService(ResearchAccessMixin):
                 "holdout_fraction": holdout_fraction,
                 "holdout_unit_ids": sorted(holdout_unit_ids or ()),
                 "embedding_provider": params["embedding_provider"],
+                "embedding_model_name": embedding_model_name,
                 "embedding_identity": resolved_embedding_identity,
                 "persist_embedding_artifacts": persist_embedding_artifacts,
             },
@@ -263,13 +282,22 @@ class TopicModelService(ResearchAccessMixin):
             )
             texts = [u.text for u in units]
 
-            config = PreprocessingConfig().to_dict()
-            if params.get("preprocessing_profile_id"):
+            profile_config = None
+            if not (
+                isinstance(params.get("preprocessing_config"), dict)
+                and params.get("preprocessing_config")
+            ) and params.get("preprocessing_profile_id"):
                 profile = await self.repo.get_preprocessing_profile(
                     params["preprocessing_profile_id"]
                 )
                 if profile is not None:
-                    config.update(loads(profile.config_json, {}))
+                    profile_config = loads(profile.config_json, {})
+            config = _topic_preprocessing_config(
+                preprocessing_config=params.get("preprocessing_config")
+                if isinstance(params.get("preprocessing_config"), dict)
+                else None,
+                profile_config=profile_config,
+            )
 
             run = await ensure_not_cancelled(self.repo, run)
             prepared = await prepare_texts_cached_async(
@@ -315,16 +343,20 @@ class TopicModelService(ResearchAccessMixin):
             await self.repo.update_run(run, progress_stage="saving")
             await self.db.commit()
             run = await ensure_not_cancelled(self.repo, run)
-            model_path, model_artifact_metadata = model_storage.save_artifact_with_metadata(
+            run.artifact_namespace = (
+                run.artifact_namespace
+                or model_storage.default_artifact_namespace(run.project_id, run.id)
+            )
+            staged_model_path, staged_model_metadata = model_storage.stage_artifact_with_metadata(
                 result["model"],
                 category="topic_models",
-                namespace=run.artifact_namespace,
+                artifact_namespace=run.artifact_namespace,
             )
-            vectorizer_path, vectorizer_artifact_metadata = (
-                model_storage.save_artifact_with_metadata(
+            staged_vectorizer_path, staged_vectorizer_metadata = (
+                model_storage.stage_artifact_with_metadata(
                     result["vectorizer"],
                     category="topic_vectorizers",
-                    namespace=run.artifact_namespace,
+                    artifact_namespace=run.artifact_namespace,
                 )
             )
 
@@ -341,13 +373,35 @@ class TopicModelService(ResearchAccessMixin):
                 }
                 for i, unit in enumerate(train_units)
             ]
-            distribution_path, distribution_artifact_metadata = (
-                model_storage.save_artifact_with_metadata(
+            staged_distribution_path, staged_distribution_metadata = (
+                model_storage.stage_artifact_with_metadata(
                     doc_topic_rows,
                     category="topic_distributions",
-                    namespace=run.artifact_namespace,
+                    artifact_namespace=run.artifact_namespace,
                 )
             )
+            run = await ensure_not_cancelled(self.repo, run)
+            model_path, model_artifact_metadata = model_storage.promote_staged_artifact(
+                staged_model_path,
+                category="topic_models",
+                artifact_namespace=run.artifact_namespace,
+                metadata=staged_model_metadata,
+            )
+            vectorizer_path, vectorizer_artifact_metadata = model_storage.promote_staged_artifact(
+                staged_vectorizer_path,
+                category="topic_vectorizers",
+                artifact_namespace=run.artifact_namespace,
+                metadata=staged_vectorizer_metadata,
+            )
+            distribution_path, distribution_artifact_metadata = (
+                model_storage.promote_staged_artifact(
+                    staged_distribution_path,
+                    category="topic_distributions",
+                    artifact_namespace=run.artifact_namespace,
+                    metadata=staged_distribution_metadata,
+                )
+            )
+            model_storage.cleanup_run_tmp(run.artifact_namespace)
             dominant_counts = {str(k): v for k, v in Counter(dominant).items()}
             topic_prevalence = {
                 str(topic_id): sum(float(distribution[topic_id]) for distribution in doc_topic)
@@ -385,6 +439,14 @@ class TopicModelService(ResearchAccessMixin):
                 progress_stage="completed",
                 completed_at=_utcnow(),
                 artifact_path=model_path,
+                parameters_json=dumps(
+                    {
+                        **params,
+                        "preprocessing_config": config,
+                        "corpus_checksum": prepared.corpus_checksum,
+                        "pipeline_checksum": prepared.pipeline_checksum,
+                    }
+                ),
                 metrics_json=dumps({"n_topics": result["n_topics"], **result["diagnostics"]}),
                 results_json=dumps(
                     {
@@ -416,8 +478,16 @@ class TopicModelService(ResearchAccessMixin):
             )
             await self.db.commit()
         except RunCancelledError:
+            model_storage.cleanup_run_namespace(
+                getattr(run, "artifact_namespace", None),
+                include_published=True,
+            )
             await self.db.commit()
         except Exception as exc:  # noqa: BLE001
+            model_storage.cleanup_run_namespace(
+                getattr(run, "artifact_namespace", None),
+                include_published=True,
+            )
             await fail_if_active(
                 self.repo,
                 run,
@@ -447,11 +517,15 @@ class TopicModelService(ResearchAccessMixin):
                 status_code=422,
                 detail="No text units match the requested corpus/unit_type/filters",
             )
-        config = PreprocessingConfig().to_dict()
+        profile_config = None
         if preprocessing_profile_id:
             profile = await self.repo.get_preprocessing_profile(preprocessing_profile_id)
             if profile is not None:
-                config.update(loads(profile.config_json, {}))
+                profile_config = loads(profile.config_json, {})
+        config = _topic_preprocessing_config(
+            preprocessing_config=None,
+            profile_config=profile_config,
+        )
         texts = [u.text for u in units]
         prepared = prepare_texts(
             texts,
@@ -549,13 +623,22 @@ class TopicModelService(ResearchAccessMixin):
             )
             if not units:
                 raise ValueError("No text units match the requested corpus/unit_type/filters")
-            config = PreprocessingConfig().to_dict()
-            if params.get("preprocessing_profile_id"):
+            profile_config = None
+            if not (
+                isinstance(params.get("preprocessing_config"), dict)
+                and params.get("preprocessing_config")
+            ) and params.get("preprocessing_profile_id"):
                 profile = await self.repo.get_preprocessing_profile(
                     params["preprocessing_profile_id"]
                 )
                 if profile is not None:
-                    config.update(loads(profile.config_json, {}))
+                    profile_config = loads(profile.config_json, {})
+            config = _topic_preprocessing_config(
+                preprocessing_config=params.get("preprocessing_config")
+                if isinstance(params.get("preprocessing_config"), dict)
+                else None,
+                profile_config=profile_config,
+            )
             prepared = prepare_texts(
                 [unit.text for unit in units],
                 config,
@@ -708,13 +791,22 @@ class TopicModelService(ResearchAccessMixin):
             )
             if not units:
                 raise ValueError("No text units match the requested corpus/unit_type/filters")
-            config = PreprocessingConfig().to_dict()
-            if params.get("preprocessing_profile_id"):
+            profile_config = None
+            if not (
+                isinstance(params.get("preprocessing_config"), dict)
+                and params.get("preprocessing_config")
+            ) and params.get("preprocessing_profile_id"):
                 profile = await self.repo.get_preprocessing_profile(
                     params["preprocessing_profile_id"]
                 )
                 if profile is not None:
-                    config.update(loads(profile.config_json, {}))
+                    profile_config = loads(profile.config_json, {})
+            config = _topic_preprocessing_config(
+                preprocessing_config=params.get("preprocessing_config")
+                if isinstance(params.get("preprocessing_config"), dict)
+                else None,
+                profile_config=profile_config,
+            )
             prepared = prepare_texts(
                 [unit.text for unit in units],
                 config,

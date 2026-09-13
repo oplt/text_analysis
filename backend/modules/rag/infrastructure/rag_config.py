@@ -38,7 +38,6 @@ class RagConfig:
     embedding_preprocessing_version: str = "unicode-nfc-v1"
     rerank_enabled: bool = False
     rerank_heuristic_enabled: bool = False
-    rerank_candidate_multiplier: int = 3
     rerank_max_depth: int = 40
     context_overlap_dedupe_threshold: float = 0.8
     context_ordering_policy: str = "relevance"
@@ -176,7 +175,6 @@ class RagConfig:
             score_threshold=settings.RAG_SCORE_THRESHOLD,
             rerank_enabled=settings.RAG_RERANK_ENABLED,
             rerank_heuristic_enabled=settings.RAG_RERANK_HEURISTIC_ENABLED,
-            rerank_candidate_multiplier=max(1, settings.RAG_RERANK_CANDIDATE_MULTIPLIER),
             rerank_max_depth=max(0, settings.RAG_RERANK_MAX_DEPTH),
             context_overlap_dedupe_threshold=min(
                 1.0, max(0.0, settings.RAG_CONTEXT_OVERLAP_DEDUPE_THRESHOLD)

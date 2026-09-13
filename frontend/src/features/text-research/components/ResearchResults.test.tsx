@@ -19,9 +19,9 @@ describe("ResearchResultsTable", () => {
         );
 
         expect(screen.getByText("zebra")).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Term" }));
+        fireEvent.click(screen.getByRole("button", { name: /Term/i }));
         expect(screen.getByText("apple")).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Next" }));
+        fireEvent.click(screen.getByRole("button", { name: "Go to next page" }));
         expect(screen.getByText("zebra")).toBeInTheDocument();
     });
 });

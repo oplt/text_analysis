@@ -32,9 +32,9 @@ class ResultArtifactAuthorizationTests(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(return_value=run),
             ),
             patch(
-                "backend.modules.text_research.infrastructure.artifact_store.ArtifactStore.load",
-                return_value={"rows": [{"id": "one"}], "total": 1},
-            ) as load,
+                "backend.modules.text_research.application.result_artifacts.load_full_run_results",
+                return_value=({"rows": [{"id": "one"}], "total": 1}, "export:full-results", None),
+            ),
         ):
             payload = await get_run_results_artifact(
                 "run-1",
@@ -43,7 +43,6 @@ class ResultArtifactAuthorizationTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertEqual(payload["total"], 1)
-        load.assert_called_once_with("export:full-results")
 
     async def test_results_does_not_load_artifact_when_run_access_is_denied(self) -> None:
         with (
@@ -52,8 +51,8 @@ class ResultArtifactAuthorizationTests(unittest.IsolatedAsyncioTestCase):
                 new=AsyncMock(side_effect=HTTPException(status_code=404, detail="not found")),
             ),
             patch(
-                "backend.modules.text_research.api.routes.ArtifactStore.load",
-            ) as load,
+                "backend.modules.text_research.application.result_artifacts.page_run_results",
+            ) as page,
             self.assertRaises(HTTPException) as ctx,
         ):
             await get_run_results(
@@ -62,7 +61,7 @@ class ResultArtifactAuthorizationTests(unittest.IsolatedAsyncioTestCase):
                 current_user=SimpleNamespace(id="user-1"),
             )
         self.assertEqual(ctx.exception.status_code, 404)
-        load.assert_not_called()
+        page.assert_not_called()
 
 
 class AnnotationStreamingTests(unittest.IsolatedAsyncioTestCase):

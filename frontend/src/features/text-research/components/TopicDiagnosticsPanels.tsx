@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import {
     Alert,
-    Box,
     Button,
     MenuItem,
     Stack,
@@ -13,9 +12,11 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
+import { formatDisplayValue } from "../../../components/ui/jsonDisplay";
 import { MetricCards, RankedBarChart, ScientificLineChart } from "./ResearchCharts";
 import { ResearchResultsTable } from "./ResearchResults";
-import { RunStatusChip } from "./ResearchShared";
+import { RunStatusChip } from "../../../components/ui/RunStatusChip";
+import { ScrollRegion } from "../../../components/ui/ScrollRegion";
 import type { AnalysisRun } from "../types";
 import { topicFilterPayload, type SharedTopicFilters } from "./topicFilters";
 
@@ -40,15 +41,8 @@ function formatMetric(value: number | null | undefined, digits = 3): string {
 }
 
 function formatCell(value: unknown): string {
-    if (value == null) return "—";
     if (typeof value === "number") return formatMetric(value);
-    if (typeof value === "string") return value || "—";
-    if (typeof value === "boolean") return String(value);
-    try {
-        return JSON.stringify(value);
-    } catch {
-        return String(value);
-    }
+    return formatDisplayValue(value);
 }
 
 type TopicTerm = { term?: string; weight?: number };
@@ -294,7 +288,7 @@ export function TopicKSweepView({
             {run?.error_message ? <Alert severity="error">{run.error_message}</Alert> : null}
             {chartSeries.length ? <ScientificLineChart series={chartSeries} height={280} /> : null}
             {rows.length ? (
-                <Box sx={{ overflowX: "auto" }}>
+                <ScrollRegion>
                     <Table size="small">
                         <TableHead>
                             <TableRow>
@@ -338,7 +332,7 @@ export function TopicKSweepView({
                             ))}
                         </TableBody>
                     </Table>
-                </Box>
+                </ScrollRegion>
             ) : run?.status === "completed" ? (
                 <Typography variant="body2" color="text.secondary">
                     No sweep rows in results.
@@ -477,7 +471,7 @@ export function TopicSeedStabilityView({
                 />
             ) : null}
             {pairwise.length ? (
-                <Box sx={{ overflowX: "auto" }}>
+                <ScrollRegion>
                     <Table size="small">
                         <TableHead>
                             <TableRow>
@@ -506,7 +500,7 @@ export function TopicSeedStabilityView({
                             ))}
                         </TableBody>
                     </Table>
-                </Box>
+                </ScrollRegion>
             ) : null}
             {Array.isArray(results?.per_seed_diagnostics) ? (
                 <ResearchResultsTable
@@ -767,7 +761,7 @@ export function TopicComparisonView({
             {compare ? (
                 <Stack spacing={2}>
                     <Typography variant="subtitle2">Changed parameters</Typography>
-                    <Box sx={{ overflowX: "auto" }}>
+                    <ScrollRegion>
                         <Table size="small">
                             <TableHead>
                                 <TableRow>
@@ -788,9 +782,9 @@ export function TopicComparisonView({
                                     ))}
                             </TableBody>
                         </Table>
-                    </Box>
+                    </ScrollRegion>
                     <Typography variant="subtitle2">Metrics</Typography>
-                    <Box sx={{ overflowX: "auto" }}>
+                    <ScrollRegion>
                         <Table size="small">
                             <TableHead>
                                 <TableRow>
@@ -813,12 +807,12 @@ export function TopicComparisonView({
                                 ))}
                             </TableBody>
                         </Table>
-                    </Box>
+                    </ScrollRegion>
                 </Stack>
             ) : null}
 
             {runA?.status === "completed" && runB?.status === "completed" ? (
-                <Box sx={{ overflowX: "auto" }}>
+                <ScrollRegion>
                     <Typography variant="subtitle2" gutterBottom>
                         Topic terms side-by-side
                     </Typography>
@@ -840,7 +834,7 @@ export function TopicComparisonView({
                             ))}
                         </TableBody>
                     </Table>
-                </Box>
+                </ScrollRegion>
             ) : null}
         </Stack>
     );

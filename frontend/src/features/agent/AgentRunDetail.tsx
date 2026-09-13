@@ -1,23 +1,38 @@
 import { Alert, Box, Chip, Stack, Typography } from "@mui/material";
 import { formatAgentCostMicros, type AgentRun } from "../../api/agent";
+import { AdvancedSettings } from "../../components/ui/AdvancedSettings";
+import { JsonBlock } from "../../components/ui/JsonBlock";
+import { KeyValueList } from "../../components/ui/KeyValueList";
 import { SectionCard } from "../../components/ui/SectionCard";
+import { recordToKeyValueItems } from "../../components/ui/jsonDisplay";
+import { buildAgentTraceSteps, formatElapsed } from "./agentTraceModel";
 
 type AgentRunDetailProps = {
     run: AgentRun;
 };
 
+/** Compact run summary used outside the tabbed Agent workspace. */
 export function AgentRunDetail({ run }: AgentRunDetailProps) {
+    const steps = buildAgentTraceSteps(run).slice(0, 4);
+    const outputItems = recordToKeyValueItems(run.output_json);
     return (
         <SectionCard
             title="Run detail"
-            description="Response, retrieval/memory degradation, provider usage, and identifiers."
+            description="Structured summary — prefer the Agent Trace / Sources / Output tabs for full inspection."
         >
             <Stack spacing={1.5}>
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                     <Chip size="small" label={`run ${run.id}`} />
-                    <Chip size="small" variant="outlined" label={`memory ${run.memory_run_id}`} />
-                    <Chip size="small" color={run.status === "completed" ? "success" : "default"} label={run.status} />
-                    <Chip size="small" variant="outlined" label={`${run.provider_key}/${run.model_name}`} />
+                    <Chip
+                        size="small"
+                        color={run.status === "completed" ? "success" : "default"}
+                        label={run.status}
+                    />
+                    <Chip
+                        size="small"
+                        variant="outlined"
+                        label={`${run.provider_key}/${run.model_name}`}
+                    />
                 </Stack>
 
                 {(run.retrieval_degraded || run.memory_degraded || run.error_message) && (
@@ -32,47 +47,42 @@ export function AgentRunDetail({ run }: AgentRunDetailProps) {
 
                 <Box>
                     <Typography variant="subtitle2" gutterBottom>
-                        Response
+                        Trace preview
                     </Typography>
-                    <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
-                        {run.output_text ||
-                            (run.output_json ? JSON.stringify(run.output_json, null, 2) : "—")}
-                    </Typography>
+                    {steps.map((step) => (
+                        <Typography key={step.id} variant="body2" color="text.secondary">
+                            {step.title}
+                            {step.durationMs != null ? ` · ${formatElapsed(step.durationMs)}` : ""}
+                        </Typography>
+                    ))}
                 </Box>
-
-                <Typography variant="body2" color="text.secondary">
-                    Latency: {run.latency_ms ?? "—"} ms · Tokens: {run.total_tokens} (in{" "}
-                    {run.input_tokens} / out {run.output_tokens}) · Est. cost:{" "}
-                    {formatAgentCostMicros(run.estimated_cost_micros)}
-                </Typography>
 
                 <Box>
                     <Typography variant="subtitle2" gutterBottom>
-                        Retrieved chunks
+                        Output
                     </Typography>
-                    {run.retrieved_chunk_ids.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary">
-                            None
+                    {run.output_text?.trim() ? (
+                        <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+                            {run.output_text}
                         </Typography>
+                    ) : outputItems.length ? (
+                        <KeyValueList dense items={outputItems} />
                     ) : (
-                        <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-                            {run.retrieved_chunk_ids.map((chunkId) => (
-                                <Chip key={chunkId} size="small" variant="outlined" label={chunkId.slice(0, 12)} />
-                            ))}
-                        </Stack>
-                    )}
-                    {run.injection_chunks_filtered > 0 ? (
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-                            Filtered {run.injection_chunks_filtered} injection chunk(s)
+                        <Typography variant="body2" color="text.secondary">
+                            —
                         </Typography>
+                    )}
+                    {run.output_json ? (
+                        <AdvancedSettings title="Raw JSON" sx={{ mt: 1 }}>
+                            <JsonBlock data={run.output_json} />
+                        </AdvancedSettings>
                     ) : null}
                 </Box>
 
-                {run.retrieval_query ? (
-                    <Typography variant="caption" color="text.secondary">
-                        Retrieval query: {run.retrieval_query}
-                    </Typography>
-                ) : null}
+                <Typography variant="body2" color="text.secondary">
+                    Latency: {run.latency_ms ?? "—"} ms · Tokens: {run.total_tokens} · Est. cost:{" "}
+                    {formatAgentCostMicros(run.estimated_cost_micros)}
+                </Typography>
             </Stack>
         </SectionCard>
     );

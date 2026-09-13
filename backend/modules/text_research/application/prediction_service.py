@@ -79,6 +79,9 @@ def _prediction_row(
     }
 
 
+SELECTION_SNAPSHOT_VERSION = 1
+
+
 def freeze_prediction_selection(
     *,
     corpus_id: str,
@@ -87,25 +90,54 @@ def freeze_prediction_selection(
     filters: dict[str, Any] | None,
     document_ids: list[str] | None,
     annotated_unit_ids: set[str] | None,
+    corpus_revision_hash: str | None = None,
 ) -> dict[str, Any]:
-    """Immutable selection identity for reproducible / restartable prediction."""
-    annotated_sorted = sorted(annotated_unit_ids or ())
-    # SHA-256 of the empty payload is a stable identity for an empty freeze.
-    annotated_hash = hashlib.sha256(",".join(annotated_sorted).encode("utf-8")).hexdigest()
-    doc_ids = sorted(document_ids or ())
-    payload = {
+    """Immutable selection identity for reproducible / restartable prediction.
+
+    Empty annotation sets are first-class: callers must distinguish ``None``
+    (annotation membership not applicable) from ``set()`` (frozen empty set)
+    via the ``annotated_unit_ids`` key on the persisted snapshot, never via
+    truthiness of the ID list itself.
+    """
+    # Do not use ``annotated_unit_ids or ()`` — empty set is falsy but intentional.
+    annotated_sorted = sorted(annotated_unit_ids) if annotated_unit_ids is not None else None
+    annotated_hash = (
+        hashlib.sha256(",".join(annotated_sorted).encode("utf-8")).hexdigest()
+        if annotated_sorted is not None
+        else None
+    )
+    # ``None`` means unfiltered corpus scope; ``[]`` means explicitly no documents.
+    doc_ids = sorted(document_ids) if document_ids is not None else None
+    doc_hash = (
+        hashlib.sha256(",".join(doc_ids).encode("utf-8")).hexdigest()
+        if doc_ids is not None
+        else "ALL"
+    )
+    payload: dict[str, Any] = {
+        "snapshot_version": SELECTION_SNAPSHOT_VERSION,
+        "frozen": True,
         "corpus_id": corpus_id,
         "unit_type": unit_type,
         "only_unannotated": bool(only_unannotated),
         "filters": filters or {},
         "document_ids": doc_ids,
+        "document_ids_hash": doc_hash,
         "annotated_unit_ids_hash": annotated_hash,
-        "annotated_unit_count": len(annotated_sorted),
+        "annotated_unit_count": len(annotated_sorted) if annotated_sorted is not None else None,
+        "corpus_revision_hash": corpus_revision_hash,
     }
     payload["selection_hash"] = hashlib.sha256(
         json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
     ).hexdigest()
     return payload
+
+
+def selection_snapshot_is_frozen(params: dict[str, Any]) -> bool:
+    """True when a selection snapshot was persisted (including empty freezes)."""
+    snapshot = params.get("selection_snapshot")
+    return isinstance(snapshot, dict) and (
+        snapshot.get("frozen") is True or "selection_hash" in snapshot
+    )
 
 
 class PredictionService(ResearchAccessMixin):
@@ -177,30 +209,52 @@ class PredictionService(ResearchAccessMixin):
             filters = params.get("filters") or {}
             documents = await self.repo.list_documents(model.corpus_id)
             filtered_docs = _apply_document_filters(documents, filters)
-            doc_ids = [d.id for d in filtered_docs] if filters else None
+            live_doc_ids = [d.id for d in filtered_docs] if filters else None
+
+            frozen_snapshot = (
+                params.get("selection_snapshot") if selection_snapshot_is_frozen(params) else None
+            )
 
             # Freeze only-unannotated membership at run start for reproducibility.
+            # Detect snapshot presence structurally — empty ``annotated_unit_ids: []``
+            # must still win over a live re-query after new annotations appear.
             annotated_unit_ids: set[str] | None = None
             if params.get("only_unannotated"):
-                frozen = params.get("selection_snapshot") or {}
-                if "annotated_unit_ids" in frozen:
-                    annotated_unit_ids = set(frozen["annotated_unit_ids"])
+                if isinstance(frozen_snapshot, dict) and "annotated_unit_ids" in frozen_snapshot:
+                    annotated_unit_ids = set(frozen_snapshot["annotated_unit_ids"] or ())
                 else:
                     annotated_unit_ids = await self.repo.list_annotated_text_unit_ids(
                         model.corpus_id
                     )
 
-            selection = freeze_prediction_selection(
-                corpus_id=model.corpus_id,
-                unit_type=params["unit_type"],
-                only_unannotated=bool(params.get("only_unannotated")),
-                filters=filters,
-                document_ids=doc_ids,
-                annotated_unit_ids=annotated_unit_ids,
+            if isinstance(frozen_snapshot, dict) and "document_ids" in frozen_snapshot:
+                doc_ids = frozen_snapshot.get("document_ids")
+            else:
+                doc_ids = live_doc_ids
+
+            corpus_revision = getattr(model, "training_dataset_snapshot_id", None)
+            if isinstance(frozen_snapshot, dict) and frozen_snapshot.get("corpus_revision_hash"):
+                corpus_revision = frozen_snapshot.get("corpus_revision_hash")
+
+            selection = (
+                dict(frozen_snapshot)
+                if isinstance(frozen_snapshot, dict) and frozen_snapshot.get("selection_hash")
+                else freeze_prediction_selection(
+                    corpus_id=model.corpus_id,
+                    unit_type=params["unit_type"],
+                    only_unannotated=bool(params.get("only_unannotated")),
+                    filters=filters,
+                    document_ids=doc_ids,
+                    annotated_unit_ids=annotated_unit_ids,
+                    corpus_revision_hash=str(corpus_revision) if corpus_revision else None,
+                )
             )
-            # Persist snapshot once (restart-safe); keep annotated ids only when needed.
-            if not params.get("selection_snapshot"):
+            # Persist snapshot once (restart-safe). Always record annotated_unit_ids
+            # when only_unannotated, including the empty list.
+            if not selection_snapshot_is_frozen(params):
                 snapshot = dict(selection)
+                snapshot["frozen"] = True
+                snapshot["snapshot_version"] = SELECTION_SNAPSHOT_VERSION
                 if annotated_unit_ids is not None:
                     snapshot["annotated_unit_ids"] = sorted(annotated_unit_ids)
                 params = {**params, "selection_snapshot": snapshot}
@@ -257,6 +311,9 @@ class PredictionService(ResearchAccessMixin):
                 for row in rows:
                     row["prediction_set_id"] = prediction_set.id
                 await self.repo.bulk_upsert_predictions(rows)
+                # Commit each staged batch so a later discard/publish is a small
+                # transaction, not one giant uncommitted write.
+                await self.db.commit()
                 predicted_unit_ids.extend(unit.id for unit in batch_units)
                 units_predicted += len(batch_units)
 

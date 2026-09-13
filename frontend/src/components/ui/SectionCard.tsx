@@ -1,6 +1,7 @@
 import { Box, Paper, Stack, Typography, type SxProps, type Theme } from "@mui/material";
-import { alpha } from "@mui/material/styles";
-import { colors, radii } from "../../app/designTokens";
+import { radii } from "../../app/designTokens";
+import { headingHierarchy, layoutSpacing } from "./layoutTokens";
+import { surfaceCard, surfaceMuted } from "./themeSurfaces";
 
 type SectionCardVariant = "default" | "subtle" | "outlined" | "flat";
 
@@ -16,15 +17,12 @@ type SectionCardProps = {
 };
 
 function variantSx(variant: SectionCardVariant, theme: Theme): SxProps<Theme> {
-    const isDark = theme.palette.mode === "dark";
     switch (variant) {
         case "subtle":
             return {
                 border: "none",
                 boxShadow: "none",
-                backgroundColor: isDark
-                    ? alpha(theme.palette.common.white, 0.03)
-                    : colors.lightAsh,
+                backgroundColor: surfaceMuted(theme),
             };
         case "outlined":
             return {
@@ -44,7 +42,7 @@ function variantSx(variant: SectionCardVariant, theme: Theme): SxProps<Theme> {
             return {
                 border: "none",
                 boxShadow: "none",
-                backgroundColor: isDark ? theme.palette.background.paper : colors.lightAsh,
+                backgroundColor: surfaceCard(theme),
             };
     }
 }
@@ -59,7 +57,12 @@ export function SectionCard({
     sx,
     contentSx,
 }: SectionCardProps) {
-    const padding = variant === "flat" ? 0 : compact ? { xs: 1.5, md: 2 } : { xs: 2.5, md: 3 };
+    const padding =
+        variant === "flat"
+            ? 0
+            : compact
+              ? layoutSpacing.cardPadding.compact
+              : layoutSpacing.cardPadding.default;
 
     return (
         <Paper
@@ -81,12 +84,22 @@ export function SectionCard({
                     justifyContent="space-between"
                     alignItems={{ xs: "flex-start", sm: "flex-start" }}
                     spacing={compact ? 1 : 2}
-                    sx={{ mb: compact ? 1.5 : 2.5, flexShrink: 0 }}
+                    sx={{
+                        mb: compact
+                            ? layoutSpacing.headerMarginBottom.compact
+                            : layoutSpacing.headerMarginBottom.default + 0.5,
+                        flexShrink: 0,
+                    }}
                 >
                     <Box sx={{ minWidth: 0, flex: 1 }}>
                         {title && (
                             <Typography
-                                variant={compact ? "subtitle1" : "h5"}
+                                variant={
+                                    compact
+                                        ? headingHierarchy.sectionCompact
+                                        : headingHierarchy.section
+                                }
+                                component="h2"
                                 sx={{ mb: description ? 0.5 : 0 }}
                             >
                                 {title}
@@ -107,6 +120,8 @@ export function SectionCard({
                             sx={{
                                 flexShrink: 0,
                                 width: { xs: "100%", sm: "auto" },
+                                display: "flex",
+                                justifyContent: { xs: "flex-start", sm: "flex-end" },
                                 "& > *": { maxWidth: "100%" },
                             }}
                         >

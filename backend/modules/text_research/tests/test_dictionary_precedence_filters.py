@@ -70,7 +70,7 @@ class DictionaryPrecedenceTests(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "backend.modules.text_research.application.quantitative_analysis_service._prepare_with_identity",
+                "backend.modules.text_research.application.lexical_analysis_service._prepare_with_identity",
                 new=AsyncMock(
                     return_value=(
                         SimpleNamespace(
@@ -97,7 +97,7 @@ class DictionaryPrecedenceTests(unittest.IsolatedAsyncioTestCase):
                 side_effect=fake_match,
             ),
             patch(
-                "backend.modules.text_research.application.quantitative_analysis_service.asyncio.to_thread",
+                "backend.modules.text_research.application.lexical_analysis_service.asyncio.to_thread",
                 new=AsyncMock(side_effect=lambda fn, *a, **k: fn(*a, **k)),
             ),
         ):

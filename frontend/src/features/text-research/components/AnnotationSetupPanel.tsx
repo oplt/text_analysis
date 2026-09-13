@@ -19,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSnackbar } from "../../../app/snackbarContext";
 import { listUserDirectory } from "../../../api/users";
 import { assignCorpusAnnotationTasks, getDashboardSummary } from "../../../api/textResearch";
+import { HelpTooltip } from "../../../components/ui/HelpTooltip";
 import { queryKeys } from "../../../config/queryKeys";
 import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
@@ -184,7 +185,16 @@ export function AnnotationSetupPanel() {
             </Stack>
 
             <Stack spacing={1}>
-                <Typography variant="subtitle2">Annotation mode</Typography>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Typography variant="subtitle2">Annotation mode</Typography>
+                    <HelpTooltip
+                        termId={
+                            annotationMode === "ai_assisted"
+                                ? "ai_assisted_coding"
+                                : "blind_reliability"
+                        }
+                    />
+                </Stack>
                 <RadioGroup
                     value={annotationMode}
                     onChange={(event) => setAnnotationMode(event.target.value as AnnotationMode)}
@@ -223,9 +233,10 @@ export function AnnotationSetupPanel() {
                         until the campaign is explicitly released.
                     </Alert>
                 ) : (
-                    <Alert severity="info">
+                    <Alert severity="warning">
                         AI-assisted coding may show model suggestions alongside the codebook. Suggestions
-                        are never auto-applied — annotators decide each label.
+                        are never auto-applied — annotators decide each label. Prefer blind reliability
+                        when measuring agreement.
                     </Alert>
                 )}
                 <TextField

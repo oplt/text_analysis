@@ -1,14 +1,15 @@
 import type { ReactNode } from "react";
-import { Alert, Stack, Typography } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
+import { RunStatusPanel } from "../../../components/ui/RunStatusPanel";
+import { formatDisplayValue } from "../../../components/ui/jsonDisplay";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { isActiveRunStatus } from "../runPolling";
 import type { AnalysisRun } from "../types";
 import { ActiveRunActions } from "./ActiveRunActions";
 import { ResultsInspector } from "./ResearchCharts";
 import { ResearchResultsTable } from "./ResearchResults";
-import { RunStatusChip } from "./ResearchShared";
 import { asRecord } from "./advancedAnalysisUtils";
 
 function ResultOutput({ run }: { run: AnalysisRun | undefined }) {
@@ -29,26 +30,29 @@ function ResultOutput({ run }: { run: AnalysisRun | undefined }) {
               .map((key) => ({
                   id: key,
                   label: key.replaceAll("_", " "),
-                  value: (row: Record<string, unknown>) => {
-                      const value = row[key];
-                      return typeof value === "object" ? JSON.stringify(value) : String(value ?? "");
-                  },
+                  value: (row: Record<string, unknown>) => formatDisplayValue(row[key]),
               }))
         : [];
     return (
         <Stack spacing={1.5}>
-            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                <Typography variant="body2">
-                    Run <RunStatusChip status={run.status} />{" "}
-                    {run.progress_stage ? ` · ${run.progress_stage}` : ""}
-                </Typography>
-                <ActiveRunActions
-                    run={run}
-                    projectId={ctx.projectId}
-                    corpusId={ctx.selectedCorpusId}
-                />
-            </Stack>
-            {run.error_message ? <Alert severity="error">{run.error_message}</Alert> : null}
+            <RunStatusPanel
+                dense
+                title="Analysis run"
+                status={run.status}
+                runId={run.id}
+                stage={run.progress_stage}
+                startedAt={run.started_at}
+                completedAt={run.completed_at}
+                createdAt={run.created_at}
+                errorMessage={run.error_message}
+                actions={
+                    <ActiveRunActions
+                        run={run}
+                        projectId={ctx.projectId}
+                        corpusId={ctx.selectedCorpusId}
+                    />
+                }
+            />
             {isActiveRunStatus(run.status) ? (
                 <Typography color="text.secondary">Analysis in progress…</Typography>
             ) : null}

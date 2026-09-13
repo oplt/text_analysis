@@ -1,50 +1,45 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Alert,
     Box,
     Button,
     Drawer,
-    IconButton,
-    Stack,
-    Typography,
     useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import {
-    Close as CloseIcon,
-    ChatBubbleOutline as AskIcon,
-} from "@mui/icons-material";
+import { ChatBubbleOutline as AskIcon } from "@mui/icons-material";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { ContextInspector } from "../../../components/ui/ContextInspector";
 import { PageShell } from "../../../components/ui/PageShell";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
-import { SectionCard } from "../../../components/ui/SectionCard";
+import { WorkspaceSplit } from "../../../components/ui/WorkspaceSplit";
+import { getProject } from "../../../api/projects";
+import { queryKeys } from "../../../config/queryKeys";
 import { CorpusAssistantPanel } from "../components/assistant/CorpusAssistantPanel";
 import { ResearchMemosPanel } from "../components/ResearchMemosPanel";
 import { CorpusDocumentDrawer } from "../components/CorpusDocumentDrawer";
+import { ResearchContextBar } from "../components/ResearchContextBar";
+import { ResearchNavBar } from "../components/ResearchNavBar";
 import { ResearchWorkflowDrawer } from "../components/ResearchWorkflowDrawer";
-import { ResearchWorkflowStrip } from "../components/ResearchWorkflowStrip";
 import { ResearchProvider, useResearchContext } from "../hooks/useResearchContext";
 import { useResearchWorkflow } from "../hooks/useResearchWorkflow";
 import { setLastResearchProjectId } from "../researchProjectStorage";
 import { RESEARCH_TABS } from "../types";
 import {
+    pathForNavItem,
+    resolveResearchNav,
+    type ResearchNavGroupId,
+    type ResearchNavItem,
+} from "../researchNavigation";
+import {
     RESEARCH_WORKFLOW_STAGES,
     stageIdFromPath,
     type WorkflowStageState,
 } from "../workflow";
+import { stageActionLabel } from "../workflowDisplayModel";
 import { getDocument, type AssistantCitation } from "../../../api/textResearch";
 import type { CorpusDocument } from "../types";
-
-const ANALYSIS_SUBLINKS = [
-    { tab: "overview", label: "Corpus tools" },
-    { tab: "statistical", label: "Statistical models" },
-    { tab: "measurement", label: "Measurement" },
-] as const;
-
-const ANALYSIS_RELATED_LINKS = [
-    { path: "dictionaries", label: "Dictionaries" },
-    { path: "comparative", label: "Comparative prevalence" },
-] as const;
 
 function routeFromPath(pathname: string, projectId: string): string {
     const prefix = `/research/${projectId}/`;
@@ -61,12 +56,16 @@ function ResearchLayoutInner() {
     const navigate = useNavigate();
     const location = useLocation();
     const theme = useTheme();
-    const isWide = useMediaQuery(theme.breakpoints.up("xl"));
-    const showInlineContext = isWide;
+    const showInlineContext = useMediaQuery(theme.breakpoints.up("lg"));
     const ctx = useResearchContext();
     const activeRoute = routeFromPath(location.pathname, projectId);
     const activeStageId = stageIdFromPath(location.pathname, projectId);
     const { stages } = useResearchWorkflow(activeRoute);
+    const resolvedNav = useMemo(
+        () => resolveResearchNav(location.pathname, projectId, location.search),
+        [location.pathname, location.search, projectId]
+    );
+    const [browseGroupId, setBrowseGroupId] = useState<ResearchNavGroupId | null>(null);
     const [workflowOpen, setWorkflowOpen] = useState(false);
     const [citationDoc, setCitationDoc] = useState<CorpusDocument | null>(null);
     const [citationSnippet, setCitationSnippet] = useState<string | null>(null);
@@ -78,6 +77,13 @@ function ResearchLayoutInner() {
         "parsed_document" | "page" | "canonical_document" | null
     >(null);
     const [citationOpenError, setCitationOpenError] = useState<string | null>(null);
+    const [citationCoordinate, setCitationCoordinate] = useState<AssistantCitation | null>(null);
+
+    const projectQuery = useQuery({
+        queryKey: queryKeys.projects.detail(projectId),
+        queryFn: () => getProject(projectId),
+        enabled: Boolean(projectId),
+    });
 
     useEffect(() => {
         if (projectId) {
@@ -85,12 +91,25 @@ function ResearchLayoutInner() {
         }
     }, [projectId]);
 
+    useEffect(() => {
+        setBrowseGroupId(null);
+    }, [location.pathname, location.search]);
+
+    const nextStage =
+        stages.find((stage) => stage.status === "current" || stage.status === "warning") ??
+        stages.find((stage) => stage.status === "incomplete");
+
     function handleSelectStage(stage: WorkflowStageState) {
         if (stage.status === "blocked") {
             openWorkflow();
             return;
         }
         navigate(`/research/${projectId}/${stage.route}`);
+    }
+
+    function handleNavigateItem(item: ResearchNavItem) {
+        navigate(pathForNavItem(projectId, item));
+        setBrowseGroupId(null);
     }
 
     async function handleOpenCitation(citation: AssistantCitation) {
@@ -113,6 +132,7 @@ function ResearchLayoutInner() {
             setCitationCharEnd(citation.char_end ?? null);
             setCitationSourceSpanIds(citation.source_span_ids ?? null);
             setCitationOffsetScope(citation.offset_scope ?? null);
+            setCitationCoordinate(citation);
         } catch {
             setCitationOpenError(
                 "historical_source_unavailable: could not open this citation source."
@@ -131,181 +151,83 @@ function ResearchLayoutInner() {
     }
 
     const contextDrawerOpen = ctx.askPanelOpen && !showInlineContext;
+    const projectName = projectQuery.data?.name ?? projectId;
 
-    const contextPanel = (
-        <SectionCard
-            title="Ask Corpus"
-            description="Context, corpus questions, and retrieved evidence."
-            variant="subtle"
-            compact
-            sx={{ mt: 0 }}
-            action={
-                !showInlineContext ? (
-                    <IconButton
-                        aria-label="Close Ask Corpus panel"
-                        size="small"
-                        onClick={() => ctx.setAskPanelOpen(false)}
-                    >
-                        <CloseIcon fontSize="small" />
-                    </IconButton>
-                ) : undefined
-            }
-        >
-            <CorpusAssistantPanel onOpenCitation={handleOpenCitation} />
-        </SectionCard>
+    const askCorpusBody = <CorpusAssistantPanel onOpenCitation={handleOpenCitation} />;
+
+    const workspaceActions = (
+        <>
+            {nextStage ? (
+                <Button
+                    size="small"
+                    variant="contained"
+                    onClick={() => handleSelectStage(nextStage)}
+                    disabled={nextStage.status === "blocked"}
+                >
+                    Next: {stageActionLabel(nextStage)}
+                </Button>
+            ) : null}
+            {!showInlineContext ? (
+                <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<AskIcon />}
+                    onClick={openAskCorpus}
+                >
+                    Ask Corpus
+                </Button>
+            ) : null}
+        </>
     );
 
     return (
         <PageShell width="full" dense>
-            {!showInlineContext ? (
-                <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<AskIcon />}
-                        onClick={openAskCorpus}
-                    >
-                        Ask Corpus
-                    </Button>
-                </Stack>
-            ) : null}
+            <ResearchContextBar projectName={projectName} actions={workspaceActions} />
 
-            <Box sx={{ mb: 1.5 }}>
-                <ResearchWorkflowStrip
-                    stages={stages}
-                    activeStageId={
-                        activeStageId && activeStageId !== "dashboard" ? activeStageId : false
-                    }
-                    onSelectStage={handleSelectStage}
-                    onOpenWorkflow={openWorkflow}
-                />
-            </Box>
+            <ResearchNavBar
+                projectId={projectId}
+                resolved={resolvedNav}
+                browseGroupId={browseGroupId}
+                onBrowseGroup={setBrowseGroupId}
+                onNavigate={handleNavigateItem}
+                onOpenAll={openWorkflow}
+            />
 
-            {!workflowOpen ? (
-                <Button
-                    variant="contained"
-                    size="small"
-                    onClick={openWorkflow}
-                    aria-label="Open all workflow stages"
-                    sx={{
-                        position: "fixed",
-                        right: { xs: 12, md: 16 },
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        zIndex: (t) => t.zIndex.speedDial,
-                        writingMode: "vertical-rl",
-                        textOrientation: "mixed",
-                        minWidth: 40,
-                        px: 1,
-                        py: 1.5,
-                        borderRadius: 2,
-                        boxShadow: 3,
-                        letterSpacing: 0.04,
-                    }}
-                >
-                    
-                    
-                    Stages
-                </Button>
-            ) : null}
-
-            <Box
-                sx={{
-                    display: "grid",
-                    gridTemplateColumns: {
-                        xs: "minmax(0, 1fr)",
-                        xl: "minmax(0, 1fr) minmax(380px, 440px)",
-                    },
-                    gap: { xs: 1.5, lg: 2 },
-                    alignItems: "start",
-                }}
-            >
-                <Box component="main" sx={{ minWidth: 0 }}>
-                    {ctx.corporaError ? (
-                        <Alert severity="error" sx={{ mb: 2 }}>
-                            Failed to load corpora for this project.
-                        </Alert>
-                    ) : null}
-                    {activeRoute === "analysis" ? (
-                        <Stack
-                            direction="row"
-                            spacing={1}
-                            flexWrap="wrap"
-                            useFlexGap
-                            sx={{ mb: 1.5 }}
-                            aria-label="Analysis section"
+            <WorkspaceSplit
+                ratio="8-4"
+                sideFrom="lg"
+                side={
+                    showInlineContext ? (
+                        <ContextInspector
+                            title="Ask Corpus"
+                            description="Context, corpus questions, and retrieved evidence."
+                            sticky
+                            sx={{ width: "100%", maxWidth: "none", minWidth: 0 }}
                         >
-                            <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                sx={{ alignSelf: "center", mr: 0.5 }}
-                            >
-                                Overview
-                            </Typography>
-                            {ANALYSIS_SUBLINKS.map((link) => (
-                                <Button
-                                    key={link.tab}
-                                    size="small"
-                                    variant={
-                                        location.search.includes(`tab=${link.tab}`) ||
-                                        (link.tab === "overview" &&
-                                            !location.search.includes("tab="))
-                                            ? "contained"
-                                            : "outlined"
-                                    }
-                                    onClick={() =>
-                                        navigate(
-                                            link.tab === "overview"
-                                                ? `/research/${projectId}/analysis`
-                                                : `/research/${projectId}/analysis?tab=${link.tab}`
-                                        )
-                                    }
-                                >
-                                    {link.label}
-                                </Button>
-                            ))}
-                            {ANALYSIS_RELATED_LINKS.map((link) => (
-                                <Button
-                                    key={link.path}
-                                    size="small"
-                                    variant="text"
-                                    onClick={() =>
-                                        navigate(`/research/${projectId}/${link.path}`)
-                                    }
-                                >
-                                    {link.label}
-                                </Button>
-                            ))}
-                        </Stack>
-                    ) : null}
-                    <QueryBoundary
-                        isLoading={ctx.corporaLoading && ctx.corpora.length === 0}
-                        variant="inline"
-                    >
-                        <ResearchMemosPanel onOpenCitation={handleOpenCitation} />
-                        <Outlet />
-                    </QueryBoundary>
-                </Box>
-
-                {showInlineContext ? (
-                    <Box
-                        component="aside"
-                        aria-label="Ask Corpus"
-                        sx={{
-                            position: "sticky",
-                            top: 16,
-                            width: { xl: 400 },
-                            maxWidth: 440,
-                            minWidth: 360,
-                        }}
-                    >
-                        {contextPanel}
-                    </Box>
-                ) : null}
-            </Box>
+                            {askCorpusBody}
+                        </ContextInspector>
+                    ) : undefined
+                }
+                main={
+                    <>
+                        {ctx.corporaError ? (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                Failed to load corpora for this project.
+                            </Alert>
+                        ) : null}
+                        <QueryBoundary
+                            isLoading={ctx.corporaLoading && ctx.corpora.length === 0}
+                            variant="inline"
+                        >
+                            <ResearchMemosPanel onOpenCitation={handleOpenCitation} />
+                            <Outlet />
+                        </QueryBoundary>
+                    </>
+                }
+            />
 
             {citationOpenError ? (
-                <Alert severity="error" onClose={() => setCitationOpenError(null)} sx={{ mb: 1 }}>
+                <Alert severity="error" onClose={() => setCitationOpenError(null)}>
                     {citationOpenError}
                 </Alert>
             ) : null}
@@ -314,9 +236,24 @@ function ResearchLayoutInner() {
                 anchor="right"
                 open={contextDrawerOpen}
                 onClose={() => ctx.setAskPanelOpen(false)}
-                PaperProps={{ sx: { width: { xs: "100%", sm: 400 }, p: 2 } }}
+                PaperProps={{
+                    sx: {
+                        width: { xs: "100%", sm: "min(100vw, 400px)", md: 400 },
+                        maxWidth: "100%",
+                        p: 2,
+                    },
+                }}
             >
-                {contextPanel}
+                <ContextInspector
+                    title="Ask Corpus"
+                    description="Context, corpus questions, and retrieved evidence."
+                    sticky={false}
+                    dismissible
+                    onDismiss={() => ctx.setAskPanelOpen(false)}
+                    sx={{ width: "100%", maxWidth: "none", minWidth: 0 }}
+                >
+                    {askCorpusBody}
+                </ContextInspector>
             </Drawer>
 
             <CorpusDocumentDrawer
@@ -329,6 +266,7 @@ function ResearchLayoutInner() {
                 charEnd={citationCharEnd}
                 sourceSpanIds={citationSourceSpanIds}
                 offsetScope={citationOffsetScope}
+                sourceCoordinate={citationCoordinate}
                 onClose={() => {
                     setCitationDoc(null);
                     setCitationSnippet(null);
@@ -337,6 +275,7 @@ function ResearchLayoutInner() {
                     setCitationCharEnd(null);
                     setCitationSourceSpanIds(null);
                     setCitationOffsetScope(null);
+                    setCitationCoordinate(null);
                 }}
             />
 
@@ -348,21 +287,11 @@ function ResearchLayoutInner() {
                     activeStageId && activeStageId !== "dashboard" ? activeStageId : false
                 }
                 onSelectStage={handleSelectStage}
+                onNavigateItem={handleNavigateItem}
+                resolved={resolvedNav}
                 onOpenDashboard={() => navigate(`/research/${projectId}/dashboard`)}
                 dashboardSelected={activeRoute === "dashboard"}
             />
-
-            <Box
-                component="footer"
-                sx={{ mt: 1, py: 1, borderTop: 1, borderColor: "divider" }}
-            >
-                <Typography variant="caption" color="text.secondary">
-                    Corpus: {ctx.selectedCorpus?.name ?? "not selected"} · Unit: {ctx.unitType} ·
-                    Codebook: {ctx.selectedCodebook?.name ?? "not selected"} · Research state is
-                    persisted in analysis runs.
-                    {citationSnippet ? ` · Opened evidence: ${citationSnippet.slice(0, 80)}…` : ""}
-                </Typography>
-            </Box>
         </PageShell>
     );
 }

@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import json
+import math
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Protocol
 
+from backend.modules.rag.application.rag_context_builder import RagContextBuilder
 from backend.modules.rag.application.retrieval_service import RetrievalService
-from backend.modules.rag.domain.models import RetrievalOutcome
+from backend.modules.rag.domain.models import RagAnswer, RetrievalOutcome
 from backend.modules.rag.eval.retrieval_eval import evaluate_ranking
+from backend.modules.rag.infrastructure.config_models import EvaluationConfig
 
 FIXTURES = Path(__file__).with_name("fixtures") / "end_to_end_qrels.json"
 REQUIRED_CATEGORIES = {
@@ -68,7 +72,7 @@ def structural_citation_validity(
     claim_chunk_ids: list[str],
     retrieved_chunk_ids: set[str],
 ) -> dict[str, float]:
-    """Placeholder structural citation checks (no entailment model)."""
+    """Check citation membership in retrieved evidence (not semantic entailment)."""
     if not claim_chunk_ids:
         return {
             "citation_structural_validity": 1.0,
@@ -90,6 +94,9 @@ async def run_end_to_end_benchmark(
     document_ids: list[str],
     cases: list[EndToEndCase] | None = None,
     claim_chunk_ids_by_case: dict[str, list[str]] | None = None,
+    index_revision_ids: list[str] | None = None,
+    max_context_tokens: int = 4000,
+    answer_runner: Callable[[EndToEndCase, RetrievalOutcome], Awaitable[RagAnswer]] | None = None,
 ) -> dict[str, Any]:
     """Evaluate the actual retrieval service against an already-ingested fixture corpus."""
     reports: list[dict[str, Any]] = []
@@ -100,7 +107,16 @@ async def run_end_to_end_benchmark(
             case.query,
             user_id=user_id,
             project_id=project_id,
-            filters={"document_ids": document_ids, "owner_scoped": False},
+            top_k=10,
+            filters={
+                "document_ids": document_ids,
+                "owner_scoped": False,
+                **(
+                    {"index_revision_ids": index_revision_ids}
+                    if index_revision_ids is not None
+                    else {}
+                ),
+            },
             intent=case.intent,
         )
         latency_ms = int((perf_counter() - started) * 1000)
@@ -114,33 +130,84 @@ async def run_end_to_end_benchmark(
             chunk_to_document={chunk.chunk_id: chunk.document_id for chunk in outcome.chunks},
         )
         duplicate_ratio = 1 - (len(set(chunk_ids)) / len(chunk_ids)) if chunk_ids else 0.0
-        citation_metrics = structural_citation_validity(
-            claim_chunk_ids=claim_map.get(case.id, list(case.expected_chunk_ids)),
-            retrieved_chunk_ids=set(chunk_ids) | set(case.expected_chunk_ids),
+        answer = await answer_runner(case, outcome) if answer_runner is not None else None
+        if answer is not None:
+            claim_map[case.id] = [
+                chunk_id for claim in answer.claims for chunk_id in claim.chunk_ids
+            ]
+        citation_metrics = (
+            structural_citation_validity(
+                claim_chunk_ids=claim_map[case.id],
+                retrieved_chunk_ids=set(chunk_ids),
+            )
+            if case.id in claim_map
+            else {
+                "citation_structural_validity": None,
+                "unsupported_claim_rate": None,
+            }
         )
+        if answer is not None and answer.citation_validation_failed:
+            citation_metrics = {"citation_structural_validity": 0.0, "unsupported_claim_rate": 1.0}
         reports.append(
             {
                 "id": case.id,
                 "category": case.category,
+                "generation_model": answer.model_name if answer is not None else None,
+                "citation_validation_status": answer.citation_validation_status
+                if answer is not None
+                else "NOT_RUN",
                 "latency_ms": latency_ms,
                 "no_answer_expected": case.no_answer,
                 "no_matches": outcome.no_matches,
                 "recall_at_5": metrics.recall_at_5,
+                "recall_at_10": metrics.recall_at_10,
+                "precision_at_5": metrics.precision_at_k,
+                "document_recall": metrics.document_coverage,
                 "mrr": metrics.mrr,
                 "ndcg_at_10": metrics.ndcg_at_10,
                 "source_diversity": len(set(document_ids_found)),
                 "duplicate_ratio": duplicate_ratio,
                 "expected_source_ids": list(case.expected_source_ids),
+                "retrieved_chunk_ids": chunk_ids,
+                "retrieval_provenance": outcome.retrieval_provenance,
+                "context_token_count": RagContextBuilder.select_context_for_generation(
+                    outcome.chunks,
+                    max_tokens=max_context_tokens,
+                    reserved_tokens=0,
+                ).context_token_count,
+                "citation_precision": (
+                    len(set(claim_map[case.id]) & set(chunk_ids) & set(case.expected_chunk_ids))
+                    / len(set(claim_map[case.id]))
+                    if claim_map.get(case.id)
+                    else None
+                ),
+                "citation_recall": (
+                    len(set(claim_map[case.id]) & set(chunk_ids) & set(case.expected_chunk_ids))
+                    / len(set(case.expected_chunk_ids))
+                    if case.id in claim_map and case.expected_chunk_ids
+                    else None
+                ),
                 **citation_metrics,
             }
         )
     latencies = sorted(item["latency_ms"] for item in reports)
+    negative_cases = [item for item in reports if item["no_answer_expected"]]
     return {
-        "schema_version": 1,
+        "schema_version": EvaluationConfig().schema_version,
+        "evaluation_fingerprint": EvaluationConfig().fingerprint(),
+        "qrels_version": EvaluationConfig().end_to_end_qrels_version,
         "case_count": len(reports),
         "cases": reports,
+        "no_answer_false_positive_rate": (
+            sum(bool(item["retrieved_chunk_ids"]) for item in negative_cases) / len(negative_cases)
+            if negative_cases
+            else None
+        ),
         "latency": {
             "p50_ms": latencies[len(latencies) // 2] if latencies else 0,
-            "p95_ms": latencies[max(0, int(len(latencies) * 0.95) - 1)] if latencies else 0,
+            "p95_ms": latencies[max(0, math.ceil(len(latencies) * 0.95) - 1)] if latencies else 0,
+            "p99_ms": latencies[math.ceil(len(latencies) * 0.99) - 1]
+            if len(latencies) >= 100
+            else None,
         },
     }

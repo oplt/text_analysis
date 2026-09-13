@@ -5,7 +5,6 @@ import {
     Button,
     FormControl,
     InputLabel,
-    LinearProgress,
     MenuItem,
     Select,
     Stack,
@@ -30,16 +29,20 @@ import {
     segmentCorpus,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { DisabledWithReason } from "../../../components/ui/DisabledWithReason";
 import { PageTabs } from "../../../components/ui/PageTabs";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
+import { RunStatusChip } from "../../../components/ui/RunStatusChip";
+import { RunStatusPanel } from "../../../components/ui/RunStatusPanel";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
-import { NoCorpusEmptyState, RunStatusChip } from "../components/ResearchShared";
+import { NoCorpusEmptyState } from "../components/NoCorpusEmptyState";
 import { CleaningPanel } from "../components/CleaningPanel";
 import { IngestionQaPanel } from "../components/IngestionQaPanel";
 import { PreprocessingPanel } from "../components/PreprocessingPanel";
+import { segmentCorpusDisabledReason } from "../actionDisabledReasons";
 import { useResearchContext } from "../hooks/useResearchContext";
 import {
     isSegmentationRunActive,
@@ -98,14 +101,21 @@ function SegmentUnitControls({
                         ))}
                     </Select>
                 </FormControl>
-                <Button
-                    variant="contained"
-                    startIcon={<StartIcon />}
-                    onClick={() => onSegment(localUnitType)}
-                    disabled={documentCount === 0 || active}
+                <DisabledWithReason
+                    reason={segmentCorpusDisabledReason({
+                        documentCount,
+                        active,
+                    })}
                 >
-                    {active ? "Segmentation in progress…" : "Start segmentation"}
-                </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={<StartIcon />}
+                        onClick={() => onSegment(localUnitType)}
+                        disabled={documentCount === 0 || active}
+                    >
+                        {active ? "Segmentation in progress…" : "Start segmentation"}
+                    </Button>
+                </DisabledWithReason>
                 <Button variant="outlined" onClick={onManageDocuments}>
                     Manage documents
                 </Button>
@@ -343,25 +353,38 @@ export default function PrepareView() {
                     >
                         {runQuery.data ? (
                             <Stack spacing={1.5}>
-                                <Typography variant="body2">
-                                    Run {runQuery.data.id} — <RunStatusChip status={runQuery.data.status} />
-                                    {" · "}
-                                    {segmentationStageLabel(runQuery.data.progress_stage)}
-                                </Typography>
-                                {active ? <LinearProgress variant="determinate" value={progressPct} /> : null}
-                                <Box component="ul" sx={{ m: 0, pl: 2 }}>
-                                    {progressLines.map((line) => (
-                                        <Typography key={line} component="li" variant="body2">
-                                            {line}
-                                        </Typography>
-                                    ))}
-                                </Box>
-                                {runQuery.data.error_message ? (
-                                    <Alert severity="error">{runQuery.data.error_message}</Alert>
+                                <RunStatusPanel
+                                    title="Segmentation"
+                                    status={runQuery.data.status}
+                                    runId={runQuery.data.id}
+                                    progress={active ? progressPct : null}
+                                    stage={segmentationStageLabel(runQuery.data.progress_stage)}
+                                    startedAt={runQuery.data.started_at}
+                                    completedAt={runQuery.data.completed_at}
+                                    createdAt={runQuery.data.created_at}
+                                    errorMessage={runQuery.data.error_message}
+                                    onRetry={() =>
+                                        segmentMutation.mutate(
+                                            (runQuery.data.parameters?.unit_type as UnitType) ||
+                                                ctx.unitType
+                                        )
+                                    }
+                                    retryLabel="Retry segmentation"
+                                    retryDisabled={segmentMutation.isPending}
+                                />
+                                {progressLines.length ? (
+                                    <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                                        {progressLines.map((line) => (
+                                            <Typography key={line} component="li" variant="body2">
+                                                {line}
+                                            </Typography>
+                                        ))}
+                                    </Box>
                                 ) : null}
                                 {runQuery.data.status === "completed" ? (
                                     <Alert severity="success">
-                                        Segmentation finished. Dashboard and corpus unit counts have been refreshed.
+                                        Segmentation finished. Dashboard and corpus unit counts have
+                                        been refreshed.
                                     </Alert>
                                 ) : null}
                             </Stack>

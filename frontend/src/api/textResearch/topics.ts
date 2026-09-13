@@ -1,0 +1,3 @@
+export {
+  nameTopic,
+} from "./impl";

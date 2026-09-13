@@ -1116,6 +1116,50 @@ class ModelStorageTests(unittest.TestCase):
                 model_storage.ARTIFACT_ROOT = original_root
                 model_storage._storage_configured = original_storage_configured
 
+    def test_stage_promote_and_tmp_cleanup_lifecycle(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            original_root = model_storage.ARTIFACT_ROOT
+            original_storage_configured = model_storage._storage_configured
+            model_storage.ARTIFACT_ROOT = Path(tmp_dir)
+            model_storage._storage_configured = lambda: False
+            try:
+                namespace = "runs/project-1/run-42"
+                staged_ref, staged_meta = model_storage.stage_artifact_with_metadata(
+                    {"weights": [1, 2, 3]},
+                    category="research_classifiers",
+                    artifact_namespace=namespace,
+                )
+                staged_path = Path(staged_ref)
+                self.assertTrue(staged_path.exists())
+                self.assertIn("/tmp/", staged_ref.replace("\\", "/"))
+                self.assertTrue(staged_meta["staged"])
+
+                published_ref, published_meta = model_storage.promote_staged_artifact(
+                    staged_ref,
+                    category="research_classifiers",
+                    artifact_namespace=namespace,
+                    metadata=staged_meta,
+                )
+                published_path = Path(published_ref)
+                self.assertTrue(published_path.exists())
+                self.assertFalse(staged_path.exists())
+                self.assertIn("/artifacts/", published_ref.replace("\\", "/"))
+                self.assertTrue(published_meta["published"])
+                self.assertEqual(published_meta["sha256"], staged_meta["sha256"])
+
+                model_storage.cleanup_run_tmp(namespace)
+                self.assertFalse((Path(tmp_dir) / "runs/project-1/run-42/tmp").exists())
+                self.assertTrue(published_path.exists())
+
+                # Incomplete-run cleanup may wipe unpublished promotions.
+                model_storage.cleanup_run_namespace(namespace, include_published=True)
+                self.assertFalse(published_path.exists())
+            finally:
+                model_storage.ARTIFACT_ROOT = original_root
+                model_storage._storage_configured = original_storage_configured
+
     def test_ensure_artifact_dir_creates_nested_directories(self):
         import shutil
         import tempfile

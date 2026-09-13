@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { collectScientificWarnings } from "../components/scientificWarnings";
+import { collectScientificWarnings } from "./ScientificWarnings";
 
 describe("collectScientificWarnings", () => {
     it("dedupes diagnostics across result payloads", () => {

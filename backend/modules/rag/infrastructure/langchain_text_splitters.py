@@ -197,10 +197,11 @@ def split_documents(
             or hashlib.sha256(full_text.encode("utf-8")).hexdigest()
         )
         scope_type = "page" if base_meta.get("page_number") is not None else "parsed_document"
+        scope_prefix = "ocr" if base_meta.get("ocr_transformed_extract") else "page"
         scope_id = str(
             base_meta.get("offset_scope_id")
             or (
-                f"page:{source_revision}:{base_meta['page_number']}"
+                f"{scope_prefix}:{source_revision}:{base_meta['page_number']}"
                 if scope_type == "page"
                 else f"parsed-document:{source_revision}:{document_index}"
             )

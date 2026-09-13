@@ -117,7 +117,7 @@ export function ResearchProvider({ children }: { children: React.ReactNode }) {
 
     const labelsQuery = useQuery({
         queryKey: queryKeys.textResearch.labels(selectedCodebookId),
-        queryFn: () => listLabels(selectedCodebookId),
+        queryFn: ({ signal }) => listLabels(selectedCodebookId, signal),
         enabled: Boolean(selectedCodebookId),
         staleTime: QUERY_STALE_TIMES.researchCodebook,
     });

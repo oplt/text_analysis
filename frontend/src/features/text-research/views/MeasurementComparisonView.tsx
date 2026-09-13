@@ -20,7 +20,7 @@ import { compareMeasurements } from "../../../api/textResearch";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { MatrixHeatmap, MetricCards, RankedBarChart, ResultsInspector } from "../components/ResearchCharts";
-import { RunStatusChip } from "../components/ResearchShared";
+import { RunStatusChip } from "../../../components/ui/RunStatusChip";
 import { useResearchContext } from "../hooks/useResearchContext";
 import type { AnalysisRun } from "../types";
 

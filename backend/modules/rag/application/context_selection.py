@@ -23,11 +23,26 @@ class ContextSelection:
     selected_chunk_ids: list[str]
     ordering_policy: ContextOrderingPolicy = ContextOrderingPolicy.RELEVANCE
     budget_removed_chunk_ids: list[str] | None = None
+    context_token_count: int = 0
 
     def provenance(self) -> dict:
         return {
             "selected_chunk_ids": list(self.selected_chunk_ids),
             "removed_chunk_ids": list(self.removed_chunk_ids),
+            "deduplicated_chunk_ids": list(self.removed_chunk_ids),
+            "context_token_count": self.context_token_count,
+            "context_truncations": {
+                chunk.chunk_id: {
+                    key: chunk.metadata[key]
+                    for key in (
+                        "context_truncated",
+                        "original_context_tokens",
+                        "included_context_tokens",
+                    )
+                }
+                for chunk in self.chunks
+                if chunk.metadata.get("context_truncated")
+            },
             "budget_removed_chunk_ids": list(self.budget_removed_chunk_ids or []),
             "ordering_policy": self.ordering_policy.value,
         }

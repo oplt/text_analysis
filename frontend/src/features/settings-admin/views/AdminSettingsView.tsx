@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton, Stack } from "@mui/material";
 import { getConfigSettings, listDatabaseSettings } from "../../../api/settings";
 import { queryKeys } from "../../../config/queryKeys";
-import { AdminSettingsTabs } from "../../../components/layout/AdminSettingsTabs";
+import { SettingsTabs } from "../../../components/layout/SettingsTabs";
 import { PageShell } from "../../../components/ui/PageShell";
 import { QueryErrorAlert } from "../../../components/ui/QueryBoundary";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
@@ -19,7 +19,7 @@ export default function AdminSettingsPage() {
     }
     if (!config.data) {
         return (
-            <PageShell maxWidth="xl"><AdminSettingsTabs /><Stack spacing={2} sx={{ mt: 2 }}>
+            <PageShell maxWidth="xl"><SettingsTabs /><Stack spacing={2} sx={{ mt: 2 }}>
                 <QueryErrorAlert error={config.error ?? new Error("Failed to load config values.")} fallback="Failed to load config values." title="Config" onRetry={() => void config.refetch()} />
                 {database.isError && <QueryErrorAlert error={database.error} fallback="Failed to load database settings." title="Database settings" onRetry={() => void database.refetch()} />}
             </Stack></PageShell>

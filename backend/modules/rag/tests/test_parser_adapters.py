@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import shutil
 import unittest
 from importlib.util import find_spec
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from backend.modules.rag.infrastructure.langchain_document_loaders import _parse_csv
@@ -29,6 +31,54 @@ class CsvParserTests(unittest.TestCase):
 
 
 class PdfParserSmokeTests(unittest.TestCase):
+    @unittest.skipUnless(
+        shutil.which("tesseract") and find_spec("pytesseract") and find_spec("pymupdf"),
+        "Native OCR extra unavailable",
+    )
+    def test_native_ocr_runs_for_image_only_pdf(self):
+        import pymupdf
+
+        with pymupdf.open() as source, pymupdf.open() as scan:
+            page = source.new_page()
+            page.insert_text((72, 100), "RESEARCH EVIDENCE ACCOUNTABILITY", fontsize=24)
+            image = page.get_pixmap(matrix=pymupdf.Matrix(2, 2)).tobytes("png")
+            scanned_page = scan.new_page()
+            scanned_page.insert_image(scanned_page.rect, stream=image)
+            with patch(
+                "backend.modules.rag.infrastructure.pdf_parsers.settings.RAG_PDF_OCR_ENABLED", True
+            ):
+                document = EnhancedPdfParser().parse(scan.tobytes())[0]
+        self.assertIn("ACCOUNTABILITY", document.content)
+        self.assertTrue(document.metadata["ocr_ran"])
+        self.assertEqual(document.metadata["ocr_status"], "ocr_success")
+        self.assertEqual(document.metadata["blocks"], [])
+
+    def test_native_capability_failures_are_distinct(self):
+        for binary, languages, expected in (
+            (None, [], "ocr_binary_missing"),
+            ("/usr/bin/tesseract", [], "ocr_language_missing"),
+        ):
+            ocr = SimpleNamespace(
+                pytesseract=SimpleNamespace(tesseract_cmd="tesseract"),
+                get_languages=lambda languages=languages, **kwargs: languages,
+            )
+            with (
+                patch(
+                    "backend.modules.rag.infrastructure.pdf_parsers.settings.RAG_PDF_OCR_ENABLED",
+                    True,
+                ),
+                patch(
+                    "backend.modules.rag.infrastructure.pdf_parsers.shutil.which",
+                    return_value=binary,
+                ),
+                patch.dict(
+                    "sys.modules", {"pytesseract": ocr, "PIL": SimpleNamespace(Image=object())}
+                ),
+            ):
+                _, metadata = _extract_ocr_text(object(), object())
+            self.assertEqual(metadata["ocr_status"], expected)
+            self.assertFalse(metadata["ocr_available"])
+
     def test_basic_parser_name(self):
         self.assertEqual(BasicPypdfParser.name, "pypdf-v1")
 
@@ -74,6 +124,46 @@ class PdfParserSmokeTests(unittest.TestCase):
         self.assertEqual(tables[0]["page_number"], 2)
         self.assertEqual(tables[0]["bbox"], [1, 2, 30, 40])
         self.assertEqual(tables[0]["rows"], [["year", "count"], ["2025", "3"]])
+
+    def test_missing_ocr_python_dependencies_are_explicit(self):
+        with (
+            patch(
+                "backend.modules.rag.infrastructure.pdf_parsers.settings.RAG_PDF_OCR_ENABLED", True
+            ),
+            patch.dict("sys.modules", {"pytesseract": None}),
+        ):
+            _, metadata = _extract_ocr_text(object(), object())
+        self.assertEqual(metadata["ocr_status"], "ocr_python_dependency_missing")
+        self.assertFalse(metadata["ocr_available"])
+
+    @unittest.skipUnless(find_spec("pymupdf"), "PyMuPDF optional dependency is not installed")
+    def test_ocr_replacement_discards_extraction_block_coordinates(self):
+        import pymupdf
+
+        with pymupdf.open() as pdf:
+            page = pdf.new_page()
+            page.insert_text((72, 72), "Bad")
+            content = pdf.tobytes()
+        with (
+            patch(
+                "backend.modules.rag.infrastructure.pdf_parsers.settings.RAG_PDF_OCR_ENABLED", True
+            ),
+            patch(
+                "backend.modules.rag.infrastructure.pdf_parsers._extract_ocr_text",
+                return_value=(
+                    "Readable OCR evidence",
+                    {"ocr_ran": True, "ocr_transformed_extract": True, "ocr_status": "ocr_success"},
+                ),
+            ),
+        ):
+            document = EnhancedPdfParser().parse(content)[0]
+        self.assertEqual(document.content, "Readable OCR evidence")
+        self.assertEqual(document.metadata["blocks"], [])
+        self.assertFalse(document.metadata["original_layout_coordinates_available"])
+        self.assertTrue(
+            all(span.startswith("transformed:") for span in document.metadata["source_span_ids"])
+        )
+        self.assertIn("tesseract-ocr", document.metadata["transformation_chain"]["transforms"])
 
     @unittest.skipUnless(
         find_spec("pymupdf") or find_spec("fitz"),

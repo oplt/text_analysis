@@ -49,16 +49,32 @@ def _run_with_session(coro_factory):
     run_async_in_sync_context(_run())
 
 
-async def _claim_run_for_execution(db, run_id: str) -> bool:
+async def _claim_run_for_execution(db, run_id: str, *, worker_id: str | None = None) -> bool:
     from backend.modules.text_research.application.execution_service import ExecutionService
 
-    return await ExecutionService.claim_run_for_execution(db=db, run_id=run_id)
+    return await ExecutionService.claim_run_for_execution(db=db, run_id=run_id, worker_id=worker_id)
+
+
+async def _claim_or_skip(db, run_id: str, *, operation: str, user_id: str) -> bool:
+    """Return True when this delivery owns execution; False when it must no-op."""
+    worker_id = f"{operation}:{user_id}"
+    if await _claim_run_for_execution(db, run_id, worker_id=worker_id):
+        return True
+    logger.info(
+        "Research %s skipped; run already claimed run=%s user=%s",
+        operation,
+        run_id,
+        user_id,
+    )
+    return False
 
 
 def segmentation_sync(*, run_id: str, user_id: str) -> None:
     from backend.modules.text_research.application.segmentation_service import SegmentationService
 
     async def _execute(db):
+        if not await _claim_or_skip(db, run_id, operation="segmentation", user_id=user_id):
+            return
         service = SegmentationService(db)
         await service.execute_segmentation(run_id)
 
@@ -77,8 +93,7 @@ def classifier_training_sync(*, run_id: str, user_id: str) -> None:
     )
 
     async def _execute(db):
-        if not await _claim_run_for_execution(db, run_id):
-            logger.info("Classifier training skipped; run already claimed run=%s", run_id)
+        if not await _claim_or_skip(db, run_id, operation="classification", user_id=user_id):
             return
         service = ClassificationService(db)
         await service.execute_training(run_id)
@@ -96,6 +111,8 @@ def topic_model_training_sync(*, run_id: str, user_id: str) -> None:
     from backend.modules.text_research.application.topic_model_service import TopicModelService
 
     async def _execute(db):
+        if not await _claim_or_skip(db, run_id, operation="topic_training", user_id=user_id):
+            return
         service = TopicModelService(db)
         await service.execute_training(run_id)
 
@@ -112,6 +129,8 @@ def topic_k_sweep_sync(*, run_id: str, user_id: str) -> None:
     from backend.modules.text_research.application.topic_model_service import TopicModelService
 
     async def _execute(db):
+        if not await _claim_or_skip(db, run_id, operation="topic_k_sweep", user_id=user_id):
+            return
         await TopicModelService(db).execute_k_sweep(run_id)
 
     logger.info("Topic K sweep started run=%s user=%s", run_id, user_id)
@@ -123,6 +142,8 @@ def topic_seed_stability_sync(*, run_id: str, user_id: str) -> None:
     from backend.modules.text_research.application.topic_model_service import TopicModelService
 
     async def _execute(db):
+        if not await _claim_or_skip(db, run_id, operation="topic_seed_stability", user_id=user_id):
+            return
         await TopicModelService(db).execute_seed_stability(run_id)
 
     logger.info("Topic seed stability started run=%s user=%s", run_id, user_id)
@@ -134,6 +155,8 @@ def robustness_sweep_sync(*, run_id: str, user_id: str) -> None:
     from backend.modules.text_research.application.robustness_service import RobustnessService
 
     async def _execute(db):
+        if not await _claim_or_skip(db, run_id, operation="robustness", user_id=user_id):
+            return
         service = RobustnessService(db)
         await service.execute_sweep(run_id)
 
@@ -150,8 +173,7 @@ def prediction_sync(*, run_id: str, user_id: str) -> None:
     from backend.modules.text_research.application.prediction_service import PredictionService
 
     async def _execute(db):
-        if not await _claim_run_for_execution(db, run_id):
-            logger.info("Prediction skipped; run already claimed run=%s", run_id)
+        if not await _claim_or_skip(db, run_id, operation="prediction", user_id=user_id):
             return
         await PredictionService(db).execute_prediction(run_id)
 
@@ -164,8 +186,7 @@ def quantitative_analysis_sync(*, run_id: str, user_id: str) -> None:
     )
 
     async def _execute(db):
-        if not await _claim_run_for_execution(db, run_id):
-            logger.info("Quantitative analysis skipped; run already claimed run=%s", run_id)
+        if not await _claim_or_skip(db, run_id, operation="quantitative", user_id=user_id):
             return
         await QuantitativeAnalysisService(db).execute_quantitative(run_id)
 
@@ -184,6 +205,8 @@ def corpus_synthesis_sync(*, run_id: str, user_id: str) -> None:
     )
 
     async def _execute(db):
+        if not await _claim_or_skip(db, run_id, operation="corpus_synthesis", user_id=user_id):
+            return
         await CorpusSynthesisService(db).execute_synthesis(run_id)
 
     try:

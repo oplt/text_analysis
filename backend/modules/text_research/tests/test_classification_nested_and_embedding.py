@@ -164,11 +164,27 @@ class ExecuteTrainingSmokeTests(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "backend.modules.text_research.application.classification_service.model_storage.save_artifact_with_metadata",
+                "backend.modules.text_research.application.classification_service.model_storage.stage_artifact_with_metadata",
                 side_effect=[
-                    ("model.joblib", {"sha256": "model-checksum"}),
-                    ("vectorizer.joblib", {"sha256": "vectorizer-checksum"}),
+                    ("tmp/model.joblib", {"sha256": "model-checksum", "staged": True}),
+                    (
+                        "tmp/vectorizer.joblib",
+                        {"sha256": "vectorizer-checksum", "staged": True},
+                    ),
                 ],
+            ),
+            patch(
+                "backend.modules.text_research.application.classification_service.model_storage.promote_staged_artifact",
+                side_effect=[
+                    ("artifacts/model.joblib", {"sha256": "model-checksum", "published": True}),
+                    (
+                        "artifacts/vectorizer.joblib",
+                        {"sha256": "vectorizer-checksum", "published": True},
+                    ),
+                ],
+            ),
+            patch(
+                "backend.modules.text_research.application.classification_service.model_storage.cleanup_run_tmp"
             ),
             patch(
                 "backend.modules.text_research.application.run_lifecycle.complete_if_active",

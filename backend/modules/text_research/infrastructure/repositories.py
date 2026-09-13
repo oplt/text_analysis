@@ -462,6 +462,56 @@ class ResearchRepository:
         count_stmt = select(func.count()).select_from(stmt.order_by(None).subquery())
         return int(await self.db.scalar(count_stmt) or 0)
 
+    async def document_metadata_coverage(
+        self, corpus_id: str, *, fields: tuple[str, ...] | None = None
+    ) -> dict[str, float]:
+        """Share of documents with non-null values for each metadata field."""
+        target_fields = fields or (
+            "title",
+            "organization",
+            "publication_year",
+            "language",
+            "country",
+        )
+        total = await self.count_documents(corpus_id)
+        coverage: dict[str, float] = {}
+        if total <= 0:
+            for field in target_fields:
+                coverage[field] = 0.0
+            coverage["overall"] = 0.0
+            return coverage
+
+        for field in target_fields:
+            column = getattr(CorpusDocument, field)
+            filled = int(
+                await self.db.scalar(
+                    select(func.count())
+                    .select_from(CorpusDocument)
+                    .where(CorpusDocument.corpus_id == corpus_id, column.is_not(None))
+                )
+                or 0
+            )
+            coverage[field] = filled / total
+        coverage["overall"] = sum(coverage[field] for field in target_fields) / len(target_fields)
+        return coverage
+
+    async def language_counts(self, corpus_id: str) -> dict[str, int]:
+        statement = (
+            select(
+                CorpusDocument.language.label("value"),
+                func.count(CorpusDocument.id).label("count"),
+            )
+            .where(CorpusDocument.corpus_id == corpus_id)
+            .group_by(CorpusDocument.language)
+            .order_by(func.count(CorpusDocument.id).desc())
+        )
+        rows = (await self.db.execute(statement)).all()
+        counts: dict[str, int] = {}
+        for row in rows:
+            key = str(row.value) if row.value else "unknown"
+            counts[key] = int(row.count)
+        return counts
+
     async def update_document(self, document: CorpusDocument, **fields: Any) -> CorpusDocument:
         for key, value in fields.items():
             if value is not None:
@@ -1246,6 +1296,27 @@ class ResearchRepository:
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
+    async def count_annotations_for_corpus(
+        self,
+        corpus_id: str,
+        *,
+        campaign_id: str | None = None,
+        codebook_version: str | None = None,
+    ) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(Annotation)
+            .join(TextUnit, TextUnit.id == Annotation.text_unit_id)
+            .join(CorpusDocument, CorpusDocument.id == TextUnit.corpus_document_id)
+            .where(CorpusDocument.corpus_id == corpus_id)
+        )
+        if campaign_id is not None:
+            stmt = stmt.where(Annotation.campaign_id == campaign_id)
+        if codebook_version is not None:
+            stmt = stmt.where(Annotation.codebook_version == codebook_version)
+        result = await self.db.execute(stmt)
+        return int(result.scalar_one())
+
     async def list_annotated_text_unit_ids(self, corpus_id: str) -> set[str]:
         """Project distinct annotated unit ids — no full Annotation ORM graphs."""
         result = await self.db.execute(
@@ -1556,11 +1627,20 @@ class ResearchRepository:
         run_id: str,
         *,
         execution_key: str | None = None,
+        worker_id: str | None = None,
     ) -> AnalysisRun | None:
-        """Atomically transition a queued run to RUNNING for one worker only."""
+        """Atomically transition a queued run to RUNNING for one worker only.
+
+        Uses a single conditional ``UPDATE`` so concurrent deliveries cannot both
+        observe QUEUED and proceed. ``worker_id`` is accepted for observability;
+        lease/heartbeat persistence can attach to it later without changing callers.
+        """
+        from backend.modules.text_research.domain.enums import AnalysisRunStatus
+
+        _ = worker_id  # reserved for future lease/heartbeat ownership
         conditions = [
             AnalysisRun.id == run_id,
-            AnalysisRun.status == "queued",
+            AnalysisRun.status == AnalysisRunStatus.QUEUED.value,
         ]
         if execution_key is not None:
             conditions.append(AnalysisRun.execution_key == execution_key)
@@ -1568,7 +1648,7 @@ class ResearchRepository:
             update(AnalysisRun)
             .where(*conditions)
             .values(
-                status="running",
+                status=AnalysisRunStatus.RUNNING.value,
                 progress_stage="running",
                 started_at=_utcnow(),
                 run_version=AnalysisRun.run_version + 1,
@@ -1875,11 +1955,30 @@ class ResearchRepository:
         return prediction_set
 
     async def discard_prediction_set(self, prediction_set: PredictionSet) -> None:
-        """Remove unpublished staged predictions after cancellation or failure."""
+        """Remove unpublished staged predictions after cancellation or failure.
+
+        Published sets are left untouched so a successful finalize cannot be
+        rolled back by a later discard call.
+        """
+        if getattr(prediction_set, "status", None) == "published":
+            return
         await self.db.execute(
             delete(ModelPrediction).where(ModelPrediction.prediction_set_id == prediction_set.id)
         )
         await self.db.execute(delete(PredictionSet).where(PredictionSet.id == prediction_set.id))
+
+    async def discard_draft_prediction_sets_for_run(self, analysis_run_id: str) -> int:
+        """Drop leftover draft sets for a run (crash/retry safety)."""
+        result = await self.db.execute(
+            select(PredictionSet).where(
+                PredictionSet.analysis_run_id == analysis_run_id,
+                PredictionSet.status == "draft",
+            )
+        )
+        drafts = list(result.scalars().all())
+        for draft in drafts:
+            await self.discard_prediction_set(draft)
+        return len(drafts)
 
     async def get_prediction_set(self, prediction_set_id: str) -> PredictionSet | None:
         result = await self.db.execute(

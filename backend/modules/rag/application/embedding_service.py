@@ -3,6 +3,7 @@ from __future__ import annotations
 from time import perf_counter
 
 from backend.lib.embedding_cache import embed_texts_with_cache
+from backend.modules.rag.application.trace_context import traced
 from backend.modules.rag.infrastructure import metrics
 from backend.modules.rag.infrastructure.langchain_embeddings import LangChainEmbeddingAdapter
 from backend.modules.rag.infrastructure.rag_config import RagConfig
@@ -13,6 +14,7 @@ class EmbeddingService:
         self.config = config or RagConfig.from_settings()
         self._adapter = LangChainEmbeddingAdapter(self.config)
 
+    @traced("rag.embedding")
     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []

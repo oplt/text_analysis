@@ -20,6 +20,7 @@ import {
 } from "@mui/icons-material";
 import type { ProjectTask } from "../../../api/projects";
 import { PageShell } from "../../../components/ui/PageShell";
+import { MetricGrid } from "../../../components/ui/MetricGrid";
 import { StatCard } from "../../../components/ui/StatCard";
 import { StatCardSkeletonGrid } from "../../../components/ui/StatCardSkeletonGrid";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
@@ -103,14 +104,7 @@ export default function ProjectDetailPage() {
                 </Button>
             </Stack>
 
-            <Box
-                sx={{
-                    display: "grid",
-                    gap: 2,
-                    gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                    mb: 2,
-                }}
-            >
+            <MetricGrid>
                 <StatCard
                     label="Total tasks"
                     value={m.orderedTasks.length}
@@ -138,7 +132,7 @@ export default function ProjectDetailPage() {
                     icon={<CalendarIcon />}
                     color={overdue > 0 ? "error" : "secondary"}
                 />
-            </Box>
+            </MetricGrid>
 
             {(m.projectQuery.error || m.tasksQuery.error) && (
                 <Alert severity="error" sx={{ mb: 2 }}>

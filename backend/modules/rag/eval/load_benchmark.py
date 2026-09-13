@@ -62,6 +62,7 @@ def memory_ceiling_smoke(
     within_ceiling = estimated_bytes <= max_estimated_bytes and sampled <= max_materialized_rows
     return {
         "schema_version": 1,
+        "measurement": "SYNTHETIC",
         "scale_chunks": scale.chunks,
         "sampled_rows": sampled,
         "estimated_bytes": estimated_bytes,

@@ -50,8 +50,12 @@ import {
 } from "../../../api/textResearch";
 import { MetadataFilterBar } from "../components/MetadataFilterBar";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { DisabledWithReason } from "../../../components/ui/DisabledWithReason";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
+import { RunStatusPanel } from "../../../components/ui/RunStatusPanel";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { AdvancedSettings } from "../../../components/ui/AdvancedSettings";
+import { HelpFieldLabel, HelpTooltip } from "../../../components/ui/HelpTooltip";
 import { queryKeys } from "../../../config/queryKeys";
 import { QUERY_STALE_TIMES, researchRunStaleTime } from "../../../config/queryTiming";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
@@ -60,6 +64,7 @@ import {
     DEFAULT_CLASSIFICATION_TRAIN_CONFIG,
     type ClassificationTrainConfig,
 } from "../components/classificationTrainConfig";
+import { AnalysisChartFrame } from "../components/AnalysisChartFrame";
 import {
     DivergingBarChart,
     MatrixHeatmap,
@@ -69,13 +74,19 @@ import {
 } from "../components/ResearchCharts";
 import { ActiveRunActions } from "../components/ActiveRunActions";
 import { ResearchResultsTable } from "../components/ResearchResults";
-import { RunStatusChip } from "../components/ResearchShared";
-import { ScientificWarnings } from "../components/ScientificWarnings";
-import { collectScientificWarnings } from "../components/scientificWarnings";
+import { ProvenanceDrawer } from "../components/ProvenanceDrawer";
+import { ScientificWarnings, collectScientificWarnings } from "../components/ScientificWarnings";
+import {
+    assessClassImbalance,
+    formatPercent,
+    plannedSplitFractions,
+} from "../classificationDatasetSummary";
+import { trainClassifierDisabledReason, predictModelDisabledReason } from "../actionDisabledReasons";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 import type { AnalysisRun, TrainedModel } from "../types";
+import type { HelpTermId } from "../../../config/helpText";
 
 const ClassificationCalibrationPanel = lazy(() =>
     import("../components/ClassificationEvalPanels").then((m) => ({
@@ -116,15 +127,23 @@ const ACTIVE_LEARNING_STEPS = [
     "Retrain",
 ] as const;
 
-const CLASSIFICATION_TABS = ["dataset", "train", "evaluate", "models", "active"] as const;
+const CLASSIFICATION_TABS = [
+    "setup",
+    "dataset",
+    "train",
+    "evaluation",
+    "predictions",
+    "advanced",
+] as const;
 type ClassificationTab = (typeof CLASSIFICATION_TABS)[number];
 
 const CLASSIFICATION_TAB_ITEMS: Array<{ value: ClassificationTab; label: string }> = [
+    { value: "setup", label: "Setup" },
     { value: "dataset", label: "Dataset" },
     { value: "train", label: "Train" },
-    { value: "evaluate", label: "Evaluate" },
-    { value: "models", label: "Models" },
-    { value: "active", label: "Active learning" },
+    { value: "evaluation", label: "Evaluation" },
+    { value: "predictions", label: "Predictions" },
+    { value: "advanced", label: "Advanced" },
 ];
 
 const ANNOTATION_SOURCES: Array<{ value: AnnotationSource; label: string }> = [
@@ -161,33 +180,34 @@ function pickMetrics(...sources: Array<Record<string, unknown> | null | undefine
 }
 
 function evaluationCards(metrics: Record<string, unknown> | null, results: Record<string, unknown> | null) {
-    const cards: Array<{ label: string; value: string | number }> = [];
+    const cards: Array<{
+        label: string;
+        value: string | number;
+        helpTermId?: HelpTermId;
+        description?: string;
+    }> = [];
     if (!metrics && !results) return cards;
 
-    const metricKeys: Array<[string, string]> = [
-        ["f1_macro", "Macro F1"],
-        ["f1_micro", "Micro F1"],
-        ["f1_weighted", "Weighted F1"],
-        ["precision_macro", "Precision (macro)"],
-        ["recall_macro", "Recall (macro)"],
-        ["precision_micro", "Precision (micro)"],
-        ["recall_micro", "Recall (micro)"],
-        ["precision_weighted", "Precision (weighted)"],
-        ["recall_weighted", "Recall (weighted)"],
-        ["accuracy", "Accuracy"],
+    const metricKeys: Array<[string, string, HelpTermId | undefined]> = [
+        ["f1_macro", "Macro F1", "macro_f1"],
+        ["f1_micro", "Micro F1", "micro_f1"],
+        ["f1_weighted", "Weighted F1", "f1"],
+        ["precision_macro", "Precision (macro)", "precision"],
+        ["recall_macro", "Recall (macro)", "recall"],
+        ["precision_micro", "Precision (micro)", "precision"],
+        ["recall_micro", "Recall (micro)", "recall"],
+        ["precision_weighted", "Precision (weighted)", "precision"],
+        ["recall_weighted", "Recall (weighted)", "recall"],
+        ["accuracy", "Accuracy", undefined],
     ];
-    for (const [key, label] of metricKeys) {
+    for (const [key, label, helpTermId] of metricKeys) {
         const value = num(metrics?.[key]);
-        if (value != null) cards.push({ label, value: formatMetric(value) });
+        if (value != null) cards.push({ label, value: formatMetric(value), helpTermId });
     }
 
-    const nTrain = num(results?.n_train) ?? num(metrics?.n_train) ?? num(metrics?.train_size);
-    const nTest = num(results?.n_test) ?? num(metrics?.n_test) ?? num(metrics?.test_size);
     const vocab =
         num(results?.vocabulary_size) ?? num(metrics?.vocabulary_size) ?? num(metrics?.vocab_size);
-    if (nTrain != null) cards.push({ label: "Train size", value: nTrain });
-    if (nTest != null) cards.push({ label: "Test size", value: nTest });
-    if (vocab != null) cards.push({ label: "Vocabulary size", value: vocab });
+    if (vocab != null) cards.push({ label: "Vocabulary size", value: vocab, helpTermId: "vocabulary_size" });
 
     const featureSpace =
         asRecord(results?.feature_space) ?? asRecord(metrics?.feature_space) ?? null;
@@ -200,6 +220,46 @@ function evaluationCards(metrics: Record<string, unknown> | null, results: Recor
         if (afterDf != null) cards.push({ label: "After DF pruning", value: afterDf });
         if (afterSel != null) cards.push({ label: "After supervised selection", value: afterSel });
         if (nonzero != null) cards.push({ label: "Non-zero coefficients", value: nonzero });
+    }
+    return cards;
+}
+
+function splitSummaryCards(
+    metrics: Record<string, unknown> | null,
+    results: Record<string, unknown> | null
+) {
+    const nTrain = num(results?.n_train) ?? num(metrics?.n_train) ?? num(metrics?.train_size);
+    const nVal = num(results?.n_val) ?? num(metrics?.n_val) ?? num(metrics?.val_size);
+    const nTest = num(results?.n_test) ?? num(metrics?.n_test) ?? num(metrics?.test_size);
+    const cards: Array<{
+        label: string;
+        value: string | number;
+        helpTermId?: HelpTermId;
+        description?: string;
+    }> = [];
+    if (nTrain != null) {
+        cards.push({
+            label: "Training set",
+            value: nTrain,
+            helpTermId: "train_test_split",
+            description: "Used to fit the model",
+        });
+    }
+    if (nVal != null && nVal > 0) {
+        cards.push({
+            label: "Validation set",
+            value: nVal,
+            helpTermId: "validation_set",
+            description: "Thresholds / search only",
+        });
+    }
+    if (nTest != null) {
+        cards.push({
+            label: "Test set",
+            value: nTest,
+            helpTermId: "train_test_split",
+            description: "Final held-out evaluation",
+        });
     }
     return cards;
 }
@@ -328,7 +388,13 @@ export default function ClassificationView() {
     const [coefficientLabel, setCoefficientLabel] = useState("");
     const [confusionNormalized, setConfusionNormalized] = useState(false);
     const [confusionLabel, setConfusionLabel] = useState("");
-    const [tab, setTab] = useTabQueryParam(CLASSIFICATION_TABS, "dataset");
+    const [tab, setTab] = useTabQueryParam(CLASSIFICATION_TABS, "setup", "tab", {
+        aliases: {
+            evaluate: "evaluation",
+            models: "predictions",
+            active: "advanced",
+        },
+    });
 
     const labelIds = ctx.labels.map((l) => l.id);
     const labelNameById = useMemo(
@@ -412,19 +478,23 @@ export default function ClassificationView() {
             offset: uncertainOffset,
             limit: UNCERTAIN_PAGE_SIZE,
         }),
-        queryFn: () =>
-            listUncertainPredictions(selectedModelId!, {
-                limit: UNCERTAIN_PAGE_SIZE,
-                offset: uncertainOffset,
-                contentMode: "snippet",
-            }),
+        queryFn: ({ signal }) =>
+            listUncertainPredictions(
+                selectedModelId!,
+                {
+                    limit: UNCERTAIN_PAGE_SIZE,
+                    offset: uncertainOffset,
+                    contentMode: "snippet",
+                },
+                signal
+            ),
         enabled: Boolean(selectedModelId),
         staleTime: QUERY_STALE_TIMES.researchAnnotationQueue,
     });
 
     const coefficientsQuery = useQuery({
         queryKey: queryKeys.textResearch.coefficients(selectedModelId ?? ""),
-        queryFn: () => getClassifierCoefficients(selectedModelId!),
+        queryFn: ({ signal }) => getClassifierCoefficients(selectedModelId!, signal),
         enabled: Boolean(selectedModelId),
         staleTime: QUERY_STALE_TIMES.researchModelMetrics,
     });
@@ -439,6 +509,7 @@ export default function ClassificationView() {
     );
     const trainResults = asRecord(trainRunQuery.data?.results);
     const evalCards = evaluationCards(trainMetrics, trainResults);
+    const splitCards = splitSummaryCards(trainMetrics, trainResults);
     const perLabelItems = perLabelF1Items(trainMetrics);
     const perLabelMetricRows = perLabelMetrics(trainMetrics);
     const trainGroups = Array.isArray(trainResults?.train_groups)
@@ -459,8 +530,10 @@ export default function ClassificationView() {
         : null;
 
     const distributionItems = previewQuery.data
-        ? classDistributionItems(previewQuery.data.class_distribution)
+        ? classDistributionItems(previewQuery.data.class_distribution, labelNameById)
         : [];
+    const imbalance = assessClassImbalance(distributionItems);
+    const splitPlan = plannedSplitFractions(trainConfig.testSize, trainConfig.valSize);
 
     const coefficientLabels = useMemo(() => {
         const labels = new Set((coefficientsQuery.data ?? []).map((c) => c.label));
@@ -751,6 +824,130 @@ export default function ClassificationView() {
                 ariaLabel="Classification workflow"
             />
 
+            {tab === "setup" ? (
+                <SectionCard
+                    title="Classification setup"
+                    description="Define task type, labels, and model family before freezing a dataset."
+                >
+                    <Stack spacing={2}>
+                        <Box>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Labels ({ctx.labels.length})
+                            </Typography>
+                            {ctx.labels.length ? (
+                                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                                    {ctx.labels.map((label) => (
+                                        <Chip key={label.id} size="small" label={label.name} />
+                                    ))}
+                                </Stack>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    No codebook labels yet.
+                                </Typography>
+                            )}
+                        </Box>
+
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
+                            <TextField
+                                select
+                                size="small"
+                                label="Task type"
+                                value={trainConfig.taskType}
+                                onChange={(e) =>
+                                    setTrainConfig((prev) => ({
+                                        ...prev,
+                                        taskType: e.target
+                                            .value as ClassificationTrainConfig["taskType"],
+                                    }))
+                                }
+                                sx={{ minWidth: 200 }}
+                                helperText="Blank = infer from labels"
+                            >
+                                <MenuItem value="">Infer automatically</MenuItem>
+                                <MenuItem value="binary">Binary</MenuItem>
+                                <MenuItem value="multiclass">Multiclass</MenuItem>
+                                <MenuItem value="multilabel">Multilabel</MenuItem>
+                            </TextField>
+                            <TextField
+                                select
+                                size="small"
+                                label={
+                                    <HelpFieldLabel termId="model_family">Model family</HelpFieldLabel>
+                                }
+                                value={trainConfig.algorithm}
+                                onChange={(e) =>
+                                    setTrainConfig((prev) => ({
+                                        ...prev,
+                                        algorithm: e.target
+                                            .value as ClassificationTrainConfig["algorithm"],
+                                    }))
+                                }
+                                sx={{ minWidth: 220 }}
+                            >
+                                <MenuItem value="logistic_regression">Logistic regression</MenuItem>
+                                <MenuItem value="linear_svm">Linear SVM</MenuItem>
+                                <MenuItem value="multinomial_nb">Multinomial NB</MenuItem>
+                                <MenuItem value="complement_nb">Complement NB</MenuItem>
+                                <MenuItem value="sgd_classifier">SGD classifier</MenuItem>
+                                <MenuItem value="embedding_logistic">Embedding + logistic</MenuItem>
+                                <MenuItem value="embedding_svm">Embedding + SVM</MenuItem>
+                            </TextField>
+                        </Stack>
+
+                        {!canPreview ? (
+                            <EmptyState
+                                icon={<PreviewIcon fontSize="large" />}
+                                title="Setup incomplete"
+                                description={
+                                    !ctx.selectedCorpusId
+                                        ? "Select a corpus in the context bar."
+                                        : !ctx.selectedCodebookId
+                                          ? "Select or create a codebook with labels."
+                                          : "Add at least one codebook label, then annotate units."
+                                }
+                                action={
+                                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                                        <Button
+                                            variant="contained"
+                                            onClick={() =>
+                                                navigate(
+                                                    !ctx.selectedCodebookId
+                                                        ? `/research/${ctx.projectId}/codebook`
+                                                        : `/research/${ctx.projectId}/annotation`
+                                                )
+                                            }
+                                        >
+                                            {!ctx.selectedCodebookId
+                                                ? "Open codebook"
+                                                : "Open annotation"}
+                                        </Button>
+                                        <Button
+                                            variant="outlined"
+                                            onClick={() => setTab("dataset")}
+                                            disabled={!canPreview}
+                                        >
+                                            Continue to Dataset
+                                        </Button>
+                                    </Stack>
+                                }
+                            />
+                        ) : (
+                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                                <Button variant="contained" onClick={() => setTab("dataset")}>
+                                    Continue to Dataset
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    onClick={() => navigate(`/research/${ctx.projectId}/annotation`)}
+                                >
+                                    Review annotations
+                                </Button>
+                            </Stack>
+                        )}
+                    </Stack>
+                </SectionCard>
+            ) : null}
+
             {tab === "dataset" ? (
             <>
             <SectionCard
@@ -864,14 +1061,17 @@ export default function ClassificationView() {
                                             {
                                                 label: "Fully labeled units",
                                                 value: previewQuery.data.unit_count,
+                                                description: "Sample size for training snapshot",
                                             },
                                             {
                                                 label: "Documents",
                                                 value: previewQuery.data.document_count,
+                                                description: "Grouping units for leakage-safe splits",
                                             },
                                             {
                                                 label: "Missing labels",
                                                 value: previewQuery.data.missing_labels.length,
+                                                description: "Units incomplete for this label set",
                                             },
                                             {
                                                 label: "Excluded disagreements",
@@ -881,18 +1081,65 @@ export default function ClassificationView() {
                                         ]}
                                     />
 
-                                    <Box>
-                                        <Typography variant="subtitle2" gutterBottom>
-                                            Class distribution
-                                        </Typography>
+                                    <MetricCards
+                                        items={[
+                                            {
+                                                label: "Planned train share",
+                                                value: formatPercent(splitPlan.trainFraction),
+                                                helpTermId: "train_test_split",
+                                                description: "Remainder after val + test",
+                                            },
+                                            {
+                                                label: "Planned validation share",
+                                                value: formatPercent(splitPlan.validationFraction),
+                                                helpTermId: "validation_set",
+                                                description:
+                                                    splitPlan.validationFraction === 0
+                                                        ? "Disabled (0)"
+                                                        : "For thresholds / search",
+                                            },
+                                            {
+                                                label: "Planned test share",
+                                                value: formatPercent(splitPlan.testFraction),
+                                                helpTermId: "train_test_split",
+                                                description: "Final held-out evaluation",
+                                            },
+                                        ]}
+                                    />
+
+                                    <AnalysisChartFrame
+                                        title="Class distribution"
+                                        subtitle="Positive / class counts in the current labeled preview."
+                                        legend="Bar length = labeled unit count"
+                                        xAxisLabel="Count"
+                                        yAxisLabel="Class"
+                                        methodologicalNote="Unequal bars indicate imbalance risk. Prefer macro F1 and per-class metrics when rare classes matter scientifically."
+                                    >
                                         {distributionItems.length ? (
-                                            <RankedBarChart items={distributionItems} height={280} />
+                                            <RankedBarChart
+                                                items={distributionItems}
+                                                height={280}
+                                                seriesLabel="Units"
+                                                xAxisLabel="Count"
+                                                yAxisLabel="Class"
+                                            />
                                         ) : (
                                             <Typography variant="body2" color="text.secondary">
                                                 No class counts in this preview.
                                             </Typography>
                                         )}
-                                    </Box>
+                                    </AnalysisChartFrame>
+
+                                    {imbalance.warnings.map((warning) => (
+                                        <Alert key={warning} severity="warning">
+                                            <Stack direction="row" spacing={0.5} alignItems="flex-start">
+                                                <Typography variant="body2" sx={{ flex: 1 }}>
+                                                    {warning}
+                                                </Typography>
+                                                <HelpTooltip termId="class_imbalance" />
+                                            </Stack>
+                                        </Alert>
+                                    ))}
 
                                     <Typography variant="body2" color="text.secondary">
                                         Annotator coverage:{" "}
@@ -907,10 +1154,12 @@ export default function ClassificationView() {
                                         </Alert>
                                     ))}
 
-                                    <ResultsInspector
-                                        title="dataset preview"
-                                        data={previewQuery.data}
-                                    />
+                                    <AdvancedSettings title="Inspect raw preview payload">
+                                        <ResultsInspector
+                                            title="dataset preview"
+                                            data={previewQuery.data}
+                                        />
+                                    </AdvancedSettings>
                                 </Stack>
                             ) : null}
                         </QueryBoundary>
@@ -1013,12 +1262,15 @@ export default function ClassificationView() {
 
             {tab === "train" ? (
             <SectionCard
-                title="Model configuration"
-                description="Full training controls. Splits are grouped by source document to prevent leakage."
+                title="Train"
+                description="Primary hyperparameters and seed. Rare options stay in Advanced Settings below."
             >
                 <Stack spacing={2}>
-                    <Alert severity="warning">
-                        Train/test splitting is grouped by source document to prevent leakage.
+                    <Alert severity="info">
+                        <HelpTooltip termId="train_test_split" variant="label">
+                            Document-grouped train / validation / test
+                        </HelpTooltip>{" "}
+                        — fit on train, tune on validation, report on test.
                     </Alert>
 
                     {!snapshotId ? (
@@ -1036,40 +1288,56 @@ export default function ClassificationView() {
                         }))}
                     />
 
-                    <Button
-                        variant="contained"
-                        startIcon={<TrainIcon />}
-                        onClick={() => trainMutation.mutate()}
-                        disabled={!snapshotId || trainMutation.isPending}
-                        sx={{ alignSelf: "flex-start" }}
+                    <DisabledWithReason
+                        reason={trainClassifierDisabledReason({
+                            snapshotId,
+                            pending: trainMutation.isPending,
+                        })}
                     >
-                        Train classifier
-                    </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={<TrainIcon />}
+                            onClick={() => trainMutation.mutate()}
+                            disabled={!snapshotId || trainMutation.isPending}
+                            sx={{ alignSelf: "flex-start" }}
+                        >
+                            Train classifier
+                        </Button>
+                    </DisabledWithReason>
 
                     {trainRunId && trainRunQuery.data ? (
                         <Box>
-                            <Stack
-                                direction="row"
-                                spacing={1}
-                                alignItems="center"
-                                flexWrap="wrap"
-                                useFlexGap
-                                sx={{ mb: 1 }}
-                            >
-                                <Typography variant="body2">
-                                    Training run —{" "}
-                                    <RunStatusChip status={trainRunQuery.data.status} />
-                                </Typography>
-                                {isActiveRunStatus(trainRunQuery.data.status) ? (
-                                    <ActiveRunActions
-                                        run={trainRunQuery.data}
-                                        projectId={ctx.projectId}
-                                        corpusId={ctx.selectedCorpusId}
-                                    />
-                                ) : null}
-                            </Stack>
-                            {trainRunQuery.data.error_message ? (
-                                <Alert severity="error">{trainRunQuery.data.error_message}</Alert>
+                            <RunStatusPanel
+                                title="Training"
+                                status={trainRunQuery.data.status}
+                                runId={trainRunQuery.data.id}
+                                stage={trainRunQuery.data.progress_stage}
+                                startedAt={trainRunQuery.data.started_at}
+                                completedAt={trainRunQuery.data.completed_at}
+                                createdAt={trainRunQuery.data.created_at}
+                                errorMessage={trainRunQuery.data.error_message}
+                                actions={
+                                    <>
+                                        <ProvenanceDrawer run={trainRunQuery.data} />
+                                        {isActiveRunStatus(trainRunQuery.data.status) ? (
+                                            <ActiveRunActions
+                                                run={trainRunQuery.data}
+                                                projectId={ctx.projectId}
+                                                corpusId={ctx.selectedCorpusId}
+                                            />
+                                        ) : null}
+                                    </>
+                                }
+                            />
+                            {trainRunQuery.data.status === "completed" ? (
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() => setTab("evaluation")}
+                                    sx={{ mt: 1 }}
+                                >
+                                    Open Evaluation
+                                </Button>
                             ) : null}
                         </Box>
                     ) : null}
@@ -1077,13 +1345,24 @@ export default function ClassificationView() {
             </SectionCard>
             ) : null}
 
-            {tab === "evaluate" ? (
+            {tab === "evaluation" ? (
             <SectionCard
                 title="Evaluation"
-                description="Metrics from the latest training run or the selected model. Splits are document-grouped."
+                description="Readable accuracy / precision / recall / F1 plus confusion matrix. Raw JSON lives under Advanced."
             >
                 {trainRunQuery.data?.status === "completed" || selectedModel ? (
                     <Stack spacing={2}>
+                        {splitCards.length ? (
+                            <Box>
+                                <Typography variant="subtitle2" gutterBottom>
+                                    <HelpTooltip termId="train_test_split" variant="label">
+                                        Train / validation / test sizes
+                                    </HelpTooltip>
+                                </Typography>
+                                <MetricCards items={splitCards} />
+                            </Box>
+                        ) : null}
+
                         {evalCards.length ? <MetricCards items={evalCards} /> : null}
                         <ScientificWarnings
                             title="Scientific review signals (not automatic model decisions)."
@@ -1095,52 +1374,115 @@ export default function ClassificationView() {
                         />
 
                         {perLabelItems.length ? (
-                            <Box>
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Per-label F1
-                                </Typography>
+                            <AnalysisChartFrame
+                                title="Per-label F1"
+                                subtitle="Class-wise F1 on the evaluation partition."
+                                legend="Higher is better · rare classes matter for macro F1"
+                                xAxisLabel="F1"
+                                yAxisLabel="Label"
+                                methodologicalNote="Support sizes differ by class. Low F1 on rare labels often reflects imbalance or ambiguous codebook definitions — not only model choice."
+                            >
                                 <RankedBarChart
                                     items={perLabelItems}
                                     height={280}
                                     valueFormatter={(v) => formatMetric(v)}
+                                    seriesLabel="F1"
+                                    xAxisLabel="F1"
+                                    yAxisLabel="Label"
                                 />
-                            </Box>
+                            </AnalysisChartFrame>
                         ) : null}
 
                         {multiclassConfusion || multilabelConfusion ? (
-                            <Stack spacing={1}>
-                                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
-                                    <Typography variant="subtitle2">Confusion matrix</Typography>
-                                    <FormControlLabel
-                                        control={<Checkbox checked={confusionNormalized} onChange={(event) => setConfusionNormalized(event.target.checked)} />}
-                                        label="Row-normalized percentages"
-                                    />
-                                    {availableConfusionLabels.length ? (
-                                        <TextField select size="small" label="Multilabel class" value={activeConfusionLabel} onChange={(event) => setConfusionLabel(event.target.value)} sx={{ minWidth: 180 }}>
-                                            {availableConfusionLabels.map((label) => <MenuItem key={label} value={label}>{labelNameById.get(label) ?? label}</MenuItem>)}
-                                        </TextField>
-                                    ) : null}
+                            <AnalysisChartFrame
+                                title="Confusion matrix"
+                                subtitle="Rows = actual · columns = predicted (document-grouped evaluation)."
+                                legend={
+                                    confusionNormalized
+                                        ? "Row-normalized percentages"
+                                        : "Raw counts"
+                                }
+                                methodologicalNote="Off-diagonal cells are misclassifications. Normalize rows to compare error rates across classes with unequal support."
+                            >
+                                <Stack spacing={1}>
+                                    <Stack
+                                        direction={{ xs: "column", sm: "row" }}
+                                        spacing={1}
+                                        alignItems={{ sm: "center" }}
+                                    >
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={confusionNormalized}
+                                                    onChange={(event) =>
+                                                        setConfusionNormalized(event.target.checked)
+                                                    }
+                                                />
+                                            }
+                                            label="Row-normalized percentages"
+                                        />
+                                        {availableConfusionLabels.length ? (
+                                            <TextField
+                                                select
+                                                size="small"
+                                                label="Multilabel class"
+                                                value={activeConfusionLabel}
+                                                onChange={(event) =>
+                                                    setConfusionLabel(event.target.value)
+                                                }
+                                                sx={{ minWidth: 180 }}
+                                            >
+                                                {availableConfusionLabels.map((label) => (
+                                                    <MenuItem key={label} value={label}>
+                                                        {labelNameById.get(label) ?? label}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        ) : null}
+                                    </Stack>
+                                    {(() => {
+                                        const matrix =
+                                            multiclassConfusion ?? multilabelConfusion ?? [];
+                                        const labels = multiclassConfusion
+                                            ? multiclassConfusionLabels
+                                            : ["Actual no", "Actual yes"];
+                                        const columns = multiclassConfusion
+                                            ? multiclassConfusionLabels
+                                            : ["Predicted no", "Predicted yes"];
+                                        const values = matrix.map((row) => {
+                                            const total = row.reduce(
+                                                (sum, value) => sum + value,
+                                                0
+                                            );
+                                            return row.map((value) =>
+                                                confusionNormalized && total
+                                                    ? value / total
+                                                    : value
+                                            );
+                                        });
+                                        return (
+                                            <MatrixHeatmap
+                                                rowLabels={labels}
+                                                colLabels={columns}
+                                                values={values}
+                                                formatCell={(value) =>
+                                                    value == null
+                                                        ? "—"
+                                                        : confusionNormalized
+                                                          ? `${(value * 100).toFixed(1)}%`
+                                                          : String(value)
+                                                }
+                                            />
+                                        );
+                                    })()}
                                 </Stack>
-                                {(() => {
-                                    const matrix = multiclassConfusion ?? multilabelConfusion ?? [];
-                                    const labels = multiclassConfusion ? multiclassConfusionLabels : ["Actual no", "Actual yes"];
-                                    const columns = multiclassConfusion ? multiclassConfusionLabels : ["Predicted no", "Predicted yes"];
-                                    const values = matrix.map((row) => {
-                                        const total = row.reduce((sum, value) => sum + value, 0);
-                                        return row.map((value) => confusionNormalized && total ? value / total : value);
-                                    });
-                                    return <MatrixHeatmap rowLabels={labels} colLabels={columns} values={values} formatCell={(value) => value == null ? "—" : confusionNormalized ? `${(value * 100).toFixed(1)}%` : String(value)} />;
-                                })()}
-                            </Stack>
+                            </AnalysisChartFrame>
                         ) : null}
 
                         {(trainGroups || testGroups) && (
                             <Typography variant="body2" color="text.secondary">
-                                Grouped split:{" "}
-                                {trainGroups?.length ?? "—"}{" "}
-                                train documents ·{" "}
-                                {testGroups?.length ?? "—"}{" "}
-                                test documents
+                                Grouped split: {trainGroups?.length ?? "—"} train documents ·{" "}
+                                {testGroups?.length ?? "—"} test documents
                             </Typography>
                         )}
 
@@ -1184,44 +1526,40 @@ export default function ClassificationView() {
                             </Box>
                         ) : null}
 
-                        <Box>
-                            <Typography variant="subtitle2" gutterBottom>
-                                ROC / Precision–Recall
-                            </Typography>
-                            <Suspense fallback={<EvalPanelFallback />}>
-                                <ClassificationCurvePanel metrics={trainMetrics} />
-                            </Suspense>
-                        </Box>
-
-                        <Box>
-                            <Typography variant="subtitle2" gutterBottom>
-                                Calibration
-                            </Typography>
-                            <Suspense fallback={<EvalPanelFallback />}>
-                                <ClassificationCalibrationPanel
-                                    metrics={trainMetrics}
-                                    results={trainResults}
-                                />
-                            </Suspense>
-                        </Box>
-
-                        <Box>
-                            <Typography variant="subtitle2" gutterBottom>
-                                Error analysis
-                            </Typography>
-                            <Suspense fallback={<EvalPanelFallback />}>
-                                <ClassificationErrorBrowser results={trainResults} />
-                            </Suspense>
-                        </Box>
-
-                        <ResultsInspector
-                            title="run metrics / results"
-                            data={{
-                                metrics: trainMetrics,
-                                results: trainResults,
-                                model_metrics: selectedModel?.metrics,
-                            }}
-                        />
+                        <AdvancedSettings
+                            title="Additional diagnostics"
+                            description="ROC / PR curves, calibration, error browser"
+                        >
+                            <Stack spacing={2}>
+                                <Box>
+                                    <Typography variant="subtitle2" gutterBottom>
+                                        ROC / Precision–Recall
+                                    </Typography>
+                                    <Suspense fallback={<EvalPanelFallback />}>
+                                        <ClassificationCurvePanel metrics={trainMetrics} />
+                                    </Suspense>
+                                </Box>
+                                <Box>
+                                    <Typography variant="subtitle2" gutterBottom>
+                                        Calibration
+                                    </Typography>
+                                    <Suspense fallback={<EvalPanelFallback />}>
+                                        <ClassificationCalibrationPanel
+                                            metrics={trainMetrics}
+                                            results={trainResults}
+                                        />
+                                    </Suspense>
+                                </Box>
+                                <Box>
+                                    <Typography variant="subtitle2" gutterBottom>
+                                        Error analysis
+                                    </Typography>
+                                    <Suspense fallback={<EvalPanelFallback />}>
+                                        <ClassificationErrorBrowser results={trainResults} />
+                                    </Suspense>
+                                </Box>
+                            </Stack>
+                        </AdvancedSettings>
                     </Stack>
                 ) : (
                     <Typography variant="body2" color="text.secondary">
@@ -1231,7 +1569,7 @@ export default function ClassificationView() {
             </SectionCard>
             ) : null}
 
-            {tab === "models" ? (
+            {tab === "predictions" ? (
             <>
             <SectionCard
                 title="Trained models"
@@ -1401,8 +1739,28 @@ export default function ClassificationView() {
             </>
             ) : null}
 
-            {tab === "active" ? (
+            {tab === "advanced" ? (
             <>
+            <SectionCard
+                title="Raw configuration & diagnostics"
+                description="Full train config snapshot and raw evaluation payloads. Prefer Evaluation for primary metrics."
+            >
+                <Stack spacing={2}>
+                    <ResultsInspector
+                        title="train configuration"
+                        data={trainConfig}
+                    />
+                    <ResultsInspector
+                        title="run metrics / results"
+                        data={{
+                            metrics: trainMetrics,
+                            results: trainResults,
+                            model_metrics: selectedModel?.metrics,
+                        }}
+                    />
+                </Stack>
+            </SectionCard>
+
             <SectionCard
                 title="Active learning loop"
                 description="Train a model, score unannotated units, review uncertain cases, send them for human coding, then freeze and retrain."
@@ -1450,14 +1808,21 @@ export default function ClassificationView() {
                 description="Predictions stay separate from human coding. Send difficult cases to annotation deliberately."
                 action={
                     <Stack direction="row" spacing={1}>
-                        <Button
-                            variant="contained"
-                            startIcon={<PredictIcon />}
-                            onClick={() => predictMutation.mutate()}
-                            disabled={!selectedModelId || predictMutation.isPending}
+                        <DisabledWithReason
+                            reason={predictModelDisabledReason({
+                                modelId: selectedModelId,
+                                pending: predictMutation.isPending,
+                            })}
                         >
-                            Predict unannotated units
-                        </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<PredictIcon />}
+                                onClick={() => predictMutation.mutate()}
+                                disabled={!selectedModelId || predictMutation.isPending}
+                            >
+                                Predict unannotated units
+                            </Button>
+                        </DisabledWithReason>
                         <Button
                             variant="outlined"
                             onClick={() => navigate(`/research/${ctx.projectId}/annotation`)}
@@ -1479,16 +1844,36 @@ export default function ClassificationView() {
                             />
                         ) : null}
                         {predictRunId && predictRunQuery.data ? (
-                            <Typography variant="body2">
-                                Predict run —{" "}
-                                <RunStatusChip status={predictRunQuery.data.status} />
-                                {predictRunQuery.data.metrics
-                                    ? ` · units predicted: ${String(
-                                          asRecord(predictRunQuery.data.metrics)?.units_predicted ??
-                                              "—"
-                                      )}`
-                                    : null}
-                            </Typography>
+                            <RunStatusPanel
+                                dense
+                                title="Predict run"
+                                status={predictRunQuery.data.status}
+                                runId={predictRunQuery.data.id}
+                                stage={
+                                    predictRunQuery.data.metrics
+                                        ? `units predicted: ${String(
+                                              asRecord(predictRunQuery.data.metrics)
+                                                  ?.units_predicted ?? "—"
+                                          )}`
+                                        : predictRunQuery.data.progress_stage
+                                }
+                                startedAt={predictRunQuery.data.started_at}
+                                completedAt={predictRunQuery.data.completed_at}
+                                createdAt={predictRunQuery.data.created_at}
+                                errorMessage={predictRunQuery.data.error_message}
+                                actions={
+                                    <>
+                                        <ProvenanceDrawer run={predictRunQuery.data} />
+                                        {isActiveRunStatus(predictRunQuery.data.status) ? (
+                                            <ActiveRunActions
+                                                run={predictRunQuery.data}
+                                                projectId={ctx.projectId}
+                                                corpusId={ctx.selectedCorpusId}
+                                            />
+                                        ) : null}
+                                    </>
+                                }
+                            />
                         ) : null}
 
                         <QueryBoundary

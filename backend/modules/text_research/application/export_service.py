@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import csv
 import io
+import warnings
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
@@ -39,6 +41,57 @@ def _utcnow() -> datetime:
     return datetime.now(UTC)
 
 
+@dataclass(frozen=True, slots=True)
+class ExportStreamMeta:
+    """Pre-stream export accounting for HTTP headers / manifests.
+
+    Truncation is never silent: when ``max_rows`` caps the stream, callers must
+    surface ``truncated`` via ``X-Export-*`` headers (and optional manifest notes).
+    """
+
+    total_rows: int
+    exported_rows: int
+    truncated: bool
+    max_rows: int | None = None
+
+    def as_headers(self) -> dict[str, str]:
+        headers = {
+            "X-Export-Total-Rows": str(self.total_rows),
+            "X-Export-Exported-Rows": str(self.exported_rows),
+        }
+        if self.truncated:
+            headers["X-Export-Truncated"] = "true"
+        if self.max_rows is not None:
+            headers["X-Export-Max-Rows"] = str(self.max_rows)
+        return headers
+
+    def as_manifest_note(self) -> dict[str, Any]:
+        return {
+            "total_rows": self.total_rows,
+            "exported_rows": self.exported_rows,
+            "truncated": self.truncated,
+            "max_rows": self.max_rows,
+        }
+
+
+def resolve_export_row_budget(total_rows: int, *, max_rows: int | None) -> ExportStreamMeta:
+    """Compute export budget; ``max_rows=None`` means stream every row."""
+    if max_rows is None:
+        return ExportStreamMeta(
+            total_rows=total_rows,
+            exported_rows=total_rows,
+            truncated=False,
+            max_rows=None,
+        )
+    exported = min(total_rows, max_rows)
+    return ExportStreamMeta(
+        total_rows=total_rows,
+        exported_rows=exported,
+        truncated=total_rows > max_rows,
+        max_rows=max_rows,
+    )
+
+
 class ExportService(ResearchAccessMixin):
     async def iter_units_csv(self, corpus_id: str, *, user_id: str, unit_type: str, **filters: Any):
         """Yield unit CSV rows incrementally for HTTP streaming exports.
@@ -68,6 +121,17 @@ class ExportService(ResearchAccessMixin):
     async def export_units_csv(
         self, corpus_id: str, *, user_id: str, unit_type: str, **filters: Any
     ) -> str:
+        """Materialize a full units CSV string (rich columns).
+
+        .. deprecated::
+            Prefer :meth:`iter_units_csv` for HTTP responses. This helper remains
+            for small in-process callers only.
+        """
+        warnings.warn(
+            "export_units_csv materializes the full CSV; use iter_units_csv for HTTP streaming",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         await self.get_corpus_or_404(corpus_id, user_id=user_id)
         documents = await self.repo.list_documents(corpus_id)
         filtered_docs = _apply_document_filters(documents, filters or {})
@@ -138,58 +202,67 @@ class ExportService(ResearchAccessMixin):
         return buffer.getvalue()
 
     async def export_annotations_csv(
-        self, corpus_id: str, *, user_id: str, codebook_id: str | None = None
+        self,
+        corpus_id: str,
+        *,
+        user_id: str,
+        codebook_id: str | None = None,
+        max_rows: int | None = None,
     ) -> str:
-        await self.get_corpus_or_404(corpus_id, user_id=user_id)
-        annotations = await self.repo.list_annotations_for_corpus(corpus_id)
-        if codebook_id:
-            codebook = await self.get_codebook_or_404(codebook_id, user_id=user_id)
-            annotations = [a for a in annotations if a.codebook_version == codebook.version]
+        """Materialize a full annotations CSV string.
 
-        label_ids = {a.label_id for a in annotations}
-        label_names = {
-            label.id: label.name for label in await self.repo.list_labels_by_ids(label_ids)
-        }
-
-        buffer = io.StringIO()
-        writer = csv.writer(buffer)
-        writer.writerow(
-            [
-                "text_unit_id",
-                "label_id",
-                "label_name",
-                "annotator_id",
-                "value",
-                "confidence",
-                "comment",
-                "codebook_version",
-                "created_at",
-                "updated_at",
-            ]
+        .. deprecated::
+            Prefer :meth:`iter_annotations_csv` for HTTP responses.
+        """
+        warnings.warn(
+            "export_annotations_csv materializes the full CSV; "
+            "use iter_annotations_csv for HTTP streaming",
+            DeprecationWarning,
+            stacklevel=2,
         )
-        for a in annotations:
-            writer.writerow(
-                [
-                    a.text_unit_id,
-                    a.label_id,
-                    label_names.get(a.label_id, a.label_id),
-                    a.annotator_id,
-                    a.value,
-                    a.confidence if a.confidence is not None else "",
-                    a.comment or "",
-                    a.codebook_version,
-                    a.created_at.isoformat() if a.created_at else "",
-                    a.updated_at.isoformat() if a.updated_at else "",
-                ]
-            )
+        buffer = io.StringIO()
+        async for line in self.iter_annotations_csv(
+            corpus_id, user_id=user_id, codebook_id=codebook_id, max_rows=max_rows
+        ):
+            buffer.write(line)
         return buffer.getvalue()
 
     PREDICTION_EXPORT_PAGE_SIZE = 5_000
 
     ANNOTATION_EXPORT_PAGE_SIZE = 5_000
 
+    async def annotation_export_meta(
+        self,
+        corpus_id: str,
+        *,
+        user_id: str,
+        codebook_id: str | None = None,
+        max_rows: int | None = None,
+    ) -> ExportStreamMeta:
+        await self.get_corpus_or_404(corpus_id, user_id=user_id)
+        codebook_version: str | None = None
+        if codebook_id:
+            codebook = await self.get_codebook_or_404(codebook_id, user_id=user_id)
+            codebook_version = codebook.version
+        total = await self.repo.count_annotations_for_corpus(
+            corpus_id, codebook_version=codebook_version
+        )
+        return resolve_export_row_budget(total, max_rows=max_rows)
+
+    async def prediction_export_meta(
+        self, model_id: str, *, user_id: str, max_rows: int | None = None
+    ) -> ExportStreamMeta:
+        model = await self.get_model_or_404(model_id, user_id=user_id)
+        _rows, total = await self.repo.list_predictions_for_model(model.id, limit=1, offset=0)
+        return resolve_export_row_budget(int(total), max_rows=max_rows)
+
     async def iter_annotations_csv(
-        self, corpus_id: str, *, user_id: str, codebook_id: str | None = None
+        self,
+        corpus_id: str,
+        *,
+        user_id: str,
+        codebook_id: str | None = None,
+        max_rows: int | None = None,
     ):
         """Yield annotation CSV rows in bounded pages (header first, no full preload)."""
         await self.get_corpus_or_404(corpus_id, user_id=user_id)
@@ -215,13 +288,15 @@ class ExportService(ResearchAccessMixin):
         )
 
         offset = 0
+        emitted = 0
         page_size = self.ANNOTATION_EXPORT_PAGE_SIZE
         label_names: dict[str, str] = {}
-        while True:
+        while max_rows is None or emitted < max_rows:
+            limit = min(page_size, max_rows - emitted) if max_rows is not None else page_size
             annotations = await self.repo.list_annotations_for_corpus(
                 corpus_id,
                 codebook_version=codebook_version,
-                limit=page_size,
+                limit=limit,
                 offset=offset,
             )
             if not annotations:
@@ -249,14 +324,21 @@ class ExportService(ResearchAccessMixin):
                         annotation.updated_at.isoformat() if annotation.updated_at else "",
                     ]
                 )
+                emitted += 1
+                if max_rows is not None and emitted >= max_rows:
+                    break
             offset += len(annotations)
-            if len(annotations) < page_size:
+            if len(annotations) < limit:
                 break
 
     async def iter_predictions_csv(
         self, model_id: str, *, user_id: str, max_rows: int | None = None
     ):
-        """Yield prediction CSV rows in bounded pages (no million-row preload)."""
+        """Yield prediction CSV rows in bounded pages.
+
+        Default streams every published prediction. Pass an explicit ``max_rows``
+        to cap the body; callers must advertise truncation via export meta headers.
+        """
         model = await self.get_model_or_404(model_id, user_id=user_id)
         yield _csv_line(
             [
@@ -290,6 +372,8 @@ class ExportService(ResearchAccessMixin):
                     ]
                 )
                 emitted += 1
+                if max_rows is not None and emitted >= max_rows:
+                    break
             offset += len(predictions)
             if len(predictions) < limit:
                 break
@@ -297,6 +381,17 @@ class ExportService(ResearchAccessMixin):
     async def export_predictions_csv(
         self, model_id: str, *, user_id: str, max_rows: int | None = None
     ) -> str:
+        """Materialize a full predictions CSV string.
+
+        .. deprecated::
+            Prefer :meth:`iter_predictions_csv` for HTTP responses.
+        """
+        warnings.warn(
+            "export_predictions_csv materializes the full CSV; "
+            "use iter_predictions_csv for HTTP streaming",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         buffer = io.StringIO()
         async for line in self.iter_predictions_csv(model_id, user_id=user_id, max_rows=max_rows):
             buffer.write(line)
@@ -414,6 +509,7 @@ class ExportService(ResearchAccessMixin):
             "analysis_runs": {
                 "total": total_runs,
                 "included": len(runs),
+                "truncated": total_runs > len(runs),
                 "runs": [
                     {
                         "id": r.id,

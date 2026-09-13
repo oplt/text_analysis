@@ -1,8 +1,12 @@
 import { Alert, Box, Button, Chip, MenuItem, Skeleton, Stack, TextField, Typography } from "@mui/material";
 import { Approval as ReviewIcon } from "@mui/icons-material";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { KeyValueList } from "../../../components/ui/KeyValueList";
 import { QueryErrorAlert } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { AdvancedSettings } from "../../../components/ui/AdvancedSettings";
+import { JsonBlock } from "../../../components/ui/JsonBlock";
+import { recordToKeyValueItems } from "../../../components/ui/jsonDisplay";
 import { formatDateTime } from "../../../utils/formatters";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { datasetCaseDraftSchema, firstSchemaError, parseJsonObject } from "../studioUtils";
@@ -167,9 +171,19 @@ export function ReviewsEvaluationsPanel({ m }: { m: AiStudioModel }) {
                     <Stack spacing={1}>
                         {selectedDatasetCases.map((item) => (
                             <Box key={item.id} sx={(theme) => ({ p: 1.5, borderRadius: 3, border: `1px solid ${theme.palette.divider}` })}>
-                                <Typography variant="body2" sx={{ fontFamily: '"IBM Plex Mono", monospace' }}>
-                                    {JSON.stringify(item.input_variables)}
-                                </Typography>
+                                {recordToKeyValueItems(item.input_variables).length ? (
+                                    <KeyValueList
+                                        dense
+                                        items={recordToKeyValueItems(item.input_variables)}
+                                    />
+                                ) : (
+                                    <Typography variant="body2" color="text.secondary">
+                                        No input variables
+                                    </Typography>
+                                )}
+                                <AdvancedSettings title="Raw input variables" sx={{ mt: 1 }}>
+                                    <JsonBlock data={item.input_variables} />
+                                </AdvancedSettings>
                                 {item.expected_output_text && (
                                     <Typography variant="caption" color="text.secondary">
                                         Expected: {item.expected_output_text}

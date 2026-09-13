@@ -95,5 +95,3 @@ class EvaluationConfig(ComponentConfig):
 
     schema_version: int = 1
     end_to_end_qrels_version: str = "fixture-v1"
-    citation_entailment_enabled: bool = False
-    load_benchmark_scales: tuple[str, ...] = ("10k", "100k", "1M")

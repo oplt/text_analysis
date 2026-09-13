@@ -175,253 +175,67 @@ def _stage_prepare_corpus(context: dict[str, Any], plan: ExecutionPlan) -> None:
             )
 
 
-def _run_frequencies(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import (
-        run_frequencies_operator,
-    )
-
-    prepared: PreparedCorpusArtifact = context["prepared"]
-    spec: AnalysisSpecification = context["spec"]
-    params = spec.analysis.parameters
-    group_keys = _resolve_group_keys(
-        prepared,
-        group_by=params.get("group_by"),
-        documents_by_id=context.get("documents_by_id"),
-    )
-    context["results"] = run_frequencies_operator(
-        prepared,
-        top_n=int(params.get("top_n", 50)),
-        rate_per=float(params.get("rate_per", 1000)),
-        group_keys=group_keys,
-    )
-
-
-def _run_corpus_stats(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import (
-        run_corpus_stats_operator,
-    )
-
-    context["results"] = run_corpus_stats_operator(context["prepared"])
-
-
-def _run_ngrams(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import (
-        run_ngrams_operator,
-    )
-
-    prepared: PreparedCorpusArtifact = context["prepared"]
-    params = context["spec"].analysis.parameters
-    context["results"] = run_ngrams_operator(
-        prepared,
-        n=int(params.get("n", 2)),
-        top_n=int(params.get("top_n", 50)),
-        rate_per=float(params.get("rate_per", 1000)),
-        skip=int(params.get("skip", 0)),
-    )
-
-
-def _run_dfm(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import (
-        run_dfm_operator,
-    )
-
-    prepared: PreparedCorpusArtifact = context["prepared"]
-    spec: AnalysisSpecification = context["spec"]
-    params = spec.analysis.parameters
-    fe = spec.feature_extraction
-    build_kwargs: dict[str, Any] = {}
-    for key in ("k1", "b", "smooth_idf", "force_sparse_only", "trim"):
-        if key in params and params[key] is not None:
-            build_kwargs[key] = params[key]
-    context["results"] = run_dfm_operator(
-        prepared,
-        weighting=str(params.get("weighting") or fe.type or "count"),
-        **build_kwargs,
-    )
-
-
-def _run_kwic(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import (
-        run_kwic_operator,
-    )
-
-    prepared: PreparedCorpusArtifact = context["prepared"]
-    params = context["spec"].analysis.parameters
-    context["results"] = run_kwic_operator(
-        prepared,
-        keyword=str(params.get("keyword", "")),
-        window_size=int(params.get("window_size", 5)),
-        case_sensitive=bool(params.get("case_sensitive", False)),
-        query_mode=str(params.get("query_mode", "auto")),
-        language=params.get("query_language") or params.get("language"),
-        token_attribute=params.get("token_attribute"),
-        max_matches=params.get("max_matches"),
-    )
-
-
-def _run_dictionary(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import (
-        run_dictionary_operator,
-    )
+def _run_registered_operator(context: dict[str, Any], _plan: ExecutionPlan) -> None:
+    """Dispatch StageRunner analysis stages through canonical OPERATORS."""
+    from backend.modules.text_research.application.analysis_operators import invoke_operator
     from backend.modules.text_research.infrastructure.dictionary_matcher import (
         parse_dictionary_payload,
     )
 
-    prepared: PreparedCorpusArtifact = context["prepared"]
-    params = context["spec"].analysis.parameters
-    spec_payload = params.get("hierarchy") or params.get("dictionary_terms") or params.get("terms")
-    if isinstance(spec_payload, dict):
-        dictionary_spec = parse_dictionary_payload(spec_payload)
-    else:
-        dictionary_spec = parse_dictionary_payload(
-            {"terms": spec_payload or [], "source": "inline"}
+    prepared: PreparedCorpusArtifact = context.get("prepared_a") or context["prepared"]
+    spec: AnalysisSpecification = context["spec"]
+    analysis_type = spec.analysis.type
+    params = dict(spec.analysis.parameters or {})
+
+    group_keys = None
+    if analysis_type in {"frequencies", "dictionary", "similarity"}:
+        group_keys = _resolve_group_keys(
+            prepared,
+            group_by=params.get("group_by"),
+            documents_by_id=context.get("documents_by_id"),
         )
-    group_keys = _resolve_group_keys(
+
+    dictionary_spec = None
+    if analysis_type == "dictionary":
+        spec_payload = (
+            params.get("hierarchy") or params.get("dictionary_terms") or params.get("terms")
+        )
+        if isinstance(spec_payload, dict):
+            dictionary_spec = parse_dictionary_payload(spec_payload)
+        else:
+            dictionary_spec = parse_dictionary_payload(
+                {"terms": spec_payload or [], "source": "inline"}
+            )
+
+    prepared_b = None
+    if analysis_type == "keyness":
+        prepared_b = context.get("prepared_b")
+        if prepared_b is None:
+            texts_b = context.get("texts_b")
+            if not texts_b:
+                raise ValueError("keyness requires context['texts_b'] or context['prepared_b']")
+            prepared_b = prepare_texts(
+                texts_b,
+                prepared.preprocessing_profile,
+                unit_ids=context.get("unit_ids_b"),
+                force_in_memory=context.get("force_in_memory", False),
+            )
+            context["prepared_b"] = prepared_b
+
+    feature_type = None
+    if analysis_type == "dfm":
+        feature_type = getattr(getattr(spec, "feature_extraction", None), "type", None)
+
+    context["results"] = invoke_operator(
+        analysis_type,
         prepared,
-        group_by=params.get("group_by"),
-        documents_by_id=context.get("documents_by_id"),
-    )
-    context["results"] = run_dictionary_operator(
-        prepared,
+        params,
+        prepared_b=prepared_b,
+        group_keys=group_keys,
         dictionary_spec=dictionary_spec,
-        case_sensitive=bool(params.get("case_sensitive", False)),
-        rate_per=float(params.get("rate_per", 1000.0)),
-        group_keys=group_keys,
+        random_seed=int(getattr(spec, "random_seed", 42) or 42),
+        feature_extraction_type=feature_type,
     )
-
-
-def _run_keyness(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import run_keyness_operator
-
-    prepared_a: PreparedCorpusArtifact = context.get("prepared_a") or context["prepared"]
-    prepared_b: PreparedCorpusArtifact | None = context.get("prepared_b")
-    if prepared_b is None:
-        texts_b = context.get("texts_b")
-        if not texts_b:
-            raise ValueError("keyness requires context['texts_b'] or context['prepared_b']")
-        prepared_b = prepare_texts(
-            texts_b,
-            prepared_a.preprocessing_profile,
-            unit_ids=context.get("unit_ids_b"),
-            force_in_memory=context.get("force_in_memory", False),
-        )
-        context["prepared_b"] = prepared_b
-
-    params = context["spec"].analysis.parameters
-    context["results"] = run_keyness_operator(
-        prepared_a,
-        prepared_b,
-        method=str(params.get("method", "log_likelihood")),
-        top_n=int(params.get("top_n", 50)),
-        min_frequency=int(params.get("min_frequency", 1)),
-        correction=params.get("correction", "bh"),
-        group_a_label=params.get("group_a_label"),
-        group_b_label=params.get("group_b_label"),
-        group_field=params.get("group_field"),
-    )
-
-
-def _run_cooccurrence(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import (
-        run_cooccurrence_operator,
-    )
-
-    prepared: PreparedCorpusArtifact = context["prepared"]
-    params = context["spec"].analysis.parameters
-    context["results"] = run_cooccurrence_operator(
-        prepared,
-        window_size=int(params.get("window_size", 5)),
-        top_n=int(params.get("top_n", 50)),
-        association_method=str(params.get("association_method", "pmi")),
-        directional=bool(params.get("directional", False)),
-        min_frequency=int(params.get("min_frequency", 1)),
-        min_count=int(params.get("min_count", 1)),
-        include_network=bool(params.get("include_network", True)),
-    )
-
-
-def _run_similarity(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import run_similarity_operator
-
-    prepared: PreparedCorpusArtifact = context["prepared"]
-    params = context["spec"].analysis.parameters
-    group_keys = _resolve_group_keys(
-        prepared,
-        group_by=params.get("group_by"),
-        documents_by_id=context.get("documents_by_id"),
-    )
-
-    context["results"] = run_similarity_operator(
-        prepared,
-        method=str(params.get("method", "tfidf_cosine")),
-        mode=str(params.get("mode", "pairwise")),
-        group_keys=group_keys,
-        top_k=params.get("top_k"),
-        min_score=params.get("min_score"),
-        centroid_target=str(params.get("centroid_target", "between_groups")),
-        query_text=params.get("query_text"),
-        query_id=params.get("query_id") or "query",
-        embeddings=params.get("embeddings"),
-        query_embedding=params.get("query_embedding"),
-    )
-
-
-def _run_clustering(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import run_clustering_operator
-
-    prepared: PreparedCorpusArtifact = context["prepared"]
-    params = context["spec"].analysis.parameters
-    result = run_clustering_operator(
-        prepared,
-        n_clusters=int(params.get("n_clusters", 5)),
-        algorithm=str(params.get("algorithm", "kmeans")),
-        use_svd=bool(params.get("use_svd", False)),
-        svd_components=int(params.get("n_svd_components", params.get("svd_components", 50))),
-        random_seed=int(params.get("random_seed", context["spec"].random_seed)),
-        top_n_terms=int(params.get("top_terms", 10)),
-    )
-    context["results"] = {k: v for k, v in result.items() if k != "tfidf_matrix"}
-
-
-def _run_dimensionality_reduction(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import (
-        run_dimensionality_reduction_operator,
-    )
-
-    params = context["spec"].analysis.parameters
-    context["results"] = run_dimensionality_reduction_operator(
-        context["prepared"],
-        method=str(params.get("method", "svd")),
-        n_components=int(params.get("n_components", 2)),
-        random_seed=int(params.get("random_seed", context["spec"].random_seed)),
-    )
-
-
-def _run_duplicate_detection(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import (
-        run_duplicate_detection_operator,
-    )
-
-    params = context["spec"].analysis.parameters
-    context["results"] = run_duplicate_detection_operator(
-        context["prepared"],
-        methods=params.get("methods"),
-        lexical_threshold=float(params.get("lexical_threshold", 0.85)),
-        char_ngram_size=int(params.get("char_ngram_size", 5)),
-        minhash_num_perm=int(params.get("minhash_num_perm", 64)),
-        minhash_shingle_size=int(params.get("minhash_shingle_size", 3)),
-        minhash_threshold=float(params.get("minhash_threshold", 0.8)),
-        max_pairs=params.get("max_pairs", 1000),
-    )
-
-
-def _run_readability(context: dict[str, Any], _plan: ExecutionPlan) -> None:
-    from backend.modules.text_research.application.analysis_operators import (
-        run_readability_operator,
-    )
-
-    prepared: PreparedCorpusArtifact = context["prepared"]
-    context["results"] = run_readability_operator(prepared)
 
 
 def _run_statistical_model(context: dict[str, Any], _plan: ExecutionPlan) -> None:
@@ -520,19 +334,19 @@ def _stage_build_manifest(context: dict[str, Any], plan: ExecutionPlan) -> None:
 
 
 ANALYSIS_HANDLERS: dict[str, StageHandler] = {
-    "frequencies": _run_frequencies,
-    "corpus_stats": _run_corpus_stats,
-    "ngrams": _run_ngrams,
-    "dfm": _run_dfm,
-    "kwic": _run_kwic,
-    "dictionary": _run_dictionary,
-    "keyness": _run_keyness,
-    "cooccurrence": _run_cooccurrence,
-    "similarity": _run_similarity,
-    "clustering": _run_clustering,
-    "dimensionality_reduction": _run_dimensionality_reduction,
-    "duplicate_detection": _run_duplicate_detection,
-    "readability": _run_readability,
+    "frequencies": _run_registered_operator,
+    "corpus_stats": _run_registered_operator,
+    "ngrams": _run_registered_operator,
+    "dfm": _run_registered_operator,
+    "kwic": _run_registered_operator,
+    "dictionary": _run_registered_operator,
+    "keyness": _run_registered_operator,
+    "cooccurrence": _run_registered_operator,
+    "similarity": _run_registered_operator,
+    "clustering": _run_registered_operator,
+    "dimensionality_reduction": _run_registered_operator,
+    "duplicate_detection": _run_registered_operator,
+    "readability": _run_registered_operator,
     "statistical_model": _run_statistical_model,
 }
 

@@ -23,7 +23,7 @@ import {
 import { Search as SearchIcon, PeopleAlt as PeopleAltIcon } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import { listAdminUsers, updateUserStatus, type AdminUserListResponse } from "../api/admin";
-import { AdminSettingsTabs } from "../components/layout/AdminSettingsTabs";
+import { SettingsTabs } from "../components/layout/SettingsTabs";
 import { EmptyState } from "../components/ui/EmptyState";
 import { PageShell } from "../components/ui/PageShell";
 import { QueryBoundary } from "../components/ui/QueryBoundary";
@@ -87,7 +87,7 @@ export default function AdminUsersPage() {
 
     return (
         <PageShell width="wide">
-            <AdminSettingsTabs />
+            <SettingsTabs />
 
             <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
                 <TextField

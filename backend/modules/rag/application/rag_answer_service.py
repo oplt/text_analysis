@@ -12,6 +12,7 @@ from backend.modules.rag.application.citation_validation_service import Citation
 from backend.modules.rag.application.prompt_context_service import PromptContextService
 from backend.modules.rag.application.rag_context_builder import RagContextBuilder
 from backend.modules.rag.application.retrieval_service import RetrievalService
+from backend.modules.rag.application.trace_context import traced, tracer
 from backend.modules.rag.domain.citation_validation_context import CitationValidationContext
 from backend.modules.rag.domain.enums import RetrievalIntent
 from backend.modules.rag.domain.models import RagAnswer, RetrievalOutcome, RetrievedChunk
@@ -107,6 +108,7 @@ class RagAnswerService:
         )
         self.generation: GenerationPort = AiServiceGenerationPort(db)
 
+    @traced("rag.request")
     async def answer(
         self,
         query: str,
@@ -156,6 +158,7 @@ class RagAnswerService:
             commit=commit,
         )
 
+    @traced("rag.answer")
     async def answer_from_retrieval(
         self,
         query: str,
@@ -179,12 +182,25 @@ class RagAnswerService:
 
         started = perf_counter()
         user_id = user.id
-        bounded_chunks = self.context_builder.trim_chunks_to_token_budget(
-            outcome.chunks,
-            max_tokens=self.config.max_context_tokens,
-            overlap_dedupe_threshold=getattr(self.config, "context_overlap_dedupe_threshold", 0.8),
-            ordering_policy=getattr(self.config, "context_ordering_policy", "relevance"),
-        )
+        with tracer.start_as_current_span(
+            "rag.context_selection", record_exception=False, set_status_on_exception=False
+        ):
+            selection = self.context_builder.select_context_for_generation(
+                outcome.chunks,
+                max_tokens=self.config.max_context_tokens,
+                overlap_dedupe_threshold=getattr(
+                    self.config, "context_overlap_dedupe_threshold", 0.8
+                ),
+                ordering_policy=getattr(self.config, "context_ordering_policy", "relevance"),
+            )
+        bounded_chunks = selection.chunks
+        outcome.retrieval_provenance["context_selection"] = selection.provenance()
+        if outcome.retrieval_trace_id:
+            await self.repo.record_context_selection(
+                outcome.retrieval_trace_id,
+                user_id=user_id,
+                selection=selection.provenance(),
+            )
 
         if not bounded_chunks:
             latency_ms = int((perf_counter() - started) * 1000)
@@ -251,7 +267,7 @@ class RagAnswerService:
         combined = f"{system_context or ''}\n\n{STRUCTURED_CLAIM_INSTRUCTION}".strip()
         chunk_ids = [c.chunk_id for c in bounded_chunks]
 
-        ai_run = await self.generation.run_rag_answer(
+        ai_run = await self._generate(
             user,
             query=query,
             combined_context=combined,
@@ -270,7 +286,7 @@ class RagAnswerService:
             outcome=outcome,
             chunks=bounded_chunks,
         )
-        validated = self.citation_validator.validate(
+        validated = self._validate_citations(
             raw_output=ai_run.output_text or "",
             retrieved_chunks=bounded_chunks,
             allowed_document_ids=document_ids,
@@ -284,7 +300,7 @@ class RagAnswerService:
                 f"{combined}\n\n{STRUCTURED_REPAIR_INSTRUCTION}\n\n"
                 f"Previous invalid output:\n{(ai_run.output_text or '')[:2000]}"
             )
-            ai_run = await self.generation.run_rag_answer(
+            ai_run = await self._generate(
                 user,
                 query=query,
                 combined_context=repair_context,
@@ -295,7 +311,7 @@ class RagAnswerService:
                 injection_chunks_filtered=outcome.injection_chunks_filtered,
                 commit=commit,
             )
-            validated = self.citation_validator.validate(
+            validated = self._validate_citations(
                 raw_output=ai_run.output_text or "",
                 retrieved_chunks=bounded_chunks,
                 allowed_document_ids=document_ids,
@@ -355,6 +371,17 @@ class RagAnswerService:
             index_revision_ids=list(outcome.index_revision_ids),
         )
 
+    @traced("rag.generation")
+    async def _generate(self, *args, **kwargs):
+        return await self.generation.run_rag_answer(*args, **kwargs)
+
+    def _validate_citations(self, **kwargs):
+        with tracer.start_as_current_span(
+            "rag.citation_validation", record_exception=False, set_status_on_exception=False
+        ):
+            return self.citation_validator.validate(**kwargs)
+
+    @traced("rag.answer.persistence")
     async def _log_query(
         self,
         *,

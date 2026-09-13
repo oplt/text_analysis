@@ -36,8 +36,12 @@ import {
     type ResearchDictionary,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { AdvancedSettings } from "../../../components/ui/AdvancedSettings";
+import { JsonBlock } from "../../../components/ui/JsonBlock";
+import { KeyValueList } from "../../../components/ui/KeyValueList";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { recordToKeyValueItems, formatDisplayValue } from "../../../components/ui/jsonDisplay";
 import { AskAboutThisButton } from "../components/assistant/AskAboutThisButton";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
@@ -367,19 +371,19 @@ export default function DictionaryManagerView() {
                                 <Typography variant="subtitle2" gutterBottom>
                                     Hierarchy
                                 </Typography>
-                                <Box
-                                    component="pre"
-                                    sx={{
-                                        m: 0,
-                                        p: 1.5,
-                                        borderRadius: 1,
-                                        bgcolor: "action.hover",
-                                        overflow: "auto",
-                                        fontSize: 12,
-                                    }}
-                                >
-                                    {JSON.stringify(selected.hierarchy, null, 2)}
-                                </Box>
+                                {recordToKeyValueItems(selected.hierarchy).length ? (
+                                    <KeyValueList
+                                        dense
+                                        items={recordToKeyValueItems(selected.hierarchy)}
+                                    />
+                                ) : (
+                                    <Typography variant="body2" color="text.secondary">
+                                        Nested hierarchy present.
+                                    </Typography>
+                                )}
+                                <AdvancedSettings title="Raw hierarchy JSON" sx={{ mt: 1 }}>
+                                    <JsonBlock data={selected.hierarchy} />
+                                </AdvancedSettings>
                             </Box>
                         ) : null}
                         {(selected.exclusions?.length ?? 0) > 0 ? (
@@ -387,19 +391,25 @@ export default function DictionaryManagerView() {
                                 <Typography variant="subtitle2" gutterBottom>
                                     Exclusions
                                 </Typography>
-                                <Box
-                                    component="pre"
-                                    sx={{
-                                        m: 0,
-                                        p: 1.5,
-                                        borderRadius: 1,
-                                        bgcolor: "action.hover",
-                                        overflow: "auto",
-                                        fontSize: 12,
-                                    }}
-                                >
-                                    {JSON.stringify(selected.exclusions, null, 2)}
-                                </Box>
+                                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                                    {(selected.exclusions ?? []).slice(0, 40).map((item, index) => (
+                                        <Chip
+                                            key={`${index}-${formatDisplayValue(item)}`}
+                                            size="small"
+                                            label={formatDisplayValue(item)}
+                                            variant="outlined"
+                                        />
+                                    ))}
+                                    {(selected.exclusions?.length ?? 0) > 40 ? (
+                                        <Chip
+                                            size="small"
+                                            label={`+${(selected.exclusions?.length ?? 0) - 40} more`}
+                                        />
+                                    ) : null}
+                                </Stack>
+                                <AdvancedSettings title="Raw exclusions JSON" sx={{ mt: 1 }}>
+                                    <JsonBlock data={selected.exclusions} />
+                                </AdvancedSettings>
                             </Box>
                         ) : null}
                     </Stack>

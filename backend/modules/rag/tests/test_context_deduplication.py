@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 
+from backend.lib.vectors import estimate_tokens
 from backend.modules.rag.application.context_selection import (
     ContextOrderingPolicy,
     order_context_chunks,
@@ -63,7 +65,7 @@ class ContextDeduplicationTests(unittest.TestCase):
             _chunk("two", "doc", 0.8, ["a"], "same"),
         ]
         selected = RagContextBuilder.trim_chunks_to_token_budget(
-            chunks, max_tokens=600, reserved_tokens=512
+            chunks, max_tokens=900, reserved_tokens=512
         )
         self.assertEqual(len(selected), 1)
 
@@ -93,9 +95,52 @@ class ContextDeduplicationTests(unittest.TestCase):
         ]
         selection = RagContextBuilder.select_context_for_generation(
             chunks,
-            max_tokens=560,
-            reserved_tokens=512,
+            max_tokens=estimate_tokens(
+                RagContextBuilder().build_document_context_block(chunks[:1])
+            ),
+            reserved_tokens=0,
             ordering_policy=ContextOrderingPolicy.RELEVANCE,
         )
         self.assertEqual(selection.selected_chunk_ids, ["one"])
         self.assertIn("two", selection.budget_removed_chunk_ids or [])
+
+    def test_rendered_context_budget_and_citation_authority(self):
+        original = replace(
+            _chunk("one", "doc", 0.9, ["a"], "one"),
+            content="original citation " * 500,
+            citation_content="original citation " * 500,
+        )
+        parent = replace(
+            original, context_content="expanded parent " * 1000, parent_context_id="parent"
+        )
+        builder = RagContextBuilder()
+        for chunk in (original, parent):
+            with self.subTest(parent=chunk.parent_context_id):
+                selection = builder.select_context_for_generation(
+                    [chunk], max_tokens=300, reserved_tokens=0
+                )
+                self.assertEqual(len(selection.chunks), 1)
+                included = selection.chunks[0]
+                self.assertLessEqual(
+                    estimate_tokens(builder.build_document_context_block(selection.chunks)), 300
+                )
+                self.assertEqual(included.content, original.content)
+                self.assertEqual(included.citation_content, original.citation_content)
+                self.assertTrue(included.metadata["context_truncated"])
+                self.assertEqual(selection.provenance()["context_token_count"], 300)
+                self.assertNotIn(
+                    "citation_content:", builder.build_document_context_block(selection.chunks)
+                )
+
+    def test_zero_and_exact_fit_budgets(self):
+        chunk = _chunk("one", "doc", 0.9, ["a"], "one")
+        builder = RagContextBuilder()
+        exact = estimate_tokens(builder.build_document_context_block([chunk]))
+        for budget in (0, 1, exact):
+            selection = builder.select_context_for_generation(
+                [chunk], max_tokens=budget, reserved_tokens=0
+            )
+            self.assertLessEqual(selection.context_token_count, budget)
+            self.assertEqual(selection.selected_chunk_ids, ["one"] if budget == exact else [])
+            if budget != exact:
+                self.assertEqual(selection.budget_removed_chunk_ids, ["one"])

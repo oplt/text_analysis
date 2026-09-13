@@ -84,7 +84,6 @@ RAG_TOP_K=5
 RAG_SCORE_THRESHOLD=0.3
 RAG_MAX_CONTEXT_TOKENS=6000
 RAG_RERANK_ENABLED=false
-RAG_RERANK_CANDIDATE_MULTIPLIER=3
 RAG_DENSE_CANDIDATES=40
 RAG_LEXICAL_CANDIDATES=40
 RAG_FUSION_METHOD=rrf
@@ -244,3 +243,77 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 backend/.venv/bin/pytest \
 ## Vector backend
 
 Only `pgvector` is supported. The app fails fast at startup if `RAG_VECTOR_BACKEND` is set to an unsupported value. External vector DBs (e.g. Qdrant) require a new adapter implementation before enabling a new backend name in config.
+
+
+## Reproducible evidence and evaluation
+
+Frozen research scope binds exact document and index revision IDs. Empty document or revision
+allow-lists yield no evidence; unavailable historical revisions fail closed. Generation accepts
+one retrieval outcome and validates citations against its chunks, document scope, and revisions.
+Cache identity includes evidence revisions and retrieval fingerprints.
+
+Context selection counts the complete rendered document context, including source labels. It
+can shorten only the generation representation; canonical citation content remains intact.
+Selection provenance records selected, deduplicated, and budget-removed IDs and token counts.
+The viewer resolves source scope/span coordinates before page ranges and snippet matching.
+OCR text uses transformed page identity and never inherits inaccurate digital-PDF block offsets.
+
+Install OCR with `uv sync --extra pdf-ocr` and native Tesseract plus the required language packs.
+`infra/backend.Dockerfile` provides English, German, French, and Turkish. Parser diagnostics
+separate disabled OCR, missing Python dependencies, missing binary/language, execution failure,
+and success. The standard PDF path remains available without OCR.
+
+Query variants and dense/lexical branches have separate concurrency limits. Database statements
+sharing an AsyncSession remain serialized. Synthesis uses at most `synthesis_batch_size` independent
+sessions and restores frozen corpus ordering before reduction. Per-document failures remain explicit
+missing-evidence findings. Trace context crosses persisted synthesis jobs; OpenTelemetry spans cover
+retrieval, generation, citation validation, context selection, persistence, and reduction levels.
+Span attributes exclude raw queries and source content.
+
+### Live fixture evaluation
+
+After migrating a disposable pgvector database, run from the repository root:
+
+```sh
+PYTHONPATH=. PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 \
+RAG_EVAL_REPORT_PATH=var/benchmarks/rag-end-to-end.json \
+backend/.venv/bin/pytest -p pytest_asyncio.plugin \
+  backend/tests/integration/test_rag_end_to_end_eval.py -q
+```
+
+Set `RAG_INTEGRATION_DATABASE_URL` to that disposable database. Fixture files use production parsing,
+canonicalization, chunking, revision persistence, pgvector and lexical retrieval. Qrels bind stable
+fixture-relative chunk identities to runtime UUIDs; source coordinates and content hashes are reported.
+The offline embedding and extractive generation providers are explicitly synthetic. Production answer
+assembly and citation validation run on actual retrieved evidence; expected IDs never enter retrieval.
+This tests pipeline integrity, not learned semantic quality or semantic claim entailment.
+
+The Turkish benchmark compares PostgreSQL `simple` FTS with experimental simplemma normalization on
+both documents and queries, including morphology, dotted/dotless I, and negative controls. Production
+keeps its language-specific FTS plus `simple` fallback. The small fixture does not justify enabling
+normalization globally; no normalized representation or migration is required while it is experimental.
+
+### Live scale benchmark
+
+Use an **empty**, migrated disposable RAG database; the harness refuses existing documents and
+retains benchmark rows for inspection. It never clears user data.
+
+```sh
+PYTHONPATH=. backend/.venv/bin/python -m backend.modules.rag.eval.live_benchmark \
+  --scale small --samples 20 --output var/benchmarks/rag-live-small.json
+```
+
+Scales are 100 documents/10k chunks, 1k/100k, and 10k/1M. Seeding streams bounded batches with
+synthetic 32-dimensional vectors padded to the production 1536 dimensions. Reports include exact and
+production-query timings, filtered recall, hybrid latency, index rebuild time/size, database versions,
+SHA, and EXPLAIN ANALYZE BUFFERS plans. P99 is omitted below 100 samples.
+
+If PostgreSQL chooses an exact scan, production ANN timings remain null and `production_plan_warning`
+is `exact_scan`. A separate `ann_diagnostic` executes the same scoped production SQL with explicitly
+reported transaction-local planner overrides, verifies HNSW/IVFFlat use, and measures actual ANN recall.
+Those diagnostic timings must not be presented as default production performance. The synthetic memory
+smoke remains labelled `SYNTHETIC`; it is not a database load measurement.
+
+CI runs live fixture and 10k scale checks after migrations and uploads JSON reports. Nightly runs
+100k with 100 queries; manual dispatch enables 1M. All normal quality gates evaluate the checked-out
+SHA. Local uncommitted validation does not establish a green remote final-commit quality gate.

@@ -165,6 +165,90 @@ class PredictionSetServiceTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(items, [])
         self.assertEqual(total, 0)
 
+    async def test_create_draft_clears_prior_drafts_and_stays_unpublished(self) -> None:
+        draft = PredictionSet(
+            id="ps-draft",
+            project_id="project-1",
+            corpus_id="corpus-1",
+            trained_model_id="model-1",
+            model_version=2,
+            dataset_snapshot_id="snapshot-1",
+            analysis_run_id="run-1",
+            status="draft",
+            created_by="user-1",
+            created_at=datetime.now(UTC),
+            metadata_json="{}",
+        )
+        self.service.repo.discard_draft_prediction_sets_for_run = AsyncMock(return_value=1)
+        self.service.repo.create_prediction_set.return_value = draft
+
+        result = await self.service.create_draft_from_run(
+            run=self.run,
+            model=self.model,
+            created_by="user-1",
+        )
+
+        self.service.repo.discard_draft_prediction_sets_for_run.assert_awaited_once_with("run-1")
+        saved = self.service.repo.create_prediction_set.await_args.args[0]
+        self.assertEqual(saved.status, "draft")
+        self.assertTrue(loads(saved.metadata_json, {}).get("staging"))
+        self.assertEqual(result.id, "ps-draft")
+
+    async def test_publish_flips_draft_to_published(self) -> None:
+        draft = PredictionSet(
+            id="ps-draft",
+            project_id="project-1",
+            corpus_id="corpus-1",
+            trained_model_id="model-1",
+            model_version=2,
+            dataset_snapshot_id="snapshot-1",
+            analysis_run_id="run-1",
+            status="draft",
+            created_by="user-1",
+            created_at=datetime.now(UTC),
+            metadata_json=dumps({"staging": True, "unit_ids": []}),
+        )
+        published = PredictionSet(
+            id="ps-draft",
+            project_id="project-1",
+            corpus_id="corpus-1",
+            trained_model_id="model-1",
+            model_version=2,
+            dataset_snapshot_id="snapshot-1",
+            analysis_run_id="run-1",
+            status="published",
+            created_by="user-1",
+            created_at=datetime.now(UTC),
+            metadata_json=dumps({"staging": False, "unit_ids": ["u1"], "unit_count": 1}),
+        )
+        self.service.repo.update_prediction_set.return_value = published
+
+        result = await self.service.publish(draft, unit_ids=["u1"])
+
+        kwargs = self.service.repo.update_prediction_set.await_args.kwargs
+        self.assertEqual(kwargs["status"], "published")
+        self.assertEqual(loads(kwargs["metadata_json"], {})["unit_ids"], ["u1"])
+        self.assertEqual(result.status, "published")
+
+    async def test_get_hides_draft_prediction_sets(self) -> None:
+        draft = PredictionSet(
+            id="ps-draft",
+            project_id="project-1",
+            corpus_id="corpus-1",
+            trained_model_id="model-1",
+            model_version=2,
+            dataset_snapshot_id="snapshot-1",
+            analysis_run_id="run-1",
+            status="draft",
+            created_by="user-1",
+            created_at=datetime.now(UTC),
+            metadata_json="{}",
+        )
+        self.service.repo.get_prediction_set.return_value = draft
+        with self.assertRaises(Exception) as raised:
+            await self.service.get("ps-draft", user_id="user-1")
+        self.assertEqual(raised.exception.status_code, 404)
+
 
 if __name__ == "__main__":
     unittest.main()

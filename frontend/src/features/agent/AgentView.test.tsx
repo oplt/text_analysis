@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -37,13 +38,13 @@ const run: AgentRun = {
     status: "completed",
     response_format: "text",
     variables: {},
-    retrieval_query: null,
-    retrieved_chunk_ids: [],
+    retrieval_query: "find evidence",
+    retrieved_chunk_ids: ["chunk-aaa", "chunk-bbb"],
     retrieval_degraded: false,
     memory_degraded: false,
     degradation_reason: null,
     injection_chunks_filtered: 0,
-    input_messages: [],
+    input_messages: [{ role: "user", content: "Summarize findings" }],
     output_text: "Persisted response",
     output_json: null,
     latency_ms: 12,
@@ -58,12 +59,14 @@ const run: AgentRun = {
     memory_run_id: "memory-123",
 };
 
-function renderView() {
+function renderView(initialEntry = "/agent?tab=run") {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     return render(
-        <QueryClientProvider client={queryClient}>
-            <AgentView />
-        </QueryClientProvider>
+        <MemoryRouter initialEntries={[initialEntry]}>
+            <QueryClientProvider client={queryClient}>
+                <AgentView />
+            </QueryClientProvider>
+        </MemoryRouter>
     );
 }
 
@@ -110,10 +113,23 @@ describe("AgentView persisted history", () => {
         vi.mocked(listAgentRuns).mockResolvedValue({ items: [run], total: 1, limit: 20, offset: 0 });
         renderView();
 
-        fireEvent.click(await screen.findByText(/run-1234.*completed/i));
+        fireEvent.click(await screen.findByRole("button", { name: /run-1234.*completed/i }));
 
         expect(await screen.findByText("Persisted response")).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Refresh history" }));
+        fireEvent.click(screen.getByRole("tab", { name: "Run" }));
+        fireEvent.click(await screen.findByRole("button", { name: "Refresh history" }));
         await waitFor(() => expect(listAgentRuns).toHaveBeenCalledTimes(2));
+    });
+
+    it("shows structured trace steps for a selected run", async () => {
+        vi.mocked(listAgentRuns).mockResolvedValue({ items: [run], total: 1, limit: 20, offset: 0 });
+        renderView("/agent?tab=run");
+
+        fireEvent.click(await screen.findByRole("button", { name: /run-1234.*completed/i }));
+        fireEvent.click(await screen.findByRole("tab", { name: "Trace" }));
+
+        expect(await screen.findByText("Tool: RAG retrieve")).toBeInTheDocument();
+        expect(screen.getByText("Tool: Generate")).toBeInTheDocument();
+        expect(screen.getByText(/Structured steps/i)).toBeInTheDocument();
     });
 });

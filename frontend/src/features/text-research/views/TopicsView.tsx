@@ -23,9 +23,11 @@ import {
     runTopicSeedStability,
     trainTopicModel,
 } from "../../../api/textResearch";
+import { DisabledWithReason } from "../../../components/ui/DisabledWithReason";
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { trainTopicModelDisabledReason } from "../actionDisabledReasons";
 import { ActiveRunActions } from "../components/ActiveRunActions";
 import { AskAboutThisButton } from "../components/assistant/AskAboutThisButton";
 import { useResearchContext } from "../hooks/useResearchContext";
@@ -42,7 +44,7 @@ import {
     SimpleLineLikeBars,
 } from "../components/ResearchCharts";
 import { ResearchResultsTable } from "../components/ResearchResults";
-import { RunStatusChip } from "../components/ResearchShared";
+import { RunStatusChip } from "../../../components/ui/RunStatusChip";
 import {
     TopicComparisonView,
     TopicDocumentExplorer,
@@ -245,7 +247,7 @@ export default function TopicsView() {
 
     const compareQuery = useQuery({
         queryKey: ["text-research", "topic-compare", compareAId, compareBId],
-        queryFn: () => compareRuns(compareAId, compareBId),
+        queryFn: ({ signal }) => compareRuns(compareAId, compareBId, signal),
         enabled: Boolean(compareAId && compareBId && compareAId !== compareBId),
     });
 
@@ -266,7 +268,7 @@ export default function TopicsView() {
 
     const labelsQuery = useQuery({
         queryKey: queryKeys.textResearch.topicLabels(runId ?? ""),
-        queryFn: () => listTopicLabels(runId!),
+        queryFn: ({ signal }) => listTopicLabels(runId!, signal),
         enabled: Boolean(runId && completed),
     });
 
@@ -626,14 +628,21 @@ export default function TopicsView() {
                             </Typography>
                         </Stack>
                     </Stack>
-                    <Button
-                        variant="contained"
-                        startIcon={<TrainIcon />}
-                        onClick={() => trainMutation.mutate()}
-                        disabled={!ctx.selectedCorpusId || trainMutation.isPending}
+                    <DisabledWithReason
+                        reason={trainTopicModelDisabledReason({
+                            corpusId: ctx.selectedCorpusId,
+                            pending: trainMutation.isPending,
+                        })}
                     >
-                        Train topic model
-                    </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={<TrainIcon />}
+                            onClick={() => trainMutation.mutate()}
+                            disabled={!ctx.selectedCorpusId || trainMutation.isPending}
+                        >
+                            Train topic model
+                        </Button>
+                    </DisabledWithReason>
                 </SectionCard>
             ) : null}
 

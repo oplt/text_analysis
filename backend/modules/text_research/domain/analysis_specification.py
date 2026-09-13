@@ -92,11 +92,14 @@ class ValidationSpec(BaseModel):
         "grouped_cv",
         "leave_one_group_out",
         "temporal",
+        "nested_grouped_cv",
     ] = "grouped_holdout"
     group_field: str = "source_document"
     temporal_field: str | None = None
     test_size: float = 0.2
     n_splits: int = 5
+    outer_splits: int | None = None
+    inner_splits: int | None = None
     random_seed: int = 42
 
 
@@ -172,7 +175,13 @@ class AnalysisSpecification(BaseModel):
         if normalized.validation is not None:
             strategy = normalized.validation.strategy
             if (
-                strategy in {"grouped_holdout", "grouped_cv", "leave_one_group_out"}
+                strategy
+                in {
+                    "grouped_holdout",
+                    "grouped_cv",
+                    "leave_one_group_out",
+                    "nested_grouped_cv",
+                }
                 and not normalized.validation.group_field.strip()
             ):
                 raise ValueError(
@@ -182,6 +191,11 @@ class AnalysisSpecification(BaseModel):
                 raise ValueError(
                     "validation.temporal_field is required when strategy is 'temporal'"
                 )
+            if strategy == "nested_grouped_cv":
+                if not normalized.validation.outer_splits or normalized.validation.outer_splits < 2:
+                    raise ValueError("validation.outer_splits must be >= 2 for nested_grouped_cv")
+                if not normalized.validation.inner_splits or normalized.validation.inner_splits < 2:
+                    raise ValueError("validation.inner_splits must be >= 2 for nested_grouped_cv")
 
         if normalized.analysis.type == "classification":
             if normalized.model is None:

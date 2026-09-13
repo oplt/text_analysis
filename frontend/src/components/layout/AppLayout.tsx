@@ -51,6 +51,7 @@ import {
     researchLabPath,
 } from "../../features/text-research/researchProjectStorage";
 import { NotificationNavBadge } from "./NotificationNavBadge";
+import { SkipToContentLink } from "../ui/SkipToContentLink";
 import { getInitials } from "../../utils/formatters";
 
 const DRAWER_WIDTH = 195;
@@ -415,6 +416,7 @@ export function AppLayout() {
 
     return (
         <Box sx={{ minHeight: "100vh" }}>
+            <SkipToContentLink />
             <AppBar
                 position="fixed"
                 elevation={0}
@@ -521,6 +523,8 @@ export function AppLayout() {
 
             <Box
                 component="main"
+                id="main-content"
+                tabIndex={-1}
                 sx={{
                     minHeight: "100vh",
                     ml: { md: `${desktopDrawerWidth}px` },
@@ -528,6 +532,7 @@ export function AppLayout() {
                     transition: theme.transitions.create("margin-left", {
                         duration: theme.transitions.duration.shorter,
                     }),
+                    outline: "none",
                 }}
             >
                 <Outlet />

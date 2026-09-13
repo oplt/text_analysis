@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
     Box,
     Button,
@@ -11,8 +10,20 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { BarChart } from "@mui/x-charts/BarChart";
-import { JsonBlock } from "./ResearchShared";
+import { AdvancedSettings } from "../../../components/ui/AdvancedSettings";
+import { HelpTooltip } from "../../../components/ui/HelpTooltip";
+import { JsonBlock } from "../../../components/ui/JsonBlock";
+import { KeyValueList } from "../../../components/ui/KeyValueList";
+import { MetricGrid } from "../../../components/ui/MetricGrid";
+import { recordToKeyValueItems } from "../../../components/ui/jsonDisplay";
+import { scrollContainerSx } from "../../../components/ui/responsiveQa";
+import {
+    chartHeatFill,
+    chartNodeLabelColor,
+    chartSeriesColors,
+} from "../../../components/ui/themeSurfaces";
 
 export type RankedItem = {
     label: string;
@@ -23,10 +34,16 @@ export function RankedBarChart({
     items,
     height = 320,
     valueFormatter,
+    seriesLabel,
+    xAxisLabel,
+    yAxisLabel,
 }: {
     items: RankedItem[];
     height?: number;
     valueFormatter?: (value: number | null) => string;
+    seriesLabel?: string;
+    xAxisLabel?: string;
+    yAxisLabel?: string;
 }) {
     const sliced = items.slice(0, 25);
     if (!sliced.length) {
@@ -41,14 +58,23 @@ export function RankedBarChart({
             <BarChart
                 layout="horizontal"
                 height={Math.max(height, sliced.length * 28)}
-                yAxis={[{ data: sliced.map((item) => item.label), width: 140 }]}
+                yAxis={[
+                    {
+                        data: sliced.map((item) => item.label),
+                        width: 140,
+                        label: yAxisLabel,
+                    },
+                ]}
+                xAxis={xAxisLabel ? [{ label: xAxisLabel }] : undefined}
                 series={[
                     {
                         data: sliced.map((item) => item.value),
+                        label: seriesLabel,
                         valueFormatter: valueFormatter ?? ((v) => String(v ?? "")),
                     },
                 ]}
-                margin={{ left: 16, right: 16, top: 16, bottom: 16 }}
+                hideLegend={!seriesLabel}
+                margin={{ left: 16, right: 16, top: seriesLabel ? 28 : 16, bottom: xAxisLabel ? 40 : 16 }}
             />
         </Box>
     );
@@ -57,9 +83,15 @@ export function RankedBarChart({
 export function DivergingBarChart({
     items,
     height = 360,
+    seriesLabel,
+    xAxisLabel,
+    yAxisLabel,
 }: {
     items: Array<{ label: string; value: number }>;
     height?: number;
+    seriesLabel?: string;
+    xAxisLabel?: string;
+    yAxisLabel?: string;
 }) {
     const sliced = items.slice(0, 30);
     if (!sliced.length) {
@@ -74,9 +106,23 @@ export function DivergingBarChart({
             <BarChart
                 layout="horizontal"
                 height={Math.max(height, sliced.length * 26)}
-                yAxis={[{ data: sliced.map((item) => item.label), width: 160 }]}
-                series={[{ data: sliced.map((item) => item.value) }]}
-                margin={{ left: 16, right: 16, top: 16, bottom: 16 }}
+                yAxis={[
+                    {
+                        data: sliced.map((item) => item.label),
+                        width: 160,
+                        label: yAxisLabel,
+                    },
+                ]}
+                xAxis={xAxisLabel ? [{ label: xAxisLabel }] : undefined}
+                series={[
+                    {
+                        data: sliced.map((item) => item.value),
+                        label: seriesLabel,
+                        valueFormatter: (v) => String(v ?? ""),
+                    },
+                ]}
+                hideLegend={!seriesLabel}
+                margin={{ left: 16, right: 16, top: seriesLabel ? 28 : 16, bottom: xAxisLabel ? 40 : 16 }}
             />
         </Box>
     );
@@ -178,6 +224,8 @@ export function ScientificLineChart({
     series: Array<{ label: string; points: Array<{ x: number; y: number }> }>;
     height?: number;
 }) {
+    const theme = useTheme();
+    const seriesColors = chartSeriesColors(theme);
     const points = series.flatMap((item) => item.points);
     if (!points.length) return <Typography color="text.secondary">No time-series values to plot.</Typography>;
     const width = 720;
@@ -188,20 +236,19 @@ export function ScientificLineChart({
     const yMax = Math.max(...points.map((point) => point.y));
     const x = (value: number) => padding + ((value - xMin) / Math.max(1, xMax - xMin)) * (width - padding * 2);
     const y = (value: number) => height - padding - ((value - yMin) / Math.max(0.0001, yMax - yMin)) * (height - padding * 2);
-    const colors = ["#2d6a4f", "#4361ee", "#b45309", "#9d174d", "#0f766e"];
     return (
-        <Box sx={{ overflowX: "auto" }}>
+        <Box sx={scrollContainerSx}>
             <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Time-series chart" style={{ width: "100%", minWidth: 500, height }}>
                 <line x1={padding} x2={padding} y1={padding} y2={height - padding} stroke="currentColor" opacity="0.35" />
                 <line x1={padding} x2={width - padding} y1={height - padding} y2={height - padding} stroke="currentColor" opacity="0.35" />
                 {series.map((item, index) => (
                     <g key={item.label}>
-                        <polyline fill="none" stroke={colors[index % colors.length]} strokeWidth="2" points={item.points.map((point) => `${x(point.x)},${y(point.y)}`).join(" ")} />
-                        {item.points.map((point) => <circle key={`${point.x}-${point.y}`} cx={x(point.x)} cy={y(point.y)} r="3" fill={colors[index % colors.length]}><title>{`${item.label}: ${point.x}, ${point.y.toFixed(3)}`}</title></circle>)}
+                        <polyline fill="none" stroke={seriesColors[index % seriesColors.length]} strokeWidth="2" points={item.points.map((point) => `${x(point.x)},${y(point.y)}`).join(" ")} />
+                        {item.points.map((point) => <circle key={`${point.x}-${point.y}`} cx={x(point.x)} cy={y(point.y)} r="3" fill={seriesColors[index % seriesColors.length]}><title>{`${item.label}: ${point.x}, ${point.y.toFixed(3)}`}</title></circle>)}
                     </g>
                 ))}
-                <text x={padding} y={height - 10} fontSize="12">{xMin}</text>
-                <text x={width - padding - 28} y={height - 10} fontSize="12">{xMax}</text>
+                <text x={padding} y={height - 10} fontSize="12" fill="currentColor">{xMin}</text>
+                <text x={width - padding - 28} y={height - 10} fontSize="12" fill="currentColor">{xMax}</text>
             </svg>
         </Box>
     );
@@ -214,6 +261,8 @@ export function ScientificScatterPlot({
     points: Array<{ x: number; y: number; label: string; detail: string }>;
     height?: number;
 }) {
+    const theme = useTheme();
+    const fill = chartSeriesColors(theme)[0];
     if (!points.length) return <Typography color="text.secondary">No joined observations to plot.</Typography>;
     const width = 720;
     const padding = 42;
@@ -223,9 +272,9 @@ export function ScientificScatterPlot({
     const yMax = Math.max(...points.map((point) => point.y));
     const x = (value: number) => padding + ((value - xMin) / Math.max(0.0001, xMax - xMin)) * (width - padding * 2);
     const y = (value: number) => height - padding - ((value - yMin) / Math.max(0.0001, yMax - yMin)) * (height - padding * 2);
-    return <Box sx={{ overflowX: "auto" }}><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Contextual indicator and prevalence scatter plot" style={{ width: "100%", minWidth: 500, height }}>
+    return <Box sx={scrollContainerSx}><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Contextual indicator and prevalence scatter plot" style={{ width: "100%", minWidth: 500, height }}>
         <line x1={padding} x2={padding} y1={padding} y2={height - padding} stroke="currentColor" opacity="0.35" /><line x1={padding} x2={width - padding} y1={height - padding} y2={height - padding} stroke="currentColor" opacity="0.35" />
-        {points.map((point) => <circle key={`${point.label}:${point.x}:${point.y}`} cx={x(point.x)} cy={y(point.y)} r="5" fill="#2d6a4f"><title>{`${point.label}\n${point.detail}`}</title></circle>)}
+        {points.map((point) => <circle key={`${point.label}:${point.x}:${point.y}`} cx={x(point.x)} cy={y(point.y)} r="5" fill={fill}><title>{`${point.label}\n${point.detail}`}</title></circle>)}
     </svg></Box>;
 }
 
@@ -236,6 +285,9 @@ export function CooccurrenceNetwork({
     edges: Array<{ termA: string; termB: string; count: number; association: number }>;
     onNodeClick?: (term: string) => void;
 }) {
+    const theme = useTheme();
+    const [nodeFill, edgeStroke] = chartSeriesColors(theme);
+    const labelFill = chartNodeLabelColor();
     const terms = Array.from(new Set(edges.flatMap((edge) => [edge.termA, edge.termB])));
     if (!edges.length) return <Typography color="text.secondary">No co-occurrence edges meet the selected threshold.</Typography>;
     const width = 720;
@@ -247,16 +299,10 @@ export function CooccurrenceNetwork({
     edges.forEach((edge) => { degree.set(edge.termA, (degree.get(edge.termA) ?? 0) + edge.count); degree.set(edge.termB, (degree.get(edge.termB) ?? 0) + edge.count); });
     const maxCount = Math.max(...edges.map((edge) => edge.count));
     const maxDegree = Math.max(...degree.values());
-    return <Box sx={{ overflowX: "auto" }}><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Co-occurrence network" style={{ width: "100%", minWidth: 500, height }}>
-        {edges.map((edge) => { const a = positions.get(edge.termA)!; const b = positions.get(edge.termB)!; return <line key={`${edge.termA}:${edge.termB}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#4361ee" opacity="0.45" strokeWidth={1 + (edge.count / maxCount) * 5}><title>{`${edge.termA} × ${edge.termB}: ${edge.count}, association ${edge.association.toFixed(3)}`}</title></line>; })}
-        {terms.map((term) => { const point = positions.get(term)!; return <g key={term} onClick={() => onNodeClick?.(term)} style={{ cursor: onNodeClick ? "pointer" : "default" }}><circle cx={point.x} cy={point.y} r={8 + ((degree.get(term) ?? 0) / maxDegree) * 16} fill="#2d6a4f" /><text x={point.x} y={point.y + 4} textAnchor="middle" fill="#f8fafc" fontSize="10">{term.slice(0, 8)}</text><title>{`${term}: weighted degree ${degree.get(term)}`}</title></g>; })}
+    return <Box sx={scrollContainerSx}><svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Co-occurrence network" style={{ width: "100%", minWidth: 500, height }}>
+        {edges.map((edge) => { const a = positions.get(edge.termA)!; const b = positions.get(edge.termB)!; return <line key={`${edge.termA}:${edge.termB}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={edgeStroke} opacity="0.45" strokeWidth={1 + (edge.count / maxCount) * 5}><title>{`${edge.termA} × ${edge.termB}: ${edge.count}, association ${edge.association.toFixed(3)}`}</title></line>; })}
+        {terms.map((term) => { const point = positions.get(term)!; return <g key={term} onClick={() => onNodeClick?.(term)} style={{ cursor: onNodeClick ? "pointer" : "default" }}><circle cx={point.x} cy={point.y} r={8 + ((degree.get(term) ?? 0) / maxDegree) * 16} fill={nodeFill} /><text x={point.x} y={point.y + 4} textAnchor="middle" fill={labelFill} fontSize="10">{term.slice(0, 8)}</text><title>{`${term}: weighted degree ${degree.get(term)}`}</title></g>; })}
     </svg></Box>;
-}
-
-function heatColor(value: number, max: number): string {
-    if (max <= 0) return "transparent";
-    const t = Math.max(0, Math.min(1, value / max));
-    return `rgba(25, 118, 210, ${0.08 + t * 0.72})`;
 }
 
 export function MatrixHeatmap({
@@ -274,6 +320,7 @@ export function MatrixHeatmap({
     formatCell?: (value: number | null) => string;
     cellDetails?: (rowIndex: number, colIndex: number) => string | undefined;
 }) {
+    const theme = useTheme();
     if (!rowLabels.length || !colLabels.length) {
         return (
             <Typography variant="body2" color="text.secondary">
@@ -285,7 +332,7 @@ export function MatrixHeatmap({
     const max = Math.max(0.0001, ...numericValues);
     const fmt = formatCell ?? ((v: number | null) => (v === null ? "—" : v.toFixed(2)));
     return (
-        <Box sx={{ overflowX: "auto" }}>
+        <Box sx={scrollContainerSx}>
             <Table size="small">
                 <TableHead>
                     <TableRow>
@@ -319,7 +366,10 @@ export function MatrixHeatmap({
                                         key={colLabel}
                                         align="center"
                                         sx={{
-                                            bgcolor: value === null ? "action.disabledBackground" : heatColor(value, max),
+                                            bgcolor:
+                                                value === null
+                                                    ? "action.disabledBackground"
+                                                    : chartHeatFill(theme, value / max),
                                             color: value === null ? "text.secondary" : undefined,
                                             p: 0.5,
                                         }}
@@ -343,18 +393,26 @@ export function MatrixHeatmap({
 export function ResultsInspector({
     title = "raw data",
     data,
+    /** When true, also show a one-level key/value summary above the raw accordion. */
+    showSummary = false,
 }: {
     title?: string;
     data: unknown;
+    showSummary?: boolean;
 }) {
-    const [open, setOpen] = useState(false);
     if (data == null) return null;
+    const summaryItems = showSummary ? recordToKeyValueItems(data) : [];
     return (
         <Stack spacing={1}>
-            <Button size="small" variant="text" onClick={() => setOpen((v) => !v)}>
-                {open ? "Hide" : "Inspect"} {title}
-            </Button>
-            {open ? <JsonBlock data={data} /> : null}
+            {summaryItems.length ? (
+                <KeyValueList dense items={summaryItems} />
+            ) : null}
+            <AdvancedSettings
+                title={`Raw · ${title}`}
+                description="Expert payload for debugging, copy/export, and provenance. Not the primary result view."
+            >
+                <JsonBlock data={data} showCopy />
+            </AdvancedSettings>
         </Stack>
     );
 }
@@ -362,26 +420,37 @@ export function ResultsInspector({
 export function MetricCards({
     items,
 }: {
-    items: Array<{ label: string; value: string | number | null | undefined }>;
+    items: Array<{
+        label: string;
+        value: string | number | null | undefined;
+        /** Secondary line under the value (e.g. careful interpretation). */
+        description?: React.ReactNode;
+        helpTermId?: string;
+    }>;
 }) {
     return (
-        <Box
-            sx={{
-                display: "grid",
-                gap: 1,
-                gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" },
-            }}
-        >
+        <MetricGrid>
             {items.map((item) => (
-                <Box key={item.label} sx={{ p: 1.5, borderRadius: 1, bgcolor: "action.hover" }}>
-                    <Typography variant="caption" color="text.secondary">
-                        {item.label}
+                <Box key={item.label} sx={{ p: 1.5, borderRadius: 1, bgcolor: "action.hover", height: "100%" }}>
+                    <Typography variant="caption" color="text.secondary" component="div">
+                        {item.helpTermId ? (
+                            <HelpTooltip termId={item.helpTermId} variant="label">
+                                {item.label}
+                            </HelpTooltip>
+                        ) : (
+                            item.label
+                        )}
                     </Typography>
                     <Typography variant="h6">
                         {item.value == null || item.value === "" ? "—" : String(item.value)}
                     </Typography>
+                    {item.description ? (
+                        <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.5 }}>
+                            {item.description}
+                        </Typography>
+                    ) : null}
                 </Box>
             ))}
-        </Box>
+        </MetricGrid>
     );
 }

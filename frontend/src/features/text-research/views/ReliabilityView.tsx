@@ -4,7 +4,6 @@ import {
     Box,
     Button,
     FormControlLabel,
-    IconButton,
     List,
     ListItemButton,
     ListItemText,
@@ -18,11 +17,9 @@ import {
     TableHead,
     TableRow,
     TextField,
-    Tooltip,
     Typography,
 } from "@mui/material";
 import {
-    HelpOutline as HelpIcon,
     PlaylistAddCheck as CodebookIcon,
     PlayArrow as RunIcon,
     RateReview as AdjudicateIcon,
@@ -45,20 +42,34 @@ import {
     type DisagreementItem,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { DisabledWithReason } from "../../../components/ui/DisabledWithReason";
+import { HelpTooltip } from "../../../components/ui/HelpTooltip";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
+import { RunStatusPanel } from "../../../components/ui/RunStatusPanel";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { PageTabs } from "../../../components/ui/PageTabs";
+import { AdvancedSettings } from "../../../components/ui/AdvancedSettings";
 import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
+import type { HelpTermId } from "../../../config/helpText";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { MatrixHeatmap, MetricCards, ReliabilityComparisonChart, ResultsInspector } from "../components/ResearchCharts";
-import { ScientificWarnings } from "../components/ScientificWarnings";
-import { collectScientificWarnings } from "../components/scientificWarnings";
-import { RunStatusChip } from "../components/ResearchShared";
+import { ProvenanceDrawer } from "../components/ProvenanceDrawer";
+import { ProvenancePanel } from "../components/ProvenancePanel";
+import { ScientificWarnings, collectScientificWarnings } from "../components/ScientificWarnings";
+import {
+    computeReliabilityDisabledReason,
+    RELIABILITY_ANNOTATOR_HINT,
+} from "../actionDisabledReasons";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
-import { activeRunRefetchInterval } from "../runPolling";
+import { activeRunRefetchInterval, isActiveRunStatus } from "../runPolling";
 import type { AnnotationLabel } from "../types";
+import {
+    formatAgreementWithInterpretation,
+    interpretChanceCorrectedAgreement,
+    summarizeReliabilityCoverage,
+} from "../reliabilityInterpretation";
 
 type LabelDecision = "yes" | "no" | "uncertain";
 
@@ -127,25 +138,15 @@ type LabelReliability = {
     metadata?: Record<string, unknown>;
 };
 
-const STAT_HELP: Record<string, string> = {
-    kappa:
-        "Cohen's kappa measures chance-corrected agreement between exactly two coders on the same units. Prefer it for two-rater designs with complete overlap.",
-    fleiss:
-        "Fleiss' kappa summarizes agreement among three or more coders on the same units. Prefer it for multi-rater designs with complete overlap.",
-    alpha:
-        "Krippendorff's alpha supports any number of coders and missing values. Prefer it when there are more than two coders or incomplete annotation overlap.",
-    observed:
-        "Observed agreement is the raw proportion of units where coders assign the same value, before correcting for chance.",
-    expected:
-        "Expected agreement is the agreement rate predicted by chance given each coder's category marginals. Used to compute kappa.",
-    sample:
-        "Sample size is the number of overlapping units used for the two-coder kappa calculation.",
-    missingness:
-        "Missingness is the share of coder×unit cells without a value. Higher missingness reduces the effective reliability sample for alpha.",
-    n_coders:
-        "Number of distinct annotators who contributed values for this label in the selected codebook version.",
-    pairable:
-        "Pairable units are units annotated by at least two coders and included in reliability calculations.",
+const STAT_HELP_TERM: Record<string, HelpTermId> = {
+    kappa: "cohens_kappa",
+    fleiss: "fleiss_kappa",
+    alpha: "krippendorff_alpha",
+    observed: "observed_agreement",
+    expected: "expected_agreement",
+    missingness: "missingness",
+    n_coders: "n_coders",
+    pairable: "pairable_units",
 };
 
 function formatMetric(value: number | null | undefined, digits = 3): string {
@@ -190,16 +191,11 @@ function reliabilityChartItems(byLabel: Record<string, LabelReliability>) {
     }));
 }
 
-function StatLabel({ label, helpKey }: { label: string; helpKey: keyof typeof STAT_HELP }) {
+function StatLabel({ label, helpKey }: { label: string; helpKey: keyof typeof STAT_HELP_TERM }) {
     return (
-        <Stack direction="row" spacing={0.5} alignItems="center" component="span">
-            <span>{label}</span>
-            <Tooltip title={STAT_HELP[helpKey]} arrow>
-                <IconButton size="small" aria-label={`About ${label}`} sx={{ p: 0.25 }}>
-                    <HelpIcon fontSize="inherit" />
-                </IconButton>
-            </Tooltip>
-        </Stack>
+        <HelpTooltip termId={STAT_HELP_TERM[helpKey]} variant="label">
+            {label}
+        </HelpTooltip>
     );
 }
 
@@ -222,6 +218,97 @@ function pairMatrixValues(pair: CoderPairAgreement | null | undefined): {
     return { coders, values, commonUnits };
 }
 
+function InterpretationCaption({ value }: { value: number | null | undefined }) {
+    const interpretation = interpretChanceCorrectedAgreement(value);
+    if (!interpretation) return null;
+    return (
+        <HelpTooltip termId="agreement_benchmarks" variant="label">
+            {interpretation.label}
+        </HelpTooltip>
+    );
+}
+
+function ReliabilityPrimaryMetrics({
+    metrics,
+    byLabel,
+}: {
+    metrics: Record<string, unknown>;
+    byLabel: Record<string, LabelReliability> | null;
+}) {
+    const meanAlpha = metrics.mean_krippendorff_alpha as number | null | undefined;
+    const meanFleiss = metrics.mean_fleiss_kappa as number | null | undefined;
+    const meanCohen = metrics.mean_cohens_kappa as number | null | undefined;
+    const alphaFmt = formatAgreementWithInterpretation(meanAlpha, 2);
+    const fleissFmt = formatAgreementWithInterpretation(meanFleiss, 2);
+    const cohenFmt = formatAgreementWithInterpretation(meanCohen, 2);
+    const coverage = summarizeReliabilityCoverage(byLabel ?? {});
+
+    return (
+        <Stack spacing={1.5}>
+            <MetricCards
+                items={[
+                    {
+                        label: "Mean Krippendorff's α",
+                        value: alphaFmt.valueText,
+                        description: alphaFmt.interpretation ? (
+                            <InterpretationCaption value={meanAlpha} />
+                        ) : undefined,
+                        helpTermId: "krippendorff_alpha",
+                    },
+                    {
+                        label: "Mean Fleiss' κ",
+                        value: fleissFmt.valueText,
+                        description: fleissFmt.interpretation ? (
+                            <InterpretationCaption value={meanFleiss} />
+                        ) : undefined,
+                        helpTermId: "fleiss_kappa",
+                    },
+                    {
+                        label: "Mean Cohen's κ",
+                        value: cohenFmt.valueText,
+                        description: cohenFmt.interpretation ? (
+                            <InterpretationCaption value={meanCohen} />
+                        ) : undefined,
+                        helpTermId: "cohens_kappa",
+                    },
+                    {
+                        label: "Labels evaluated",
+                        value:
+                            metrics.labels_evaluated != null
+                                ? String(metrics.labels_evaluated)
+                                : "—",
+                        helpTermId: "annotation_agreement",
+                    },
+                    {
+                        label: "Coders (max across labels)",
+                        value: coverage.maxCoders != null ? String(coverage.maxCoders) : "—",
+                        helpTermId: "n_coders",
+                    },
+                    {
+                        label: "Pairable units (sum)",
+                        value:
+                            coverage.totalPairableUnits != null
+                                ? String(coverage.totalPairableUnits)
+                                : "—",
+                        helpTermId: "pairable_units",
+                    },
+                ]}
+            />
+            <Alert severity="info" icon={false}>
+                <Stack direction="row" spacing={0.5} alignItems="flex-start">
+                    <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                        Verbal labels such as “substantial agreement” are{" "}
+                        <strong>illustrative heuristics</strong>. Acceptable reliability depends on
+                        discipline, codebook difficulty, prevalence, and intended use. Prefer reporting
+                        the coefficient, confidence interval, sample size, and codebook version.
+                    </Typography>
+                    <HelpTooltip termId="agreement_benchmarks" />
+                </Stack>
+            </Alert>
+        </Stack>
+    );
+}
+
 function LabelReliabilitySummaryTable({
     byLabel,
 }: {
@@ -238,7 +325,15 @@ function LabelReliabilitySummaryTable({
                     <TableCell>Primary metric</TableCell>
                     <TableCell>CI</TableCell>
                     <TableCell>
+                        <HelpTooltip termId="agreement_benchmarks" variant="label">
+                            Heuristic reading
+                        </HelpTooltip>
+                    </TableCell>
+                    <TableCell>
                         <StatLabel label="n (pairable)" helpKey="pairable" />
+                    </TableCell>
+                    <TableCell>
+                        <StatLabel label="n coders" helpKey="n_coders" />
                     </TableCell>
                 </TableRow>
             </TableHead>
@@ -247,6 +342,9 @@ function LabelReliabilitySummaryTable({
                     const primaryName = row.primary_metric?.name;
                     const primaryValue = row.primary_metric?.value;
                     const ci = row.primary_ci ?? null;
+                    const interpretation = interpretChanceCorrectedAgreement(
+                        typeof primaryValue === "number" ? primaryValue : null
+                    );
                     return (
                         <TableRow key={labelName}>
                             <TableCell>{labelName}</TableCell>
@@ -257,9 +355,21 @@ function LabelReliabilitySummaryTable({
                             </TableCell>
                             <TableCell>{formatCiRange(ci, 2) ?? "—"}</TableCell>
                             <TableCell>
+                                {interpretation ? (
+                                    <HelpTooltip termId="agreement_benchmarks" variant="label">
+                                        {interpretation.label}
+                                    </HelpTooltip>
+                                ) : (
+                                    "—"
+                                )}
+                            </TableCell>
+                            <TableCell>
                                 {row.n_pairable_units != null
                                     ? String(row.n_pairable_units)
                                     : "—"}
+                            </TableCell>
+                            <TableCell>
+                                {row.n_coders != null ? String(row.n_coders) : "—"}
                             </TableCell>
                         </TableRow>
                     );
@@ -291,10 +401,35 @@ function LabelReliabilityCard({
         ...(row.diagnostics ?? []),
     ];
 
+    const primaryValue =
+        typeof row.primary_metric?.value === "number" ? row.primary_metric.value : null;
+    const primaryInterpretation = interpretChanceCorrectedAgreement(primaryValue);
+
     return (
         <Box sx={{ p: 2, borderRadius: 1, bgcolor: "action.hover" }}>
             <Stack spacing={1.5}>
-                <Typography variant="subtitle1">{labelName}</Typography>
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1}
+                    alignItems={{ sm: "baseline" }}
+                    justifyContent="space-between"
+                >
+                    <Typography variant="subtitle1">{labelName}</Typography>
+                    {row.primary_metric?.name && primaryValue != null ? (
+                        <Typography variant="body2" color="text.secondary">
+                            {primaryMetricLabel(row.primary_metric.name)}{" "}
+                            {formatMetricWithCi(primaryValue, row.primary_ci, 2)}
+                            {primaryInterpretation ? (
+                                <>
+                                    {" · "}
+                                    <HelpTooltip termId="agreement_benchmarks" variant="label">
+                                        {primaryInterpretation.label}
+                                    </HelpTooltip>
+                                </>
+                            ) : null}
+                        </Typography>
+                    ) : null}
+                </Stack>
 
                 {twoCoders ? (
                     <Table size="small">
@@ -603,8 +738,15 @@ export default function ReliabilityView() {
     const [confidenceLevel, setConfidenceLevel] = useState(0.95);
     const [randomSeed, setRandomSeed] = useState<string>("");
     const [tab, setTab] = useTabQueryParam(
-        ["agreement", "adjudication", "history"] as const,
-        "agreement"
+        ["overview", "agreement", "disagreements", "by_coder", "methods"] as const,
+        "overview",
+        "tab",
+        {
+            aliases: {
+                adjudication: "disagreements",
+                history: "methods",
+            },
+        }
     );
     const sseConnected = useRunEvents(runId, ctx.projectId);
 
@@ -625,10 +767,10 @@ export default function ReliabilityView() {
             ...queryKeys.textResearch.disagreements(ctx.selectedCorpusId, ctx.selectedCodebookId),
             selectedCampaignId || "legacy",
         ],
-        queryFn: () =>
+        queryFn: ({ signal }) =>
             selectedCampaignId
-                ? listCampaignDisagreements(selectedCampaignId, ctx.selectedCodebookId)
-                : listDisagreements(ctx.selectedCorpusId, ctx.selectedCodebookId),
+                ? listCampaignDisagreements(selectedCampaignId, ctx.selectedCodebookId, signal)
+                : listDisagreements(ctx.selectedCorpusId, ctx.selectedCodebookId, signal),
         enabled: Boolean(ctx.selectedCorpusId && ctx.selectedCodebookId),
     });
 
@@ -637,10 +779,10 @@ export default function ReliabilityView() {
             ...queryKeys.textResearch.adjudications(ctx.selectedCorpusId),
             selectedCampaignId || "legacy",
         ],
-        queryFn: () =>
+        queryFn: ({ signal }) =>
             selectedCampaignId
-                ? listCampaignAdjudications(selectedCampaignId)
-                : listAdjudications(ctx.selectedCorpusId),
+                ? listCampaignAdjudications(selectedCampaignId, signal)
+                : listAdjudications(ctx.selectedCorpusId, signal),
         enabled: Boolean(ctx.selectedCorpusId),
     });
 
@@ -677,7 +819,7 @@ export default function ReliabilityView() {
 
     const unitContextQuery = useQuery({
         queryKey: ["text-research", "unit-context", selectedDisagreement?.text_unit_id],
-        queryFn: () => getTextUnitContext(selectedDisagreement!.text_unit_id, 2),
+        queryFn: ({ signal }) => getTextUnitContext(selectedDisagreement!.text_unit_id, 2, signal),
         enabled: Boolean(selectedDisagreement?.text_unit_id),
     });
 
@@ -816,24 +958,26 @@ export default function ReliabilityView() {
                 value={tab}
                 onChange={setTab}
                 tabs={[
+                    { value: "overview", label: "Overview" },
                     { value: "agreement", label: "Agreement" },
-                    { value: "adjudication", label: "Adjudication" },
-                    { value: "history", label: "History", disabled: !ctx.selectedCorpusId },
+                    { value: "disagreements", label: "Disagreements" },
+                    { value: "by_coder", label: "By Coder" },
+                    { value: "methods", label: "Methods & Provenance", disabled: !ctx.selectedCorpusId },
                 ]}
                 ariaLabel="Reliability workflow"
             />
 
-            {tab === "agreement" ? (
+            {tab === "overview" ? (
             <>
             <SectionCard
                 title="Inter-annotator reliability"
-                description="Compute agreement metrics for the selected codebook labels."
+                description="Compute Cohen's κ, Fleiss' κ, and Krippendorff's α with bootstrap confidence intervals for the selected codebook."
             >
                 {!reliabilityReady ? (
                     <EmptyState
                         icon={<CodebookIcon fontSize="large" />}
                         title={emptyTitle}
-                        description={emptyDescription}
+                        description={`${emptyDescription} ${RELIABILITY_ANNOTATOR_HINT}`}
                         action={
                             <Button variant="contained" onClick={() => navigate(emptyActionPath)}>
                                 {emptyActionLabel}
@@ -848,7 +992,7 @@ export default function ReliabilityView() {
                             {ctx.selectedCodebook?.is_frozen ? " · frozen" : ""}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            Labels included: {ctx.labels.map((l) => l.name).join(", ")}
+                            Labels included: {ctx.labels.map((l) => l.name).join(", ") || "None"}.
                         </Typography>
                         <Stack
                             direction={{ xs: "column", sm: "row" }}
@@ -872,54 +1016,104 @@ export default function ReliabilityView() {
                                     </MenuItem>
                                 ))}
                             </TextField>
-                            <TextField
-                                size="small"
-                                type="number"
-                                label="Bootstrap samples"
-                                value={bootstrapSamples}
-                                onChange={(e) =>
-                                    setBootstrapSamples(Number(e.target.value) || 2000)
-                                }
-                                inputProps={{ min: 100, max: 10000, step: 100 }}
-                                sx={{ width: 160 }}
-                            />
-                            <TextField
-                                size="small"
-                                type="number"
-                                label="CI level"
-                                value={confidenceLevel}
-                                onChange={(e) =>
-                                    setConfidenceLevel(Number(e.target.value) || 0.95)
-                                }
-                                inputProps={{ min: 0.5, max: 0.99, step: 0.01 }}
-                                sx={{ width: 120 }}
-                            />
-                            <TextField
-                                size="small"
-                                type="number"
-                                label="Random seed"
-                                value={randomSeed}
-                                onChange={(e) => setRandomSeed(e.target.value)}
-                                placeholder="Optional"
-                                sx={{ width: 140 }}
-                            />
                         </Stack>
-                        <Button
-                            variant="contained"
-                            startIcon={<RunIcon />}
-                            onClick={() => reliabilityMutation.mutate()}
-                            disabled={reliabilityMutation.isPending}
+                        <AdvancedSettings title="Bootstrap & sampling" description="Confidence intervals and reproducibility controls.">
+                            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
+                                <TextField
+                                    size="small"
+                                    type="number"
+                                    label="Bootstrap samples"
+                                    value={bootstrapSamples}
+                                    onChange={(e) =>
+                                        setBootstrapSamples(Number(e.target.value) || 2000)
+                                    }
+                                    inputProps={{ min: 100, max: 10000, step: 100 }}
+                                    sx={{ width: 160 }}
+                                />
+                                <TextField
+                                    size="small"
+                                    type="number"
+                                    label="CI level"
+                                    value={confidenceLevel}
+                                    onChange={(e) =>
+                                        setConfidenceLevel(Number(e.target.value) || 0.95)
+                                    }
+                                    inputProps={{ min: 0.5, max: 0.99, step: 0.01 }}
+                                    sx={{ width: 120 }}
+                                />
+                                <TextField
+                                    size="small"
+                                    type="number"
+                                    label="Random seed"
+                                    value={randomSeed}
+                                    onChange={(e) => setRandomSeed(e.target.value)}
+                                    placeholder="Optional"
+                                    sx={{ width: 140 }}
+                                />
+                            </Stack>
+                        </AdvancedSettings>
+                        <DisabledWithReason
+                            reason={computeReliabilityDisabledReason({
+                                corpusId: ctx.selectedCorpusId,
+                                codebookId: ctx.selectedCodebookId,
+                                labelCount: ctx.labels.length,
+                                pending: reliabilityMutation.isPending,
+                            })}
                         >
-                            Compute reliability
-                        </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<RunIcon />}
+                                onClick={() => reliabilityMutation.mutate()}
+                                disabled={
+                                    Boolean(
+                                        computeReliabilityDisabledReason({
+                                            corpusId: ctx.selectedCorpusId,
+                                            codebookId: ctx.selectedCodebookId,
+                                            labelCount: ctx.labels.length,
+                                            pending: reliabilityMutation.isPending,
+                                        })
+                                    )
+                                }
+                                sx={{ mt: 2 }}
+                            >
+                                Compute reliability
+                            </Button>
+                        </DisabledWithReason>
                     </>
                 )}
             </SectionCard>
 
+            {runId && metrics ? (
+                <SectionCard
+                    title="Latest summary"
+                    description="Primary chance-corrected coefficients with heuristic readings, coverage (coders / units), and caveats."
+                >
+                    <ReliabilityPrimaryMetrics metrics={metrics} byLabel={byLabel} />
+                    <Stack direction="row" spacing={1} sx={{ mt: 2 }} flexWrap="wrap">
+                        <Button size="small" variant="outlined" onClick={() => setTab("agreement")}>
+                            View agreement & CIs
+                        </Button>
+                        <Button size="small" variant="outlined" onClick={() => setTab("by_coder")}>
+                            View by coder
+                        </Button>
+                        <Button size="small" variant="outlined" onClick={() => setTab("disagreements")}>
+                            Resolve disagreements
+                        </Button>
+                        <Button size="small" variant="text" onClick={() => setTab("methods")}>
+                            Methods & provenance
+                        </Button>
+                    </Stack>
+                </SectionCard>
+            ) : null}
+            </>
+            ) : null}
+
+            {tab === "agreement" ? (
+            <>
             {runId ? (
                 <SectionCard
                     title="Reliability results"
-                    description="Per-label agreement statistics and coder pair matrices."
+                    description="Mean coefficients, per-label CIs, n_coders / pairable units, and heuristic readings (not universal cutoffs)."
                 >
                     <QueryBoundary
                         isLoading={runQuery.isLoading && !runQuery.data}
@@ -929,55 +1123,22 @@ export default function ReliabilityView() {
                     >
                         {runQuery.data ? (
                             <Stack spacing={2}>
-                                <Typography variant="body2">
-                                    Run {runQuery.data.id} —{" "}
-                                    <RunStatusChip status={runQuery.data.status} />
-                                </Typography>
-                                {runQuery.data.error_message ? (
-                                    <Alert severity="error">{runQuery.data.error_message}</Alert>
-                                ) : null}
+                                <RunStatusPanel
+                                    dense
+                                    title="Reliability run"
+                                    status={runQuery.data.status}
+                                    runId={runQuery.data.id}
+                                    stage={runQuery.data.progress_stage}
+                                    startedAt={runQuery.data.started_at}
+                                    completedAt={runQuery.data.completed_at}
+                                    createdAt={runQuery.data.created_at}
+                                    errorMessage={runQuery.data.error_message}
+                                    actions={<ProvenanceDrawer run={runQuery.data} />}
+                                />
 
                                 {metrics ? (
-                                    <MetricCards
-                                        items={[
-                                            {
-                                                label: "Mean Krippendorff α",
-                                                value: formatMetric(
-                                                    metrics.mean_krippendorff_alpha as
-                                                        | number
-                                                        | null
-                                                        | undefined
-                                                ),
-                                            },
-                                            {
-                                                label: "Mean Fleiss' κ",
-                                                value: formatMetric(
-                                                    metrics.mean_fleiss_kappa as
-                                                        | number
-                                                        | null
-                                                        | undefined
-                                                ),
-                                            },
-                                            {
-                                                label: "Mean Cohen's κ",
-                                                value: formatMetric(
-                                                    metrics.mean_cohens_kappa as
-                                                        | number
-                                                        | null
-                                                        | undefined
-                                                ),
-                                            },
-                                            {
-                                                label: "Labels evaluated",
-                                                value:
-                                                    metrics.labels_evaluated != null
-                                                        ? String(metrics.labels_evaluated)
-                                                        : "—",
-                                            },
-                                        ]}
-                                    />
-                                ) : runQuery.data.status === "running" ||
-                                  runQuery.data.status === "pending" ? (
+                                    <ReliabilityPrimaryMetrics metrics={metrics} byLabel={byLabel} />
+                                ) : isActiveRunStatus(runQuery.data.status) ? (
                                     <Typography color="text.secondary">
                                         Computing reliability metrics…
                                     </Typography>
@@ -999,37 +1160,69 @@ export default function ReliabilityView() {
                                               onSelect={setSelectedReliabilityLabel}
                                           />
                                           {selectedReliabilityLabel ? <Button size="small" onClick={() => setSelectedReliabilityLabel(null)}>Show all labels</Button> : null}
-                                          {Object.entries(byLabel)
-                                              .filter(([labelName]) => !selectedReliabilityLabel || labelName === selectedReliabilityLabel)
-                                              .map(([labelName, row]) => (
-                                          <LabelReliabilityCard
-                                              key={labelName}
-                                              labelName={labelName}
-                                              row={row}
-                                          />
-                                      ))}
                                       </>
                                     : null}
-
-                                <ResultsInspector
-                                    title="raw reliability data"
-                                    data={{
-                                        metrics: runQuery.data.metrics,
-                                        results: runQuery.data.results,
-                                    }}
-                                />
                             </Stack>
                         ) : null}
                     </QueryBoundary>
                 </SectionCard>
-            ) : null}
+            ) : (
+                <SectionCard title="Agreement" description="Compute reliability from Overview to inspect per-label metrics.">
+                    <EmptyState
+                        icon={<CodebookIcon fontSize="large" />}
+                        title="No reliability run yet"
+                        description="Open Overview to compute agreement for the selected codebook."
+                        action={
+                            <Button variant="contained" onClick={() => setTab("overview")}>
+                                Go to Overview
+                            </Button>
+                        }
+                    />
+                </SectionCard>
+            )}
             </>
             ) : null}
 
-            {tab === "adjudication" ? (
+            {tab === "by_coder" ? (
+                <SectionCard
+                    title="By coder"
+                    description="Coder-pair matrices, pairwise Cohen's κ, and per-label primary metrics with CIs from the latest run."
+                >
+                    {byLabel ? (
+                        <Stack spacing={2}>
+                            {Object.entries(byLabel)
+                                .filter(
+                                    ([labelName]) =>
+                                        !selectedReliabilityLabel ||
+                                        labelName === selectedReliabilityLabel
+                                )
+                                .map(([labelName, row]) => (
+                                    <LabelReliabilityCard
+                                        key={labelName}
+                                        labelName={labelName}
+                                        row={row}
+                                    />
+                                ))}
+                        </Stack>
+                    ) : (
+                        <EmptyState
+                            icon={<CodebookIcon fontSize="large" />}
+                            title="No coder pairwise results"
+                            description="Compute reliability on Overview first, then inspect coder-pair agreement here."
+                            action={
+                                <Button variant="contained" onClick={() => setTab("overview")}>
+                                    Go to Overview
+                                </Button>
+                            }
+                        />
+                    )}
+                </SectionCard>
+            ) : null}
+
+            {tab === "disagreements" ? (
             <SectionCard
                 title="Disagreement adjudication"
-                description="Resolve coder disagreements into a gold label without changing original annotations."
+                description="Inspect units where coders differ, set a gold decision, and preserve original annotations for audit."
             >
                 {!ctx.selectedCorpusId || !ctx.selectedCodebookId ? (
                     <EmptyState
@@ -1220,7 +1413,60 @@ export default function ReliabilityView() {
             </SectionCard>
             ) : null}
 
-            {tab === "history" && ctx.selectedCorpusId ? (
+            {tab === "methods" && ctx.selectedCorpusId ? (
+                <>
+                <SectionCard
+                    title="Methods & provenance"
+                    description="Bootstrap CI settings and raw reliability payloads for reporting. Defaults also appear on Overview when computing."
+                >
+                    <AdvancedSettings title="Bootstrap & sampling" defaultExpanded>
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Bootstrap samples"
+                                value={bootstrapSamples}
+                                onChange={(e) =>
+                                    setBootstrapSamples(Number(e.target.value) || 2000)
+                                }
+                                inputProps={{ min: 100, max: 10000, step: 100 }}
+                                sx={{ width: 160 }}
+                            />
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="CI level"
+                                value={confidenceLevel}
+                                onChange={(e) =>
+                                    setConfidenceLevel(Number(e.target.value) || 0.95)
+                                }
+                                inputProps={{ min: 0.5, max: 0.99, step: 0.01 }}
+                                sx={{ width: 120 }}
+                            />
+                            <TextField
+                                size="small"
+                                type="number"
+                                label="Random seed"
+                                value={randomSeed}
+                                onChange={(e) => setRandomSeed(e.target.value)}
+                                placeholder="Optional"
+                                sx={{ width: 140 }}
+                            />
+                        </Stack>
+                    </AdvancedSettings>
+                    {runQuery.data ? (
+                        <Box sx={{ mt: 2 }}>
+                            <ProvenancePanel run={runQuery.data} showRaw />
+                            <ResultsInspector
+                                title="raw reliability data"
+                                data={{
+                                    metrics: runQuery.data.metrics,
+                                    results: runQuery.data.results,
+                                }}
+                            />
+                        </Box>
+                    ) : null}
+                </SectionCard>
                 <SectionCard
                     title="Adjudication provenance"
                     description="Gold decisions recorded for this corpus. Original coder judgments are preserved."
@@ -1278,6 +1524,7 @@ export default function ReliabilityView() {
                         )}
                     </QueryBoundary>
                 </SectionCard>
+                </>
             ) : null}
         </Stack>
     );

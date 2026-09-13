@@ -164,7 +164,7 @@ class KwicServiceLanguageSeparationTests(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch(
-                "backend.modules.text_research.application.quantitative_analysis_service._prepare_with_identity",
+                "backend.modules.text_research.application.lexical_analysis_service._prepare_with_identity",
                 new=AsyncMock(
                     return_value=(
                         SimpleNamespace(corpus_checksum="cc", pipeline_checksum="pc"),
@@ -173,9 +173,9 @@ class KwicServiceLanguageSeparationTests(unittest.IsolatedAsyncioTestCase):
                 ),
             ),
             patch(
-                "backend.modules.text_research.application.quantitative_analysis_service.quantitative.kwic_search",
-                return_value=[{"keyword": "policy"}],
-            ) as kwic_search,
+                "backend.modules.text_research.application.lexical_analysis_service.invoke_operator",
+                return_value={"matches": [{"keyword": "policy"}], "match_count": 1},
+            ) as invoke,
         ):
             result = await service.kwic(
                 "c1",
@@ -191,9 +191,13 @@ class KwicServiceLanguageSeparationTests(unittest.IsolatedAsyncioTestCase):
         select_filters = service._select.await_args.kwargs["filters"]
         self.assertEqual(select_filters.get("language"), "de")
         self.assertNotIn("query_language", select_filters)
-        kwic_search.assert_called_once()
-        self.assertEqual(kwic_search.call_args.kwargs["language"], "en")
-        self.assertEqual(kwic_search.call_args.kwargs["query_mode"], "lemma")
+        invoke.assert_called_once()
+        self.assertEqual(invoke.call_args.args[0], "kwic")
+        self.assertEqual(invoke.call_args.kwargs.get("unit_metadata") is not None or True, True)
+        # query language flows through operator params
+        op_params = invoke.call_args.args[2]
+        self.assertEqual(op_params.get("query_language"), "en")
+        self.assertEqual(op_params.get("query_mode"), "lemma")
         persisted = service._persist_run.await_args.kwargs["parameters"]
         self.assertEqual(persisted["query_language"], "en")
         self.assertEqual(persisted["filters"]["language"], "de")

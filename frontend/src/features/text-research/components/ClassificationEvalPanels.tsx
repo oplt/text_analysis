@@ -15,6 +15,7 @@ import {
 import { MetricCards, ScientificLineChart } from "./ResearchCharts";
 import { ResearchResultsTable } from "./ResearchResults";
 import { AskAboutThisButton } from "./assistant/AskAboutThisButton";
+import { ScrollRegion } from "../../../components/ui/ScrollRegion";
 import { useResearchContext } from "../hooks/useResearchContext";
 import type { TrainedModel } from "../types";
 
@@ -259,7 +260,7 @@ export function ClassificationErrorBrowser({
                         ))}
                     </TextField>
                     {sliceRows ? (
-                        <Box sx={{ overflowX: "auto" }}>
+                        <ScrollRegion>
                             <Table size="small">
                                 <TableHead>
                                     <TableRow>
@@ -289,7 +290,7 @@ export function ClassificationErrorBrowser({
                                     })}
                                 </TableBody>
                             </Table>
-                        </Box>
+                        </ScrollRegion>
                     ) : null}
                 </Stack>
             ) : null}
@@ -362,7 +363,7 @@ export function ClassificationModelComparison({
                 Select 2+ models to compare holdout metrics.
             </Typography>
             {selected.length >= 2 ? (
-                <Box sx={{ overflowX: "auto" }}>
+                <ScrollRegion>
                     <Table size="small">
                         <TableHead>
                             <TableRow>
@@ -400,7 +401,7 @@ export function ClassificationModelComparison({
                             })}
                         </TableBody>
                     </Table>
-                </Box>
+                </ScrollRegion>
             ) : null}
         </Stack>
     );

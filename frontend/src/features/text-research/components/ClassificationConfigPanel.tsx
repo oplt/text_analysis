@@ -1,8 +1,4 @@
-import type { ReactNode } from "react";
 import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
     Checkbox,
     FormControlLabel,
     MenuItem,
@@ -10,39 +6,17 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { AdvancedSettings } from "../../../components/ui/AdvancedSettings";
+import { FormGrid } from "../../../components/ui/FormGrid";
+import { HelpFieldLabel } from "../../../components/ui/HelpTooltip";
 import type { ClassificationTrainConfig, ClassifierAlgorithm } from "./classificationTrainConfig";
 
 type ProfileOption = { id: string; name: string };
 
-function Section({
-    title,
-    description,
-    defaultExpanded = false,
-    children,
-}: {
-    title: string;
-    description: string;
-    defaultExpanded?: boolean;
-    children: ReactNode;
-}) {
-    return (
-        <Accordion defaultExpanded={defaultExpanded} disableGutters>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Stack spacing={0.25}>
-                    <Typography variant="subtitle2">{title}</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                        {description}
-                    </Typography>
-                </Stack>
-            </AccordionSummary>
-            <AccordionDetails>
-                <Stack spacing={2}>{children}</Stack>
-            </AccordionDetails>
-        </Accordion>
-    );
-}
-
+/**
+ * Train configuration with primary controls visible and rare hyperparameters
+ * collapsed under Advanced Settings (Phase 13).
+ */
 export function ClassificationConfigPanel({
     config,
     onChange,
@@ -65,63 +39,224 @@ export function ClassificationConfigPanel({
         isEmbedding;
 
     return (
-        <Stack spacing={1}>
-            <Section
-                title="Dataset"
-                description="Snapshot is selected above. Choose preprocessing and task type here."
-                defaultExpanded
-            >
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
+        <Stack spacing={2}>
+            <Typography variant="subtitle2">Task & model family</Typography>
+            <FormGrid columns="4-4-4">
+                <TextField
+                    select
+                    size="small"
+                    label="Task type"
+                    value={config.taskType}
+                    onChange={(e) =>
+                        patch({
+                            taskType: e.target.value as ClassificationTrainConfig["taskType"],
+                        })
+                    }
+                    helperText="Blank = infer from labels"
+                >
+                    <MenuItem value="">Infer automatically</MenuItem>
+                    <MenuItem value="binary">Binary</MenuItem>
+                    <MenuItem value="multiclass">Multiclass</MenuItem>
+                    <MenuItem value="multilabel">Multilabel</MenuItem>
+                </TextField>
+                <TextField
+                    select
+                    size="small"
+                    label={<HelpFieldLabel termId="model_family">Model family</HelpFieldLabel>}
+                    value={config.algorithm}
+                    onChange={(e) =>
+                        patch({
+                            algorithm: e.target.value as ClassifierAlgorithm,
+                        })
+                    }
+                >
+                    <MenuItem value="logistic_regression">Logistic regression</MenuItem>
+                    <MenuItem value="linear_svm">Linear SVM</MenuItem>
+                    <MenuItem value="multinomial_nb">Multinomial NB</MenuItem>
+                    <MenuItem value="complement_nb">Complement NB</MenuItem>
+                    <MenuItem value="sgd_classifier">SGD classifier</MenuItem>
+                    <MenuItem value="embedding_logistic">Embedding + logistic</MenuItem>
+                    <MenuItem value="embedding_svm">Embedding + SVM</MenuItem>
+                </TextField>
+                <TextField
+                    select
+                    size="small"
+                    label="Preprocessing profile"
+                    value={config.profileId}
+                    onChange={(e) => patch({ profileId: e.target.value })}
+                >
+                    <MenuItem value="">Default (none)</MenuItem>
+                    {profiles.map((profile) => (
+                        <MenuItem key={profile.id} value={profile.id}>
+                            {profile.name}
+                        </MenuItem>
+                    ))}
+                </TextField>
+                <TextField
+                    size="small"
+                    label="Model name"
+                    value={config.modelName}
+                    onChange={(e) => patch({ modelName: e.target.value })}
+                    placeholder="Optional"
+                />
+                {isEmbedding ? (
                     <TextField
                         select
                         size="small"
-                        label="Task type"
-                        value={config.taskType}
-                        onChange={(e) =>
-                            patch({
-                                taskType: e.target.value as ClassificationTrainConfig["taskType"],
-                            })
+                        label={
+                            <HelpFieldLabel termId="embeddings">Embedding provider</HelpFieldLabel>
                         }
-                        sx={{ minWidth: 180 }}
-                        helperText="Blank = infer from labels"
+                        value={config.embeddingProvider}
+                        onChange={(e) => patch({ embeddingProvider: e.target.value })}
                     >
-                        <MenuItem value="">Infer automatically</MenuItem>
-                        <MenuItem value="binary">Binary</MenuItem>
-                        <MenuItem value="multiclass">Multiclass</MenuItem>
-                        <MenuItem value="multilabel">Multilabel</MenuItem>
+                        <MenuItem value="hashing">Hashing (lexical)</MenuItem>
+                        <MenuItem value="sentence_transformers">Sentence transformers</MenuItem>
                     </TextField>
+                ) : null}
+                <TextField
+                    select
+                    size="small"
+                    label={<HelpFieldLabel termId="class_weight">Class weight</HelpFieldLabel>}
+                    value={config.classWeight}
+                    onChange={(e) =>
+                        patch({
+                            classWeight: e.target.value as "none" | "balanced",
+                        })
+                    }
+                >
+                    <MenuItem value="none">none</MenuItem>
+                    <MenuItem value="balanced">balanced</MenuItem>
+                </TextField>
+                {isLinear && !isNb ? (
                     <TextField
-                        select
                         size="small"
-                        label="Preprocessing profile"
-                        value={config.profileId}
-                        onChange={(e) => patch({ profileId: e.target.value })}
-                        sx={{ minWidth: 220 }}
-                    >
-                        <MenuItem value="">Default (none)</MenuItem>
-                        {profiles.map((profile) => (
-                            <MenuItem key={profile.id} value={profile.id}>
-                                {profile.name}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                    <TextField
-                        size="small"
-                        label="Model name"
-                        value={config.modelName}
-                        onChange={(e) => patch({ modelName: e.target.value })}
-                        sx={{ minWidth: 200 }}
-                        placeholder="Optional"
+                        type="number"
+                        label="C (regularization)"
+                        value={config.regularizationC}
+                        onChange={(e) =>
+                            patch({ regularizationC: Number(e.target.value) || 1 })
+                        }
+                        inputProps={{ min: 0.001, step: 0.1 }}
                     />
-                </Stack>
-            </Section>
-
-            <Section title="Features" description="Vectorizer and n-gram families." defaultExpanded>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
+                ) : null}
+                {isNb ? (
+                    <TextField
+                        size="small"
+                        type="number"
+                        label="NB alpha"
+                        value={config.nbAlpha}
+                        onChange={(e) => patch({ nbAlpha: Number(e.target.value) || 1 })}
+                        inputProps={{ min: 0.0001, step: 0.1 }}
+                    />
+                ) : null}
+                {isSgd ? (
                     <TextField
                         select
                         size="small"
-                        label="Vectorizer"
+                        label="SGD loss"
+                        value={config.sgdLoss}
+                        onChange={(e) => patch({ sgdLoss: e.target.value })}
+                    >
+                        <MenuItem value="log_loss">log_loss</MenuItem>
+                        <MenuItem value="hinge">hinge</MenuItem>
+                        <MenuItem value="modified_huber">modified_huber</MenuItem>
+                    </TextField>
+                ) : null}
+            </FormGrid>
+
+            <Typography variant="subtitle2">
+                <HelpFieldLabel termId="train_test_split">
+                    Train / validation / test
+                </HelpFieldLabel>
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+                Splits are grouped by source document to reduce leakage. Use validation for
+                thresholds and search; reserve test for final reporting.
+            </Typography>
+            <FormGrid columns="4-4-4">
+                <TextField
+                    select
+                    size="small"
+                    label="Validation strategy"
+                    value={config.validationStrategy}
+                    onChange={(e) =>
+                        patch({
+                            validationStrategy: e.target
+                                .value as ClassificationTrainConfig["validationStrategy"],
+                        })
+                    }
+                >
+                    <MenuItem value="holdout">Grouped holdout</MenuItem>
+                    <MenuItem value="nested_grouped_cv">Nested grouped CV</MenuItem>
+                </TextField>
+                <TextField
+                    size="small"
+                    type="number"
+                    label={
+                        <HelpFieldLabel termId="train_test_split">Test fraction</HelpFieldLabel>
+                    }
+                    value={config.testSize}
+                    onChange={(e) => patch({ testSize: Number(e.target.value) || 0.25 })}
+                    inputProps={{ min: 0.05, max: 0.5, step: 0.05 }}
+                    disabled={config.validationStrategy === "nested_grouped_cv"}
+                    helperText="Held-out test set"
+                />
+                <TextField
+                    size="small"
+                    type="number"
+                    label={
+                        <HelpFieldLabel termId="validation_set">Validation fraction</HelpFieldLabel>
+                    }
+                    value={config.valSize}
+                    onChange={(e) => patch({ valSize: Number(e.target.value) || 0 })}
+                    inputProps={{ min: 0, max: 0.5, step: 0.05 }}
+                    helperText="0 disables validation fold"
+                    disabled={config.validationStrategy === "nested_grouped_cv"}
+                />
+                {config.validationStrategy === "nested_grouped_cv" ? (
+                    <>
+                        <TextField
+                            size="small"
+                            type="number"
+                            label="Outer CV splits"
+                            value={config.nestedOuter}
+                            onChange={(e) =>
+                                patch({ nestedOuter: Number(e.target.value) || 5 })
+                            }
+                            inputProps={{ min: 2, max: 10, step: 1 }}
+                        />
+                        <TextField
+                            size="small"
+                            type="number"
+                            label="Inner CV splits"
+                            value={config.nestedInner}
+                            onChange={(e) =>
+                                patch({ nestedInner: Number(e.target.value) || 3 })
+                            }
+                            inputProps={{ min: 2, max: 10, step: 1 }}
+                        />
+                    </>
+                ) : null}
+                <TextField
+                    size="small"
+                    type="number"
+                    label="Random seed"
+                    value={config.randomSeed}
+                    onChange={(e) => patch({ randomSeed: Number(e.target.value) || 0 })}
+                    inputProps={{ step: 1 }}
+                    helperText="Reproducibility"
+                />
+            </FormGrid>
+
+            <AdvancedSettings
+                title="Feature engineering"
+                description="Vectorizer, n-grams, and DF pruning"
+            >
+                <FormGrid columns="4-4-4">
+                    <TextField
+                        select
+                        size="small"
+                        label={<HelpFieldLabel termId="tfidf">Vectorizer</HelpFieldLabel>}
                         value={config.vectorizer}
                         onChange={(e) =>
                             patch({
@@ -129,7 +264,6 @@ export function ClassificationConfigPanel({
                             })
                         }
                         disabled={isEmbedding}
-                        sx={{ minWidth: 140 }}
                     >
                         <MenuItem value="tfidf">TF-IDF</MenuItem>
                         <MenuItem value="count">Count</MenuItem>
@@ -152,7 +286,6 @@ export function ClassificationConfigPanel({
                         onChange={(e) => patch({ ngramMin: Number(e.target.value) || 1 })}
                         inputProps={{ min: 1, max: 5, step: 1 }}
                         disabled={!config.useWordNgrams || isEmbedding}
-                        sx={{ width: 130 }}
                     />
                     <TextField
                         size="small"
@@ -162,7 +295,6 @@ export function ClassificationConfigPanel({
                         onChange={(e) => patch({ ngramMax: Number(e.target.value) || 1 })}
                         inputProps={{ min: 1, max: 5, step: 1 }}
                         disabled={!config.useWordNgrams || isEmbedding}
-                        sx={{ width: 130 }}
                     />
                     <FormControlLabel
                         control={
@@ -182,7 +314,6 @@ export function ClassificationConfigPanel({
                         onChange={(e) => patch({ charNgramMin: Number(e.target.value) || 3 })}
                         inputProps={{ min: 2, max: 10, step: 1 }}
                         disabled={!config.useCharNgrams || isEmbedding}
-                        sx={{ width: 130 }}
                     />
                     <TextField
                         size="small"
@@ -192,47 +323,42 @@ export function ClassificationConfigPanel({
                         onChange={(e) => patch({ charNgramMax: Number(e.target.value) || 5 })}
                         inputProps={{ min: 2, max: 10, step: 1 }}
                         disabled={!config.useCharNgrams || isEmbedding}
-                        sx={{ width: 130 }}
                     />
                     <TextField
                         size="small"
                         type="number"
-                        label="min_df"
+                        label={<HelpFieldLabel termId="min_df">min_df</HelpFieldLabel>}
                         value={config.minDf}
                         onChange={(e) => patch({ minDf: Number(e.target.value) || 1 })}
                         inputProps={{ min: 1, step: 1 }}
                         disabled={isEmbedding}
-                        sx={{ width: 120 }}
                     />
                     <TextField
                         size="small"
                         type="number"
-                        label="max_df"
+                        label={<HelpFieldLabel termId="max_df">max_df</HelpFieldLabel>}
                         value={config.maxDf}
                         onChange={(e) => patch({ maxDf: Number(e.target.value) || 1 })}
                         inputProps={{ min: 0.01, max: 1, step: 0.01 }}
                         disabled={isEmbedding}
-                        sx={{ width: 120 }}
                     />
                     <TextField
                         size="small"
-                        label="max_features"
+                        label={<HelpFieldLabel termId="max_features">max_features</HelpFieldLabel>}
                         value={config.maxFeatures}
                         onChange={(e) => patch({ maxFeatures: e.target.value })}
                         placeholder="unlimited"
                         disabled={isEmbedding}
-                        sx={{ width: 140 }}
                         helperText="Blank = no cap"
                     />
-                </Stack>
-            </Section>
+                </FormGrid>
+            </AdvancedSettings>
 
-            <Section
+            <AdvancedSettings
                 title="Feature selection"
-                description="Supervised selection after DF pruning. Fit on train labels only."
-                defaultExpanded
+                description="Optional supervised pruning after DF filters"
             >
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
+                <FormGrid columns="4-4-4">
                     <TextField
                         select
                         size="small"
@@ -245,7 +371,6 @@ export function ClassificationConfigPanel({
                             })
                         }
                         disabled={isEmbedding}
-                        sx={{ minWidth: 180 }}
                     >
                         <MenuItem value="none">None</MenuItem>
                         <MenuItem value="chi2">Chi-square</MenuItem>
@@ -263,7 +388,6 @@ export function ClassificationConfigPanel({
                             config.featureSelectionMethod === "l1" ||
                             Boolean(config.featureSelectionPercentile.trim())
                         }
-                        sx={{ width: 140 }}
                         helperText="Integer or all"
                     />
                     <TextField
@@ -276,186 +400,16 @@ export function ClassificationConfigPanel({
                             config.featureSelectionMethod === "none" ||
                             config.featureSelectionMethod === "l1"
                         }
-                        sx={{ width: 140 }}
                         helperText="Optional; overrides K"
                     />
-                </Stack>
-            </Section>
+                </FormGrid>
+            </AdvancedSettings>
 
-            <Section title="Model" description="Algorithm and regularization." defaultExpanded>
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
-                    <TextField
-                        select
-                        size="small"
-                        label="Algorithm"
-                        value={config.algorithm}
-                        onChange={(e) =>
-                            patch({
-                                algorithm: e.target.value as ClassifierAlgorithm,
-                            })
-                        }
-                        sx={{ minWidth: 220 }}
-                    >
-                        <MenuItem value="logistic_regression">Logistic regression</MenuItem>
-                        <MenuItem value="linear_svm">Linear SVM</MenuItem>
-                        <MenuItem value="multinomial_nb">Multinomial NB</MenuItem>
-                        <MenuItem value="complement_nb">Complement NB</MenuItem>
-                        <MenuItem value="sgd_classifier">SGD classifier</MenuItem>
-                        <MenuItem value="embedding_logistic">Embedding + logistic</MenuItem>
-                        <MenuItem value="embedding_svm">Embedding + SVM</MenuItem>
-                    </TextField>
-                    {isEmbedding ? (
-                        <TextField
-                            select
-                            size="small"
-                            label="Embedding provider"
-                            value={config.embeddingProvider}
-                            onChange={(e) => patch({ embeddingProvider: e.target.value })}
-                            sx={{ minWidth: 180 }}
-                        >
-                            <MenuItem value="hashing">Hashing (lexical)</MenuItem>
-                            <MenuItem value="sentence_transformers">Sentence transformers</MenuItem>
-                        </TextField>
-                    ) : null}
-                    <TextField
-                        select
-                        size="small"
-                        label="class_weight"
-                        value={config.classWeight}
-                        onChange={(e) =>
-                            patch({
-                                classWeight: e.target.value as "none" | "balanced",
-                            })
-                        }
-                        sx={{ width: 150 }}
-                    >
-                        <MenuItem value="none">none</MenuItem>
-                        <MenuItem value="balanced">balanced</MenuItem>
-                    </TextField>
-                    {isLinear && !isNb ? (
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="C (regularization)"
-                            value={config.regularizationC}
-                            onChange={(e) =>
-                                patch({ regularizationC: Number(e.target.value) || 1 })
-                            }
-                            inputProps={{ min: 0.001, step: 0.1 }}
-                            sx={{ width: 150 }}
-                        />
-                    ) : null}
-                    {isNb ? (
-                        <TextField
-                            size="small"
-                            type="number"
-                            label="NB alpha"
-                            value={config.nbAlpha}
-                            onChange={(e) => patch({ nbAlpha: Number(e.target.value) || 1 })}
-                            inputProps={{ min: 0.0001, step: 0.1 }}
-                            sx={{ width: 130 }}
-                        />
-                    ) : null}
-                    {isSgd ? (
-                        <TextField
-                            select
-                            size="small"
-                            label="SGD loss"
-                            value={config.sgdLoss}
-                            onChange={(e) => patch({ sgdLoss: e.target.value })}
-                            sx={{ minWidth: 160 }}
-                        >
-                            <MenuItem value="log_loss">log_loss</MenuItem>
-                            <MenuItem value="hinge">hinge</MenuItem>
-                            <MenuItem value="modified_huber">modified_huber</MenuItem>
-                        </TextField>
-                    ) : null}
-                </Stack>
-            </Section>
-
-            <Section
-                title="Validation"
-                description="Document-grouped holdout or nested grouped CV."
-                defaultExpanded
+            <AdvancedSettings
+                title="Calibration & uncertainty"
+                description="Probability calibration, thresholds, bootstrap CIs"
             >
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
-                    <TextField
-                        select
-                        size="small"
-                        label="Validation strategy"
-                        value={config.validationStrategy}
-                        onChange={(e) =>
-                            patch({
-                                validationStrategy: e.target
-                                    .value as ClassificationTrainConfig["validationStrategy"],
-                            })
-                        }
-                        sx={{ minWidth: 200 }}
-                    >
-                        <MenuItem value="holdout">Grouped holdout</MenuItem>
-                        <MenuItem value="nested_grouped_cv">Nested grouped CV</MenuItem>
-                    </TextField>
-                    <TextField
-                        size="small"
-                        type="number"
-                        label="test_size"
-                        value={config.testSize}
-                        onChange={(e) => patch({ testSize: Number(e.target.value) || 0.25 })}
-                        inputProps={{ min: 0.05, max: 0.5, step: 0.05 }}
-                        sx={{ width: 120 }}
-                        disabled={config.validationStrategy === "nested_grouped_cv"}
-                    />
-                    <TextField
-                        size="small"
-                        type="number"
-                        label="val_size"
-                        value={config.valSize}
-                        onChange={(e) => patch({ valSize: Number(e.target.value) || 0 })}
-                        inputProps={{ min: 0, max: 0.5, step: 0.05 }}
-                        sx={{ width: 120 }}
-                        helperText="0 disables val fold"
-                        disabled={config.validationStrategy === "nested_grouped_cv"}
-                    />
-                    {config.validationStrategy === "nested_grouped_cv" ? (
-                        <>
-                            <TextField
-                                size="small"
-                                type="number"
-                                label="Outer splits"
-                                value={config.nestedOuter}
-                                onChange={(e) =>
-                                    patch({ nestedOuter: Number(e.target.value) || 5 })
-                                }
-                                inputProps={{ min: 2, max: 10, step: 1 }}
-                                sx={{ width: 130 }}
-                            />
-                            <TextField
-                                size="small"
-                                type="number"
-                                label="Inner splits"
-                                value={config.nestedInner}
-                                onChange={(e) =>
-                                    patch({ nestedInner: Number(e.target.value) || 3 })
-                                }
-                                inputProps={{ min: 2, max: 10, step: 1 }}
-                                sx={{ width: 130 }}
-                            />
-                        </>
-                    ) : null}
-                    <TextField
-                        size="small"
-                        type="number"
-                        label="random_seed"
-                        value={config.randomSeed}
-                        onChange={(e) => patch({ randomSeed: Number(e.target.value) || 0 })}
-                        inputProps={{ step: 1 }}
-                        sx={{ width: 130 }}
-                    />
-                </Stack>
-            </Section>
-
-            <Section title="Calibration" description="Probability recalibration method.">
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
+                <FormGrid columns="4-4-4">
                     <TextField
                         select
                         size="small"
@@ -466,19 +420,10 @@ export function ClassificationConfigPanel({
                                 calibrationMethod: e.target.value as "sigmoid" | "isotonic",
                             })
                         }
-                        sx={{ minWidth: 180 }}
                     >
                         <MenuItem value="sigmoid">Sigmoid (Platt)</MenuItem>
                         <MenuItem value="isotonic">Isotonic</MenuItem>
                     </TextField>
-                </Stack>
-            </Section>
-
-            <Section
-                title="Uncertainty"
-                description="Threshold tuning and bootstrap confidence intervals."
-            >
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
                     <FormControlLabel
                         control={
                             <Checkbox
@@ -495,7 +440,6 @@ export function ClassificationConfigPanel({
                         value={config.thresholdObjective}
                         onChange={(e) => patch({ thresholdObjective: e.target.value })}
                         disabled={!config.tuneThresholds}
-                        sx={{ minWidth: 200 }}
                     >
                         <MenuItem value="f1">F1</MenuItem>
                         <MenuItem value="precision">Precision</MenuItem>
@@ -514,7 +458,6 @@ export function ClassificationConfigPanel({
                             patch({ bootstrapSamples: Number(e.target.value) || 0 })
                         }
                         inputProps={{ min: 0, max: 2000, step: 50 }}
-                        sx={{ width: 160 }}
                     />
                     <TextField
                         size="small"
@@ -523,12 +466,14 @@ export function ClassificationConfigPanel({
                         value={config.ciLevel}
                         onChange={(e) => patch({ ciLevel: Number(e.target.value) || 0.95 })}
                         inputProps={{ min: 0.5, max: 0.99, step: 0.01 }}
-                        sx={{ width: 120 }}
                     />
-                </Stack>
-            </Section>
+                </FormGrid>
+            </AdvancedSettings>
 
-            <Section title="Advanced" description="Hyperparameter search grid / random search.">
+            <AdvancedSettings
+                title="Hyperparameter search"
+                description="Optional grid/random search on validation only"
+            >
                 <Stack spacing={2}>
                     <FormControlLabel
                         control={
@@ -539,7 +484,7 @@ export function ClassificationConfigPanel({
                         }
                         label="Enable hyperparameter search (validation only)"
                     />
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap">
+                    <FormGrid columns="4-4-4">
                         <TextField
                             select
                             size="small"
@@ -551,7 +496,6 @@ export function ClassificationConfigPanel({
                                 })
                             }
                             disabled={!config.tuneHyperparameters}
-                            sx={{ minWidth: 140 }}
                         >
                             <MenuItem value="grid">Grid</MenuItem>
                             <MenuItem value="random">Random</MenuItem>
@@ -559,11 +503,12 @@ export function ClassificationConfigPanel({
                         <TextField
                             select
                             size="small"
-                            label="Scoring metric"
+                            label={
+                                <HelpFieldLabel termId="macro_f1">Scoring metric</HelpFieldLabel>
+                            }
                             value={config.searchScoring}
                             onChange={(e) => patch({ searchScoring: e.target.value })}
                             disabled={!config.tuneHyperparameters}
-                            sx={{ minWidth: 160 }}
                         >
                             <MenuItem value="f1_macro">f1_macro</MenuItem>
                             <MenuItem value="f1_micro">f1_micro</MenuItem>
@@ -581,9 +526,8 @@ export function ClassificationConfigPanel({
                             }
                             disabled={!config.tuneHyperparameters || config.searchType !== "random"}
                             inputProps={{ min: 1, max: 100, step: 1 }}
-                            sx={{ width: 130 }}
                         />
-                    </Stack>
+                    </FormGrid>
                     <TextField
                         size="small"
                         label="Parameter grid (JSON object)"
@@ -597,7 +541,7 @@ export function ClassificationConfigPanel({
                         fullWidth
                     />
                 </Stack>
-            </Section>
+            </AdvancedSettings>
         </Stack>
     );
 }

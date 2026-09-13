@@ -936,6 +936,23 @@ class RagRepository:
         )
         return result.scalar_one_or_none()
 
+    async def record_context_selection(
+        self, trace_id: str, *, user_id: str, selection: dict
+    ) -> None:
+        result = await self.db.execute(
+            select(RagRetrievalTrace).where(
+                RagRetrievalTrace.id == trace_id,
+                RagRetrievalTrace.user_id == user_id,
+            )
+        )
+        row = result.scalar_one_or_none()
+        if row is None:
+            raise ValueError("retrieval_trace_unavailable")
+        config = json.loads(row.config_json or "{}")
+        config["context_selection"] = selection
+        row.config_json = json.dumps(config, ensure_ascii=True)
+        await self.db.flush()
+
     async def create_message(
         self,
         *,

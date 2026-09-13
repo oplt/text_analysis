@@ -29,14 +29,21 @@ import {
     predictClassifier,
 } from "../../../api/textResearch";
 import { listUserDirectory } from "../../../api/users";
+import { DisabledWithReason } from "../../../components/ui/DisabledWithReason";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { HelpTooltip } from "../../../components/ui/HelpTooltip";
+import { FormGrid } from "../../../components/ui/FormGrid";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
+import { RunStatusPanel } from "../../../components/ui/RunStatusPanel";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { QUERY_STALE_TIMES, researchRunStaleTime } from "../../../config/queryTiming";
 import { useAuth } from "../../../hooks/useAuth";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
-import { RunStatusChip } from "../components/ResearchShared";
+import {
+    assignUncertainDisabledReason,
+    predictModelDisabledReason,
+} from "../actionDisabledReasons";
 import { useResearchContext } from "../hooks/useResearchContext";
 import { useRunEvents } from "../hooks/useRunEvents";
 import { activeRunRefetchInterval } from "../runPolling";
@@ -110,13 +117,17 @@ export default function ActiveLearningView() {
             limit: PAGE_SIZE,
             campaignId: campaignId || undefined,
         }),
-        queryFn: () =>
-            listUncertainPredictions(selectedModelId, {
-                limit: PAGE_SIZE,
-                offset,
-                campaignId: campaignId || undefined,
-                contentMode: "snippet",
-            }),
+        queryFn: ({ signal }) =>
+            listUncertainPredictions(
+                selectedModelId,
+                {
+                    limit: PAGE_SIZE,
+                    offset,
+                    campaignId: campaignId || undefined,
+                    contentMode: "snippet",
+                },
+                signal
+            ),
         enabled: Boolean(selectedModelId) && !blindBlocksPredictions,
         staleTime: QUERY_STALE_TIMES.researchAnnotationQueue,
     });
@@ -198,7 +209,11 @@ export default function ActiveLearningView() {
     return (
         <Stack spacing={2}>
             <SectionCard
-                title="Active learning"
+                title={
+                    <HelpTooltip termId="active_learning" variant="label">
+                        Active learning
+                    </HelpTooltip>
+                }
                 description="Rank uncertain model predictions, inspect snippets, assign to annotators or a campaign, then freeze and retrain."
                 action={
                     <Button
@@ -216,14 +231,14 @@ export default function ActiveLearningView() {
                         fetch or display predictions for annotators under that policy.
                     </Alert>
 
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} flexWrap="wrap" useFlexGap>
+                    <FormGrid columns="4-4-4">
                         <TextField
                             select
                             size="small"
                             label="Trained model"
                             value={selectedModelId}
                             onChange={(e) => selectModel(e.target.value)}
-                            sx={{ minWidth: 260 }}
+                            fullWidth
                         >
                             <MenuItem value="">Select model</MenuItem>
                             {(modelsQuery.data ?? []).map((model) => (
@@ -241,7 +256,7 @@ export default function ActiveLearningView() {
                                 setCampaignId(e.target.value);
                                 setPage(0);
                             }}
-                            sx={{ minWidth: 220 }}
+                            fullWidth
                             helperText={
                                 selectedCampaign?.blind_mode
                                     ? "Blind campaign — predictions hidden"
@@ -262,7 +277,7 @@ export default function ActiveLearningView() {
                             label="Predict unit type"
                             value={predictUnitType}
                             onChange={(e) => setPredictUnitType(e.target.value as UnitType)}
-                            sx={{ minWidth: 160 }}
+                            fullWidth
                         >
                             {(["document", "paragraph", "sentence"] as UnitType[]).map((unit) => (
                                 <MenuItem key={unit} value={unit}>
@@ -270,6 +285,13 @@ export default function ActiveLearningView() {
                                 </MenuItem>
                             ))}
                         </TextField>
+                    </FormGrid>
+                    <DisabledWithReason
+                        reason={predictModelDisabledReason({
+                            modelId: selectedModelId,
+                            pending: predictMutation.isPending,
+                        })}
+                    >
                         <Button
                             variant="contained"
                             startIcon={<PredictIcon />}
@@ -278,12 +300,20 @@ export default function ActiveLearningView() {
                         >
                             Predict unannotated
                         </Button>
-                    </Stack>
+                    </DisabledWithReason>
 
                     {predictRunId && predictRunQuery.data ? (
-                        <Typography variant="body2">
-                            Predict run — <RunStatusChip status={predictRunQuery.data.status} />
-                        </Typography>
+                        <RunStatusPanel
+                            dense
+                            title="Predict run"
+                            status={predictRunQuery.data.status}
+                            runId={predictRunQuery.data.id}
+                            stage={predictRunQuery.data.progress_stage}
+                            startedAt={predictRunQuery.data.started_at}
+                            completedAt={predictRunQuery.data.completed_at}
+                            createdAt={predictRunQuery.data.created_at}
+                            errorMessage={predictRunQuery.data.error_message}
+                        />
                     ) : null}
                 </Stack>
             </SectionCard>
@@ -463,19 +493,28 @@ export default function ActiveLearningView() {
                         annotator(s)
                     </Typography>
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                        <Button
-                            variant="contained"
-                            startIcon={<AssignIcon />}
-                            disabled={
-                                !selectedModelId ||
-                                selectedUnitIds.length === 0 ||
-                                annotatorIds.length === 0 ||
-                                assignMutation.isPending
-                            }
-                            onClick={() => assignMutation.mutate()}
+                        <DisabledWithReason
+                            reason={assignUncertainDisabledReason({
+                                modelId: selectedModelId,
+                                selectedUnitCount: selectedUnitIds.length,
+                                annotatorCount: annotatorIds.length,
+                                pending: assignMutation.isPending,
+                            })}
                         >
-                            Assign selected
-                        </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<AssignIcon />}
+                                disabled={
+                                    !selectedModelId ||
+                                    selectedUnitIds.length === 0 ||
+                                    annotatorIds.length === 0 ||
+                                    assignMutation.isPending
+                                }
+                                onClick={() => assignMutation.mutate()}
+                            >
+                                Assign selected
+                            </Button>
+                        </DisabledWithReason>
                         <Button
                             variant="outlined"
                             onClick={() => navigate(`/research/${ctx.projectId}/annotation`)}

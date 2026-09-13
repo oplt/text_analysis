@@ -39,4 +39,33 @@ describe("PageTabs + useTabQueryParam", () => {
         expect(screen.getByTestId("tab-value")).toHaveTextContent("train");
         expect(screen.getByTestId("search")).toHaveTextContent("tab=train");
     });
+
+    it("maps legacy alias query values onto current tabs", () => {
+        function AliasHarness() {
+            const [tab] = useTabQueryParam(
+                ["dataset", "predictions"] as const,
+                "dataset",
+                "tab",
+                { aliases: { models: "predictions" } }
+            );
+            const location = useLocation();
+            return (
+                <div>
+                    <div data-testid="tab-value">{tab}</div>
+                    <div data-testid="search">{location.search}</div>
+                </div>
+            );
+        }
+
+        render(
+            <MemoryRouter initialEntries={["/research/p1/classify?tab=models"]}>
+                <Routes>
+                    <Route path="/research/:projectId/classify" element={<AliasHarness />} />
+                </Routes>
+            </MemoryRouter>
+        );
+
+        expect(screen.getByTestId("tab-value")).toHaveTextContent("predictions");
+        expect(screen.getByTestId("search")).toHaveTextContent("tab=models");
+    });
 });

@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from backend.core.pagination import paginated_response
-from backend.modules.text_research.api import routes
+from backend.modules.text_research.api import corpus_routes, routes
 from backend.modules.text_research.application.corpus_service import CorpusService
 
 
@@ -65,17 +65,17 @@ class ListDocumentsRoutePaginationTests(unittest.IsolatedAsyncioTestCase):
 
         with (
             patch.object(
-                routes,
+                corpus_routes,
                 "CorpusService",
                 return_value=MagicMock(paginate_documents=AsyncMock(return_value=(documents, 17))),
             ),
             patch.object(
-                routes,
+                corpus_routes,
                 "_document_response",
                 side_effect=lambda doc: {"id": id(doc)},
             ),
         ):
-            response = await routes.list_documents(
+            response = await corpus_routes.list_documents(
                 "corpus-1",
                 pagination=pagination,
                 db=db,

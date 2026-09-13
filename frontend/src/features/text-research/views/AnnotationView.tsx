@@ -22,6 +22,7 @@ import {
     NavigateBefore as PrevIcon,
     NavigateNext as NextIcon,
     Save as SaveIcon,
+    Verified as ReliabilityIcon,
 } from "@mui/icons-material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -34,7 +35,9 @@ import {
     listClassifiers,
     saveAnnotations,
 } from "../../../api/textResearch";
+import { AdvancedSettings } from "../../../components/ui/AdvancedSettings";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { HelpTooltip } from "../../../components/ui/HelpTooltip";
 import { PageTabs } from "../../../components/ui/PageTabs";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
@@ -43,13 +46,14 @@ import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { useTabQueryParam } from "../../../hooks/useTabQueryParam";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
+import { AnnotationLabelGuide } from "../components/AnnotationLabelGuide";
 import { AnnotationSetupPanel } from "../components/AnnotationSetupPanel";
 import {
     isBlindReliabilityCoding,
     shouldFetchPredictions,
 } from "../annotationPredictions";
 import { useResearchContext } from "../hooks/useResearchContext";
-import type { AnnotationLabel, AnnotationQueueItem } from "../types";
+import type { AnnotationQueueItem } from "../types";
 
 type LabelDecision = "yes" | "no" | "uncertain";
 
@@ -61,38 +65,13 @@ const ANNOTATION_TAB_ITEMS: Array<{ value: AnnotationTab; label: string }> = [
     { value: "workspace", label: "Workspace" },
 ];
 
-function LabelGuide({ label }: { label: AnnotationLabel }) {
-    return (
-        <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: "action.hover" }}>
-            <Typography variant="subtitle2">{label.name}</Typography>
-            {label.description ? (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    {label.description}
-                </Typography>
-            ) : null}
-            {label.inclusion_criteria ? (
-                <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                    Include: {label.inclusion_criteria}
-                </Typography>
-            ) : null}
-            {label.exclusion_criteria ? (
-                <Typography variant="caption" display="block">
-                    Exclude: {label.exclusion_criteria}
-                </Typography>
-            ) : null}
-            {label.positive_examples?.length ? (
-                <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-                    + {label.positive_examples.join(" · ")}
-                </Typography>
-            ) : null}
-            {label.negative_examples?.length ? (
-                <Typography variant="caption" display="block">
-                    − {label.negative_examples.join(" · ")}
-                </Typography>
-            ) : null}
-            {label.is_placeholder ? <Chip size="small" label="demo" sx={{ mt: 1 }} /> : null}
-        </Box>
-    );
+function taskStatusColor(
+    status: string
+): "default" | "success" | "warning" | "info" {
+    if (status === "completed") return "success";
+    if (status === "in_progress") return "warning";
+    if (status === "assigned") return "info";
+    return "default";
 }
 
 export default function AnnotationView() {
@@ -104,6 +83,7 @@ export default function AnnotationView() {
 
     const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
     const [labelValues, setLabelValues] = useState<Record<string, LabelDecision>>({});
+    const [focusedLabelIndex, setFocusedLabelIndex] = useState(0);
     const [comment, setComment] = useState("");
     const [confidence, setConfidence] = useState(0.8);
     const [queueFilter, setQueueFilter] = useState<"assigned" | "in_progress" | "all">("assigned");
@@ -115,13 +95,14 @@ export default function AnnotationView() {
     const queueStatus = queueFilter === "all" ? undefined : queueFilter;
     const queueQuery = useQuery({
         queryKey: queryKeys.textResearch.annotationQueue(queueStatus ?? "all", queuePage * queuePageSize),
-        queryFn: ({ signal }) => listAnnotationQueue(queueStatus, { limit: queuePageSize, offset: queuePage * queuePageSize }, signal),
+        queryFn: ({ signal }) =>
+            listAnnotationQueue(queueStatus, { limit: queuePageSize, offset: queuePage * queuePageSize }, signal),
         staleTime: QUERY_STALE_TIMES.researchAnnotationQueue,
     });
 
     const progressQuery = useQuery({
         queryKey: queryKeys.textResearch.annotationProgress(ctx.selectedCorpusId),
-        queryFn: () => getAnnotationProgress(ctx.selectedCorpusId),
+        queryFn: ({ signal }) => getAnnotationProgress(ctx.selectedCorpusId, signal),
         enabled: Boolean(ctx.selectedCorpusId),
         staleTime: QUERY_STALE_TIMES.researchAnnotationQueue,
     });
@@ -183,17 +164,21 @@ export default function AnnotationView() {
             selectedItem?.task.campaign_id,
             resolvedSelectedUnitId,
         ],
-        queryFn: () =>
-            listUncertainPredictions(selectedModelId!, {
-                campaignId: selectedItem?.task.campaign_id ?? undefined,
-                textUnitId: resolvedSelectedUnitId ?? undefined,
-            }),
+        queryFn: ({ signal }) =>
+            listUncertainPredictions(
+                selectedModelId!,
+                {
+                    campaignId: selectedItem?.task.campaign_id ?? undefined,
+                    textUnitId: resolvedSelectedUnitId ?? undefined,
+                },
+                signal
+            ),
         enabled: predictionsEnabled,
     });
 
     const contextQuery = useQuery({
         queryKey: ["text-research", "unit-context", resolvedSelectedUnitId],
-        queryFn: () => getTextUnitContext(resolvedSelectedUnitId!, 2),
+        queryFn: ({ signal }) => getTextUnitContext(resolvedSelectedUnitId!, 2, signal),
         enabled: Boolean(resolvedSelectedUnitId),
     });
 
@@ -204,16 +189,28 @@ export default function AnnotationView() {
         selectedItem?.blind_policy,
         selectedItem?.campaign
     );
+    const aiAssisted =
+        !blindCoding &&
+        (selectedItem?.blind_policy?.ai_assistance_enabled === true ||
+            selectedItem?.campaign?.ai_assistance_enabled === true ||
+            selectedItem?.campaign?.annotation_mode === "ai_assisted");
 
     useEffect(() => {
         setLabelValues({});
         setComment("");
         setConfidence(0.8);
+        setFocusedLabelIndex(0);
     }, [resolvedSelectedUnitId]);
 
     function selectIndex(index: number) {
         const item = visibleQueueItems[index];
         if (item?.text_unit) setSelectedUnitId(item.text_unit.id);
+    }
+
+    function setDecisionForFocusedLabel(decision: LabelDecision) {
+        const label = ctx.labels[focusedLabelIndex] ?? ctx.labels[0];
+        if (!label) return;
+        setLabelValues((current) => ({ ...current, [label.id]: decision }));
     }
 
     const saveMutation = useMutation({
@@ -263,6 +260,7 @@ export default function AnnotationView() {
         function onKeyDown(event: KeyboardEvent) {
             const target = event.target as HTMLElement | null;
             if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+            if (tab !== "workspace") return;
 
             if (event.key === "ArrowRight" || event.key === "j") {
                 event.preventDefault();
@@ -270,10 +268,25 @@ export default function AnnotationView() {
             } else if (event.key === "ArrowLeft" || event.key === "k") {
                 event.preventDefault();
                 selectIndex(Math.max(0, selectedIndex - 1));
+            } else if (event.key === "Tab" && ctx.labels.length > 0) {
+                event.preventDefault();
+                const delta = event.shiftKey ? -1 : 1;
+                setFocusedLabelIndex(
+                    (index) => (index + delta + ctx.labels.length) % ctx.labels.length
+                );
+            } else if (event.key === "y" || event.key === "1") {
+                event.preventDefault();
+                setDecisionForFocusedLabel("yes");
+            } else if (event.key === "n" || event.key === "2") {
+                event.preventDefault();
+                setDecisionForFocusedLabel("no");
+            } else if (event.key === "u" || event.key === "3") {
+                event.preventDefault();
+                setDecisionForFocusedLabel("uncertain");
             } else if (event.key === "s" && (event.metaKey || event.ctrlKey)) {
                 event.preventDefault();
                 saveMutation.mutate({ complete: true, advance: true });
-            } else if (event.key === "n" && !event.metaKey && !event.ctrlKey) {
+            } else if (event.key === "Enter" && !event.metaKey && !event.ctrlKey) {
                 event.preventDefault();
                 selectIndex(Math.min(visibleQueueItems.length - 1, selectedIndex + 1));
             }
@@ -281,9 +294,10 @@ export default function AnnotationView() {
         window.addEventListener("keydown", onKeyDown);
         return () => window.removeEventListener("keydown", onKeyDown);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [visibleQueueItems, selectedIndex, saveMutation]);
+    }, [visibleQueueItems, selectedIndex, saveMutation, tab, ctx.labels, focusedLabelIndex]);
 
     const completionRate = Math.round((progressQuery.data?.completion_rate ?? 0) * 100);
+    const decidedCount = ctx.labels.filter((label) => Boolean(labelValues[label.id])).length;
 
     return (
         <Stack spacing={2}>
@@ -295,340 +309,466 @@ export default function AnnotationView() {
             />
 
             {tab === "setup" ? (
-            <Box id="annotation-setup">
-                <SectionCard
-                    title="Annotation setup"
-                    description="Create tasks with sample size, annotators, and overlap for reliability."
-                >
-                    <AnnotationSetupPanel />
-                </SectionCard>
-            </Box>
+                <Box id="annotation-setup">
+                    <SectionCard
+                        title="Annotation setup"
+                        description="Create tasks with sample size, annotators, and overlap for reliability."
+                    >
+                        <AnnotationSetupPanel />
+                    </SectionCard>
+                </Box>
             ) : null}
 
             {tab === "workspace" ? (
-            <SectionCard
-                title="Annotation workspace"
-                description="Code queue units with codebook guidance. Model predictions stay visually separate and are never auto-applied."
-                action={
-                    <FormControl size="small" sx={{ minWidth: 140 }}>
-                        <InputLabel>Queue</InputLabel>
-                        <Select
-                            label="Queue"
-                            value={queueFilter}
-                            onChange={(e) => {
-                                setQueueFilter(e.target.value as typeof queueFilter);
-                                setQueuePage(0);
-                                setSelectedUnitId(null);
-                            }}
-                        >
-                            <MenuItem value="assigned">Assigned</MenuItem>
-                            <MenuItem value="in_progress">In progress</MenuItem>
-                            <MenuItem value="all">All</MenuItem>
-                        </Select>
-                    </FormControl>
-                }
-            >
-                {progressQuery.data ? (
-                    <Box sx={{ mb: 2 }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                            Progress: {progressQuery.data.completed_tasks}/
-                            {progressQuery.data.total_tasks} tasks ({completionRate}%)
-                        </Typography>
-                        <LinearProgress variant="determinate" value={completionRate} />
-                    </Box>
-                ) : null}
-
-                {!ctx.selectedCodebookId || ctx.labels.length === 0 ? (
-                    <Alert
-                        severity="info"
-                        sx={{ mb: 2 }}
-                        action={
+                <SectionCard
+                    title="Annotation workspace"
+                    description="Code the unit text first, then apply labels. Model suggestions stay separate and are never auto-applied."
+                    action={
+                        <Stack direction="row" spacing={1} alignItems="center">
                             <Button
-                                color="inherit"
                                 size="small"
-                                onClick={() => navigate(`/research/${ctx.projectId}/codebook`)}
+                                variant="outlined"
+                                startIcon={<ReliabilityIcon />}
+                                onClick={() =>
+                                    navigate(`/research/${ctx.projectId}/reliability?tab=disagreements`)
+                                }
                             >
-                                Open codebook
+                                Disagreements
                             </Button>
-                        }
-                    >
-                        Select or create a codebook with labels before coding.
-                    </Alert>
-                ) : null}
-
-                <QueryBoundary
-                    isLoading={queueQuery.isLoading}
-                    isError={queueQuery.isError}
-                    error={queueQuery.error}
-                    onRetry={() => void queueQuery.refetch()}
+                            <FormControl size="small" sx={{ minWidth: 140 }}>
+                                <InputLabel>Queue</InputLabel>
+                                <Select
+                                    label="Queue"
+                                    value={queueFilter}
+                                    onChange={(e) => {
+                                        setQueueFilter(e.target.value as typeof queueFilter);
+                                        setQueuePage(0);
+                                        setSelectedUnitId(null);
+                                    }}
+                                >
+                                    <MenuItem value="assigned">Assigned</MenuItem>
+                                    <MenuItem value="in_progress">In progress</MenuItem>
+                                    <MenuItem value="all">All</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Stack>
+                    }
                 >
-                    {!queueItems.length ? (
-                        <EmptyState
-                            icon={<TaskIcon fontSize="large" />}
-                            title="No tasks in this queue"
-                            description="Use Annotation setup to assign units, then return here to code."
+                    {progressQuery.data ? (
+                        <Box sx={{ mb: 2 }}>
+                            <Stack
+                                direction={{ xs: "column", sm: "row" }}
+                                spacing={1}
+                                justifyContent="space-between"
+                                alignItems={{ sm: "center" }}
+                                sx={{ mb: 0.75 }}
+                            >
+                                <Typography variant="body2" color="text.secondary">
+                                    Progress: {progressQuery.data.completed_tasks}/
+                                    {progressQuery.data.total_tasks} tasks ({completionRate}%)
+                                </Typography>
+                                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                                    {selectedItem?.task.status ? (
+                                        <Chip
+                                            size="small"
+                                            color={taskStatusColor(selectedItem.task.status)}
+                                            label={`Status: ${selectedItem.task.status}`}
+                                        />
+                                    ) : null}
+                                    {blindCoding ? (
+                                        <Chip size="small" color="info" label="Blind reliability" />
+                                    ) : null}
+                                    {aiAssisted ? (
+                                        <Chip size="small" color="warning" label="AI-assisted" />
+                                    ) : null}
+                                    {ctx.labels.length > 0 ? (
+                                        <Chip
+                                            size="small"
+                                            variant="outlined"
+                                            label={`${decidedCount}/${ctx.labels.length} labels decided`}
+                                        />
+                                    ) : null}
+                                </Stack>
+                            </Stack>
+                            <LinearProgress variant="determinate" value={completionRate} />
+                        </Box>
+                    ) : null}
+
+                    {!ctx.selectedCodebookId || ctx.labels.length === 0 ? (
+                        <Alert
+                            severity="info"
+                            sx={{ mb: 2 }}
                             action={
                                 <Button
-                                    variant="contained"
-                                    onClick={() => setTab("setup")}
+                                    color="inherit"
+                                    size="small"
+                                    onClick={() => navigate(`/research/${ctx.projectId}/codebook`)}
                                 >
-                                    Create annotation tasks
+                                    Open codebook
                                 </Button>
                             }
-                        />
-                    ) : (
-                        <Box
-                            sx={{
-                                display: "grid",
-                                gap: 2,
-                                gridTemplateColumns: {
-                                    xs: "1fr",
-                                    lg: "240px minmax(0, 1fr) 280px",
-                                },
-                                alignItems: "start",
-                            }}
                         >
-                            <Stack spacing={1} sx={{ maxHeight: 640, overflow: "auto" }}>
-                                <Stack direction="row" alignItems="center" justifyContent="space-between">
-                                    <Typography variant="subtitle2">
-                                        Queue {queueQuery.data ? `(${queueQuery.data.total})` : ""}
-                                    </Typography>
-                                    <Stack direction="row" spacing={0.5}>
+                            Select or create a codebook with labels before coding.
+                        </Alert>
+                    ) : null}
+
+                    <QueryBoundary
+                        isLoading={queueQuery.isLoading}
+                        isError={queueQuery.isError}
+                        error={queueQuery.error}
+                        onRetry={() => void queueQuery.refetch()}
+                    >
+                        {!queueItems.length ? (
+                            <EmptyState
+                                icon={<TaskIcon fontSize="large" />}
+                                title="No tasks in this queue"
+                                description="Use Annotation setup to assign units, then return here to code."
+                                action={
+                                    <Button variant="contained" onClick={() => setTab("setup")}>
+                                        Create annotation tasks
+                                    </Button>
+                                }
+                            />
+                        ) : (
+                            <Box
+                                sx={{
+                                    display: "grid",
+                                    gap: 2,
+                                    gridTemplateColumns: {
+                                        xs: "1fr",
+                                        md: "minmax(200px, 0.9fr) minmax(0, 2.4fr)",
+                                        lg: "minmax(200px, 0.85fr) minmax(0, 2.2fr) minmax(240px, 1fr)",
+                                    },
+                                    alignItems: "start",
+                                }}
+                            >
+                                <Stack spacing={1} sx={{ maxHeight: { md: "70vh" }, overflow: "auto" }}>
+                                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                                        <Typography variant="subtitle2">
+                                            Queue {queueQuery.data ? `(${queueQuery.data.total})` : ""}
+                                        </Typography>
+                                        <Stack direction="row" spacing={0.5}>
+                                            <Button
+                                                size="small"
+                                                disabled={queuePage === 0}
+                                                onClick={() => {
+                                                    setQueuePage((page) => page - 1);
+                                                    setSelectedUnitId(null);
+                                                }}
+                                            >
+                                                Earlier
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                disabled={
+                                                    !queueQuery.data ||
+                                                    (queuePage + 1) * queuePageSize >= queueQuery.data.total
+                                                }
+                                                onClick={() => {
+                                                    setQueuePage((page) => page + 1);
+                                                    setSelectedUnitId(null);
+                                                }}
+                                            >
+                                                Later
+                                            </Button>
+                                        </Stack>
+                                    </Stack>
+                                    <TextField
+                                        size="small"
+                                        label="Filter page"
+                                        value={queueSearch}
+                                        onChange={(event) => setQueueSearch(event.target.value)}
+                                        placeholder="Search text / status"
+                                    />
+                                    {visibleQueueItems.map((item, index) => (
                                         <Button
+                                            key={item.task.id}
                                             size="small"
-                                            disabled={queuePage === 0}
-                                            onClick={() => {
-                                                setQueuePage((page) => page - 1);
-                                                setSelectedUnitId(null);
+                                            variant={
+                                                item.text_unit?.id === resolvedSelectedUnitId
+                                                    ? "contained"
+                                                    : "outlined"
+                                            }
+                                            onClick={() => selectIndex(index)}
+                                            sx={{
+                                                justifyContent: "flex-start",
+                                                textAlign: "left",
+                                                alignItems: "flex-start",
+                                                py: 1,
                                             }}
                                         >
-                                            Earlier
+                                            <Stack spacing={0.35} sx={{ width: "100%" }}>
+                                                <Stack direction="row" spacing={0.75} alignItems="center">
+                                                    <Typography variant="caption" component="span">
+                                                        #{queuePage * queuePageSize + index + 1}
+                                                    </Typography>
+                                                    <Chip
+                                                        size="small"
+                                                        label={item.task.status}
+                                                        color={taskStatusColor(item.task.status)}
+                                                        sx={{ height: 20 }}
+                                                    />
+                                                </Stack>
+                                                <Typography variant="body2" component="span">
+                                                    {item.text_unit?.text.slice(0, 64) ?? "Unit"}…
+                                                </Typography>
+                                            </Stack>
+                                        </Button>
+                                    ))}
+                                </Stack>
+
+                                <Stack spacing={1.5}>
+                                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                        <Button
+                                            startIcon={<PrevIcon />}
+                                            disabled={selectedIndex <= 0}
+                                            onClick={() => selectIndex(selectedIndex - 1)}
+                                        >
+                                            Previous
                                         </Button>
                                         <Button
-                                            size="small"
-                                            disabled={!queueQuery.data || (queuePage + 1) * queuePageSize >= queueQuery.data.total}
-                                            onClick={() => {
-                                                setQueuePage((page) => page + 1);
-                                                setSelectedUnitId(null);
-                                            }}
+                                            endIcon={<NextIcon />}
+                                            disabled={selectedIndex >= visibleQueueItems.length - 1}
+                                            onClick={() => selectIndex(selectedIndex + 1)}
                                         >
-                                            Later
+                                            Next
+                                        </Button>
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<SaveIcon />}
+                                            disabled={
+                                                !resolvedSelectedUnitId ||
+                                                !ctx.selectedCodebookId ||
+                                                saveMutation.isPending
+                                            }
+                                            onClick={() =>
+                                                saveMutation.mutate({ complete: true, advance: true })
+                                            }
+                                        >
+                                            Save & Next
+                                        </Button>
+                                        <Button
+                                            variant="outlined"
+                                            disabled={
+                                                !resolvedSelectedUnitId ||
+                                                !ctx.selectedCodebookId ||
+                                                saveMutation.isPending
+                                            }
+                                            onClick={() =>
+                                                saveMutation.mutate({ complete: false, advance: false })
+                                            }
+                                        >
+                                            Save draft
                                         </Button>
                                     </Stack>
-                                </Stack>
-                                <TextField
-                                    size="small"
-                                    label="Filter page"
-                                    value={queueSearch}
-                                    onChange={(event) => setQueueSearch(event.target.value)}
-                                    placeholder="Search text / status"
-                                />
-                                {visibleQueueItems.map((item, index) => (
-                                    <Button
-                                        key={item.task.id}
-                                        size="small"
-                                        variant={
-                                            item.text_unit?.id === resolvedSelectedUnitId
-                                                ? "contained"
-                                                : "outlined"
-                                        }
-                                        onClick={() => selectIndex(index)}
-                                        sx={{ justifyContent: "flex-start", textAlign: "left" }}
-                                    >
-                                        #{queuePage * queuePageSize + index + 1} · {item.text_unit?.text.slice(0, 48) ?? "Unit"}
-                                        …
-                                    </Button>
-                                ))}
-                            </Stack>
-
-                            <Stack spacing={1.5}>
-                                <Stack direction="row" spacing={1}>
-                                    <Button
-                                        startIcon={<PrevIcon />}
-                                        disabled={selectedIndex <= 0}
-                                        onClick={() => selectIndex(selectedIndex - 1)}
-                                    >
-                                        Previous
-                                    </Button>
-                                    <Button
-                                        endIcon={<NextIcon />}
-                                        disabled={selectedIndex >= visibleQueueItems.length - 1}
-                                        onClick={() => selectIndex(selectedIndex + 1)}
-                                    >
-                                        Next
-                                    </Button>
-                                    <Button
-                                        onClick={() =>
-                                            selectIndex(
-                                                Math.min(visibleQueueItems.length - 1, selectedIndex + 1)
-                                            )
-                                        }
-                                    >
-                                        Skip
-                                    </Button>
-                                    <Button
-                                        variant="contained"
-                                        startIcon={<SaveIcon />}
-                                        disabled={
-                                            !resolvedSelectedUnitId ||
-                                            !ctx.selectedCodebookId ||
-                                            saveMutation.isPending
-                                        }
-                                        onClick={() =>
-                                            saveMutation.mutate({ complete: true, advance: true })
-                                        }
-                                    >
-                                        Save & Next
-                                    </Button>
-                                </Stack>
-                                <Typography variant="caption" color="text.secondary">
-                                    Shortcuts: ←/k previous · →/j next · n skip · ⌘/Ctrl+S save & next
-                                </Typography>
-
-                                {selectedItem?.text_unit ? (
-                                    <>
-                                        {contextQuery.data?.document ? (
-                                            <Typography variant="body2" color="text.secondary">
-                                                Source: {contextQuery.data.document.title ?? "Untitled"}
-                                                {contextQuery.data.document.organization
-                                                    ? ` · ${contextQuery.data.document.organization}`
-                                                    : ""}
-                                                {contextQuery.data.document.publication_year
-                                                    ? ` · ${contextQuery.data.document.publication_year}`
-                                                    : ""}
-                                            </Typography>
-                                        ) : null}
-
-                                        {contextQuery.data?.before.map((unit) => (
-                                            <Typography
-                                                key={unit.id}
-                                                variant="body2"
-                                                color="text.disabled"
-                                                sx={{ fontStyle: "italic" }}
-                                            >
-                                                {unit.text}
-                                            </Typography>
-                                        ))}
-
-                                        <Box
-                                            sx={{
-                                                p: 2,
-                                                borderRadius: 1,
-                                                border: "1px solid",
-                                                borderColor: "primary.main",
-                                                bgcolor: "background.paper",
-                                            }}
-                                        >
-                                            <Typography variant="body1">
-                                                {selectedItem.text_unit.text}
-                                            </Typography>
-                                        </Box>
-
-                                        {contextQuery.data?.after.map((unit) => (
-                                            <Typography
-                                                key={unit.id}
-                                                variant="body2"
-                                                color="text.disabled"
-                                                sx={{ fontStyle: "italic" }}
-                                            >
-                                                {unit.text}
-                                            </Typography>
-                                        ))}
-
-                                        {blindCoding ? (
-                                            <Alert severity="info">
-                                                Blind reliability coding — model suggestions hidden.
-                                            </Alert>
-                                        ) : null}
-
-                                        {!blindCoding && modelPrediction ? (
-                                            <Alert severity="warning">
-                                                Model suggestion (not applied):{" "}
-                                                {modelPrediction.prediction.predicted_labels.join(", ") ||
-                                                    "none"}
-                                                {modelPrediction.prediction.uncertainty != null
-                                                    ? ` · uncertainty ${modelPrediction.prediction.uncertainty.toFixed(3)}`
-                                                    : ""}
-                                            </Alert>
-                                        ) : null}
-
-                                        <Stack spacing={1.5}>
-                                            {ctx.labels.map((label) => (
-                                                <Box key={label.id}>
-                                                    <Typography variant="subtitle2">{label.name}</Typography>
-                                                    <RadioGroup
-                                                        row
-                                                        value={labelValues[label.id] ?? ""}
-                                                        onChange={(e) =>
-                                                            setLabelValues((current) => ({
-                                                                ...current,
-                                                                [label.id]: e.target
-                                                                    .value as LabelDecision,
-                                                            }))
-                                                        }
-                                                    >
-                                                        <FormControlLabel
-                                                            value="yes"
-                                                            control={<Radio size="small" />}
-                                                            label="Yes"
-                                                        />
-                                                        <FormControlLabel
-                                                            value="no"
-                                                            control={<Radio size="small" />}
-                                                            label="No"
-                                                        />
-                                                        <FormControlLabel
-                                                            value="uncertain"
-                                                            control={<Radio size="small" />}
-                                                            label="Uncertain"
-                                                        />
-                                                    </RadioGroup>
-                                                </Box>
-                                            ))}
-                                        </Stack>
-
-                                        <Typography variant="caption">
-                                            Confidence: {confidence.toFixed(2)}
-                                        </Typography>
-                                        <Slider
-                                            min={0}
-                                            max={1}
-                                            step={0.05}
-                                            value={confidence}
-                                            onChange={(_, value) => setConfidence(value as number)}
-                                        />
-                                        <TextField
-                                            label="Comment"
-                                            value={comment}
-                                            onChange={(e) => setComment(e.target.value)}
-                                            fullWidth
-                                            multiline
-                                            minRows={2}
-                                        />
-                                    </>
-                                ) : (
-                                    <Typography color="text.secondary">
-                                        Select a queued unit to begin coding.
+                                    <Typography variant="caption" color="text.secondary">
+                                        Shortcuts: ←/k · →/j · Tab label · y/n/u or 1/2/3 · ⌘/Ctrl+S save &
+                                        next
                                     </Typography>
-                                )}
-                            </Stack>
 
-                            <Stack spacing={1} sx={{ maxHeight: 640, overflow: "auto" }}>
-                                <Typography variant="subtitle2">
-                                    Codebook {ctx.selectedCodebook?.name}
-                                    {ctx.selectedCodebook
-                                        ? ` · v${ctx.selectedCodebook.version}`
-                                        : ""}
-                                    {ctx.selectedCodebook?.is_frozen ? " · frozen" : ""}
-                                </Typography>
-                                {ctx.labels.map((label) => (
-                                    <LabelGuide key={label.id} label={label} />
-                                ))}
-                            </Stack>
-                        </Box>
-                    )}
-                </QueryBoundary>
-            </SectionCard>
+                                    {selectedItem?.text_unit ? (
+                                        <>
+                                            {contextQuery.data?.document ? (
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Source: {contextQuery.data.document.title ?? "Untitled"}
+                                                    {contextQuery.data.document.organization
+                                                        ? ` · ${contextQuery.data.document.organization}`
+                                                        : ""}
+                                                    {contextQuery.data.document.publication_year
+                                                        ? ` · ${contextQuery.data.document.publication_year}`
+                                                        : ""}
+                                                </Typography>
+                                            ) : null}
+
+                                            <Box
+                                                sx={{
+                                                    p: 2,
+                                                    borderRadius: 1,
+                                                    border: "2px solid",
+                                                    borderColor: "primary.main",
+                                                    bgcolor: "background.paper",
+                                                }}
+                                            >
+                                                <Typography variant="overline" color="text.secondary">
+                                                    Text to code
+                                                </Typography>
+                                                <Typography variant="body1" sx={{ mt: 0.5 }}>
+                                                    {selectedItem.text_unit.text}
+                                                </Typography>
+                                            </Box>
+
+                                            {blindCoding ? (
+                                                <Alert
+                                                    severity="info"
+                                                    action={<HelpTooltip termId="blind_reliability" />}
+                                                >
+                                                    Blind reliability coding — peer codes and model
+                                                    suggestions are hidden.
+                                                </Alert>
+                                            ) : null}
+
+                                            {aiAssisted ? (
+                                                <Alert
+                                                    severity="warning"
+                                                    action={<HelpTooltip termId="ai_assisted_coding" />}
+                                                >
+                                                    AI-assisted mode — suggestions below are optional and
+                                                    never auto-applied.
+                                                </Alert>
+                                            ) : null}
+
+                                            {!blindCoding && modelPrediction ? (
+                                                <Alert severity="warning">
+                                                    Model suggestion (not applied):{" "}
+                                                    {modelPrediction.prediction.predicted_labels.join(
+                                                        ", "
+                                                    ) || "none"}
+                                                    {modelPrediction.prediction.uncertainty != null
+                                                        ? ` · uncertainty ${modelPrediction.prediction.uncertainty.toFixed(3)}`
+                                                        : ""}
+                                                </Alert>
+                                            ) : null}
+
+                                            <Box>
+                                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                                    Labels
+                                                </Typography>
+                                                <Stack spacing={1.25}>
+                                                    {ctx.labels.map((label, index) => (
+                                                        <Box
+                                                            key={label.id}
+                                                            onClick={() => setFocusedLabelIndex(index)}
+                                                            sx={{
+                                                                p: 1.25,
+                                                                borderRadius: 1,
+                                                                border: "1px solid",
+                                                                borderColor:
+                                                                    focusedLabelIndex === index
+                                                                        ? "primary.main"
+                                                                        : "divider",
+                                                                bgcolor:
+                                                                    focusedLabelIndex === index
+                                                                        ? "action.hover"
+                                                                        : "transparent",
+                                                            }}
+                                                        >
+                                                            <Typography variant="subtitle2">
+                                                                {label.name}
+                                                            </Typography>
+                                                            <RadioGroup
+                                                                row
+                                                                value={labelValues[label.id] ?? ""}
+                                                                onChange={(e) => {
+                                                                    setFocusedLabelIndex(index);
+                                                                    setLabelValues((current) => ({
+                                                                        ...current,
+                                                                        [label.id]: e.target
+                                                                            .value as LabelDecision,
+                                                                    }));
+                                                                }}
+                                                            >
+                                                                <FormControlLabel
+                                                                    value="yes"
+                                                                    control={<Radio size="small" />}
+                                                                    label="Yes"
+                                                                />
+                                                                <FormControlLabel
+                                                                    value="no"
+                                                                    control={<Radio size="small" />}
+                                                                    label="No"
+                                                                />
+                                                                <FormControlLabel
+                                                                    value="uncertain"
+                                                                    control={<Radio size="small" />}
+                                                                    label="Uncertain"
+                                                                />
+                                                            </RadioGroup>
+                                                        </Box>
+                                                    ))}
+                                                </Stack>
+                                            </Box>
+
+                                            <AdvancedSettings
+                                                title="Confidence & comment"
+                                                description="Optional annotator notes"
+                                            >
+                                                <Stack spacing={1.25}>
+                                                    <Typography variant="caption">
+                                                        Confidence: {confidence.toFixed(2)}
+                                                    </Typography>
+                                                    <Slider
+                                                        min={0}
+                                                        max={1}
+                                                        step={0.05}
+                                                        value={confidence}
+                                                        onChange={(_, value) =>
+                                                            setConfidence(value as number)
+                                                        }
+                                                    />
+                                                    <TextField
+                                                        label="Comment"
+                                                        value={comment}
+                                                        onChange={(e) => setComment(e.target.value)}
+                                                        fullWidth
+                                                        multiline
+                                                        minRows={2}
+                                                    />
+                                                </Stack>
+                                            </AdvancedSettings>
+
+                                            <AdvancedSettings
+                                                title="Evidence / context"
+                                                description="Surrounding units (optional)"
+                                            >
+                                                <Stack spacing={1}>
+                                                    {(contextQuery.data?.before ?? []).map((unit) => (
+                                                        <Typography
+                                                            key={unit.id}
+                                                            variant="body2"
+                                                            color="text.disabled"
+                                                            sx={{ fontStyle: "italic" }}
+                                                        >
+                                                            {unit.text}
+                                                        </Typography>
+                                                    ))}
+                                                    {(contextQuery.data?.after ?? []).map((unit) => (
+                                                        <Typography
+                                                            key={unit.id}
+                                                            variant="body2"
+                                                            color="text.disabled"
+                                                            sx={{ fontStyle: "italic" }}
+                                                        >
+                                                            {unit.text}
+                                                        </Typography>
+                                                    ))}
+                                                    {!contextQuery.data?.before.length &&
+                                                    !contextQuery.data?.after.length ? (
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            No surrounding units loaded.
+                                                        </Typography>
+                                                    ) : null}
+                                                </Stack>
+                                            </AdvancedSettings>
+                                        </>
+                                    ) : (
+                                        <Typography color="text.secondary">
+                                            Select a queued unit to begin coding.
+                                        </Typography>
+                                    )}
+                                </Stack>
+
+                                <Box sx={{ display: { xs: "none", lg: "block" } }}>
+                                    <AnnotationLabelGuide
+                                        labels={ctx.labels}
+                                        codebookName={ctx.selectedCodebook?.name}
+                                        codebookVersion={ctx.selectedCodebook?.version}
+                                        frozen={ctx.selectedCodebook?.is_frozen}
+                                    />
+                                </Box>
+                            </Box>
+                        )}
+                    </QueryBoundary>
+                </SectionCard>
             ) : null}
         </Stack>
     );

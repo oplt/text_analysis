@@ -35,12 +35,14 @@ import {
     listRuns,
 } from "../../../api/textResearch";
 import { EmptyState } from "../../../components/ui/EmptyState";
+import { FormGrid } from "../../../components/ui/FormGrid";
+import { HelpTooltip } from "../../../components/ui/HelpTooltip";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
 import { queryKeys } from "../../../config/queryKeys";
 import { getQueryErrorMessage } from "../../../utils/queryErrors";
 import { ResultsInspector } from "../components/ResearchCharts";
-import { RunStatusChip } from "../components/ResearchShared";
+import { RunStatusChip } from "../../../components/ui/RunStatusChip";
 import {
     DRIFT_DISCLAIMER,
     parseDriftReport,
@@ -272,7 +274,11 @@ export default function DriftMonitoringView() {
     return (
         <Stack spacing={2}>
             <SectionCard
-                title="Drift monitoring"
+                title={
+                    <HelpTooltip termId="drift" variant="label">
+                        Drift monitoring
+                    </HelpTooltip>
+                }
                 description="Compare complete persisted PredictionSets on the backend. The browser never downloads full prediction rows to aggregate."
                 action={
                     <Button
@@ -318,14 +324,14 @@ export default function DriftMonitoringView() {
                         />
                     ) : (
                         <Stack spacing={1.5}>
-                            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+                            <FormGrid columns="4-4-4">
                                 <TextField
                                     select
                                     size="small"
                                     label="Baseline prediction set"
                                     value={baselineSetId}
                                     onChange={(e) => setBaselineSetId(e.target.value)}
-                                    sx={{ minWidth: 280, flex: 1 }}
+                                    fullWidth
                                 >
                                     <MenuItem value="">Select…</MenuItem>
                                     {predictionSets.map((ps) => (
@@ -340,7 +346,7 @@ export default function DriftMonitoringView() {
                                     label="Current prediction set"
                                     value={currentSetId}
                                     onChange={(e) => setCurrentSetId(e.target.value)}
-                                    sx={{ minWidth: 280, flex: 1 }}
+                                    fullWidth
                                 >
                                     <MenuItem value="">Select…</MenuItem>
                                     {predictionSets.map((ps) => (
@@ -359,7 +365,7 @@ export default function DriftMonitoringView() {
                                             e.target.value as (typeof DRIFT_MODES)[number]["value"]
                                         )
                                     }
-                                    sx={{ minWidth: 220 }}
+                                    fullWidth
                                 >
                                     {DRIFT_MODES.map((mode) => (
                                         <MenuItem key={mode.value} value={mode.value}>
@@ -367,20 +373,20 @@ export default function DriftMonitoringView() {
                                         </MenuItem>
                                     ))}
                                 </TextField>
-                                <Button
-                                    variant="contained"
-                                    startIcon={<DriftIcon />}
-                                    disabled={
-                                        !ctx.selectedCorpusId ||
-                                        !baselineSetId ||
-                                        !currentSetId ||
-                                        runPredictionSetDriftMutation.isPending
-                                    }
-                                    onClick={() => runPredictionSetDriftMutation.mutate()}
-                                >
-                                    Compare prediction sets
-                                </Button>
-                            </Stack>
+                            </FormGrid>
+                            <Button
+                                variant="contained"
+                                startIcon={<DriftIcon />}
+                                disabled={
+                                    !ctx.selectedCorpusId ||
+                                    !baselineSetId ||
+                                    !currentSetId ||
+                                    runPredictionSetDriftMutation.isPending
+                                }
+                                onClick={() => runPredictionSetDriftMutation.mutate()}
+                            >
+                                Compare prediction sets
+                            </Button>
                             <Typography variant="caption" color="text.secondary">
                                 Backend aggregates <strong>all</strong> predictions in each set
                                 (including &gt;500 rows) and persists an auditable{" "}

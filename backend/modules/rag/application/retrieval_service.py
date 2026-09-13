@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import json
 import logging
+from contextlib import asynccontextmanager
 from time import perf_counter
 
 from backend.lib.retrieval_cache import get_cached_retrieval, set_cached_retrieval
@@ -30,7 +31,7 @@ from backend.modules.rag.application.source_diversifier import (
     diversify_by_document,
     filter_to_allow_list,
 )
-from backend.modules.rag.application.trace_context import RagTraceContext
+from backend.modules.rag.application.trace_context import RagTraceContext, traced
 from backend.modules.rag.domain.enums import RetrievalIntent
 from backend.modules.rag.domain.models import RetrievalCoverage, RetrievalOutcome, RetrievedChunk
 from backend.modules.rag.infrastructure import metrics
@@ -38,6 +39,7 @@ from backend.modules.rag.infrastructure.pgvector_adapter import _parse_scope
 from backend.modules.rag.infrastructure.rag_config import RagConfig
 from backend.modules.rag.infrastructure.repositories import RagRepository
 from backend.modules.rag.infrastructure.vector_store_adapter import build_vector_store
+from opentelemetry import trace
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
@@ -193,7 +195,19 @@ class RetrievalService:
         )
         self.repo = RagRepository(db)
         self.query_expansion = QueryExpansionService()
+        self._db_branch_lock = asyncio.Lock()
 
+    @asynccontextmanager
+    async def _database_branch(self):
+        # AsyncSession owns one transaction/connection and cannot run simultaneous
+        # statements. Embedding work may still overlap the lexical database call.
+        if isinstance(self.db, AsyncSession):
+            async with self._db_branch_lock:
+                yield
+        else:
+            yield
+
+    @traced("rag.retrieval")
     async def retrieve(
         self,
         query: str,
@@ -214,20 +228,33 @@ class RetrievalService:
         document_ids, owner_scoped = _parse_scope(filters)
         index_revision_ids = (filters or {}).get("index_revision_ids")
         retrieval_mode = str((filters or {}).get("retrieval_mode") or "hybrid").lower()
-        query_analysis = (
-            analyze_query(query)
-            if intent is None
-            else QueryAnalysis(
-                intent=RetrievalIntent(intent),
-                reasons=("caller_override",),
+        with trace.get_tracer("backend.rag").start_as_current_span(
+            "rag.query_analysis", record_exception=False, set_status_on_exception=False
+        ):
+            query_analysis = (
+                analyze_query(query)
+                if intent is None
+                else QueryAnalysis(
+                    intent=RetrievalIntent(intent),
+                    reasons=("caller_override",),
+                )
             )
-        )
-        plan = plan_retrieval(
-            query_analysis.intent,
-            self.config,
-            top_k=top_k,
-            retrieval_mode=retrieval_mode,
-            lexical_phrase_boost=query_analysis.lexical_phrase_boost,
+            plan = plan_retrieval(
+                query_analysis.intent,
+                self.config,
+                top_k=top_k,
+                retrieval_mode=retrieval_mode,
+                lexical_phrase_boost=query_analysis.lexical_phrase_boost,
+            )
+        span = trace.get_current_span()
+        span.set_attributes(
+            {
+                "request_id": trace_context.request_id,
+                "retrieval.intent": plan.intent.value,
+                "retrieval.top_k": plan.top_k,
+                "retrieval.document_count": len(document_ids) if document_ids is not None else -1,
+                "retrieval.reranker": self.ranker.name,
+            }
         )
         exclude_parents = bool(getattr(self.config, "parent_context_enabled", False))
 
@@ -318,6 +345,7 @@ class RetrievalService:
             trace_context.complete(
                 "cache_lookup", cache_started, status="hit" if cached is not None else "miss"
             )
+            span.set_attribute("retrieval.cache_hit", cached is not None)
             if cached is not None:
                 try:
                     cached_intent = RetrievalIntent(
@@ -399,7 +427,9 @@ class RetrievalService:
                     )
                 return outcome
 
+            expansion_started = trace_context.measure("query_expansion")
             variants = self.query_expansion.expand_if_needed(query, multi_query=plan.multi_query)
+            trace_context.complete("query_expansion", expansion_started)
             ranked_lists: list[list[RetrievedChunk]] = []
             total_dense = 0
             total_lexical = 0
@@ -432,6 +462,14 @@ class RetrievalService:
 
             variant_concurrency = max(1, int(getattr(self.config, "query_variant_concurrency", 3)))
             variant_semaphore = asyncio.Semaphore(variant_concurrency)
+            branch_semaphore = asyncio.Semaphore(
+                max(1, int(getattr(self.config, "retrieval_branch_concurrency", 2)))
+            )
+
+            async def limited_branch(branch):
+                async with branch_semaphore:
+                    return await branch
+
             embedding_tasks: dict[str, asyncio.Task] = {}
             embedding_guard = asyncio.Lock()
 
@@ -479,7 +517,9 @@ class RetrievalService:
                     else:
                         lexical_task = _completed_branch()
                     dense_raw, lexical_raw = await asyncio.gather(
-                        dense_task, lexical_task, return_exceptions=True
+                        limited_branch(dense_task),
+                        limited_branch(lexical_task),
+                        return_exceptions=True,
                     )
                     return index, dense_raw, lexical_raw
 
@@ -737,8 +777,10 @@ class RetrievalService:
                     logger.exception("Failed to persist degraded retrieval trace")
             return outcome
         finally:
+            trace_context.close()
             metrics.rag_retrieval_latency_ms.observe((perf_counter() - started) * 1000)
 
+    @traced("rag.dense")
     async def _dense_branch(
         self,
         query: str,
@@ -774,19 +816,21 @@ class RetrievalService:
                 search_filters["document_ids"] = document_ids
             if index_revision_ids is not None:
                 search_filters["index_revision_ids"] = index_revision_ids
-            dense = await self.vector_store.similarity_search(
-                query,
-                user_id=user_id,
-                project_id=project_id,
-                top_k=top_k,
-                filters=search_filters,
-                query_embedding=query_embedding,
-            )
+            async with self._database_branch():
+                dense = await self.vector_store.similarity_search(
+                    query,
+                    user_id=user_id,
+                    project_id=project_id,
+                    top_k=top_k,
+                    filters=search_filters,
+                    query_embedding=query_embedding,
+                )
             return dense or [], True, None
         except Exception as exc:
             logger.exception("Dense retrieval branch failed")
             return [], False, type(exc).__name__
 
+    @traced("rag.lexical")
     async def _lexical_branch(
         self,
         query: str,
@@ -803,22 +847,24 @@ class RetrievalService:
         if top_k <= 0:
             return [], True, None
         try:
-            lexical = await self.repo.lexical_search(
-                user_id=user_id,
-                project_id=project_id,
-                document_ids=document_ids,
-                query=query,
-                top_k=top_k,
-                owner_scoped=owner_scoped,
-                exclude_parents=exclude_parents,
-                index_revision_ids=index_revision_ids,
-                phrase_boost=phrase_boost,
-            )
+            async with self._database_branch():
+                lexical = await self.repo.lexical_search(
+                    user_id=user_id,
+                    project_id=project_id,
+                    document_ids=document_ids,
+                    query=query,
+                    top_k=top_k,
+                    owner_scoped=owner_scoped,
+                    exclude_parents=exclude_parents,
+                    index_revision_ids=index_revision_ids,
+                    phrase_boost=phrase_boost,
+                )
             return lexical, True, None
         except Exception as exc:
             logger.exception("Lexical retrieval branch failed")
             return [], False, type(exc).__name__
 
+    @traced("rag.persistence")
     async def _persist_trace(
         self,
         outcome: RetrievalOutcome,

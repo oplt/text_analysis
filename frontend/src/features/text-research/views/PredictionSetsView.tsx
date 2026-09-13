@@ -28,6 +28,7 @@ import {
 import { EmptyState } from "../../../components/ui/EmptyState";
 import { QueryBoundary } from "../../../components/ui/QueryBoundary";
 import { SectionCard } from "../../../components/ui/SectionCard";
+import { ScrollRegion } from "../../../components/ui/ScrollRegion";
 import { queryKeys } from "../../../config/queryKeys";
 import { QUERY_STALE_TIMES } from "../../../config/queryTiming";
 import { ResultsInspector } from "../components/ResearchCharts";
@@ -111,7 +112,7 @@ export default function PredictionSetsView() {
 
     const sourceModelQuery = useQuery({
         queryKey: queryKeys.textResearch.model(selectedSet?.trained_model_id ?? ""),
-        queryFn: () => getClassifier(selectedSet!.trained_model_id),
+        queryFn: ({ signal }) => getClassifier(selectedSet!.trained_model_id, signal),
         enabled: Boolean(selectedSet?.trained_model_id),
     });
 
@@ -207,7 +208,7 @@ export default function PredictionSetsView() {
                                     }
                                 />
                             ) : (
-                                <Box sx={{ overflowX: "auto" }}>
+                                <ScrollRegion>
                                     <Table size="small">
                                         <TableHead>
                                             <TableRow>
@@ -275,7 +276,7 @@ export default function PredictionSetsView() {
                                             })}
                                         </TableBody>
                                     </Table>
-                                </Box>
+                                </ScrollRegion>
                             )}
                         </QueryBoundary>
                     </>
@@ -428,7 +429,7 @@ export default function PredictionSetsView() {
                                     Showing {pageOffset + 1}–{pageOffset + rows.length} of {pageQuery.data?.total ?? 0} predictions
                                 </Typography>
 
-                                <Box sx={{ overflowX: "auto" }}>
+                                <ScrollRegion>
                                     <Table size="small">
                                         <TableHead>
                                             <TableRow>
@@ -510,7 +511,7 @@ export default function PredictionSetsView() {
                                             ))}
                                         </TableBody>
                                     </Table>
-                                </Box>
+                                </ScrollRegion>
 
                                 <Stack direction="row" spacing={1}>
                                     <Button size="small" disabled={pageOffset === 0} onClick={() => setPageOffset((offset) => Math.max(0, offset - 100))}>Previous</Button>

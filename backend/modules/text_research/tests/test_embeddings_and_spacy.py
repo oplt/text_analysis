@@ -68,3 +68,51 @@ class SpacyEngineTests(unittest.TestCase):
             engine.analyze(["The cat sat on the mat."])
         message = str(ctx.exception).lower()
         self.assertTrue("spacy" in message or "unavailable" in message)
+
+
+class EmbeddingIdentityTests(unittest.TestCase):
+    def test_hashing_identity_includes_provider_model_dim_and_package(self):
+        identity = embeddings.embedding_identity("hashing", n_features=128)
+        self.assertEqual(identity["provider"], "hashing")
+        self.assertEqual(identity["model_name"], "sklearn.feature_hasher")
+        self.assertEqual(identity["dimension"], 128)
+        self.assertEqual(
+            identity["provider_implementation_version"],
+            embeddings.EMBEDDING_PROVIDER_IMPLEMENTATION_VERSION,
+        )
+        self.assertIn("local_package_version", identity)
+        self.assertEqual(identity["revision"], identity["local_package_version"])
+        self.assertIsNone(identity["artifact_checksum"])
+        self.assertIsInstance(identity["checksum"], str)
+        self.assertEqual(len(identity["checksum"]), 64)
+
+    def test_sentence_transformer_identity_uses_known_dimension(self):
+        identity = embeddings.embedding_identity(
+            "sentence_transformers",
+            model_name="all-MiniLM-L6-v2",
+            model_revision="abc123",
+        )
+        self.assertEqual(identity["model_name"], "all-MiniLM-L6-v2")
+        self.assertEqual(identity["model_revision"], "abc123")
+        self.assertEqual(identity["dimension"], 384)
+
+    def test_dimension_and_model_revision_change_identity_checksum(self):
+        baseline = embeddings.embedding_identity("hashing", n_features=256)
+        mutated_dim = embeddings.embedding_identity("hashing", n_features=512)
+        mutated_rev = embeddings.embedding_identity("hashing", n_features=256, model_revision="r1")
+        self.assertNotEqual(baseline["checksum"], mutated_dim["checksum"])
+        self.assertNotEqual(baseline["checksum"], mutated_rev["checksum"])
+
+    def test_artifact_metadata_rebuilds_identity_with_checksum(self):
+        identity = embeddings.embedding_identity_from_artifact_metadata(
+            {
+                "provider": "hashing",
+                "model": "sklearn.feature_hasher",
+                "dim": 64,
+                "content_checksum": "deadbeef",
+            }
+        )
+        assert identity is not None
+        self.assertEqual(identity["dimension"], 64)
+        self.assertEqual(identity["artifact_checksum"], "deadbeef")
+        self.assertEqual(identity["model_name"], "sklearn.feature_hasher")
