@@ -4,6 +4,6 @@ message: "If you use this software, please cite it as below."
 authors:
   - name: Text Analysis Contributors
 license: MIT
-repository-code: "https://github.com/example/text_analysis"
+repository-code: "https://github.com/oplt/text_analysis"
 version: 0.1.0
 date-released: 2026-09-09

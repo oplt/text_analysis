@@ -1,0 +1,434 @@
+# Text Research — Full Functionality Test Plan
+# Manual QA checklist covering every destination under left-nav "Text Research".
+# Mark each step [ ] → [x] as you verify. Prefer one fresh project/corpus for an end-to-end pass.
+
+================================================================================
+0. PREREQUISITES
+================================================================================
+
+[ ] App is running (API + frontend + workers/Redis as needed for async runs).
+[ ] You can sign in (non-admin is fine for most research flows).
+[ ] Have sample files ready: at least 3–10 text/PDF/DOCX docs (or a CSV for corpus import).
+[ ] Ideally two user accounts (or two annotator identities) for Reliability / multi-coder checks.
+[ ] Note: Celery/worker must be up for long runs (segmentation, train, topics, analysis).
+
+--------------------------------------------------------------------------------
+How to enter Text Research
+--------------------------------------------------------------------------------
+
+[ ] From the left sidebar, click **Text Research**.
+[ ] If multiple projects exist, pick/open a project from the research landing (`/research`).
+[ ] Confirm URL becomes `/research/<projectId>/dashboard` (or last-used research route).
+[ ] Confirm page chrome shows: Research context bar, research nav groups, main workspace.
+[ ] (Optional) Create a dedicated test project under **Projects** first, then open Text Research.
+
+================================================================================
+1. SHARED RESEARCH CHROME (test on any page)
+================================================================================
+
+1.1 Research context bar
+[ ] Label **Research context** is visible.
+[ ] Project link/name opens or identifies the correct project.
+[ ] Select / create a **Corpus** (see §2 if none exist).
+[ ] Change **Unit type** → confirm dialog appears → Cancel leaves value unchanged.
+[ ] Change **Unit type** again → Confirm → toast/flash; dependent views refresh.
+[ ] Change **Codebook** (after §4) → confirm dialog → Confirm.
+[ ] On narrow viewport (< md): context collapses to chips; expand/collapse works.
+[ ] **Next: …** primary action (when shown) navigates to the recommended workflow stage.
+[ ] Below `lg`: **Ask Corpus** button opens the Ask Corpus drawer.
+[ ] At `lg+`: Ask Corpus appears as the right-hand inspector (no drawer button required).
+
+1.2 Research navigation
+[ ] Open each nav group: Overview · Data · Coding & Quality · Analysis · Models · Outputs.
+[ ] Every item below loads without blank/error shell:
+    Overview → Dashboard
+    Data → Corpus, Prepare, Ingestion QA, Cleaning, Preprocessing
+    Coding → Codebook, Annotation, Reliability
+    Analysis → Analysis, Dictionaries, Comparative, Topics, Contextual, Robustness, Explorer
+    Models → Classification, Active Learning, Model Registry, Predictions, Drift
+    Outputs → Runs, Exports
+[ ] **Open all / workflow** drawer (if available) lists stages and can navigate.
+[ ] Active group/item highlighting matches the current URL.
+
+1.3 Ask Corpus + memos
+[ ] Ask a simple corpus question; answer streams/returns without crash.
+[ ] Citation / evidence link opens document drawer when citations exist.
+[ ] Expand **Research memos**; list loads; edit/archive (if memos exist) works.
+[ ] Close Ask Corpus drawer on narrow screens without trapping focus.
+
+1.4 Responsive smoke (spot-check)
+[ ] ~390px: nav usable, no horizontal page blowout, Ask Corpus via button.
+[ ] ~768px: context + nav usable.
+[ ] ~1024–1440px: main content readable beside nav / Ask panel.
+[ ] Dark mode (if toggled in profile/settings): surfaces/text readable on Dashboard + one dense table page.
+
+================================================================================
+2. OVERVIEW — Dashboard
+================================================================================
+
+Nav: Overview → Dashboard
+
+[ ] Empty project: empty/no-corpus state offers path to Corpus.
+[ ] With corpus + no units: prompt to prepare/segment is clear.
+[ ] With data: KPI StatCards show Documents, Text units, Annotation progress, Codebooks, Trained models, Latest run.
+[ ] **Research progress** shows stage % and Next action; blockers list Open links work.
+[ ] **Corpus summary** shows unit mix / languages / metadata (not only duplicated KPIs).
+[ ] **Coding progress** links to Annotation and Reliability → Disagreements.
+[ ] Recent runs / models sections open target workspaces when actions exist.
+[ ] Primary Next from dashboard matches context-bar Next when workflow agrees.
+
+================================================================================
+3. DATA — Corpus
+================================================================================
+
+Nav: Data → Corpus
+Tabs: Documents | Metadata | Text Units | Quality | Import
+
+3.1 Create corpus
+[ ] Create corpus (name + optional description) → appears in context Corpus selector.
+[ ] Switch corpus via context bar → documents list refreshes.
+
+3.2 Import / documents
+[ ] **Import** tab: upload files and/or CSV import path works; errors show toast/alert.
+[ ] **Documents** tab: table lists docs; search/filter/pagination if present.
+[ ] Open a document detail/drawer; metadata fields visible.
+[ ] Select docs; bulk actions (if any) do not crash.
+[ ] Link/import from RAG documents if UI offers it.
+
+3.3 Metadata / units / quality
+[ ] **Metadata**: edit fields (title, year, language, country, etc.) and save.
+[ ] **Text Units**: empty before segmentation; after §4 shows units for selected unit type.
+[ ] **Quality**: ingestion/quality signals load or empty state is clear.
+
+================================================================================
+4. DATA — Prepare (Segment / Ingestion QA / Cleaning / Preprocessing)
+================================================================================
+
+Nav: Data → Prepare (also Ingestion QA, Cleaning, Preprocessing as separate nav items)
+
+4.1 Segment
+[ ] Select unit type (document / paragraph / sentence / etc. per options).
+[ ] **Start segmentation** disabled reason is clear when no docs.
+[ ] With docs: start run → RunStatusChip/Panel shows Queued/Running → Completed (or Failed with message).
+[ ] After success: Dashboard text-unit count increases; Corpus → Text Units populated.
+[ ] Re-run / second segmentation behaves safely (status + results update).
+
+4.2 Ingestion QA
+[ ] Panel loads metrics/warnings for the corpus.
+[ ] Empty/error states are readable; no console-breaking crash.
+
+4.3 Cleaning
+[ ] View/create cleaning profile or rules.
+[ ] Preview and/or apply cleaning; run status updates if async.
+[ ] Failed apply shows error; retry available when applicable.
+
+4.4 Preprocessing
+[ ] View/create preprocessing profile.
+[ ] Preview tokenization/normalization options without requiring a full train.
+[ ] Saved profile selectable later in Analysis / Classification where offered.
+
+================================================================================
+5. CODING & QUALITY — Codebook
+================================================================================
+
+Nav: Coding & Quality → Codebook
+
+[ ] Create codebook (name, description, version).
+[ ] Add labels (name, description, inclusion/exclusion, examples).
+[ ] Edit label; delete/archive if available.
+[ ] Select codebook in Research context; labels appear in Annotation / Reliability / Classification.
+[ ] Freeze codebook (if offered) → editing locked; version shown as frozen.
+[ ] Create second version / new codebook and switch via context bar.
+
+================================================================================
+6. CODING & QUALITY — Annotation
+================================================================================
+
+Nav: Coding & Quality → Annotation
+Tabs: Setup | Workspace
+
+6.1 Setup
+[ ] Create/select annotation campaign or queue (per UI).
+[ ] Assign annotators / configure overlap if available.
+[ ] Empty states guide when no codebook or no text units.
+
+6.2 Workspace
+[ ] Queue loads text units for coding.
+[ ] Apply label(s); save; navigate next/prev unit.
+[ ] Confidence / comment (Advanced) saves.
+[ ] Evidence / context accordion works.
+[ ] Filter queue (unlabeled / labeled / uncertain) if present.
+[ ] Progress counts update on Dashboard after several annotations.
+[ ] (Ideal) Second annotator codes overlapping units for Reliability.
+
+================================================================================
+7. CODING & QUALITY — Reliability
+================================================================================
+
+Nav: Coding & Quality → Reliability
+Tabs: Overview | Agreement | Disagreements | By Coder | Methods & Provenance
+
+[ ] Empty/not-ready state explains missing corpus, codebook, labels, or multi-annotator data.
+[ ] Overview: Compute agreement (κ / α) with optional bootstrap settings under Advanced.
+[ ] Run status goes to Completed; metrics appear.
+[ ] Agreement tab: per-label metrics / tables readable.
+[ ] Disagreements: list of conflicting units; open unit; resolve/adjudicate if UI allows.
+[ ] By Coder: coder-level stats.
+[ ] Methods & Provenance: provenance drawer/panel opens; raw JSON under Advanced; Copy works.
+[ ] Help tooltips on metric names open and are keyboard-dismissible.
+
+================================================================================
+8. ANALYSIS — Analysis laboratory
+================================================================================
+
+Nav: Analysis → Analysis
+Group tabs: Corpus overview | Frequencies | Associations | Statistical models | Measurement | Advanced
+(+ method sub-tabs where shown)
+
+For each method below: configure minimal params → Run → wait for Completed → results/charts/tables appear → provenance accessible.
+
+8.1 Corpus overview
+[ ] Overview stats / charts load for segmented corpus.
+
+8.2 Frequencies
+[ ] Term frequencies
+[ ] N-grams
+[ ] KWIC (keyword + mode; lemma language if required)
+[ ] DFM
+[ ] Keyness (two groups / filters A vs B)
+
+8.3 Associations
+[ ] Dictionaries (select a dictionary from §9 or create one first)
+[ ] Co-occurrence
+[ ] Similarity
+
+8.4 Statistical models / Measurement
+[ ] Statistical model run with required inputs.
+[ ] Measurement run with required inputs.
+
+8.5 Advanced
+[ ] Duplicates
+[ ] Clustering
+[ ] Dimensions
+[ ] Readability
+
+8.6 Cross-cutting Analysis checks
+[ ] Failed run shows error in RunStatusPanel; retry/replay if offered.
+[ ] Results export / Ask about this (if present) works.
+[ ] Switching method tabs does not leave stale wrong-method results without label.
+[ ] Seed / advanced params under AdvancedSettings stay collapsed by default.
+
+================================================================================
+9. ANALYSIS — Dictionaries
+================================================================================
+
+Nav: Analysis → Dictionaries
+
+[ ] Create dictionary (name, version, language, terms).
+[ ] Edit terms / hierarchy / exclusions (Advanced JSON or form).
+[ ] Create new version (copy).
+[ ] List shows dictionaries; select one for detail.
+[ ] Use dictionary in Analysis → Associations → Dictionaries (§8.3).
+
+================================================================================
+10. ANALYSIS — Comparative
+================================================================================
+
+Nav: Analysis → Comparative
+
+[ ] Select grouping/metadata field and model or prevalence settings as required.
+[ ] Run comparative prevalence.
+[ ] Results table/chart; empty state when prerequisites missing.
+[ ] Inspect raw results under Advanced if present.
+
+================================================================================
+11. ANALYSIS — Topics
+================================================================================
+
+Nav: Analysis → Topics
+Tabs: Setup | Topics | Distribution | Metadata | Documents | K sweep | Seed stability | Compare
+
+[ ] Setup: choose model family / K / seed / preprocessing; start topic run.
+[ ] Wait for Completed; Topics tab lists topics + top terms.
+[ ] Distribution / Metadata / Documents tabs populate from the run.
+[ ] K sweep: start sweep; results compare K values.
+[ ] Seed stability: run; stability metrics shown.
+[ ] Compare: compare two topic runs if multiple exist.
+[ ] Failed run surfaces error; can start another run.
+
+================================================================================
+12. ANALYSIS — Contextual
+================================================================================
+
+Nav: Analysis → Contextual
+Tabs: Datasets | Link
+
+[ ] Datasets: create/upload or register contextual dataset.
+[ ] Link: link corpus documents/units to contextual rows.
+[ ] Validation errors are clear; successful link visible in list.
+
+================================================================================
+13. ANALYSIS — Robustness
+================================================================================
+
+Nav: Analysis → Robustness
+
+[ ] Select trained model / dataset prerequisites (train in §15 first if needed).
+[ ] Configure sweep options (seeds, CV, preprocessing sensitivity, etc.).
+[ ] Start robustness run; status completes; results sections fill.
+[ ] Empty/disabled reasons explain missing model.
+
+================================================================================
+14. ANALYSIS — Explorer
+================================================================================
+
+Nav: Analysis → Explorer
+
+[ ] Configure comparative prevalence explorer filters.
+[ ] Run / load prevalence results.
+[ ] Charts/tables render; raw inspector under Advanced if present.
+
+================================================================================
+15. MODELS — Classification
+================================================================================
+
+Nav: Models → Classification
+Tabs: Setup | Dataset | Train | Evaluation | Predictions | Advanced
+
+15.1 Setup
+[ ] Task type (binary / multiclass / multilabel / infer).
+[ ] Model family selectable; labels come from codebook.
+
+15.2 Dataset
+[ ] Freeze / build training dataset from annotations (adjudicated / majority / selected annotator).
+[ ] Preview coverage; empty state if insufficient labels.
+
+15.3 Train
+[ ] Name model; set seed / advanced train params under Advanced.
+[ ] Start train → run status → Completed.
+[ ] Confirm `trained_model_id` / model appears in list (saved for later reuse).
+
+15.4 Evaluation
+[ ] Metrics (accuracy, F1, etc.) shown for selected model.
+[ ] Confusion / per-label tables if present.
+
+15.5 Predictions
+[ ] Select saved model → Predict on corpus units.
+[ ] Predictions appear; can open Prediction sets (§18).
+
+15.6 Advanced
+[ ] Raw payloads / advanced options collapsed by default; expandable.
+
+================================================================================
+16. MODELS — Active Learning
+================================================================================
+
+Nav: Models → Active Learning
+
+[ ] Select a trained model.
+[ ] Run predict / uncertainty sampling.
+[ ] Uncertain units list appears; select units.
+[ ] Assign to annotators → tasks appear in Annotation queue.
+[ ] Disabled reasons when no model / no units are clear.
+
+================================================================================
+17. MODELS — Model Registry
+================================================================================
+
+Nav: Models → Model Registry
+
+[ ] List trained models for project/corpus; filter by lifecycle.
+[ ] Open model detail: metrics, metadata, coefficients (if any).
+[ ] Compare two models side by side.
+[ ] Lifecycle actions: candidate → staging → production → deprecate / archive (as allowed).
+[ ] Provenance accessible; prediction sets linked to model.
+[ ] Empty state points to Classification train.
+
+================================================================================
+18. MODELS — Predictions
+================================================================================
+
+Nav: Models → Predictions
+
+[ ] List prediction sets; filter by model.
+[ ] Open set detail: rows, scores, labels.
+[ ] Pagination / search if present.
+[ ] Link back to model registry / classification.
+
+================================================================================
+19. MODELS — Drift
+================================================================================
+
+Nav: Models → Drift
+
+[ ] Requires prediction sets; empty state guides creation.
+[ ] Select set(s) / model; run drift analysis.
+[ ] Diagnostics charts/tables; history of drift runs.
+[ ] Raw report under Advanced.
+
+================================================================================
+20. OUTPUTS — Runs
+================================================================================
+
+Nav: Outputs → Runs
+
+[ ] List runs for project/corpus; filter by type/status if available.
+[ ] Open run detail: status, parameters, metrics, results.
+[ ] Provenance drawer/panel.
+[ ] Replay / exact reproduce actions: enabled with reason tooltips when blocked.
+[ ] Compare two runs when UI supports it.
+[ ] Failed runs show error_message.
+
+================================================================================
+21. OUTPUTS — Exports
+================================================================================
+
+Nav: Outputs → Exports
+Tabs: Data | Models | Analysis | Reproducibility
+
+[ ] Data: download corpus / annotations / units export; file downloads.
+[ ] Models: export model-related artifacts/manifest entries.
+[ ] Analysis: export analysis outputs.
+[ ] Reproducibility: manifest loads; quanteda/script or reproducibility package download works.
+[ ] Errors toast when corpus missing.
+
+================================================================================
+22. END-TO-END GOLDEN PATH (minimum happy path)
+================================================================================
+
+Do this once as a condensed smoke of the whole product:
+
+[ ] 1. Open Text Research → select project
+[ ] 2. Corpus: create + import ≥5 documents
+[ ] 3. Prepare: segment into text units
+[ ] 4. Codebook: create + ≥2 labels
+[ ] 5. Annotation: label a batch of units (ideally 2 coders)
+[ ] 6. Reliability: compute agreement
+[ ] 7. Analysis: run Frequencies + one other method
+[ ] 8. Dictionaries: create dict → run dictionary analysis
+[ ] 9. Classification: freeze dataset → train → evaluate → predict
+[ ] 10. Model Registry: find model → promote staging/production
+[ ] 11. Active Learning: sample uncertain → assign
+[ ] 12. Topics: train small topic model
+[ ] 13. Runs: find the train/analysis runs
+[ ] 14. Exports: download one data + reproducibility artifact
+[ ] 15. Ask Corpus: one question with citation open
+
+================================================================================
+23. BUG LOG (fill while testing)
+================================================================================
+
+# ID | Area | Steps | Expected | Actual | Severity (P0–P3)
+# -- | ---- | ----- | -------- | ------ | ----------------
+#
+#
+#
+
+================================================================================
+24. SIGN-OFF
+================================================================================
+
+[ ] All nav destinations opened at least once without fatal error.
+[ ] Golden path (§22) completed on a clean test project.
+[ ] Critical bugs (P0/P1) filed; P2+ noted in §23.
+[ ] Tester: __________________  Date: __________  Environment: __________
