@@ -1,7 +1,5 @@
 name: Live RAG scale benchmark
 on:
-  schedule:
-    - cron: '23 2 * * *'
   workflow_dispatch:
     inputs:
       scale:
@@ -22,7 +20,7 @@ jobs:
           POSTGRES_DB: benchmark
         ports: ['5432:5432']
         options: >-
-          --health-cmd 'pg_isready -U benchmark' --health-interval 5s
+          --health-cmd "pg_isready -U benchmark" --health-interval 5s
           --health-timeout 5s --health-retries 20
     env:
       DATABASE_URL: postgresql+asyncpg://benchmark:benchmark@localhost:5432/benchmark
